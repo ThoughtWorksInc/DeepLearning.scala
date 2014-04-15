@@ -4,9 +4,11 @@ import scala.runtime.AbstractPartialFunction
 import scala.reflect.macros.Context
 import scala.util.control.Exception.Catcher
 import scala.reflect.internal.annotations.compileTimeOnly
+import scala.annotation.elidable
 import scala.annotation.tailrec
 import scala.util.control.TailCalls._
 import java.util.concurrent.TimeUnit
+import scala.reflect.internal.annotations.uncheckedBounds
 
 trait Future[+A] { outer =>
 
@@ -266,15 +268,15 @@ object Future {
     import c.mirror._
     import compat._
 
-    def uncheckedBounds(typeTree: TypTree) = {
-      Annotated(Apply(Select(New(TypeTree(typeTag[scala.reflect.internal.annotations.uncheckedBounds].tpe)), nme.CONSTRUCTOR), List()), typeTree)
+    def uncheckedBounds(typeTree: Tree) = {
+      Annotated(Apply(Select(New(TypeTree(typeOf[scala.reflect.internal.annotations.uncheckedBounds])), nme.CONSTRUCTOR), List()), typeTree)
     }
 
-    val abstractPartialFunction = c.typeTag[AbstractPartialFunction[_, _]].tpe
-    val futureType = c.typeTag[Future[_]].tpe
-    val function1Type = c.typeTag[_ => _].tpe
+    val abstractPartialFunction = typeOf[AbstractPartialFunction[_, _]]
+    val futureType = typeOf[Future[_]]
+    val function1Type = typeOf[_ => _]
     val function1Symbol = function1Type.typeSymbol
-    val uncheckedSymbol = c.typeTag[scala.unchecked].tpe.typeSymbol
+    val uncheckedSymbol = typeOf[scala.unchecked].typeSymbol
     def multipleTransform(trees: List[Tree], catcher: Tree, rest: (List[Tree]) => Tree)(implicit forceAwait: Set[Name]): Tree = {
       trees match {
         case Nil => rest(Nil)
@@ -307,7 +309,7 @@ object Future {
                 AppliedTypeTree(
                   Ident(abstractPartialFunction.typeSymbol),
                   List(
-                    TypeTree(c.typeTag[Throwable].tpe),
+                    TypeTree(typeOf[Throwable]),
                     typeTree))),
               emptyValDef,
               List(
@@ -326,8 +328,8 @@ object Future {
                   Modifiers(OVERRIDE | FINAL),
                   newTermName("applyOrElse"),
                   List(
-                    TypeDef(Modifiers(PARAM), newTypeName("A1"), List(), TypeBoundsTree(TypeTree(c.typeTag[Nothing].tpe), TypeTree(c.typeTag[Throwable].tpe))),
-                    TypeDef(Modifiers(PARAM), newTypeName("B1"), List(), TypeBoundsTree(typeTree, TypeTree(c.typeTag[Any].tpe)))),
+                    TypeDef(Modifiers(PARAM), newTypeName("A1"), List(), TypeBoundsTree(TypeTree(typeOf[Nothing]), TypeTree(typeOf[Throwable]))),
+                    TypeDef(Modifiers(PARAM), newTypeName("B1"), List(), TypeBoundsTree(typeTree, TypeTree(typeOf[Any])))),
                   List(List(
                     ValDef(
                       Modifiers(PARAM),
@@ -350,8 +352,8 @@ object Future {
                   Modifiers(OVERRIDE | FINAL),
                   newTermName("isDefinedAt"),
                   List(),
-                  List(List(ValDef(Modifiers(PARAM), throwableName, TypeTree(c.typeTag[Throwable].tpe), EmptyTree))),
-                  TypeTree(c.typeTag[Boolean].tpe),
+                  List(List(ValDef(Modifiers(PARAM), throwableName, TypeTree(typeOf[Throwable]), EmptyTree))),
+                  TypeTree(typeOf[Boolean]),
                   Match(
                     Annotated(
                       Apply(Select(New(Ident(uncheckedSymbol)), nme.CONSTRUCTOR), List()),
@@ -362,23 +364,28 @@ object Future {
     }
 
     def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
-
+      c.warning(future.pos, show(awaitTypeTree))
       val futureExpr = c.Expr(future)
       val awaitValue = newTermName(c.fresh("awaitValue"))
       val catcherExpr = c.Expr[Catcher[TailRec[Unit]]](catcher)
-      val restExpr = c.Expr(rest(
-        TypeApply( Select( Ident(awaitValue), newTermName("asInstanceOf")),List(uncheckedBounds(awaitTypeTree)))
-          ))
+//      val restExpr = c.Expr(rest(Ident(awaitValue)))
+            val restExpr = c.Expr(rest(TypeApply(Select(Ident(awaitValue), newTermName("asInstanceOf")), List(uncheckedBounds(awaitTypeTree)))))
+
       Apply(
         Apply(
           Select(
+            //            future,
+            //            reify {
+            //              futureExpr.splice.asInstanceOf[Future[Nothing]]
+            //            }.tree,
+
             treeCopy.TypeApply(
               future,
               Select(future, newTermName("asInstanceOf")),
-              List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(awaitTypeTree))))),
+              List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(uncheckedBounds(awaitTypeTree)))))),
             newTermName("onComplete")),
           List(Function(
-            List(ValDef(Modifiers(PARAM), awaitValue, awaitTypeTree, EmptyTree)),
+            List(ValDef(Modifiers(PARAM), awaitValue, uncheckedBounds(awaitTypeTree), EmptyTree)),
             reify {
               try {
                 restExpr.splice
@@ -404,7 +411,7 @@ object Future {
                       AppliedTypeTree(
                         Select(reify(_root_.com.qifun.yangBoFuture.Future).tree,
                           newTypeName("TryCatchFinally")),
-                        List(TypeTree(block.tpe.widen)))),
+                        List(TypeTree(block.tpe.widen).defineType(block.tpe.widen)))),
                     nme.CONSTRUCTOR),
                   List(
                     newFuture(block).tree,
@@ -414,13 +421,13 @@ object Future {
                       },
                       AppliedTypeTree(
                         Ident(futureType.typeSymbol),
-                        List(TypeTree(block.tpe.widen)))),
+                        List(TypeTree(block.tpe.widen).defineType(block.tpe.widen)))),
                     if (finalizer.isEmpty) {
                       Literal(Constant(()))
                     } else {
                       finalizer
                     })))),
-            transformAwait(Ident(futureName), TypeTree(tree.tpe), catcher, rest))
+            transformAwait(Ident(futureName), TypeTree(tree.tpe).defineType(tree.tpe).asInstanceOf[TypTree], catcher, rest))
 
         }
         case EmptyTree | _: ImplDef | _: DefDef | _: New | _: Ident | _: Literal | _: Super | _: This | _: TypTree | _: New | _: TypeDef | _: Function => {
@@ -428,7 +435,7 @@ object Future {
         }
         case Select(future, await) if await.decoded == "await" && future.tpe <:< futureType => {
           transform(future, catcher, { (transformedFuture) =>
-            transformAwait(transformedFuture, TypeTree(tree.tpe), catcher, rest)
+            transformAwait(transformedFuture, TypeTree(tree.tpe).defineType(tree.tpe).asInstanceOf[TypTree], catcher, rest)
           })
         }
         case Select(instance, field) => {
@@ -445,21 +452,19 @@ object Future {
         }
         case Apply(Ident(name), parameters) if forceAwait(name) => {
           multipleTransform(parameters, catcher, { (transformedParameters) =>
-            transformAwait(treeCopy.Apply(tree, Ident(name), transformedParameters).setPos(tree.pos), TypeTree(tree.tpe), catcher, rest)
+            transformAwait(treeCopy.Apply(tree, Ident(name), transformedParameters).setPos(tree.pos), TypeTree(tree.tpe).defineType(tree.tpe).asInstanceOf[TypTree], catcher, rest)
           })
         }
         case Apply(method, parameters) => {
           transform(method, catcher, { (transformedMethod) =>
             multipleTransform(parameters, catcher, { (transformedParameters) =>
               val uncheckedParameters = for (p <- transformedParameters) yield {
-                //                Annotated(Apply(Select(New(TypeTree(typeTag[scala.reflect.internal.annotations.uncheckedBounds].tpe)), nme.CONSTRUCTOR), List()), tp)
-                //                p.setType(uncheckedBounds(p.tpe))
                 p.tpe match {
                   case null => p
                   case TypeRef(NoPrefix, _, _) => {
                     TypeApply(
                       Select(p, newTermName("asInstanceOf")),
-                      List(uncheckedBounds(TypeTree(p.tpe))))
+                      List(uncheckedBounds(TypeTree(p.tpe).defineType(p.tpe).asInstanceOf[TypTree])))
                   }
                   case _ => p
                 }
@@ -530,11 +535,14 @@ object Future {
                   treeCopy.CaseDef(originCaseDef,
                     pat,
                     guard,
-                    TypeApply(
-                      Select(newFuture(body).tree, newTermName("asInstanceOf")),
-                      List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe)))))))
+                    {
+                      val caseFutureExpr = newFutureAsType(body, TypeTree(tree.tpe).defineType(tree.tpe))
+                      reify {
+                        caseFutureExpr.splice.asInstanceOf[Future[Nothing]]
+                      }.tree
+                    })
                 }),
-              TypeTree(tree.tpe),
+              TypeTree().defineType(tree.tpe).asInstanceOf[TypTree],
               catcher,
               rest)
           })
@@ -544,9 +552,9 @@ object Future {
             transformAwait(
               If(
                 transformedCond,
-                TypeApply(Select(newFuture(thenp).tree, newTermName("asInstanceOf")), List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe)))))),
-                TypeApply(Select(newFuture(elsep).tree, newTermName("asInstanceOf")), List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe))))))),
-              TypeTree(tree.tpe),
+                TypeApply(Select(newFuture(thenp).tree, newTermName("asInstanceOf")), List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe).defineType(tree.tpe)))))),
+                TypeApply(Select(newFuture(elsep).tree, newTermName("asInstanceOf")), List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe).defineType(tree.tpe))))))),
+              TypeTree(tree.tpe).defineType(tree.tpe).asInstanceOf[TypTree],
               catcher,
               rest)
           })
@@ -577,16 +585,16 @@ object Future {
                 List(),
                 List(
                   for (p <- params) yield {
-                    ValDef(Modifiers(PARAM), p.name.toTermName, TypeTree(p.tpe), EmptyTree)
+                    ValDef(Modifiers(PARAM), p.name.toTermName, TypeTree(p.tpe).defineType(p.tpe), EmptyTree)
                   }),
-                AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe))),
+                AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe).defineType(tree.tpe))),
                 newFuture(rhs)(forceAwait + name).tree)),
             transformAwait(
               Apply(
                 Ident(name),
                 params),
 
-              TypeTree(tree.tpe),
+              TypeTree(tree.tpe).defineType(tree.tpe).asInstanceOf[TypTree],
               catcher,
               rest))
         }
@@ -629,13 +637,13 @@ object Future {
                       List(ValDef(
                         Modifiers(PARAM),
                         returnName,
-                        AppliedTypeTree(Ident(function1Symbol), List(parameterTypeTree, TypeTree(typeTag[TailRec[Unit]].tpe))), EmptyTree)),
+                        AppliedTypeTree(Ident(function1Symbol), List(parameterTypeTree, TypeTree(typeOf[TailRec[Unit]]))), EmptyTree)),
                       List(ValDef(
                         Modifiers(IMPLICIT | PARAM),
                         catcherName,
                         TypeTree(typeTag[Catcher[TailRec[Unit]]].tpe),
                         EmptyTree))),
-                    TypeTree(typeTag[TailRec[Unit]].tpe),
+                    TypeTree(typeOf[TailRec[Unit]]),
                     {
                       val catcherExpr = c.Expr[Catcher[TailRec[Unit]]](Ident(catcherName))
                       val tryBodyExpr = c.Expr(transform(
@@ -646,7 +654,7 @@ object Future {
                           val returnExpr = c.Expr[Any => Nothing](Ident(returnName))
                           reify {
                             val result = resultExpr.splice
-                            _root_.scala.util.control.TailCalls.tailcall(returnExpr.splice(result))
+                            _root_.scala.util.control.TailCalls.tailcall(returnExpr.splice.asInstanceOf[Any => _root_.scala.util.control.TailCalls.TailRec[Unit]](result))
                           }.tree
                         }))
                       reify {
@@ -665,17 +673,19 @@ object Future {
             List(uncheckedBounds(futureTypeTree)))))
     }
     def newFuture(tree: Tree)(implicit forceAwait: Set[Name]): c.Expr[Future[Nothing]] = {
-      newFutureAsType(tree, TypeTree(tree.tpe.widen))
+      newFutureAsType(tree, TypeTree(tree.tpe.widen).defineType(tree.tpe.widen))
     }
     val Apply(TypeApply(_, List(t)), _) = c.macroApplication
     val result = newFutureAsType(futureBody.tree, t)(Set.empty)
-    c.warning(c.enclosingPosition, show(result))
-    c.Expr(
+    c.warning(c.enclosingPosition, show(result.tree))
+    val r = c.Expr(
       TypeApply(
         Select(
           c.resetLocalAttrs(result.tree),
           newTermName("asInstanceOf")),
         List(uncheckedBounds(AppliedTypeTree(Ident(futureType.typeSymbol), List(t))))))
+    c.warning(c.enclosingPosition, "after/" +  show(r.tree))
+    r
   }
 
   import scala.language.experimental.macros
