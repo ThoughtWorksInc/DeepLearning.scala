@@ -117,7 +117,6 @@ object Future {
     override final def isCompleted = value.isDefined
 
     override final def onComplete[U](func: (Try[A]) => U)(implicit executor: ExecutionContext) {
-
       synchronized {
         valueOrHandlers match {
           case Left(handlers) => {
@@ -140,6 +139,38 @@ object Future {
       }
     }
 
+    override final def result(atMost: Duration)(implicit permit: CanAwait): A = {
+      ready(atMost)
+      value.get match {
+        case Success(successValue) => successValue
+        case Failure(throwable) => throw throwable
+      }
+    }
+
+    override final def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
+      if (atMost eq Duration.Undefined) {
+        throw new IllegalArgumentException
+      }
+      synchronized {
+        if (atMost.isFinite) {
+          val timeoutAt = atMost.toNanos + System.nanoTime
+          val milliseconds = (atMost / 1000000).toNanos
+          while (!isCompleted) {
+            val restDuration = timeoutAt - System.nanoTime - atMost.toNanos
+            if (restDuration < 0) {
+              throw new TimeoutException
+            }
+            wait(restDuration / 1000000, (restDuration % 1000000).toInt)
+          }
+        } else {
+          while (!isCompleted) {
+            wait()
+          }
+        }
+        this
+      }
+    }
+
     {
       def post(result: Try[A]) {
         synchronized {
@@ -158,32 +189,6 @@ object Future {
       }
       for (successValue <- underlying) {
         post(Success(successValue))
-      }
-    }
-
-    override final def result(atMost: Duration)(implicit permit: CanAwait): A = {
-      ready(atMost)
-      value.get match {
-        case Success(successValue) => successValue
-        case Failure(throwable) => throw throwable
-      }
-    }
-
-    override final def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
-      if (atMost eq Duration.Undefined) {
-        throw new IllegalArgumentException
-      }
-      synchronized {
-        val timeoutAt = atMost.toNanos + System.nanoTime
-        val milliseconds = (atMost / 1000000).toNanos
-        while (!isCompleted) {
-          val restDuration = timeoutAt - System.nanoTime - atMost.toNanos
-          if (restDuration < 0) {
-            throw new TimeoutException
-          }
-          wait(restDuration / 1000000, (restDuration % 1000000).toInt)
-        }
-        this
       }
     }
 
@@ -316,13 +321,13 @@ object Future {
                     rest(treeCopy.Typed(head, Ident(parameterName), typeTree) :: transformedTail)
                   }))
               })
-            //            case _ if isByNameParam.nonEmpty && isByNameParam.head => {
-            //              transform(head, catcher, { transformedHead =>
-            //                transformParameterList(isByNameParam.tail, tail, catcher, { (transformedTail) =>
-            //                  rest(transformedHead :: transformedTail)
-            //                })
-            //              })
-            //            }
+            case _ if isByNameParam.nonEmpty && isByNameParam.head => {
+              transform(head, catcher, { transformedHead =>
+                transformParameterList(isByNameParam.tail, tail, catcher, { (transformedTail) =>
+                  rest(transformedHead :: transformedTail)
+                })
+              })
+            }
             case _ =>
               transform(head, catcher, { transformedHead =>
                 val parameterName = newTermName(c.fresh("yangBoParameter"))
