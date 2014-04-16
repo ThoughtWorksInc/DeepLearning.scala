@@ -24,7 +24,7 @@ Immutable Future
       }
     }
     
-    // Without new keyword `new`, you have the magic version of `Future` constructor,
+    // Without the keyword `new`, you have the magic version of `Future` constructor,
     // which enables the magic postfix `await`.
     val sleep10seconds = Future {
       var i = 0
