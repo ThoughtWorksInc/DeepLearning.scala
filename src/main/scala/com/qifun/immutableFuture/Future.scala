@@ -540,7 +540,7 @@ object Future {
                         AppliedTypeTree(
                           Select(reify(_root_.com.qifun.immutableFuture.Future.Detail).tree,
                             newTypeName("TryCatchFinally")),
-                          List(TypeTree(block.tpe.widen)))),
+                          List(TypeTree(tree.tpe)))),
                       nme.CONSTRUCTOR),
                     List(
                       newFuture(block).tree,
@@ -550,7 +550,7 @@ object Future {
                         },
                         AppliedTypeTree(
                           Ident(futureType.typeSymbol),
-                          List(TypeTree(block.tpe.widen)))),
+                          List(TypeTree(tree.tpe)))),
                       if (finalizer.isEmpty) {
                         Literal(Constant(()))
                       } else {
@@ -836,7 +836,7 @@ object Future {
       }
       val Apply(TypeApply(_, List(t)), _) = c.macroApplication
       val result = newFutureAsType(futureBody.tree, t)(Set.empty)
-      //    c.warning(c.enclosingPosition, show(result))
+      //      c.warning(c.enclosingPosition, show(result))
       c.Expr(
         TypeApply(
           Select(
