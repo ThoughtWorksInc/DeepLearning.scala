@@ -594,17 +594,17 @@ object Future {
           }
           case Select(instance, field) => {
             transform(instance, catcher, { (transformedInstance) =>
-              rest(treeCopy.Select(tree, transformedInstance, field).setPos(tree.pos))
+              rest(treeCopy.Select(tree, transformedInstance, field))
             })
           }
           case TypeApply(method, parameters) => {
             transform(method, catcher, { (transformedMethod) =>
-              rest(treeCopy.TypeApply(tree, transformedMethod, parameters).setPos(tree.pos))
+              rest(treeCopy.TypeApply(tree, transformedMethod, parameters))
             })
           }
           case Apply(method @ Ident(name), parameters) if forceAwait(name) => {
             transformParameterList(Nil, parameters, catcher, { (transformedParameters) =>
-              transformAwait(treeCopy.Apply(tree, Ident(name), transformedParameters).setPos(tree.pos), TypeTree(tree.tpe).asInstanceOf[TypTree], catcher, rest)
+              transformAwait(treeCopy.Apply(tree, Ident(name), transformedParameters), TypeTree(tree.tpe).asInstanceOf[TypTree], catcher, rest)
             })
           }
           case Apply(method, parameters) => {
@@ -630,7 +630,7 @@ object Future {
                 rest(treeCopy.Apply(
                   tree,
                   transformedMethod,
-                  transformedParameters).setPos(tree.pos))
+                  transformedParameters))
               })
             })
           }
@@ -679,7 +679,7 @@ object Future {
           case Assign(left, right) => {
             transform(left, catcher, { (transformedLeft) =>
               transform(right, catcher, { (transformedRight) =>
-                rest(Assign(transformedLeft, transformedRight).setPos(tree.pos))
+                rest(treeCopy.Assign(tree, transformedLeft, transformedRight))
               })
             })
           }
@@ -715,19 +715,17 @@ object Future {
           }
           case Throw(throwable) => {
             transform(throwable, catcher, { (transformedThrowable) =>
-              rest(Throw(transformedThrowable).setPos(tree.pos))
+              rest(treeCopy.Throw(tree, transformedThrowable))
             })
           }
           case Typed(expr, tpt) => {
             transform(expr, catcher, { (transformedExpr) =>
-              // 不确定会不会崩溃
-              rest(Typed(transformedExpr, tpt).setPos(tree.pos))
+              rest(treeCopy.Typed(tree, transformedExpr, tpt))
             })
           }
           case Annotated(annot, arg) => {
             transform(arg, catcher, { (transformedArg) =>
-              // 不确定会不会崩溃
-              rest(Annotated(annot, transformedArg).setPos(tree.pos))
+              rest(treeCopy.Annotated(tree, annot, transformedArg))
             })
           }
           case LabelDef(name, params, rhs) => {
@@ -747,7 +745,6 @@ object Future {
                 Apply(
                   Ident(name),
                   params),
-
                 TypeTree(tree.tpe),
                 catcher,
                 rest))
