@@ -69,3 +69,27 @@ Run it and you will see the output:
     I have sleeped 9 times
     After evaluation of the immutable future `sleep10seconds`
     I sleeped 10 times in total.
+
+### Explaination
+
+There are two sorts of API to use a immutable future, the for-comprehensions style API and "A-Normal Form" style API.
+
+#### For-Comprehensions
+
+The for-comprehensions style API for `immutable-future` is like the [for-comprehensions for scala.concurrent.Future](http://docs.scala-lang.org/overviews/core/futures.html#functional_composition_and_forcomprehensions). 
+
+    for (total <- sleep10seconds) {
+      println("After evaluation of the immutable future `sleep10seconds`")
+      println(s"I sleeped $total times in total.")
+      executor.shutdown()
+    }
+
+A notable difference between the for-comprehensions for immutable futures and for `scala.concurrent.Future`s is the required implicit parameter. `scala.concurrent.Future` requires an `ExecutionContext`, while immutable future requires a `Catcher`.
+
+    import scala.util.control.Exception.Catcher
+    implicit def catcher: Catcher[Unit] = {
+      case e: Exception => {
+        println("An exception occured when I was sleeping: " + e.getMessage)
+      }
+    }
+
