@@ -121,7 +121,16 @@ Immutable futures are stateless, they will never store result values or exceptio
 
 Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and define the control flow by building immutable futures.
 
-### Threading-Free Model
+### Threading-free Model
+
+There are too many threading models and implimentations in the Java/Scala world, `java.util.concurrent.Executor`, `scala.concurrent.ExecutionContext`, `javax.swing.SwingUtilities.invokeLater`, `java.util.Timer`, ... It is very hard to communicate between threading models. When a developer is working with multiple threading models, he must very careful to pass messages between threading models, or he have to maintain bulks of `synchronized` methods to properly deal with shared variables.
+
+Why does he need multiple threading models? Because the libraries that he uses depend on different threading mode. For example, you must update Swing components in the Swing's UI thread, you must specify `java.util.concurrent.ExecutionService`s for `java.nio.channels.CompletionHandler`, and, you must specify `scala.concurrent.ExecutionContext`s for `scala.concurrent.Future` and `scala.async.Async`. Oops!
+
+Think about somebody who uses Swing to develop a text editor software. He wants to create a state machine to update UI. He have heard the cool `scala.async`, then he uses the cool "A-Normal Form" expression in `async` to build the state machine that updates UI, and he types `import scala.concurrent.ExecutionContext.Implicits._` to suppress the compiler errors. Everything looks pretty, except the software always crashes.
+
+If he tries `immutable-future`, replacing `async { }` to `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and not crashes any more. That's why threading-free model is important.
 
 ### Exception Handling
 
+### Tail Call Optimization
