@@ -14,7 +14,7 @@ Immutable Future
     // Manually implements an immutable future, which is the asynchronous version of `Thread.sleep()`
     def asyncSleep(duration: Duration) = new Future[Unit] {
       import scala.util.control.TailCalls._
-      def onComplete(handler: Unit => TailRec[Unit])(implicit tailrecCatcher: Catcher[TailRec[Unit]]) = {
+      def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
         executor.schedule(new Runnable {
           def run() {
             handler().result
