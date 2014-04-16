@@ -1,6 +1,6 @@
 organization := "com.qifun"
 
-name := "yang-bo-future"
+name := "immutable-future"
 
 version := "0.1-SNAPSHOT"
 
@@ -18,16 +18,16 @@ crossScalaVersions := Seq("2.10.4", "2.11.0-RC4")
 
 description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
 
-homepage := Some(url("https://github.com/Atry/yang-bo-future"))
+homepage := Some(url("https://github.com/Atry/immutable-future"))
 
 startYear := Some(2014)
 
 licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
 scmInfo := Some(ScmInfo(
-  url("https://github.com/Atry/yang-bo-future"),
-  "scm:git:git://github.com/Atry/yang-bo-future.git",
-  Some("scm:git:git@github.com:Atry/yang-bo-future.git")))
+  url("https://github.com/Atry/immutable-future"),
+  "scm:git:git://github.com/Atry/immutable-future.git",
+  Some("scm:git:git@github.com:Atry/immutable-future.git")))
 
 pomExtra :=
   <developers>

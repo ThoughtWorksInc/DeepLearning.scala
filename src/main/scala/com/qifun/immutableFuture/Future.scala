@@ -1,4 +1,4 @@
-package com.qifun.yangBoFuture
+package com.qifun.immutableFuture
 
 import scala.runtime.AbstractPartialFunction
 import scala.reflect.macros.Context
@@ -8,10 +8,11 @@ import scala.annotation.elidable
 import scala.annotation.tailrec
 import scala.util.control.TailCalls._
 import java.util.concurrent.TimeUnit
+import scala.concurrent.ExecutionContext
 
 trait Future[+A] { outer =>
 
-  @compileTimeOnly("await must be enclosed in a `Future` block")
+  @compileTimeOnly("`await` must be enclosed in a `Future` block")
   final def await: A = ???
 
   def onComplete(body: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit]
@@ -56,7 +57,7 @@ trait Future[+A] { outer =>
         if (b) {
           tailcall(k(a))
         } else {
-          done(())
+          tailcall(catcher(new NoSuchElementException))
         }
       }
       outer.onComplete(apply)
@@ -103,7 +104,7 @@ object Future {
 
   }
 
-  implicit final class ToConcurrentFuture[A](underlying: Future[A]) extends scala.concurrent.Future[A] {
+  implicit final class ToConcurrentFuture[A](underlying: Future[A])(implicit execctx: ExecutionContext) extends scala.concurrent.Future[A] {
 
     import scala.concurrent._
     import scala.concurrent.duration.Duration
@@ -123,7 +124,11 @@ object Future {
             valueOrHandlers = Left({ result: Try[A] =>
               executor.prepare.execute(new Runnable {
                 override final def run() {
-                  func(result)
+                  try {
+                    func(result)
+                  } catch {
+                    case e: Throwable => executor.reportFailure(e)
+                  }
                 }
               })
             } :: handlers)
@@ -131,7 +136,11 @@ object Future {
           case Right(result) => {
             executor.prepare.execute(new Runnable {
               override final def run() {
-                func(result)
+                try {
+                  func(result)
+                } catch {
+                  case e: Throwable => executor.reportFailure(e)
+                }
               }
             })
           }
@@ -154,9 +163,8 @@ object Future {
       synchronized {
         if (atMost.isFinite) {
           val timeoutAt = atMost.toNanos + System.nanoTime
-          val milliseconds = (atMost / 1000000).toNanos
           while (!isCompleted) {
-            val restDuration = timeoutAt - System.nanoTime - atMost.toNanos
+            val restDuration = timeoutAt - System.nanoTime
             if (restDuration < 0) {
               throw new TimeoutException
             }
@@ -171,27 +179,29 @@ object Future {
       }
     }
 
-    {
-      def post(result: Try[A]) {
-        synchronized {
-          val Left(handlers) = valueOrHandlers
-          valueOrHandlers = Right(result)
-          for (handler <- handlers) {
-            handler(result)
-          }
-          notifyAll()
+    private def post(result: Try[A]) {
+      synchronized {
+        val Left(handlers) = valueOrHandlers
+        valueOrHandlers = Right(result)
+        for (handler <- handlers) {
+          handler(result)
         }
-      }
-      implicit def catcher: Catcher[Unit] = {
-        case throwable: Throwable => {
-          post(Failure(throwable))
-        }
-      }
-      for (successValue <- underlying) {
-        post(Success(successValue))
+        notifyAll()
       }
     }
 
+    execctx.execute(new Runnable {
+      override final def run() {
+        implicit val catcher: Catcher[Unit] = {
+          case throwable: Throwable => {
+            post(Failure(throwable))
+          }
+        }
+        for (successValue <- underlying) {
+          post(Success(successValue))
+        }
+      }
+    })
   }
 
   implicit final class FromResponder[A](underlying: Responder[A]) extends Future[A] {
@@ -299,7 +309,7 @@ object Future {
     import compat._
 
     def unchecked(tree: Tree) = {
-      Annotated(Apply(Select(New(TypeTree(typeOf[_root_.scala.unchecked])), nme.CONSTRUCTOR), List()), tree)
+      Annotated(Apply(Select(New(TypeTree(typeOf[_root_.scala.reflect.internal.annotations.uncheckedBounds])), nme.CONSTRUCTOR), List()), tree)
     }
 
     val abstractPartialFunction = typeOf[AbstractPartialFunction[_, _]]
@@ -463,7 +473,7 @@ object Future {
                   Select(
                     New(
                       AppliedTypeTree(
-                        Select(reify(_root_.com.qifun.yangBoFuture.Future).tree,
+                        Select(reify(_root_.com.qifun.immutableFuture.Future).tree,
                           newTypeName("TryCatchFinally")),
                         List(TypeTree(block.tpe.widen)))),
                     nme.CONSTRUCTOR),
@@ -497,8 +507,12 @@ object Future {
           checkNakedAwait(tree, "await must not be used under a nested object.")
           rest(tree)
         }
-        case _: DefDef => {
-          checkNakedAwait(tree, "await must not be used under a nested method.")
+        case DefDef(mods, _, _, _, _, _) => {
+          if (mods.hasFlag(LAZY)) {
+            checkNakedAwait(tree, "await must not be used under a lazy val initializer.")
+          } else {
+            checkNakedAwait(tree, "await must not be used under a nested method.")
+          }
           rest(tree)
         }
         case _: Function => {
@@ -757,7 +771,7 @@ object Future {
     }
     val Apply(TypeApply(_, List(t)), _) = c.macroApplication
     val result = newFutureAsType(futureBody.tree, t)(Set.empty)
- //   c.warning(c.enclosingPosition, show(result))
+    //   c.warning(c.enclosingPosition, show(result))
     c.Expr(
       TypeApply(
         Select(
