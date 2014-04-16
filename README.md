@@ -119,7 +119,7 @@ Regardless of the familiar veneers between immutable futures and `scala.concurre
 
 Immutable futures are stateless, they will never store result values or exceptions. Instead, the immutable futures evaluate lazily, and they do the same work for every time you invoke `foreach` or `onComplete`. The behavior of immutable futures is more like monads in Haskell than futures in Java.
 
-Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and define the control flow by building immutable futures.
+Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining immutable futures.
 
 ### Threading-free Model
 
