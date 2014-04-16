@@ -70,11 +70,11 @@ Run it and you will see the output:
     After evaluation of the immutable future `sleep10seconds`
     I sleeped 10 times in total.
 
-### Explaination
+## Further Information
 
-There are two sorts of API to use a immutable future, the for-comprehensions style API and "A-Normal Form" style API.
+There are two sorts of API to use an immutable future, the for-comprehensions style API and "A-Normal Form" style API.
 
-#### For-Comprehensions
+### For-Comprehensions
 
 The for-comprehensions style API for `immutable-future` is like the [for-comprehensions for scala.concurrent.Future](http://docs.scala-lang.org/overviews/core/futures.html#functional_composition_and_forcomprehensions). 
 
@@ -93,3 +93,20 @@ A notable difference between the for-comprehensions for immutable futures and fo
       }
     }
 
+### A-Normal Form
+
+"A-Normal Form" style API for immutable futures is like the pending proposal [Async](http://docs.scala-lang.org/sips/pending/async.html).
+
+    val sleep10seconds = Future {
+      var i = 0
+      while (i < 10) {
+        println(s"I have sleeped $i times")
+        // The magic postfix `await` invokes asynchronous method like normal `Thread.sleep()`,
+        // and does not block any thread.
+        asyncSleep(1.seconds).await
+        i += 1
+      }
+      i
+    }
+
+The `Future` functions for immutable futures correspond to `async` method in `Async`, and the `await` postfixes to immutable futures corresponds to `await` method in `Async`.
