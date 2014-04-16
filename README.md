@@ -84,7 +84,7 @@ The for-comprehensions style API for `immutable-future` is like the [for-compreh
       executor.shutdown()
     }
 
-A notable difference between the for-comprehensions for immutable futures and for `scala.concurrent.Future`s is the required implicit parameter. `scala.concurrent.Future` requires an `ExecutionContext`, while immutable future requires a `Catcher`.
+A notable difference between the two for-comprehensions implementation is the required implicit parameter. `scala.concurrent.Future` requires an `ExecutionContext`, while immutable future requires a `Catcher`.
 
     import scala.util.control.Exception.Catcher
     implicit def catcher: Catcher[Unit] = {
