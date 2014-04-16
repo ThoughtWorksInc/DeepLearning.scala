@@ -110,3 +110,13 @@ A notable difference between the for-comprehensions for immutable futures and fo
     }
 
 The `Future` functions for immutable futures correspond to `async` method in `Async`, and the `await` postfixes to immutable futures corresponds to `await` method in `Async`.
+
+## Design
+
+Regardless of the familiar veneers between immutable futures and `scala.concurrent.Future`, I have made some different designed choices on immutable futures.
+
+### Immutability
+
+Immutable futures are stateless, they will never store result values or exceptions. Instead, the immutable futures evaluate lazily, and they do the same work for every time you invoke `foreach` or `onComplete`. The behavior of immutable futures is more like monads in Haskell than futures in Java.
+
+Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and define the control flow by building immutable futures.
