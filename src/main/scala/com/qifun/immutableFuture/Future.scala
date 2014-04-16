@@ -27,6 +27,9 @@ import scala.util.control.TailCalls._
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 
+/**
+ * @author 杨博
+ */
 trait Future[+A] { outer =>
 
   @compileTimeOnly("`await` must be enclosed in a `Future` block")
