@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 trait Future[+A] { outer =>
 
-  @compileTimeOnly("`await` must be enclosed in a `Future` block")
+  @compileTimeOnly("await must be enclosed in a `Future` block")
   final def await: A = ???
 
   def onComplete(body: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit]
@@ -307,6 +307,15 @@ object Future {
     val function1Type = typeOf[_ => _]
     val function1Symbol = function1Type.typeSymbol
     val uncheckedSymbol = typeOf[scala.unchecked].typeSymbol
+    val AndSymbol = typeOf[Boolean].declaration(newTermName("&&").encodedName)
+    val OrSymbol = typeOf[Boolean].declaration(newTermName("||").encodedName)
+
+    def checkNakedAwait(tree: Tree, errorMessage: String) {
+      for (subTree @ Select(future, await) <- tree if await.decoded == "await" && future.tpe <:< futureType) {
+        c.error(subTree.pos, errorMessage)
+      }
+    }
+
     def transformParameterList(isByNameParam: List[Boolean], trees: List[Tree], catcher: Tree, rest: (List[Tree]) => Tree)(implicit forceAwait: Set[Name]): Tree = {
       trees match {
         case Nil => rest(Nil)
@@ -322,10 +331,9 @@ object Future {
                   }))
               })
             case _ if isByNameParam.nonEmpty && isByNameParam.head => {
-              transform(head, catcher, { transformedHead =>
-                transformParameterList(isByNameParam.tail, tail, catcher, { (transformedTail) =>
-                  rest(transformedHead :: transformedTail)
-                })
+              checkNakedAwait(head, "await must not be used under a by-name argument.")
+              transformParameterList(isByNameParam.tail, tail, catcher, { (transformedTail) =>
+                rest(head :: transformedTail)
               })
             }
             case _ =>
@@ -471,12 +479,33 @@ object Future {
                     if (finalizer.isEmpty) {
                       Literal(Constant(()))
                     } else {
+                      checkNakedAwait(finalizer, "await must not be used under a finally.")
                       finalizer
                     })))),
             transformAwait(Ident(futureName), TypeTree(tree.tpe), catcher, rest))
 
         }
-        case EmptyTree | _: ImplDef | _: DefDef | _: New | _: Ident | _: Literal | _: Super | _: This | _: TypTree | _: New | _: TypeDef | _: Function => {
+        case ClassDef(mods, _, _, _) => {
+          if (mods.hasFlag(TRAIT)) {
+            checkNakedAwait(tree, "await must not be used under a nested trait.")
+          } else {
+            checkNakedAwait(tree, "await must not be used under a nested class.")
+          }
+          rest(tree)
+        }
+        case _: ModuleDef => {
+          checkNakedAwait(tree, "await must not be used under a nested object.")
+          rest(tree)
+        }
+        case _: DefDef => {
+          checkNakedAwait(tree, "await must not be used under a nested method.")
+          rest(tree)
+        }
+        case _: Function => {
+          checkNakedAwait(tree, "await must not be used under a nested function.")
+          rest(tree)
+        }
+        case EmptyTree | _: New | _: Ident | _: Literal | _: Super | _: This | _: TypTree | _: New | _: TypeDef => {
           rest(tree)
         }
         case Select(future, await) if await.decoded == "await" && future.tpe <:< futureType => {
@@ -501,9 +530,22 @@ object Future {
         }
         case Apply(method, parameters) => {
           transform(method, catcher, { (transformedMethod) =>
-            val isByNameParam = method.tpe match {
-              case MethodType(params, _) => params.map { _.asTerm.isByNameParam }
-              case _ => Nil
+            val isByNameParam = method.symbol match {
+              case AndSymbol | OrSymbol => {
+                List(true)
+              }
+              case _ => {
+                method.tpe match {
+                  case MethodType(params, _) => {
+                    for (param <- params) yield {
+                      param.asTerm.isByNameParam
+                    }
+                  }
+                  case _ => {
+                    Nil
+                  }
+                }
+              }
             }
             transformParameterList(isByNameParam, parameters, catcher, { (transformedParameters) =>
               rest(treeCopy.Apply(
@@ -569,6 +611,7 @@ object Future {
                 tree,
                 transformedSelector,
                 for (originCaseDef @ CaseDef(pat, guard, body) <- cases) yield {
+                  checkNakedAwait(guard, "await must not be used under a pattern guard.")
                   treeCopy.CaseDef(originCaseDef,
                     pat,
                     guard,
@@ -630,7 +673,11 @@ object Future {
               catcher,
               rest))
         }
-        case _: PackageDef | _: Import | _: ImportSelector | _: Template | _: CaseDef | _: Alternative | _: Star | _: Bind | _: UnApply | _: AssignOrNamedArg | _: Return | _: ReferenceToBoxed => {
+        case _: Return => {
+          c.error(tree.pos, "return is illegal.")
+          rest(tree)
+        }
+        case _: PackageDef | _: Import | _: ImportSelector | _: Template | _: CaseDef | _: Alternative | _: Star | _: Bind | _: UnApply | _: AssignOrNamedArg | _: ReferenceToBoxed => {
           c.error(tree.pos, "Unexpected expression in a `Future` block")
           rest(tree)
         }
@@ -710,7 +757,7 @@ object Future {
     }
     val Apply(TypeApply(_, List(t)), _) = c.macroApplication
     val result = newFutureAsType(futureBody.tree, t)(Set.empty)
-    // c.warning(c.enclosingPosition, show(result.tree))
+ //   c.warning(c.enclosingPosition, show(result))
     c.Expr(
       TypeApply(
         Select(
