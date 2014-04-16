@@ -129,7 +129,7 @@ Why does he need multiple threading models? Because the libraries that he uses d
 
 Think about somebody who uses Swing to develop a text editor software. He wants to create a state machine to update UI. He have heard the cool `scala.async`, then he uses the cool "A-Normal Form" expression in `async` to build the state machine that updates UI, and he types `import scala.concurrent.ExecutionContext.Implicits._` to suppress the compiler errors. Everything looks pretty, except the software always crashes.
 
-Fortunately, `immutable-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries `immutable-future`, replacing `async { }` to `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and not crashes any more. That's why threading-free model is important.
+Fortunately, `immutable-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries `immutable-future`, replacing `async { }` to `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
 
 ### Exception Handling
 
