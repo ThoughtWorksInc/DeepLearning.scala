@@ -121,7 +121,7 @@ object Future {
 
   }
 
-  implicit final class ToConcurrentFuture[A](underlying: Future[A])(implicit execctx: ExecutionContext) extends scala.concurrent.Future[A] {
+  implicit final class ToConcurrentFuture[A](underlying: Future[A])(implicit intialExecutionContext: ExecutionContext) extends scala.concurrent.Future[A] {
 
     import scala.concurrent._
     import scala.concurrent.duration.Duration
@@ -207,7 +207,7 @@ object Future {
       }
     }
 
-    execctx.execute(new Runnable {
+    intialExecutionContext.execute(new Runnable {
       override final def run() {
         implicit val catcher: Catcher[Unit] = {
           case throwable: Throwable => {
@@ -318,6 +318,11 @@ object Future {
     }
   }
 
+  @inline
+  final def forceOnComplete(future: Future[Any], handler: Nothing => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+    future.onComplete(handler.asInstanceOf[Any => TailRec[Unit]])
+  }
+
   def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[Future[Nothing]] = {
 
     import c.universe.Flag._
@@ -351,8 +356,8 @@ object Future {
             case Typed(origin, typeTree) =>
               transform(origin, catcher, { transformedOrigin =>
                 val parameterName = newTermName(c.fresh("yangBoParameter"))
-                Block(List(
-                  ValDef(Modifiers(), parameterName, TypeTree(), transformedOrigin)),
+                Block(
+                  List(ValDef(Modifiers(), parameterName, TypeTree(), transformedOrigin).setPos(origin.pos)),
                   transformParameterList(if (isByNameParam.nonEmpty) isByNameParam.tail else Nil, tail, catcher, { transformedTail =>
                     rest(treeCopy.Typed(head, Ident(parameterName), typeTree) :: transformedTail)
                   }))
@@ -366,8 +371,8 @@ object Future {
             case _ =>
               transform(head, catcher, { transformedHead =>
                 val parameterName = newTermName(c.fresh("yangBoParameter"))
-                Block(List(
-                  ValDef(Modifiers(), parameterName, TypeTree(), transformedHead)),
+                Block(
+                  List(ValDef(Modifiers(), parameterName, TypeTree(), transformedHead).setPos(head.pos)),
                   transformParameterList(if (isByNameParam.nonEmpty) isByNameParam.tail else Nil, tail, catcher, { transformedTail =>
                     rest(Ident(parameterName) :: transformedTail)
                   }))
@@ -453,30 +458,66 @@ object Future {
 
     def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
       val futureExpr = c.Expr(future)
-      val awaitValue = newTermName(c.fresh("awaitValue"))
+      val AwaitValue = newTermName(c.fresh("awaitValue"))
       val catcherExpr = c.Expr[Catcher[TailRec[Unit]]](catcher)
-      val restExpr = c.Expr(rest(Ident(awaitValue)))
-      Apply(
+      val onCompleteCallExpr = c.Expr(
         Apply(
-          Select(
-
-            treeCopy.Typed(
+          Apply(
+            Select(reify(_root_.com.qifun.immutableFuture.Future).tree, newTermName("forceOnComplete")),
+            List(
               future,
-              future,
-              unchecked(AppliedTypeTree(Ident(futureType.typeSymbol), List(awaitTypeTree)))),
-            newTermName("onComplete")),
-          List(Function(
-            List(ValDef(Modifiers(PARAM), awaitValue, awaitTypeTree, EmptyTree)),
-            reify {
-              try {
-                restExpr.splice
-              } catch {
-                case e if catcherExpr.splice.isDefinedAt(e) => {
-                  _root_.scala.util.control.TailCalls.tailcall(catcherExpr.splice(e))
+              {
+                val restTree = rest(Ident(AwaitValue))
+                val tailcallSymbol = reify(scala.util.control.TailCalls).tree.symbol
+                val TailcallName = newTermName("tailcall")
+                val ApplyName = newTermName("apply")
+                val AsInstanceOfName = newTermName("asInstanceOf")
+                def function(awaitValDef: ValDef, restTree: Tree) = {
+                  val restExpr = c.Expr(restTree)
+                  Function(
+                    List(awaitValDef),
+                    reify {
+                      try {
+                        restExpr.splice
+                      } catch {
+                        case e if catcherExpr.splice.isDefinedAt(e) => {
+                          _root_.scala.util.control.TailCalls.tailcall(catcherExpr.splice(e))
+                        }
+                      }
+                    }.tree).setPos(future.pos)
                 }
-              }
-            }.tree))),
-        List(catcher))
+                restTree match {
+                  case Block(
+                    List(ValDef(_, capturedResultName1, _, Ident(AwaitValue))),
+                    Apply(
+                      Select(tailCallsTree, TailcallName),
+                      List(
+                        Apply(
+                          Select(
+                            capturedReturnTree,
+                            ApplyName),
+                          List(Ident(capturedResultName2)))))) if capturedResultName1 == capturedResultName2 && tailCallsTree.symbol == tailcallSymbol => {
+                    // 尾调用优化
+                    capturedReturnTree
+                  }
+                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitValue))), expr) => {
+                    // 参数名优化
+                    function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), expr)
+                  }
+                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitValue)), restStates @ _*), expr) => {
+                    // 参数名优化
+                    function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), Block(restStates.toList, expr))
+                  }
+                  case _ => {
+                    function(ValDef(Modifiers(PARAM), AwaitValue, awaitTypeTree, EmptyTree), restTree)
+                  }
+                }
+              })),
+          List(catcher)))
+      reify {
+        val yangBoNextFuture = futureExpr.splice
+        _root_.scala.util.control.TailCalls.tailcall { onCompleteCallExpr.splice }
+      }.tree
     }
 
     def transform(tree: Tree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
@@ -788,7 +829,7 @@ object Future {
     }
     val Apply(TypeApply(_, List(t)), _) = c.macroApplication
     val result = newFutureAsType(futureBody.tree, t)(Set.empty)
-    //   c.warning(c.enclosingPosition, show(result))
+    //    c.warning(c.enclosingPosition, show(result))
     c.Expr(
       TypeApply(
         Select(
