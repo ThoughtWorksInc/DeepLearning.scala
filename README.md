@@ -166,6 +166,14 @@ Is any sane developer able to tell which catchers will receive the exceptions?
 
 `scala.async` does not make things better, because `scala.async` will [produce compiler errors](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L104) for every `await` in `try` statements.
 
-Fortunately, the new `immutable-future` project provides the integrity of exception handling, you could get rid of the nonsensical `onFailure`, and just use the normal `try` statements. See [the examples](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/exceptions/ExceptionsSpec.scala#L62).
+Fortunately, the new `immutable-future` project provides the integrity of exception handling. You could get rid of the nonsensical `onFailure`, and just use the normal `try` statements. See [the examples](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
 
 ### Tail Call Optimization
+
+Tail call optimization is an important feature for pure functional programming. Without tail call optimization, many recursive algorithm will fail at run-time, and you will get the well-known `StackOverflowError`.
+
+The scala language provides `scala.annotation.tailrec` to automatically optimize simple tail recursions, and `scala.util.control.TailCalls` to manually optimize complex tail calls.
+
+My `immutable-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
+
+See [this example](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that this example will cause `OutOfMemoryError` or `TimeoutException` if you port it for `scala.async`.
