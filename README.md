@@ -31,7 +31,7 @@ Immutable Future
       while (i < 10) {
         println(s"I have sleeped $i times.")
         // The magic postfix `await` invokes the asynchronous method `asyncSleep`.
-        // It is like normal `Thread.sleep()`, but does not block any thread.
+        // It looks like normal `Thread.sleep()`, but does not block any thread.
         asyncSleep(1.seconds).await
         i += 1
       }
