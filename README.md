@@ -121,7 +121,7 @@ Immutable futures are stateless, they will never store result values or exceptio
 
 Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining immutable futures.
 
-By the way, the immutable futures can be easy adapted to other mutable future implementation, and then the users can use the other future's mutable API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on an immutable future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/immutable-future-test) the most of `scala.async` test cases for immutable futures.
+By the way, immutable futures can be easy adapted to other mutable future implementation, and then the users can use the other future's mutable API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on an immutable future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/immutable-future-test) the most of `scala.async` test cases for immutable futures.
 
 ### Threading-free Model
 
@@ -182,11 +182,17 @@ See [this example](https://github.com/Atry/immutable-future-test/blob/2.10.x/tes
 
 ## Comparison
 
+There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provide a DSL to define control flows like `immutable-future` or `scala.async`. I created the following table to compare the three DSL:
+
 |               | immutable-future | scala.concurrent.Future and scala.async | scala.util.continuations |
 | ------------- | ---------------- | --------------------------------------- | ------------------------ |
-| Immutable | Yes | No | No |
+| Immutable | Yes | No | Yes |
 | Threading-free | Yes | No | Yes |
 | Exception handling in "A-Normal Form" | Yes | No | No |
 | Tail call optimization in "A-Normal Form" | Yes | No | No |
-| Pattern matching in "A-Normal Form" | Yes | Yes | Very buggy |
-| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those not contain `await` | Very buggy |
+| Pattern matching in "A-Normal Form" | Yes | Yes | Buggy |
+| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those not contain `await` | Buggy |
+
+## Installation
+
+TODO
