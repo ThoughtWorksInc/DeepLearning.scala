@@ -24,6 +24,13 @@ startYear := Some(2014)
 
 licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
+publishTo <<= (isSnapshot) { isSnapshot: Boolean =>
+  if (isSnapshot)
+    Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
+  else
+    Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
+}
+
 scmInfo := Some(ScmInfo(
   url("https://github.com/Atry/immutable-future"),
   "scm:git:git://github.com/Atry/immutable-future.git",
