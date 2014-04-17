@@ -147,21 +147,20 @@ Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exception
       case e: java.io.IOException => println("catcher2")
       case other: Exception => throw new RuntimeException(other)
     }
-    val catcher3: Catcher[Unit] = { case e: Exception => println("catcher3") }
-    val catcher4: Catcher[Unit] = {
+    val catcher3: Catcher[Unit] = {
       case e: java.io.IOException => println("catcher4")
       case other: Exception => throw new RuntimeException(other)
     }
+    val catcher4: Catcher[Unit] = { case e: Exception => println("catcher4") }
     val catcher5: Catcher[Unit] = { case e: Exception => println("catcher5") }
     val catcher6: Catcher[Unit] = { case e: Exception => println("catcher6") }
     val catcher7: Catcher[Unit] = { case e: Exception => println("catcher7") }
-    val catcher8: Catcher[Unit] = { case e: Exception => println("catcher8") }
     def future1 = scala.concurrent.future { 1 }(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher1))
     def future2 = scala.concurrent.Future.failed(new Exception)
     val composedFuture = future1.flatMap { _ => future2 }(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher2))
-    composedFuture.onFailure(catcher4)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher5))
-    composedFuture.onFailure(catcher6)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher7))
-    try { Await.result(composedFuture, Duration.Inf) } catch { case e if catcher8.isDefinedAt(e) => catcher8(e) }
+    composedFuture.onFailure(catcher3)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher4))
+    composedFuture.onFailure(catcher5)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher6))
+    try { Await.result(composedFuture, Duration.Inf) } catch { case e if catcher7.isDefinedAt(e) => catcher7(e) }
 
 Is any sane developer able to tell which catchers will receive the exceptions?
 
