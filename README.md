@@ -196,3 +196,9 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 ## Installation
 
 TODO
+
+## Known issues
+
+ * `lazy val` in magic `Future` block is not supported.
+ * In [some rare cases](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/match0/Match0.scala#L85), if you create multiple `val` with same name in one `Future` block, the last `val` may be referred unexpectly.
+ * [Some complex existential types](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/uncheckedBounds/UncheckedBoundsSpec.scala) may cause compiler errors.
