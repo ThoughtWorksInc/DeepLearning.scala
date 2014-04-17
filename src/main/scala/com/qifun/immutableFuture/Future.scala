@@ -337,7 +337,6 @@ object Future {
 
       import c.universe.Flag._
       import c.universe._
-      import c.mirror._
       import compat._
 
       def unchecked(tree: Tree) = {
