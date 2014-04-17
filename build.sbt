@@ -2,7 +2,7 @@ organization := "com.qifun"
 
 name := "immutable-future"
 
-version := "0.1-SNAPSHOT"
+version := "0.1"
 
 libraryDependencies <+= (scalaVersion) { sv =>
   "org.scala-lang" % "scala-reflect" % sv
