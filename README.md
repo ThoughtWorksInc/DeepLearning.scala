@@ -95,7 +95,7 @@ A notable difference between the two for-comprehensions implementation is the re
 
 ### A-Normal Form
 
-"A-Normal Form" style API for immutable futures is like the pending proposal [Async](http://docs.scala-lang.org/sips/pending/async.html).
+"A-Normal Form" style API for immutable futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html).
 
     val sleep10seconds = Future {
       var i = 0
@@ -120,6 +120,8 @@ Regardless of the familiar veneers between immutable futures and `scala.concurre
 Immutable futures are stateless, they will never store result values or exceptions. Instead, the immutable futures evaluate lazily, and they do the same work for every time you invoke `foreach` or `onComplete`. The behavior of immutable futures is more like monads in Haskell than futures in Java.
 
 Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining immutable futures.
+
+By the way, the immutable futures can be easy adapted to other mutable future implementation, and then the users can use the other future's mutable API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on an immutable future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/immutable-future-test) the most of `scala.async` test cases for immutable futures.
 
 ### Threading-free Model
 
@@ -177,3 +179,14 @@ The scala language provides `scala.annotation.tailrec` to automatically optimize
 My `immutable-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
 
 See [this example](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that this example will cause `OutOfMemoryError` or `TimeoutException` if you port it for `scala.async`.
+
+## Comparison
+
+|               | immutable-future | scala.concurrent.Future and scala.async | scala.util.continuations |
+| ------------- | ---------------- | --------------------------------------- | ------------------------ |
+| Immutable | Yes | No | No |
+| Threading-free | Yes | No | Yes |
+| Exception handling in "A-Normal Form" | Yes | No | No |
+| Tail call optimization in "A-Normal Form" | Yes | No | No |
+| Pattern matching in "A-Normal Form" | Yes | Yes | Very buggy |
+| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those not contain `await` | Very buggy |
