@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 /**
  * @author 杨博
  */
-trait Future[+A] { outer =>
+trait Future[+A] extends Any { outer =>
 
   @compileTimeOnly("`await` must be enclosed in a `Future` block")
   final def await: A = ???
