@@ -256,6 +256,9 @@ object Future {
    * For internal using only.
    */
   object Detail {
+    
+    abstract class AbstractFuture[+A] extends Future[A]
+    
     @inline
     final def forceOnComplete(future: Future[Any], handler: Nothing => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
       future.onComplete(handler.asInstanceOf[Any => TailRec[Unit]])
@@ -343,6 +346,7 @@ object Future {
 
       val abstractPartialFunction = typeOf[AbstractPartialFunction[_, _]]
       val futureType = typeOf[Future[_]]
+      val futureClassType = typeOf[AbstractFuture[_]]
       val function1Type = typeOf[_ => _]
       val function1Symbol = function1Type.typeSymbol
       val uncheckedSymbol = typeOf[scala.unchecked].typeSymbol
@@ -763,6 +767,7 @@ object Future {
       def newFutureAsType(tree: Tree, parameterTypeTree: Tree)(implicit forceAwait: Set[Name]): c.Expr[Future[Nothing]] = {
 
         val futureTypeTree = AppliedTypeTree(Ident(futureType.typeSymbol), List(parameterTypeTree))
+        val futureClassTypeTree = AppliedTypeTree(Ident(futureClassType.typeSymbol), List(parameterTypeTree))
 
         val futureName = newTypeName(c.fresh("YangBoFuture"))
         val returnName = newTermName(c.fresh("yangBoReturn"))
@@ -775,7 +780,7 @@ object Future {
                 futureName,
                 List(),
                 Template(
-                  List(futureTypeTree),
+                  List(futureClassTypeTree),
                   emptyValDef,
                   List(
                     DefDef(
