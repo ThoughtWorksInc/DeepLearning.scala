@@ -123,17 +123,17 @@ Also, there is no `isComplete` method in immutable futures. As a result, the use
 
 ### Threading-free Model
 
-There are too many threading models and implimentations in the Java/Scala world, `java.util.concurrent.Executor`, `scala.concurrent.ExecutionContext`, `javax.swing.SwingUtilities.invokeLater`, `java.util.Timer`, ... It is very hard to communicate between threading models. When a developer is working with multiple threading models, he must very careful to pass messages between threading models, or he have to maintain bulks of `synchronized` methods to properly deal with shared variables.
+There are too many threading models and implimentations in the Java/Scala world, `java.util.concurrent.Executor`, `scala.concurrent.ExecutionContext`, `javax.swing.SwingUtilities.invokeLater`, `java.util.Timer`, ... It is very hard to communicate between threading models. When a developer is working with multiple threading models, he must very carefully pass messages between threading models, or he have to maintain bulks of `synchronized` methods to properly deal with the shared variables between threads.
 
 Why does he need multiple threading models? Because the libraries that he uses depend on different threading modes. For example, you must update Swing components in the Swing's UI thread, you must specify `java.util.concurrent.ExecutionService`s for `java.nio.channels.CompletionHandler`, and, you must specify `scala.concurrent.ExecutionContext`s for `scala.concurrent.Future` and `scala.async.Async`. Oops!
 
 Think about somebody who uses Swing to develop a text editor software. He wants to create a state machine to update UI. He have heard the cool `scala.async`, then he uses the cool "A-Normal Form" expression in `async` to build the state machine that updates UI, and he types `import scala.concurrent.ExecutionContext.Implicits._` to suppress the compiler errors. Everything looks pretty, except the software always crashes.
 
-Fortunately, `immutable-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries `immutable-future`, replacing `async { }` to `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
+Fortunately, `immutable-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries immutable future, replacing `async { }` to `immutable-future`'s `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
 
 ### Exception Handling
 
-There were two `Future` implementations in Scala standard library, `scala.actors.Future` and `scala.concurrent.Future`. `scala.actors.Future`s are taken from [Akka](http://akka.io/), which do not designed to handling exceptions, since Akka's exceptions handlers are associated with the threads running actors.
+There were two `Future` implementations in Scala standard library, `scala.actors.Future` and `scala.concurrent.Future`. `scala.actors.Future`s are taken from [Akka](http://akka.io/), which are not designed to handling exceptions, since Akka's exceptions handlers are always associated with the threads that run actors.
 
 Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exceptions. But, unfortunately, `scala.concurrent.Future`s provide too many mechanisms to handle an exception. For example:
 
