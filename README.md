@@ -164,7 +164,8 @@ Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exception
 
 Is any sane developer able to tell which catchers will receive the exceptions?
 
-`scala.async` does not make things better, because `scala.async` will [produce compiler errors](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L114) whenever it meets a `try` statements.
+`scala.async` does not make things better, because `scala.async` will [produce compiler errors](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L104) for every `await` in `try` statements.
 
+Fortunately, `immutable-future` project provides the integrity of exception handling, you could get rid of the nonsensical `onFailure`, and just use the normal `try` statements. See [the examples](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/exceptions/ExceptionsSpec.scala#L62).
 
 ### Tail Call Optimization
