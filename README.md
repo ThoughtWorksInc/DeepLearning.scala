@@ -135,6 +135,36 @@ Fortunately, `immutable-future` depends on none of these threading model, and co
 
 There were two `Future` implementations in Scala standard library, `scala.actors.Future` and `scala.concurrent.Future`. `scala.actors.Future`s are taken from [Akka](http://akka.io/), which do not designed to handling exceptions, since Akka's exceptions handlers are associated with the threads running actors.
 
-Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exceptions, but, unfortunately, in a wrong way.
+Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exceptions. But, unfortunately, `scala.concurrent.Future`s provide too many mechanisms to handle an exception. For example:
+
+    import scala.concurrent.Await
+    import scala.concurrent.ExecutionContext
+    import scala.concurrent.duration.Duration
+    import scala.util.control.Exception.Catcher
+    import scala.concurrent.forkjoin.ForkJoinPool
+    val catcher1: Catcher[Unit] = { case e: Exception => println("catcher1") }
+    val catcher2: Catcher[Unit] = {
+      case e: java.io.IOException => println("catcher2")
+      case other: Exception => throw new RuntimeException(other)
+    }
+    val catcher3: Catcher[Unit] = { case e: Exception => println("catcher3") }
+    val catcher4: Catcher[Unit] = {
+      case e: java.io.IOException => println("catcher4")
+      case other: Exception => throw new RuntimeException(other)
+    }
+    val catcher5: Catcher[Unit] = { case e: Exception => println("catcher5") }
+    val catcher6: Catcher[Unit] = { case e: Exception => println("catcher6") }
+    val catcher7: Catcher[Unit] = { case e: Exception => println("catcher7") }
+    val catcher8: Catcher[Unit] = { case e: Exception => println("catcher8") }
+    def future1 = scala.concurrent.future { 1 }(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher1))
+    def future2 = scala.concurrent.Future.failed(new Exception)
+    val composedFuture = future1.flatMap { _ => future2 }(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher2))
+    composedFuture.onFailure(catcher4)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher5))
+    composedFuture.onFailure(catcher6)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher7))
+    try { Await.result(composedFuture, Duration.Inf) } catch { case e if catcher8.isDefinedAt(e) => catcher8(e) }
+
+Is any sane developer able to tell which catchers will receive the exceptions?
+
+
 
 ### Tail Call Optimization
