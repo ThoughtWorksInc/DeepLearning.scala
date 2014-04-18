@@ -38,7 +38,7 @@ Stateless Future
       i
     }
     
-    // When `sleep10seconds` is running, it could report failture to this catcher
+    // When `sleep10seconds` is running, it could report failures to this catcher
     implicit def catcher: Catcher[Unit] = {
       case e: Exception => {
         println("An exception occured when I was sleeping: " + e.getMessage)
