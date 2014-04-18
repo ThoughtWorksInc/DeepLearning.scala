@@ -109,7 +109,7 @@ A notable difference between the two for-comprehensions implementations is the r
       i
     }
 
-The `Future` functions for stateless futures correspond to `async` method in `Async`, and the `await` postfixes to stateless futures corresponds to `await` method in `Async`.
+The `Future` function for stateless futures corresponds to `async` method in `Async`, and the `await` postfix to stateless futures corresponds to `await` method in `Async`.
 
 ## Design
 
