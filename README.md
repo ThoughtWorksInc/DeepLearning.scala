@@ -167,9 +167,11 @@ Unlike `scala.actors.Future`s, `scala.concurrent.Future`s are designed to handle
 
 Is any sane developer able to tell which catchers will receive the exceptions?
 
+There are too many concepts about exceptions when you work with `scala.concurrent.Future`. You have to remember the different exception handling strategies between `flatMap`, `recover`, `recoverWith` and `onFailure`, and the difference between `scala.concurrent.Future.failed(new Exception)` and `scala.concurrent.future { throw new Exception }`.
+
 `scala.async` does not make things better, because `scala.async` will [produce compiler errors](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L104) for every `await` in `try` statements.
 
-Fortunately, the new `immutable-future` project provides the integrity of exception handling. You could get rid of the nonsensical `onFailure`, and just use the normal `try` statements. See [the examples](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
+Fortunately, you can get rid of all those concepts if you switch to `immutable-future`. There is no `catcher` implicit parameter in `flatMap` or `map` in immutable Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
 
 ### Tail Call Optimization
 
