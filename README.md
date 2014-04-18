@@ -177,11 +177,11 @@ Fortunately, you can get rid of all those concepts if you switch to `immutable-f
 
 Tail call optimization is an important feature for pure functional programming. Without tail call optimization, many recursive algorithm will fail at run-time, and you will get the well-known `StackOverflowError`.
 
-The scala language provides `scala.annotation.tailrec` to automatically optimize simple tail recursions, and `scala.util.control.TailCalls` to manually optimize complex tail calls.
+The Scala language provides `scala.annotation.tailrec` to automatically optimize simple tail recursions, and `scala.util.control.TailCalls` to manually optimize complex tail calls.
 
-My `immutable-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
+`immutable-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
 
-See [this example](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that this example will cause `OutOfMemoryError` or `TimeoutException` if you port it for `scala.async`.
+See [this example](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that if you port this example for `scala.async` it will throw `OutOfMemoryError` or `TimeoutException`.
 
 ## Comparison
 
