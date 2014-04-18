@@ -29,7 +29,7 @@ Stateless Future
     val sleep10seconds = Future {
       var i = 0
       while (i < 10) {
-        println(s"I have sleeped $i times.")
+        println(s"I have slept $i times.")
         // The magic postfix `await` invokes the asynchronous method `asyncSleep`.
         // It looks like normal `Thread.sleep()`, but does not block any thread.
         asyncSleep(1.seconds).await
@@ -49,7 +49,7 @@ Stateless Future
     println("Before the evaluation of the stateless future `sleep10seconds`.")
     for (total <- sleep10seconds) {
       println("After the evaluation of the stateless future `sleep10seconds`.")
-      println(s"I sleeped $total times in total.")
+      println(s"I slept $total times in total.")
       executor.shutdown()
     }
 
@@ -57,18 +57,18 @@ Stateless Future
 Run it and you will see the output:
 
     Before evaluation of the stateless future `sleep10seconds`.
-    I have sleeped 0 times.
-    I have sleeped 1 times.
-    I have sleeped 2 times.
-    I have sleeped 3 times.
-    I have sleeped 4 times.
-    I have sleeped 5 times.
-    I have sleeped 6 times.
-    I have sleeped 7 times.
-    I have sleeped 8 times.
-    I have sleeped 9 times.
+    I have slept 0 times.
+    I have slept 1 times.
+    I have slept 2 times.
+    I have slept 3 times.
+    I have slept 4 times.
+    I have slept 5 times.
+    I have slept 6 times.
+    I have slept 7 times.
+    I have slept 8 times.
+    I have slept 9 times.
     After evaluation of the stateless future `sleep10seconds`.
-    I sleeped 10 times in total.
+    I slept 10 times in total.
 
 ## Further Information
 
@@ -80,7 +80,7 @@ The for-comprehensions style API for `stateless-future` is like the [for-compreh
 
     for (total <- sleep10seconds) {
       println("After evaluation of the stateless future `sleep10seconds`")
-      println(s"I sleeped $total times in total.")
+      println(s"I slept $total times in total.")
       executor.shutdown()
     }
 
@@ -100,7 +100,7 @@ A notable difference between the two for-comprehensions implementations is the r
     val sleep10seconds = Future {
       var i = 0
       while (i < 10) {
-        println(s"I have sleeped $i times")
+        println(s"I have slept $i times")
         // The magic postfix `await` invokes asynchronous method like normal `Thread.sleep()`,
         // and does not block any thread.
         asyncSleep(1.seconds).await
