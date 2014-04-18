@@ -211,3 +211,34 @@ Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
  * [Some complex existential types](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/uncheckedBounds/UncheckedBoundsSpec.scala) may cause compiler errors.
 
 Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and run the test cases to check these limitations.
+
+<hr/>
+
+<table>
+<tr>
+<td>
+<h5>明日歌</h5>
+<p>
+明日复明日，<br/>
+明日何其多。<br/>
+我生待明日，<br/>
+万事成蹉跎。<br/>
+</p>
+<p align="right">
+——文嘉
+</p>
+</td>
+<td>
+<h5>Future Song</h5>
+<p>
+The Future flatMaps a Future.<br/>
+The Future tailcalls forever.<br/>
+My life to await the Future.<br/>
+It's OutOfMemoryError.
+</p>
+<p align="right">
+——Wen Jia
+</p>
+</td>
+</tr>
+</table>
