@@ -225,7 +225,7 @@ Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and
 万事成蹉跎。<br/>
 </p>
 <p align="right">
-——文嘉
+——文嘉/錢鶴灘
 </p>
 </td>
 <td>
@@ -237,7 +237,7 @@ My life to await the Future.<br/>
 It's OutOfMemoryError.
 </p>
 <p align="right">
-——Wen Jia
+——Wen Jia / Qian Hetan
 </p>
 </td>
 </tr>
