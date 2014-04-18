@@ -264,7 +264,7 @@ object Future {
       future.onComplete(handler.asInstanceOf[Any => TailRec[Unit]])
     }
 
-    final class TryCatchFinally[A](tryFuture: Future[A], getCatcherFuture: Catcher[Future[A]], finallyBlock: => Unit) extends Future[A] {
+    final class TryCatchFinally[A](tryFuture: Future[A], getCatcherFuture: Catcher[Future[A]], finallyBlock: => Unit) extends AbstractFuture[A] {
       @inline
       override final def onComplete(rest: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
         tryFuture.onComplete { a =>
