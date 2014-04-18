@@ -224,9 +224,9 @@ Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and
 我生待明日，<br/>
 万事成蹉跎。<br/>
 </p>
-<p align="right">
-——文嘉／錢鶴灘
-</p>
+<p align="right"><font size="-1">
+文嘉／錢鶴灘
+</font></p>
 </td>
 <td>
 <h5>Future Song</h5>
@@ -236,9 +236,9 @@ The Future tailcalls forever.<br/>
 My life to await the Future.<br/>
 It comes OutOfMemoryError.
 </p>
-<p align="right">
-——Wen Jia / Qian Hetan
-</p>
+<p align="right"><font size="-1">
+Wen Jia / Qian Hetan
+</font></p>
 </td>
 </tr>
 </table>
