@@ -2,7 +2,7 @@ organization := "com.qifun"
 
 name := "immutable-future"
 
-version := "0.1.1-SNAPSHOT"
+version := "0.1.1"
 
 libraryDependencies <+= (scalaVersion) { sv =>
   "org.scala-lang" % "scala-reflect" % sv
@@ -14,7 +14,7 @@ libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
 scalacOptions ++= Seq("-optimize", "-deprecation", "-unchecked", "-Xlint", "-feature")
 
-crossScalaVersions := Seq("2.10.4", "2.11.0-RC4")
+crossScalaVersions := Seq("2.10.4", "2.11.0")
 
 description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
 
