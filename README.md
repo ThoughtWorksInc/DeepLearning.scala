@@ -135,9 +135,9 @@ Fortunately, `immutable-future` depends on none of these threading model, and co
 
 ### Exception Handling
 
-There were two `Future` implementations in Scala standard library, `scala.actors.Future` and `scala.concurrent.Future`. `scala.actors.Future`s are taken from [Akka](http://akka.io/), which are not designed to handling exceptions, since Akka's exceptions handlers are always associated with the threads that run actors.
+There were two `Future` implementations in Scala standard library, `scala.actors.Future` and `scala.concurrent.Future`. `scala.actors.Future`s are not designed to handling exceptions, since exceptions are always handled by actors. There is no way to handle a particular exception in a particular subrange of an actor.
 
-Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exceptions. But, unfortunately, `scala.concurrent.Future`s provide too many mechanisms to handle an exception. For example:
+Unlike `scala.actors.Future`s, `scala.concurrent.Future`s are designed to handle exceptions. But, unfortunately, `scala.concurrent.Future`s provide too many mechanisms to handle an exception. For example:
 
     import scala.concurrent.Await
     import scala.concurrent.ExecutionContext
