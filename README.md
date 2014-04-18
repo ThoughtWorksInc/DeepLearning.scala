@@ -144,6 +144,7 @@ Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exception
     import scala.concurrent.duration.Duration
     import scala.util.control.Exception.Catcher
     import scala.concurrent.forkjoin.ForkJoinPool
+    val threadPool = new ForkJoinPool()
     val catcher1: Catcher[Unit] = { case e: Exception => println("catcher1") }
     val catcher2: Catcher[Unit] = {
       case e: java.io.IOException => println("catcher2")
@@ -157,11 +158,11 @@ Unlike Akka futures, `scala.concurrent.Future`s are designed to handle exception
     val catcher5: Catcher[Unit] = { case e: Exception => println("catcher5") }
     val catcher6: Catcher[Unit] = { case e: Exception => println("catcher6") }
     val catcher7: Catcher[Unit] = { case e: Exception => println("catcher7") }
-    def future1 = scala.concurrent.future { 1 }(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher1))
+    def future1 = scala.concurrent.future { 1 }(ExecutionContext.fromExecutor(threadPool, catcher1))
     def future2 = scala.concurrent.Future.failed(new Exception)
-    val composedFuture = future1.flatMap { _ => future2 }(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher2))
-    composedFuture.onFailure(catcher3)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher4))
-    composedFuture.onFailure(catcher5)(ExecutionContext.fromExecutor(new ForkJoinPool(), catcher6))
+    val composedFuture = future1.flatMap { _ => future2 }(ExecutionContext.fromExecutor(threadPool, catcher2))
+    composedFuture.onFailure(catcher3)(ExecutionContext.fromExecutor(threadPool, catcher4))
+    composedFuture.onFailure(catcher5)(ExecutionContext.fromExecutor(threadPool, catcher6))
     try { Await.result(composedFuture, Duration.Inf) } catch { case e if catcher7.isDefinedAt(e) => catcher7(e) }
 
 Is any sane developer able to tell which catchers will receive the exceptions?
