@@ -84,7 +84,7 @@ The for-comprehensions style API for `stateless-future` is like the [for-compreh
       executor.shutdown()
     }
 
-A notable difference between the two for-comprehensions implementation is the required implicit parameter. A `scala.concurrent.Future` requires an `ExecutionContext`, while a stateless future requires a `Catcher`.
+A notable difference between the two for-comprehensions implementations is the required implicit parameter. A `scala.concurrent.Future` requires an `ExecutionContext`, while a stateless future requires a `Catcher`.
 
     import scala.util.control.Exception.Catcher
     implicit def catcher: Catcher[Unit] = {
