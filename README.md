@@ -234,7 +234,7 @@ Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and
 The Future flatMaps a Future.<br/>
 The Future tailcalls forever.<br/>
 My life to await the Future.<br/>
-It's OutOfMemoryError.
+It comes OutOfMemoryError.
 </p>
 <p align="right">
 ——Wen Jia / Qian Hetan
