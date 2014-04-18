@@ -185,7 +185,7 @@ See [this example](https://github.com/Atry/stateless-future-test/blob/2.10.x/tes
 
 ## Comparison
 
-There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provide a DSL to define control flows like `stateless-future` or `scala.async`. I created the following table to compare the three DSL:
+There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provided a DSL to define control flows like `stateless-future` or `scala.async`. I created the following table to compare the three DSL:
 
 |               | stateless-future | scala.concurrent.Future and scala.async | scala.util.continuations |
 | ------------- | ---------------- | --------------------------------------- | ------------------------ |
@@ -193,8 +193,8 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 | Threading-free | Yes | No | Yes |
 | Exception handling in "A-Normal Form" | Yes | No | No |
 | Tail call optimization in "A-Normal Form" | Yes | No | No |
-| Pattern matching in "A-Normal Form" | Yes | Yes | Buggy |
-| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those not contain `await` | Buggy |
+| Pattern matching in "A-Normal Form" | Yes | Yes | Yes, but buggy |
+| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those not contain `await` | Yes, but buggy |
 
 ## Installation
 
