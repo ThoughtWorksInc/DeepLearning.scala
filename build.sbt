@@ -1,6 +1,6 @@
 organization := "com.qifun"
 
-name := "immutable-future"
+name := "stateless-future"
 
 version := "0.1.1"
 
@@ -18,7 +18,7 @@ crossScalaVersions := Seq("2.10.4", "2.11.0")
 
 description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
 
-homepage := Some(url("https://github.com/Atry/immutable-future"))
+homepage := Some(url("https://github.com/Atry/stateless-future"))
 
 startYear := Some(2014)
 
@@ -32,9 +32,9 @@ publishTo <<= (isSnapshot) { isSnapshot: Boolean =>
 }
 
 scmInfo := Some(ScmInfo(
-  url("https://github.com/Atry/immutable-future"),
-  "scm:git:git://github.com/Atry/immutable-future.git",
-  Some("scm:git:git@github.com:Atry/immutable-future.git")))
+  url("https://github.com/Atry/stateless-future"),
+  "scm:git:git://github.com/Atry/stateless-future.git",
+  Some("scm:git:git@github.com:Atry/stateless-future.git")))
 
 pomExtra :=
   <developers>

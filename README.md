@@ -1,17 +1,17 @@
-Immutable Future
+Stateless Future
 ================
 
-`immutable-future` is a set of DSL for asynchronous programming, in the pure functional favor.
+`stateless-future` is a set of DSL for asynchronous programming, in the pure functional favor.
 
 ## Usage
 
     import scala.concurrent.duration._
     import scala.util.control.Exception.Catcher
-    import com.qifun.immutableFuture.Future
+    import com.qifun.statelessFuture.Future
     
     val executor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor
     
-    // Manually implements an immutable future, which is the asynchronous version of `Thread.sleep()`
+    // Manually implements a stateless future, which is the asynchronous version of `Thread.sleep()`
     def asyncSleep(duration: Duration) = new Future[Unit] {
       import scala.util.control.TailCalls._
       def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
@@ -45,10 +45,10 @@ Immutable Future
       }
     }
     
-    // An immutable future instance is lazy, only evaluating when you query it.
-    println("Before the evaluation of the immutable future `sleep10seconds`.")
+    // A stateless future instance is lazy, only evaluating when you query it.
+    println("Before the evaluation of the stateless future `sleep10seconds`.")
     for (total <- sleep10seconds) {
-      println("After the evaluation of the immutable future `sleep10seconds`.")
+      println("After the evaluation of the stateless future `sleep10seconds`.")
       println(s"I sleeped $total times in total.")
       executor.shutdown()
     }
@@ -56,7 +56,7 @@ Immutable Future
 
 Run it and you will see the output:
 
-    Before evaluation of the immutable future `sleep10seconds`.
+    Before evaluation of the stateless future `sleep10seconds`.
     I have sleeped 0 times.
     I have sleeped 1 times.
     I have sleeped 2 times.
@@ -67,24 +67,24 @@ Run it and you will see the output:
     I have sleeped 7 times.
     I have sleeped 8 times.
     I have sleeped 9 times.
-    After evaluation of the immutable future `sleep10seconds`.
+    After evaluation of the stateless future `sleep10seconds`.
     I sleeped 10 times in total.
 
 ## Further Information
 
-There are two sorts of API to use an immutable future, the for-comprehensions style API and "A-Normal Form" style API.
+There are two sorts of API to use a stateless future, the for-comprehensions style API and "A-Normal Form" style API.
 
 ### For-Comprehensions
 
-The for-comprehensions style API for `immutable-future` is like the [for-comprehensions for scala.concurrent.Future](http://docs.scala-lang.org/overviews/core/futures.html#functional_composition_and_forcomprehensions). 
+The for-comprehensions style API for `stateless-future` is like the [for-comprehensions for scala.concurrent.Future](http://docs.scala-lang.org/overviews/core/futures.html#functional_composition_and_forcomprehensions). 
 
     for (total <- sleep10seconds) {
-      println("After evaluation of the immutable future `sleep10seconds`")
+      println("After evaluation of the stateless future `sleep10seconds`")
       println(s"I sleeped $total times in total.")
       executor.shutdown()
     }
 
-A notable difference between the two for-comprehensions implementation is the required implicit parameter. A `scala.concurrent.Future` requires an `ExecutionContext`, while an immutable future requires a `Catcher`.
+A notable difference between the two for-comprehensions implementation is the required implicit parameter. A `scala.concurrent.Future` requires an `ExecutionContext`, while a stateless future requires a `Catcher`.
 
     import scala.util.control.Exception.Catcher
     implicit def catcher: Catcher[Unit] = {
@@ -95,7 +95,7 @@ A notable difference between the two for-comprehensions implementation is the re
 
 ### A-Normal Form
 
-"A-Normal Form" style API for immutable futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html).
+"A-Normal Form" style API for stateless futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html).
 
     val sleep10seconds = Future {
       var i = 0
@@ -109,19 +109,19 @@ A notable difference between the two for-comprehensions implementation is the re
       i
     }
 
-The `Future` functions for immutable futures correspond to `async` method in `Async`, and the `await` postfixes to immutable futures corresponds to `await` method in `Async`.
+The `Future` functions for stateless futures correspond to `async` method in `Async`, and the `await` postfixes to stateless futures corresponds to `await` method in `Async`.
 
 ## Design
 
-Regardless of the familiar veneers between immutable futures and `scala.concurrent.Future`, I have made some different designed choices on immutable futures.
+Regardless of the familiar veneers between stateless futures and `scala.concurrent.Future`, I have made some different designed choices on stateless futures.
 
-### Immutability
+### Statelessness
 
-Immutable futures are stateless, they will never store result values or exceptions. Instead, immutable futures evaluate lazily, and they do the same work for every time you invoke `foreach` or `onComplete`. The behavior of immutable futures is more like monads in Haskell than futures in Java.
+The stateless futures are pure functional, they will never store result values or exceptions. Instead, stateless futures evaluate lazily, and they do the same work for every time you invoke `foreach` or `onComplete`. The behavior of stateless futures is more like monads in Haskell than futures in Java.
 
-Also, there is no `isComplete` method in immutable futures. As a result, the users of immutable futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining immutable futures.
+Also, there is no `isComplete` method in stateless futures. As a result, the users of stateless futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining stateless futures.
 
-By the way, immutable futures can be easy adapted to other mutable future implementation, and then the users can use the other future's mutable API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on an immutable future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/immutable-future-test) the most of `scala.async` test cases for immutable futures.
+By the way, stateless futures can be easy adapted to other stateful future implementation, and then the users can use the other future's stateful API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on a stateless future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/stateless-future-test) the most of `scala.async` test cases for stateless futures.
 
 ### Threading-free Model
 
@@ -131,7 +131,7 @@ Why does he need multiple threading models? Because the libraries that he uses d
 
 Think about somebody who uses Swing to develop a text editor software. He wants to create a state machine to update UI. He have heard the cool `scala.async`, then he uses the cool "A-Normal Form" expression in `async` to build the state machine that updates UI, and he types `import scala.concurrent.ExecutionContext.Implicits._` to suppress the compiler errors. Everything looks pretty, except the software always crashes.
 
-Fortunately, `immutable-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries immutable future, replacing `async { }` to `immutable-future`'s `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
+Fortunately, `stateless-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries stateless future, replacing `async { }` to `stateless-future`'s `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
 
 ### Exception Handling
 
@@ -171,7 +171,7 @@ There are too many concepts about exceptions when you work with `scala.concurren
 
 `scala.async` does not make things better, because `scala.async` will [produce compiler errors](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L104) for every `await` in `try` statements.
 
-Fortunately, you can get rid of all those concepts if you switch to `immutable-future`. There is no `catcher` implicit parameter in `flatMap` or `map` in immutable Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
+Fortunately, you can get rid of all those concepts if you switch to `stateless-future`. There is no `catcher` implicit parameter in `flatMap` or `map` in stateless Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
 
 ### Tail Call Optimization
 
@@ -179,17 +179,17 @@ Tail call optimization is an important feature for pure functional programming. 
 
 The Scala language provides `scala.annotation.tailrec` to automatically optimize simple tail recursions, and `scala.util.control.TailCalls` to manually optimize complex tail calls.
 
-`immutable-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
+`stateless-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
 
-See [this example](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that if you port this example for `scala.async` it will throw `OutOfMemoryError` or `TimeoutException`.
+See [this example](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that if you port this example for `scala.async` it will throw `OutOfMemoryError` or `TimeoutException`.
 
 ## Comparison
 
-There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provide a DSL to define control flows like `immutable-future` or `scala.async`. I created the following table to compare the three DSL:
+There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provide a DSL to define control flows like `stateless-future` or `scala.async`. I created the following table to compare the three DSL:
 
-|               | immutable-future | scala.concurrent.Future and scala.async | scala.util.continuations |
+|               | stateless-future | scala.concurrent.Future and scala.async | scala.util.continuations |
 | ------------- | ---------------- | --------------------------------------- | ------------------------ |
-| Immutable | Yes | No | Yes |
+| Stateless | Yes | No | Yes |
 | Threading-free | Yes | No | Yes |
 | Exception handling in "A-Normal Form" | Yes | No | No |
 | Tail call optimization in "A-Normal Form" | Yes | No | No |
@@ -200,14 +200,14 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 
 Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
 
-    libraryDependencies += "com.qifun" %% "immutable-future" % "0.1"
+    libraryDependencies += "com.qifun" %% "stateless-future" % "0.1"
 
-`immutable-future` should work with Scala 2.10.3, 2.10.4, or 2.11.0-RC4.
+`stateless-future` should work with Scala 2.10.3, 2.10.4, or 2.11.0-RC4.
 
 ## Known issues
 
  * `lazy val`s in magic `Future` block are not supported.
- * In [some rare cases](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/match0/Match0.scala#L85), if you create multiple `val` with same name in one `Future` block, the last `val` may be referred unexpectly.
- * [Some complex existential types](https://github.com/Atry/immutable-future-test/blob/2.10.x/test/src/test/scala/com/qifun/immutableFuture/test/run/uncheckedBounds/UncheckedBoundsSpec.scala) may cause compiler errors.
+ * In [some rare cases](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/match0/Match0.scala#L85), if you create multiple `val` with same name in one `Future` block, the last `val` may be referred unexpectly.
+ * [Some complex existential types](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/uncheckedBounds/UncheckedBoundsSpec.scala) may cause compiler errors.
 
-Clone [immutable-future-test](https://github.com/Atry/immutable-future-test) and run the test cases to check these limitations.
+Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and run the test cases to check these limitations.
