@@ -179,7 +179,7 @@ Tail call optimization is an important feature for pure functional programming. 
 
 The Scala language provides `scala.annotation.tailrec` to automatically optimize simple tail recursions, and `scala.util.control.TailCalls` to manually optimize complex tail calls.
 
-`stateless-future` project internally bases on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
+`stateless-future` project is internally based on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
 
 See [this example](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that if you port this example for `scala.async` it will throw an `OutOfMemoryError` or a `TimeoutException`.
 
