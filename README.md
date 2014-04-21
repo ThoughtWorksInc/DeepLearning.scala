@@ -108,7 +108,7 @@ A notable difference between the two for-comprehensions implementations is the r
 
 ### A-Normal Form
 
-"A-Normal Form" style API for Stateless Futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html).
+"A-Normal Form" style API for Stateless Futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html), except Stateless Futures require less limitations than `scala.async`.
 
     val sleep10seconds = Future {
       var i = 0
