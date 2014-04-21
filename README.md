@@ -1,7 +1,20 @@
 Stateless Future
 ================
 
-`stateless-future` is a set of DSL for asynchronous programming, in the pure functional favor.
+`stateless-future` is a set of Domain-specific language for asynchronous programming, in the pure functional favor.
+
+Stateless Futures provide similar API to `scala.concurrent.Future` and [scala.async](http://docs.scala-lang.org/sips/pending/async.html), except Stateless Futures are simpler, cleaner, and more powerful than `scala.concurrent.Future` and `scala.async`.
+
+There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provided a DSL to define control flows like `stateless-future` or `scala.async`. I created the following table to compare the three DSL:
+
+|               | stateless-future | scala.concurrent.Future and scala.async | scala.util.continuations |
+| ------------- | ---------------- | --------------------------------------- | ------------------------ |
+| Stateless | Yes | No | Yes |
+| Threading-free | Yes | No | Yes |
+| Exception handling in "A-Normal Form" | Yes | No | No |
+| Tail call optimization in "A-Normal Form" | Yes | No | No |
+| Pattern matching in "A-Normal Form" | Yes | Yes | Yes, but buggy |
+| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those contain no `await` | Yes, but buggy |
 
 ## Usage
 
@@ -11,7 +24,7 @@ Stateless Future
     
     val executor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor
     
-    // Manually implements a stateless future, which is the asynchronous version of `Thread.sleep()`
+    // Manually implements a Stateless Future, which is the asynchronous version of `Thread.sleep()`
     def asyncSleep(duration: Duration) = new Future[Unit] {
       import scala.util.control.TailCalls._
       def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
@@ -45,10 +58,10 @@ Stateless Future
       }
     }
     
-    // A stateless future instance is lazy, only evaluating when you query it.
-    println("Before the evaluation of the stateless future `sleep10seconds`.")
+    // A Stateless Future instance is lazy, only evaluating when you query it.
+    println("Before the evaluation of the Stateless Future `sleep10seconds`.")
     for (total <- sleep10seconds) {
-      println("After the evaluation of the stateless future `sleep10seconds`.")
+      println("After the evaluation of the Stateless Future `sleep10seconds`.")
       println(s"I slept $total times in total.")
       executor.shutdown()
     }
@@ -56,7 +69,7 @@ Stateless Future
 
 Run it and you will see the output:
 
-    Before evaluation of the stateless future `sleep10seconds`.
+    Before evaluation of the Stateless Future `sleep10seconds`.
     I have slept 0 times.
     I have slept 1 times.
     I have slept 2 times.
@@ -67,24 +80,24 @@ Run it and you will see the output:
     I have slept 7 times.
     I have slept 8 times.
     I have slept 9 times.
-    After evaluation of the stateless future `sleep10seconds`.
+    After evaluation of the Stateless Future `sleep10seconds`.
     I slept 10 times in total.
 
 ## Further Information
 
-There are two sorts of API to use a stateless future, the for-comprehensions style API and "A-Normal Form" style API.
+There are two sorts of API to use a Stateless Future, the for-comprehensions style API and "A-Normal Form" style API.
 
 ### For-Comprehensions
 
 The for-comprehensions style API for `stateless-future` is like the [for-comprehensions for scala.concurrent.Future](http://docs.scala-lang.org/overviews/core/futures.html#functional_composition_and_forcomprehensions). 
 
     for (total <- sleep10seconds) {
-      println("After evaluation of the stateless future `sleep10seconds`")
+      println("After evaluation of the Stateless Future `sleep10seconds`")
       println(s"I slept $total times in total.")
       executor.shutdown()
     }
 
-A notable difference between the two for-comprehensions implementations is the required implicit parameter. A `scala.concurrent.Future` requires an `ExecutionContext`, while a stateless future requires a `Catcher`.
+A notable difference between the two for-comprehensions implementations is the required implicit parameter. A `scala.concurrent.Future` requires an `ExecutionContext`, while a Stateless Future requires a `Catcher`.
 
     import scala.util.control.Exception.Catcher
     implicit def catcher: Catcher[Unit] = {
@@ -95,7 +108,7 @@ A notable difference between the two for-comprehensions implementations is the r
 
 ### A-Normal Form
 
-"A-Normal Form" style API for stateless futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html).
+"A-Normal Form" style API for Stateless Futures is like the pending proposal [scala.async](http://docs.scala-lang.org/sips/pending/async.html).
 
     val sleep10seconds = Future {
       var i = 0
@@ -109,19 +122,19 @@ A notable difference between the two for-comprehensions implementations is the r
       i
     }
 
-The `Future` function for stateless futures corresponds to `async` method in `Async`, and the `await` postfix to stateless futures corresponds to `await` method in `Async`.
+The `Future` function for Stateless Futures corresponds to `async` method in `Async`, and the `await` postfix to Stateless Futures corresponds to `await` method in `Async`.
 
 ## Design
 
-Regardless of the familiar veneers between stateless futures and `scala.concurrent.Future`, I have made some different designed choices on stateless futures.
+Regardless of the familiar veneers between Stateless Futures and `scala.concurrent.Future`, I have made some different designed choices on Stateless Futures.
 
 ### Statelessness
 
-The stateless futures are pure functional, they will never store result values or exceptions. Instead, stateless futures evaluate lazily, and they do the same job every time you invoke `foreach` or `onComplete`. The behavior of stateless futures is more like monads in Haskell than futures in Java.
+The Stateless Futures are pure functional, thus they will never store result values or exceptions. Instead, Stateless Futures evaluate lazily, and they do the same job every time you invoke `foreach` or `onComplete`. The behavior of Stateless Futures is more like monads in Haskell than futures in Java.
 
-Also, there is no `isComplete` method in stateless futures. As a result, the users of stateless futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining stateless futures.
+Also, there is no `isComplete` method in Stateless Futures. As a result, the users of Stateless Futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining Stateless Futures.
 
-By the way, stateless futures can be easy adapted to other stateful future implementation, and then the users can use the other future's stateful API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on a stateless future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/stateless-future-test) the most of `scala.async` test cases for stateless futures.
+By the way, Stateless Futures can be easy adapted to other stateful future implementation, and then the users can use the other future's stateful API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on a Stateless Future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/stateless-future-test) the most of `scala.async` test cases for Stateless Futures.
 
 ### Threading-free Model
 
@@ -131,7 +144,7 @@ Why does he need multiple threading models? Because the libraries that he uses d
 
 Think about somebody who uses Swing to develop a text editor software. He wants to create a state machine to update UI. He have heard the cool `scala.async`, then he uses the cool "A-Normal Form" expression in `async` to build the state machine that updates UI, and he types `import scala.concurrent.ExecutionContext.Implicits._` to suppress the compiler errors. Everything looks pretty, except the software always crashes.
 
-Fortunately, `stateless-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries stateless future, replacing `async { }` to `stateless-future`'s `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
+Fortunately, `stateless-future` depends on none of these threading model, and cooperates with all of these threading models. If the poor guy tries Stateless Future, replacing `async { }` to `stateless-future`'s `Future { }`, deleting the `import scala.concurrent.ExecutionContext.Implicits._`, he will find that everything looks pretty like before, and does not crash any more. That's why threading-free model is important.
 
 ### Exception Handling
 
@@ -171,7 +184,7 @@ There are too many concepts about exceptions when you work with `scala.concurren
 
 `scala.async` does not make things better, because `scala.async` will [produce a compiler error](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L104) for every `await` in a `try` statement.
 
-Fortunately, you can get rid of all those concepts if you switch to `stateless-future`. There is no `catcher` implicit parameter in `flatMap` or `map` in stateless Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
+Fortunately, you can get rid of all those concepts if you switch to `stateless-future`. There is no `catcher` implicit parameter in `flatMap` or `map` in Stateless Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
 
 ### Tail Call Optimization
 
@@ -182,19 +195,6 @@ The Scala language provides `scala.annotation.tailrec` to automatically optimize
 `stateless-future` project is internally based on `scala.util.control.TailCalls`, and automatically performs tail call optimization in the magic `Future` blocks, without any additional special syntax.
 
 See [this example](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/tailcall/TailcallSpec.scala). It just works, and no `StackOverflowError` or `OutOfMemoryError` occures. Note that if you port this example for `scala.async` it will throw an `OutOfMemoryError` or a `TimeoutException`.
-
-## Comparison
-
-There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for Scala. The continuation plugin also provided a DSL to define control flows like `stateless-future` or `scala.async`. I created the following table to compare the three DSL:
-
-|               | stateless-future | scala.concurrent.Future and scala.async | scala.util.continuations |
-| ------------- | ---------------- | --------------------------------------- | ------------------------ |
-| Stateless | Yes | No | Yes |
-| Threading-free | Yes | No | Yes |
-| Exception handling in "A-Normal Form" | Yes | No | No |
-| Tail call optimization in "A-Normal Form" | Yes | No | No |
-| Pattern matching in "A-Normal Form" | Yes | Yes | Yes, but buggy |
-| Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those contain no `await` | Yes, but buggy |
 
 ## Installation
 
