@@ -72,9 +72,7 @@ Output:
 
 Note the magic `await` postfix, which invokes the the former Stateless Future `randomDoubleFuture`. It looks like normal Scala method calls, but does not block any thread.
 
-### 
-
-A complex example with control structures.
+### A complex example with control structures
 
     import scala.concurrent.duration._
     import scala.util.control.Exception.Catcher
