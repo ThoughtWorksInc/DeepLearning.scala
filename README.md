@@ -42,7 +42,7 @@ Output:
     Generating a random Double...
     Recevied 0.19722960355012198.
 
-### Create another Stateless Future that invokes the former Stateless Future twice.
+### Another Stateless Future that invokes the former Stateless Future twice.
 
     val anotherFuture = Future {
       println("I am going to read the first random Double."
