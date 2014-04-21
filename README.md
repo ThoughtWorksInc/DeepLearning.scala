@@ -18,6 +18,64 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 
 ## Usage
 
+### Create a Stateless Future
+
+    import com.qifun.statelessFuture.Future
+    val randomDoubleFuture = Future {
+      println("Generating a random Double...")
+      math.random()
+    }
+
+A Stateless Future instance is lazy, only evaluating when you query it. Thus there is nothing printed when you create the Stateless Future.
+
+
+### Read from a Stateless Future
+
+    println("I am going to read a random Double.")
+    for (randomDouble <- randomDoubleFuture) {
+      println(s"Recevied $randomDouble.")
+    }
+
+Output:
+
+    I am going to read a random Double.
+    Generating a random Double...
+    Recevied 0.19722960355012198.
+
+### Create another Stateless Future that invokes the former Stateless Future twice.
+
+    val anotherFuture = Future {
+      println("I am going to read the first random Double."
+      val randomDouble1 = randomDoubleFuture.await
+      println(s"The first random Double is $randomDouble1."
+      
+      println("I am going to read the second random Double."
+      val randomDouble2 = randomDoubleFuture.await
+      println(s"The second random Double is $randomDouble1."
+    }
+    
+    println("Before running the Future.")
+    for (unit <- anotherFuture) {
+      println("After running the Future.")
+    }
+
+Output:
+
+    Before running the Future.
+    I am going to read the first random Double.
+    Generating a random Double...
+    The first random Double is 0.10768210465170625.
+    I am going to read the second random Double.
+    Generating a random Double...
+    The second random Double is 0.6134780449033244.
+    After running the Future.
+
+Note the magic `await` postfix, which invokes the the former Stateless Future `randomDoubleFuture`. It looks like normal Scala method calls, but does not block any thread.
+
+### 
+
+A complex example with control structures.
+
     import scala.concurrent.duration._
     import scala.util.control.Exception.Catcher
     import com.qifun.statelessFuture.Future
