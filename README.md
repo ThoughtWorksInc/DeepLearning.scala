@@ -184,7 +184,7 @@ There are too many concepts about exceptions when you work with `scala.concurren
 
 `scala.async` does not make things better, because `scala.async` will [produce a compiler error](https://github.com/scala/async/blob/master/src/test/scala/scala/async/neg/NakedAwait.scala#L104) for every `await` in a `try` statement.
 
-Fortunately, you can get rid of all those concepts if you switch to `stateless-future`. There is no `catcher` implicit parameter in `flatMap` or `map` in Stateless Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
+Fortunately, you can get rid of all those concepts if you switch to `stateless-future`. There is neither `catcher` implicit parameter in `flatMap` or `map` in Stateless Futures, nor `onFailure` nor `recover` method at all. You just simply `try`, and things get done. See [the examples](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/exceptions/ExceptionsSpec.scala#L62) to learn that.
 
 ### Tail Call Optimization
 
