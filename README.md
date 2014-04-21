@@ -117,7 +117,7 @@ Regardless of the familiar veneers between stateless futures and `scala.concurre
 
 ### Statelessness
 
-The stateless futures are pure functional, they will never store result values or exceptions. Instead, stateless futures evaluate lazily, and they do the same work for every time you invoke `foreach` or `onComplete`. The behavior of stateless futures is more like monads in Haskell than futures in Java.
+The stateless futures are pure functional, they will never store result values or exceptions. Instead, stateless futures evaluate lazily, and they do the same job every time you invoke `foreach` or `onComplete`. The behavior of stateless futures is more like monads in Haskell than futures in Java.
 
 Also, there is no `isComplete` method in stateless futures. As a result, the users of stateless futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining stateless futures.
 
