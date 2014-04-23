@@ -75,13 +75,53 @@ final class Promise[A] private (val state: AtomicReference[Either[List[(A => Tai
     state.get match {
       case oldState @ Left(handlers) => {
         if (state.compareAndSet(oldState, Right(value))) {
-          dispatch(handlers, value)
+          tailcall(dispatch(handlers, value))
         } else {
           complete(value)
         }
       }
       case Right(origin) => {
-        throw new IllegalStateException
+        throw new IllegalStateException("Cannot complete a Promise twice!")
+      }
+    }
+  }
+
+  final def completeWith[B](other: Future[B])(implicit view: B => A): TailRec[Unit] = {
+    other.onComplete { b =>
+      val value = Success(view(b))
+      tailcall(complete(value))
+    } {
+      case e: Throwable => {
+        val value = Failure(e)
+        tailcall(complete(value))
+      }
+    }
+  }
+
+  // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
+  final def tryComplete(value: Try[A]): TailRec[Unit] = {
+    state.get match {
+      case oldState @ Left(handlers) => {
+        if (state.compareAndSet(oldState, Right(value))) {
+          tailcall(dispatch(handlers, value))
+        } else {
+          complete(value)
+        }
+      }
+      case Right(origin) => {
+        done(())
+      }
+    }
+  }
+
+  final def tryCompleteWith[B](other: Future[B])(implicit view: B => A): TailRec[Unit] = {
+    other.onComplete { b =>
+      val value = Success(view(b))
+      tailcall(tryComplete(value))
+    } {
+      case e: Throwable => {
+        val value = Failure(e)
+        tailcall(tryComplete(value))
       }
     }
   }

@@ -40,13 +40,7 @@ object StatelessFuture {
     val p = Promise[A]()
     intialExecutionContext.execute(new Runnable {
       override final def run(): Unit = {
-        underlying.onComplete { a =>
-          p.complete(Success(a))
-        } {
-          case e => {
-            p.complete(Failure(e))
-          }
-        }.result
+        p.completeWith(underlying).result
       }
     })
     StatefulFuture.ToConcurrentFuture(p)
