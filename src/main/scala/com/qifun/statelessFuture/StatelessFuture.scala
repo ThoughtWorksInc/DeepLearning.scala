@@ -28,7 +28,7 @@ import scala.util.Failure
 /**
  * @author 杨博
  */
-trait StatelessFuture[+A] extends Future[A]
+trait StatelessFuture[+A] extends Any with Future[A]
 
 object StatelessFuture {
 
