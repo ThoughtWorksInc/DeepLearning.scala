@@ -107,6 +107,18 @@ object ANormalForm {
   }
 
   def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[Nothing] = {
+    import c.universe._
+    c.macroApplication match {
+      case Apply(TypeApply(_, List(t)), _) => {
+        applyMacroWithType(c)(futureBody, t, Ident(typeOf[Unit].typeSymbol))
+      }
+      case Apply(TypeApply(_, List(t, tailRecResultTypeTree)), _) => {
+        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree)
+      }
+    }
+  }
+
+  def applyMacroWithType(c: Context)(futureBody: c.Expr[Any], macroAwaitResultTypeTree: c.Tree, tailRecResultTypeTree: c.Tree): c.Expr[Nothing] = {
 
     import c.universe.Flag._
     import c.universe._
@@ -129,14 +141,6 @@ object ANormalForm {
     val AndSymbol = typeOf[Boolean].declaration(newTermName("&&").encodedName)
     val OrSymbol = typeOf[Boolean].declaration(newTermName("||").encodedName)
 
-    val (macroAwaitResultTypeTree, tailRecResultTypeTree) = c.macroApplication match {
-      case Apply(TypeApply(_, List(t)), _) => {
-        (t, Ident(typeOf[Unit].typeSymbol))
-      }
-      case Apply(TypeApply(_, List(t, tailRecResultTypeTree)), _) => {
-        (t, tailRecResultTypeTree)
-      }
-    }
     val tailRecTypeTree = AppliedTypeTree(Ident(tailRecSymbol), List(tailRecResultTypeTree))
     val catcherTypeTree = AppliedTypeTree(Ident(typeOf[PartialFunction[_, _]].typeSymbol), List(Ident(typeOf[Throwable].typeSymbol), tailRecTypeTree))
 
@@ -257,7 +261,7 @@ object ANormalForm {
     def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
       val futureExpr = c.Expr(future)
       val AwaitResult = newTermName(c.fresh("awaitValue"))
-      val catcherExpr = c.Expr[Catcher[TailRec[Unit]]](catcher)
+      val catcherExpr = c.Expr[Catcher[Nothing]](catcher)
       val onCompleteCallExpr = c.Expr(
         Apply(
           Apply(
@@ -603,7 +607,7 @@ object ANormalForm {
                           reify {
                             val result = resultExpr.splice
                             // Workaround for some nested Future blocks.
-                            _root_.scala.util.control.TailCalls.tailcall((returnExpr.splice).asInstanceOf[Any => _root_.scala.util.control.TailCalls.TailRec[Unit]].apply(result))
+                            _root_.scala.util.control.TailCalls.tailcall((returnExpr.splice).asInstanceOf[Any => _root_.scala.util.control.TailCalls.TailRec[Nothing]].apply(result))
                           }.tree
                         }))
                       reify {
