@@ -4,7 +4,7 @@ name := "stateless-future-util"
 
 version := "0.1.0-SNAPSHOT"
 
-libraryDependencies += "com.qifun" %% "stateless-future" % "0.1.1"
+libraryDependencies += "com.qifun" %% "stateless-future" % "0.2.0-SNAPSHOT"
 
 libraryDependencies += "com.dongxiguo" %% "fastring" % "0.2.4"
 
