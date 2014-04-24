@@ -30,16 +30,16 @@ import scala.util.Failure
  */
 object ANormalForm {
 
-  abstract class AbstractFuture[+A] extends StatelessFuture[A]
+  abstract class AbstractAwaitable[+AwaitResult, TailRecResult] extends Awaitable.Stateless[AwaitResult, TailRecResult]
 
   @inline
-  final def forceOnComplete(future: Future[Any], handler: Nothing => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-    future.onComplete(handler.asInstanceOf[Any => TailRec[Unit]])
+  final def forceOnComplete[TailRecResult](future: Awaitable[Any, TailRecResult], handler: Nothing => TailRec[TailRecResult])(implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult] = {
+    future.onComplete(handler.asInstanceOf[Any => TailRec[TailRecResult]])
   }
 
-  final class TryCatchFinally[A](tryFuture: Future[A], getCatcherFuture: Catcher[Future[A]], finallyBlock: => Unit) extends AbstractFuture[A] {
+  final class TryCatchFinally[AwaitResult, TailRecResult](tryFuture: Awaitable[AwaitResult, TailRecResult], getCatcherFuture: Catcher[Awaitable[AwaitResult, TailRecResult]], finallyBlock: => Unit) extends AbstractAwaitable[AwaitResult, TailRecResult] {
     @inline
-    override final def onComplete(rest: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
+    override final def onComplete(rest: AwaitResult => TailRec[TailRecResult])(implicit catcher: Catcher[TailRec[TailRecResult]]) = {
       tryFuture.onComplete { a =>
         // 成功执行 try
         try {
@@ -106,7 +106,7 @@ object ANormalForm {
     }
   }
 
-  def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[StatelessFuture[Nothing]] = {
+  def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[Nothing] = {
 
     import c.universe.Flag._
     import c.universe._
@@ -117,14 +117,28 @@ object ANormalForm {
     }
 
     val abstractPartialFunction = typeOf[AbstractPartialFunction[_, _]]
-    val futureType = typeOf[Future[_]]
-    val statelessFutureType = typeOf[StatelessFuture[_]]
-    val futureClassType = typeOf[AbstractFuture[_]]
+    val futureType = typeOf[Awaitable[_, _]]
+    val statelessFutureType = typeOf[Awaitable.Stateless[_, _]]
+    val futureClassType = typeOf[AbstractAwaitable[_, _]]
     val function1Type = typeOf[_ => _]
     val function1Symbol = function1Type.typeSymbol
+
+    val tailRecType = typeOf[TailRec[_]]
+    val tailRecSymbol = tailRecType.typeSymbol
     val uncheckedSymbol = typeOf[scala.unchecked].typeSymbol
     val AndSymbol = typeOf[Boolean].declaration(newTermName("&&").encodedName)
     val OrSymbol = typeOf[Boolean].declaration(newTermName("||").encodedName)
+
+    val (macroAwaitResultTypeTree, tailRecResultTypeTree) = c.macroApplication match {
+      case Apply(TypeApply(_, List(t)), _) => {
+        (t, Ident(typeOf[Unit].typeSymbol))
+      }
+      case Apply(TypeApply(_, List(t, tailRecResultTypeTree)), _) => {
+        (t, tailRecResultTypeTree)
+      }
+    }
+    val tailRecTypeTree = AppliedTypeTree(Ident(tailRecSymbol), List(tailRecResultTypeTree))
+    val catcherTypeTree = AppliedTypeTree(Ident(typeOf[PartialFunction[_, _]].typeSymbol), List(Ident(typeOf[Throwable].typeSymbol), tailRecTypeTree))
 
     def checkNakedAwait(tree: Tree, errorMessage: String) {
       for (subTree @ Select(future, await) <- tree if await.decoded == "await" && future.tpe <:< futureType) {
@@ -242,7 +256,7 @@ object ANormalForm {
 
     def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
       val futureExpr = c.Expr(future)
-      val AwaitValue = newTermName(c.fresh("awaitValue"))
+      val AwaitResult = newTermName(c.fresh("awaitValue"))
       val catcherExpr = c.Expr[Catcher[TailRec[Unit]]](catcher)
       val onCompleteCallExpr = c.Expr(
         Apply(
@@ -251,7 +265,7 @@ object ANormalForm {
             List(
               future,
               {
-                val restTree = rest(Ident(AwaitValue))
+                val restTree = rest(Ident(AwaitResult))
                 val tailcallSymbol = reify(scala.util.control.TailCalls).tree.symbol
                 val TailcallName = newTermName("tailcall")
                 val ApplyName = newTermName("apply")
@@ -272,7 +286,7 @@ object ANormalForm {
                 }
                 restTree match {
                   case Block(
-                    List(ValDef(_, capturedResultName1, _, Ident(AwaitValue))),
+                    List(ValDef(_, capturedResultName1, _, Ident(AwaitResult))),
                     Apply(
                       Select(tailCallsTree, TailcallName),
                       List(
@@ -284,16 +298,16 @@ object ANormalForm {
                     // 尾调用优化
                     capturedReturnTree
                   }
-                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitValue))), expr) => {
+                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult))), expr) => {
                     // 参数名优化
                     function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), expr)
                   }
-                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitValue)), restStates @ _*), expr) => {
+                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult)), restStates @ _*), expr) => {
                     // 参数名优化
                     function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), Block(restStates.toList, expr))
                   }
                   case _ => {
-                    function(ValDef(Modifiers(PARAM), AwaitValue, awaitTypeTree, EmptyTree), restTree)
+                    function(ValDef(Modifiers(PARAM), AwaitResult, awaitTypeTree, EmptyTree), restTree)
                   }
                 }
               })),
@@ -317,7 +331,7 @@ object ANormalForm {
                       AppliedTypeTree(
                         Select(reify(_root_.com.qifun.statelessFuture.ANormalForm).tree,
                           newTypeName("TryCatchFinally")),
-                        List(TypeTree(tree.tpe)))),
+                        List(TypeTree(tree.tpe), tailRecResultTypeTree))),
                     nme.CONSTRUCTOR),
                   List(
                     newFuture(block).tree,
@@ -327,7 +341,7 @@ object ANormalForm {
                       },
                       AppliedTypeTree(
                         Ident(futureType.typeSymbol),
-                        List(TypeTree(tree.tpe)))),
+                        List(TypeTree(tree.tpe), tailRecResultTypeTree))),
                     if (finalizer.isEmpty) {
                       Literal(Constant(()))
                     } else {
@@ -516,7 +530,7 @@ object ANormalForm {
                   for (p <- params) yield {
                     ValDef(Modifiers(PARAM), p.name.toTermName, TypeTree(p.tpe), EmptyTree)
                   }),
-                AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe))),
+                AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe), tailRecResultTypeTree)),
                 newFuture(rhs)(forceAwait + name).tree)),
             transformAwait(
               Apply(
@@ -531,16 +545,16 @@ object ANormalForm {
           rest(tree)
         }
         case _: PackageDef | _: Template | _: CaseDef | _: Alternative | _: Star | _: Bind | _: UnApply | _: AssignOrNamedArg | _: ReferenceToBoxed => {
-          c.error(tree.pos, s"Unexpected expression in a `StatelessFuture` block")
+          c.error(tree.pos, s"Unexpected expression in a `Future` block")
           rest(tree)
         }
       }
     }
 
-    def newFutureAsType(tree: Tree, parameterTypeTree: Tree)(implicit forceAwait: Set[Name]): c.Expr[StatelessFuture[Nothing]] = {
+    def newFutureAsType(tree: Tree, awaitValueTypeTree: Tree)(implicit forceAwait: Set[Name]): c.Expr[Awaitable.Stateless[Nothing, _]] = {
 
-      val statelessFutureTypeTree = AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(parameterTypeTree))
-      val futureClassTypeTree = AppliedTypeTree(Ident(futureClassType.typeSymbol), List(parameterTypeTree))
+      val statelessFutureTypeTree = AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(awaitValueTypeTree, tailRecResultTypeTree))
+      val futureClassTypeTree = AppliedTypeTree(Ident(futureClassType.typeSymbol), List(awaitValueTypeTree, tailRecResultTypeTree))
 
       val futureName = newTypeName(c.fresh("YangBoFuture"))
       val returnName = newTermName(c.fresh("yangBoReturn"))
@@ -570,16 +584,16 @@ object ANormalForm {
                       List(ValDef(
                         Modifiers(PARAM),
                         returnName,
-                        AppliedTypeTree(Ident(function1Symbol), List(parameterTypeTree, TypeTree(typeOf[TailRec[Unit]]))),
+                        AppliedTypeTree(Ident(function1Symbol), List(awaitValueTypeTree, tailRecTypeTree)),
                         EmptyTree)),
                       List(ValDef(
                         Modifiers(IMPLICIT | PARAM),
                         catcherName,
-                        TypeTree(typeTag[Catcher[TailRec[Unit]]].tpe),
+                        catcherTypeTree,
                         EmptyTree))),
-                    TypeTree(typeOf[TailRec[Unit]]),
+                    tailRecTypeTree,
                     {
-                      val catcherExpr = c.Expr[Catcher[TailRec[Unit]]](Ident(catcherName))
+                      val catcherExpr = c.Expr[Catcher[TailRec[Nothing]]](Ident(catcherName))
                       val tryBodyExpr = c.Expr(transform(
                         tree,
                         Ident(catcherName),
@@ -588,7 +602,7 @@ object ANormalForm {
                           val returnExpr = c.Expr[Any => Nothing](Ident(returnName))
                           reify {
                             val result = resultExpr.splice
-                            // Workaround for some nested StatelessFuture blocks.
+                            // Workaround for some nested Future blocks.
                             _root_.scala.util.control.TailCalls.tailcall((returnExpr.splice).asInstanceOf[Any => _root_.scala.util.control.TailCalls.TailRec[Unit]].apply(result))
                           }.tree
                         }))
@@ -606,18 +620,17 @@ object ANormalForm {
             Apply(Select(New(Ident(futureName)), nme.CONSTRUCTOR), List()),
             unchecked(statelessFutureTypeTree))))
     }
-    def newFuture(tree: Tree)(implicit forceAwait: Set[Name]): c.Expr[StatelessFuture[Nothing]] = {
+    def newFuture(tree: Tree)(implicit forceAwait: Set[Name]): c.Expr[Awaitable.Stateless[Nothing, _]] = {
       newFutureAsType(tree, TypeTree(tree.tpe.widen))
     }
-    val Apply(TypeApply(_, List(t)), _) = c.macroApplication
-    val result = newFutureAsType(futureBody.tree, t)(Set.empty)
+    val result = newFutureAsType(futureBody.tree, macroAwaitResultTypeTree)(Set.empty)
     //      c.warning(c.enclosingPosition, show(result))
     c.Expr(
       TypeApply(
         Select(
           c.resetLocalAttrs(result.tree),
           newTermName("asInstanceOf")),
-        List(unchecked(AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(t))))))
+        List(unchecked(AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(macroAwaitResultTypeTree, tailRecResultTypeTree))))))
   }
 
 }

@@ -28,10 +28,10 @@ import scala.Left
 import scala.Right
 
 object Promise {
-  def apply[A]() = new Promise[A]
+  def apply[AwaitResult]() = new Promise[AwaitResult]
 
-  private implicit class Scala210TailRec[A](underlying: TailRec[A]) {
-    final def flatMap[B](f: A => TailRec[B]): TailRec[B] = {
+  private implicit class Scala210TailRec[AwaitResult](underlying: TailRec[AwaitResult]) {
+    final def flatMap[B](f: AwaitResult => TailRec[B]): TailRec[B] = {
       tailcall(f(underlying.result))
     }
   }
@@ -41,12 +41,12 @@ object Promise {
 /**
  * The stateful variant that implement the API of Stateless Future. It's not a real Stateless Future, must be used very carefully!
  */
-final class Promise[A] private (val state: AtomicReference[Either[List[(A => TailRec[Unit], Catcher[TailRec[Unit]])], Try[A]]] = new AtomicReference[Either[List[(A => TailRec[Unit], Catcher[TailRec[Unit]])], Try[A]]](Left(Nil))) extends AnyVal with StatefulFuture[A] { // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
+final class Promise[AwaitResult] private (val state: AtomicReference[Either[List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]] = new AtomicReference[Either[List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]](Left(Nil))) extends AnyVal with Future.Stateful[AwaitResult] { // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
 
   // 为了能在Scala 2.10中编译通过
   import Promise.Scala210TailRec
 
-  private def dispatch(handlers: List[(A => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[A]): TailRec[Unit] = {
+  private def dispatch(handlers: List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
     handlers match {
       case Nil => done(())
       case (body, catcher) :: tail => {
@@ -71,7 +71,7 @@ final class Promise[A] private (val state: AtomicReference[Either[List[(A => Tai
   override final def value = state.get.right.toOption
 
   // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
-  final def complete(value: Try[A]): TailRec[Unit] = {
+  final def complete(value: Try[AwaitResult]): TailRec[Unit] = {
     state.get match {
       case oldState @ Left(handlers) => {
         if (state.compareAndSet(oldState, Right(value))) {
@@ -86,7 +86,7 @@ final class Promise[A] private (val state: AtomicReference[Either[List[(A => Tai
     }
   }
 
-  final def completeWith[B](other: Future[B])(implicit view: B => A): TailRec[Unit] = {
+  final def completeWith[B](other: Future[B])(implicit view: B => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
       val value = Success(view(b))
       tailcall(complete(value))
@@ -99,7 +99,7 @@ final class Promise[A] private (val state: AtomicReference[Either[List[(A => Tai
   }
 
   // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
-  final def tryComplete(value: Try[A]): TailRec[Unit] = {
+  final def tryComplete(value: Try[AwaitResult]): TailRec[Unit] = {
     state.get match {
       case oldState @ Left(handlers) => {
         if (state.compareAndSet(oldState, Right(value))) {
@@ -114,7 +114,7 @@ final class Promise[A] private (val state: AtomicReference[Either[List[(A => Tai
     }
   }
 
-  final def tryCompleteWith[B](other: Future[B])(implicit view: B => A): TailRec[Unit] = {
+  final def tryCompleteWith[B](other: Future[B])(implicit view: B => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
       val value = Success(view(b))
       tailcall(tryComplete(value))
@@ -127,7 +127,7 @@ final class Promise[A] private (val state: AtomicReference[Either[List[(A => Tai
   }
 
   // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
-  override final def onComplete(body: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+  override final def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
     state.get match {
       case Right(value) => {
         value match {
