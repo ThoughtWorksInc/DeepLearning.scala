@@ -40,7 +40,7 @@ object Nio2 {
     }
   }
 
-  final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with StatelessFuture[A] {
+  final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with Future.Stateless[A] {
 
     override final def onComplete(handler: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
       try {

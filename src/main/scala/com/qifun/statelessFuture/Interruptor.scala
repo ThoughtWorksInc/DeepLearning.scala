@@ -25,9 +25,16 @@ import scala.util.Try
 
 object Interruptor {
 
+  private implicit class Scala210TailRec[AwaitResult](underlying: TailRec[AwaitResult]) {
+    @inline
+    final def flatMap[B](f: AwaitResult => TailRec[B]): TailRec[B] = {
+      tailcall(f(underlying.result))
+    }
+  }
+
   class FutureInterruptedException(message: String = null, cause: Throwable = null) extends Exception(message, cause)
 
-  private final class Poll[A] private[Interruptor] (onInterrupt: Future[Nothing], interruptableFutureFactories: Seq[Interruptor => Future[A]]) extends StatelessFuture[A] {
+  private final class Poll[A] private[Interruptor] (onInterrupt: Future[Nothing], interruptableFutureFactories: Seq[Interruptor => Future[A]]) extends Future.Stateless[A] {
 
     override final def onComplete(body: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
       val promise = Promise[A]()
@@ -57,16 +64,15 @@ object Interruptor {
 
   import scala.language.implicitConversions
 
-  implicit def interruptable[A <: Future[_]](futureFactory: Interruptor => A)(implicit interruptor: Interruptor) =
+  implicit def interruptable[A <: Future[_]](futureFactory: Interruptor => A)(implicit interruptor: Interruptor): A =
     futureFactory(interruptor)
-
 }
 
 trait Interruptor {
 
   def onInterrupt: Future[Nothing]
 
-  def poll[A](interruptableFutureFactories: (Interruptor => Future[A])*): StatelessFuture[A] =
+  def poll[A](interruptableFutureFactories: (Interruptor => Future[A])*): Future.Stateless[A] =
     new Interruptor.Poll(onInterrupt, interruptableFutureFactories)
 
 }
