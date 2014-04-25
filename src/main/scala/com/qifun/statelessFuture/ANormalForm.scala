@@ -108,19 +108,17 @@ object ANormalForm {
 
   def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[Nothing] = {
     import c.universe._
-    val statelessFutureType = typeOf[Awaitable.Stateless[_, _]]
     c.macroApplication match {
       case Apply(TypeApply(_, List(t)), _) => {
-        val tailRecResultTypeTree = Ident(typeOf[Unit].typeSymbol)
-        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree, AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(t, tailRecResultTypeTree)))
+        applyMacroWithType(c)(futureBody, t, Ident(typeOf[Unit].typeSymbol))
       }
       case Apply(TypeApply(_, List(t, tailRecResultTypeTree)), _) => {
-        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree, AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(t, tailRecResultTypeTree)))
+        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree)
       }
     }
   }
 
-  def applyMacroWithType(c: Context)(futureBody: c.Expr[Any], macroAwaitResultTypeTree: c.Tree, tailRecResultTypeTree: c.Tree, resultTypeTree: c.Tree): c.Expr[Nothing] = {
+  def applyMacroWithType(c: Context)(futureBody: c.Expr[Any], macroAwaitResultTypeTree: c.Tree, tailRecResultTypeTree: c.Tree): c.Expr[Nothing] = {
 
     import c.universe.Flag._
     import c.universe._
@@ -145,7 +143,7 @@ object ANormalForm {
 
     val tailRecTypeTree = AppliedTypeTree(Ident(tailRecSymbol), List(tailRecResultTypeTree))
     val catcherTypeTree = AppliedTypeTree(Ident(typeOf[PartialFunction[_, _]].typeSymbol), List(Ident(typeOf[Throwable].typeSymbol), tailRecTypeTree))
-
+    val resultTypeTree = AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(macroAwaitResultTypeTree, tailRecResultTypeTree))
     def checkNakedAwait(tree: Tree, errorMessage: String) {
       for (subTree @ Select(future, await) <- tree if await.decoded == "await" && future.tpe <:< futureType) {
         c.error(subTree.pos, errorMessage)
