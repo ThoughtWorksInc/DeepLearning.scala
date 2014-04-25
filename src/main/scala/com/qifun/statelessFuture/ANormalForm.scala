@@ -108,17 +108,19 @@ object ANormalForm {
 
   def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[Nothing] = {
     import c.universe._
+    val statelessFutureType = typeOf[Awaitable.Stateless[_, _]]
     c.macroApplication match {
       case Apply(TypeApply(_, List(t)), _) => {
-        applyMacroWithType(c)(futureBody, t, Ident(typeOf[Unit].typeSymbol))
+        val tailRecResultTypeTree = Ident(typeOf[Unit].typeSymbol)
+        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree, AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(t, tailRecResultTypeTree)))
       }
       case Apply(TypeApply(_, List(t, tailRecResultTypeTree)), _) => {
-        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree)
+        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree, AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(t, tailRecResultTypeTree)))
       }
     }
   }
 
-  def applyMacroWithType(c: Context)(futureBody: c.Expr[Any], macroAwaitResultTypeTree: c.Tree, tailRecResultTypeTree: c.Tree): c.Expr[Nothing] = {
+  def applyMacroWithType(c: Context)(futureBody: c.Expr[Any], macroAwaitResultTypeTree: c.Tree, tailRecResultTypeTree: c.Tree, resultTypeTree: c.Tree): c.Expr[Nothing] = {
 
     import c.universe.Flag._
     import c.universe._
@@ -634,7 +636,7 @@ object ANormalForm {
         Select(
           c.resetLocalAttrs(result.tree),
           newTermName("asInstanceOf")),
-        List(unchecked(AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(macroAwaitResultTypeTree, tailRecResultTypeTree))))))
+        List(resultTypeTree)))
   }
 
 }
