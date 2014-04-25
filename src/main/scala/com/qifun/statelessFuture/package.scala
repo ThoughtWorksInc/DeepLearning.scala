@@ -24,14 +24,26 @@ import scala.concurrent.ExecutionContext
 
 package object statelessFuture {
 
+  /**
+   * An [[Awaitable]] that does not need a response type.
+   */
   type Future[+AwaitResult] = Awaitable[AwaitResult, Unit]
 
   object Future {
 
+    /**
+     * An [[Awaitable.Stateless]] that does not need a response type.
+     */
     type Stateless[+AwaitResult] = Awaitable.Stateless[AwaitResult, Unit]
 
+    /**
+     * An [[Awaitable.Stateful]] that does not need a response type.
+     */
     type Stateful[+AwaitResult] = Awaitable.Stateful[AwaitResult, Unit]
 
+    /**
+     * Forwards all [[Future.Stateful]] API to the underlying `scala.concurrent.Future`.
+     */
     final class FromConcurrentFuture[AwaitResult](underlying: scala.concurrent.Future[AwaitResult])(implicit executor: scala.concurrent.ExecutionContext) extends Future.Stateful[AwaitResult] {
       import scala.util._
 
@@ -63,7 +75,10 @@ package object statelessFuture {
 
     }
 
-    final class ToConcurrentFuture[AwaitResult](underlying: Future.Stateful[AwaitResult])(implicit intialExecutionContext: ExecutionContext) extends scala.concurrent.Future[AwaitResult] {
+    /**
+     * Forwards all `scala.concurrent.Future` API to the underlying [[Future.Stateful]].
+     */
+    final class ToConcurrentFuture[AwaitResult](underlying: Future.Stateful[AwaitResult]) extends scala.concurrent.Future[AwaitResult] {
 
       import scala.concurrent._
       import scala.concurrent.duration.Duration
@@ -153,6 +168,9 @@ package object statelessFuture {
       }
     }
 
+    /**
+     * Forwards all [[Future.Stateless]] API to the underlying `scala.Responder`.
+     */
     final class FromResponder[AwaitResult](underlying: Responder[AwaitResult]) extends Future.Stateless[AwaitResult] {
       override def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
         try {
@@ -167,6 +185,9 @@ package object statelessFuture {
       }
     }
 
+    /**
+     * Forwards all `scala.Responder` API to the underlying [[Future.Stateless]].
+     */
     final class ToResponder[AwaitResult](underlying: Future.Stateless[AwaitResult])(implicit catcher: Catcher[Unit]) extends Responder[AwaitResult] {
 
       override final def respond(handler: AwaitResult => Unit) {
@@ -182,7 +203,12 @@ package object statelessFuture {
     }
 
     import scala.language.experimental.macros
-    def apply[AwaitResult](futureBody: => AwaitResult): Awaitable.Stateless[AwaitResult, Unit] = macro ANormalForm.applyMacro
+
+    /**
+     * Returns a stateless [[Future]] that evaluates the `block`.
+     * @param block The asynchronous operation that will be performed later. Note that all [[Awaitable#await]] calls must be in the `block`.
+     */
+    def apply[AwaitResult](block: => AwaitResult): Future.Stateless[AwaitResult] = macro ANormalForm.applyMacro
 
   }
 

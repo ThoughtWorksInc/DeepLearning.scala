@@ -26,7 +26,7 @@ import scala.util.Success
 import scala.util.Failure
 
 /**
- * For internal using only.
+ * Used internally only.
  */
 object ANormalForm {
 
@@ -106,14 +106,14 @@ object ANormalForm {
     }
   }
 
-  def applyMacro(c: Context)(futureBody: c.Expr[Any]): c.Expr[Nothing] = {
+  def applyMacro(c: Context)(block: c.Expr[Any]): c.Expr[Nothing] = {
     import c.universe._
     c.macroApplication match {
       case Apply(TypeApply(_, List(t)), _) => {
-        applyMacroWithType(c)(futureBody, t, Ident(typeOf[Unit].typeSymbol))
+        applyMacroWithType(c)(block, t, Ident(typeOf[Unit].typeSymbol))
       }
       case Apply(TypeApply(_, List(t, tailRecResultTypeTree)), _) => {
-        applyMacroWithType(c)(futureBody, t, tailRecResultTypeTree)
+        applyMacroWithType(c)(block, t, tailRecResultTypeTree)
       }
     }
   }
