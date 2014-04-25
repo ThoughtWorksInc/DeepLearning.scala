@@ -25,8 +25,18 @@ import scala.concurrent.ExecutionContext
 import scala.util.Success
 import scala.util.Failure
 
+/**
+ * An asynchronous operation that will be completed in the future.
+ * @tparam AwaitResult The type that [[#await]] returns.
+ * @tparam TailRecResult The response type, should be `Unit` in most cases.
+ * @see [[Future]]
+ */
 sealed trait Awaitable[+AwaitResult, TailRecResult] extends Any { outer =>
 
+  /**
+   * Suspends this [[Awaitable]] until the asynchronous operation complete, and then returns the result of the asynchronous operation.
+   * @note The code after `await` and the code before `await` may be evaluated in different `Thread`.
+   */
   @compileTimeOnly("`await` must be enclosed in a `Future` block")
   final def await: AwaitResult = ???
 
@@ -109,156 +119,25 @@ object Awaitable {
 
   trait Stateless[+AwaitResult, TailRecResult] extends Any with Awaitable[AwaitResult, TailRecResult]
 
-  implicit final class FromConcurrentFuture[AwaitResult](underlying: scala.concurrent.Future[AwaitResult])(implicit executor: scala.concurrent.ExecutionContext) extends Future.Stateful[AwaitResult] {
-    import scala.util._
-
-    override final def value = underlying.value
-
-    override final def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-      underlying.onComplete {
-        case Success(successValue) => {
-          executor.execute(new Runnable {
-            override final def run(): Unit = {
-              body(successValue).result
-            }
-          })
-        }
-        case Failure(throwable) => {
-          if (catcher.isDefinedAt(throwable)) {
-            executor.execute(new Runnable {
-              override final def run(): Unit = {
-                catcher(throwable).result
-              }
-            })
-          } else {
-            executor.prepare.reportFailure(throwable)
-          }
-        }
-      }
-      done(())
-    }
-
-  }
-
-  implicit final class ToConcurrentFuture[AwaitResult](underlying: Future.Stateful[AwaitResult])(implicit intialExecutionContext: ExecutionContext) extends scala.concurrent.Future[AwaitResult] {
-
-    import scala.concurrent._
-    import scala.concurrent.duration.Duration
-    import scala.util._
-
-    override final def value: Option[Try[AwaitResult]] = underlying.value
-
-    override final def isCompleted = underlying.isCompleted
-
-    override final def onComplete[U](func: (Try[AwaitResult]) => U)(implicit executor: ExecutionContext) {
-      underlying.onComplete { a =>
-        executor.prepare.execute(new Runnable {
-          override final def run() {
-            ToConcurrentFuture.this.synchronized {
-              try {
-                func(Success(a))
-              } catch {
-                case e: Throwable => executor.reportFailure(e)
-              }
-            }
-          }
-        })
-        done(())
-
-      } {
-        case e: Throwable => {
-          executor.prepare.execute(new Runnable {
-            override final def run() {
-              ToConcurrentFuture.this.synchronized {
-                try {
-                  func(Failure(e))
-                } catch {
-                  case e: Throwable => executor.reportFailure(e)
-                }
-              }
-            }
-          })
-          done(())
-        }
-      }
-
-    }
-
-    override final def result(atMost: Duration)(implicit permit: CanAwait): AwaitResult = {
-      ready(atMost)
-      value.get match {
-        case Success(successValue) => successValue
-        case Failure(throwable) => throw throwable
-      }
-    }
-
-    override final def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
-      if (atMost eq Duration.Undefined) {
-        throw new IllegalArgumentException
-      }
-      synchronized {
-        if (atMost.isFinite) {
-          val timeoutAt = atMost.toNanos + System.nanoTime
-          while (!isCompleted) {
-            val restDuration = timeoutAt - System.nanoTime
-            if (restDuration < 0) {
-              throw new TimeoutException
-            }
-            wait(restDuration / 1000000, (restDuration % 1000000).toInt)
-          }
-        } else {
-          while (!isCompleted) {
-            wait()
-          }
-        }
-        this
-      }
-    }
-
-    implicit private def catcher: Catcher[Unit] = {
-      case throwable: Throwable => {
-        synchronized {
-          notifyAll()
-        }
-      }
-    }
-
-    for (successValue <- underlying) {
-      synchronized {
-        notifyAll()
-      }
-    }
-  }
-
-  implicit final class FromResponder[AwaitResult](underlying: Responder[AwaitResult]) extends Future.Stateless[AwaitResult] {
-    override def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-      try {
-        underlying.respond { a =>
-          body(a).result
-        }
-      } catch {
-        case e if catcher.isDefinedAt(e) =>
-          catcher(e).result
-      }
-      done(())
-    }
-  }
-
-  implicit final class ToResponder[AwaitResult](underlying: Future.Stateless[AwaitResult])(implicit catcher: Catcher[Unit]) extends Responder[AwaitResult] {
-
-    override final def respond(handler: AwaitResult => Unit) {
-      (underlying.onComplete { a =>
-        done(handler(a))
-      } {
-        case e if catcher.isDefinedAt(e) => {
-          done(catcher(e))
-        }
-      }).result
-    }
-
-  }
-
   import scala.language.experimental.macros
   def apply[AwaitResult, TailRecResult](futureBody: => AwaitResult): Awaitable.Stateless[AwaitResult, TailRecResult] = macro ANormalForm.applyMacro
+
+  import scala.language.implicitConversions
+
+  implicit def fromResponder[AwaitResult](underlying: Responder[AwaitResult]) = {
+    new Future.FromResponder(underlying)
+  }
+
+  implicit def toResponder[AwaitResult](underlying: Future.Stateless[AwaitResult])(implicit catcher: Catcher[Unit]) = {
+    new Future.ToResponder(underlying)
+  }
+
+  implicit def fromConcurrentFuture[AwaitResult](underlying: scala.concurrent.Future[AwaitResult])(implicit executor: scala.concurrent.ExecutionContext) = {
+    new Future.FromConcurrentFuture(underlying)
+  }
+
+  implicit def toConcurrentFuture[AwaitResult](underlying: Future.Stateful[AwaitResult])(implicit intialExecutionContext: ExecutionContext) = {
+    new Future.ToConcurrentFuture(underlying)
+  }
 
 }
