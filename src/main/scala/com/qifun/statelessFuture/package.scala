@@ -29,7 +29,7 @@ package object statelessFuture {
    */
   type Future[+AwaitResult] = Awaitable[AwaitResult, Unit]
 
-  object Future {
+  object Future extends AwaitableFactory[Unit] {
 
     /**
      * An [[Awaitable.Stateless]] that does not need a response type.
@@ -201,14 +201,14 @@ package object statelessFuture {
       }
 
     }
-
-    import scala.language.experimental.macros
-
-    /**
-     * Returns a stateless [[Future]] that evaluates the `block`.
-     * @param block The asynchronous operation that will be performed later. Note that all [[Awaitable#await]] calls must be in the `block`.
-     */
-    def apply[AwaitResult](block: => AwaitResult): Future.Stateless[AwaitResult] = macro ANormalForm.applyMacro
+//
+//    import scala.language.experimental.macros
+//
+//    /**
+//     * Returns a stateless [[Future]] that evaluates the `block`.
+//     * @param block The asynchronous operation that will be performed later. Note that all [[Awaitable#await]] calls must be in the `block`.
+//     */
+//    def apply[AwaitResult](block: => AwaitResult): Future.Stateless[AwaitResult] = macro ANormalForm.applyMacro
 
   }
 
