@@ -37,7 +37,7 @@ object Interruptor {
   private final class Poll[A] private[Interruptor] (onInterrupt: Future[Nothing], interruptableFutureFactories: Seq[Interruptor => Future[A]]) extends Future.Stateless[A] {
 
     override final def onComplete(body: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-      val promise = Promise[A]()
+      val promise = Promise[A]
       val innerInterrupter = new Interruptor {
         override final val onInterrupt = Future {
           promise.await
