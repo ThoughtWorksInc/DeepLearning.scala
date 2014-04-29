@@ -21,7 +21,7 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 ### Create a Stateless Future
 
     import com.qifun.statelessFuture.Future
-    val randomDoubleFuture = Future {
+    val randomDoubleFuture: Future.Stateless[Double] = Future {
       println("Generating a random Double...")
       math.random()
     }
@@ -70,7 +70,7 @@ Output:
     The second random Double is 0.6134780449033244.
     After running the Future.
 
-Note the magic `await` postfix, which invokes the the former Stateless Future `randomDoubleFuture`. It looks like normal Scala method calls, but does not block any thread.
+Note the magic `await` postfix, which invokes the the former Stateless Future `randomDoubleFuture`. It looks like a normal Scala method calls, but does not block any thread.
 
 ### A complex example with control structures
 
@@ -81,7 +81,7 @@ Note the magic `await` postfix, which invokes the the former Stateless Future `r
     val executor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor
     
     // Manually implements a Stateless Future, which is the asynchronous version of `Thread.sleep()`
-    def asyncSleep(duration: Duration) = new Future[Unit] {
+    def asyncSleep(duration: Duration) = new Future.Stateless[Unit] {
       import scala.util.control.TailCalls._
       def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
         executor.schedule(new Runnable {
