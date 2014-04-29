@@ -190,8 +190,6 @@ The Stateless Futures are pure functional, thus they will never store result val
 
 Also, there is no `isComplete` method in Stateless Futures. As a result, the users of Stateless Futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining Stateless Futures.
 
-By the way, Stateless Futures can be easy adapted to other stateful future implementation, and then the users can use the other future's stateful API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on a Stateless Future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/stateless-future-test) the most of `scala.async` test cases for Stateless Futures.
-
 ### Threading-free Model
 
 There are too many threading models and implimentations in the Java/Scala world, `java.util.concurrent.Executor`, `scala.concurrent.ExecutionContext`, `javax.swing.SwingUtilities.invokeLater`, `java.util.Timer`, ... It is very hard to communicate between threading models. When a developer is working with multiple threading models, he must very carefully pass messages between threading models, or he have to maintain bulks of `synchronized` methods to properly deal with the shared variables between threads.
