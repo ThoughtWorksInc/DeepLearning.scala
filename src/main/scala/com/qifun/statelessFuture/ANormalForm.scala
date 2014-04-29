@@ -267,7 +267,7 @@ object ANormalForm {
           Apply(
             Select(reify(_root_.com.qifun.statelessFuture.ANormalForm).tree, newTermName("forceOnComplete")),
             List(
-              future,
+              Ident(newTermName("yangBoNextFuture")),
               {
                 val restTree = rest(Ident(AwaitResult))
                 val tailcallSymbol = reify(scala.util.control.TailCalls).tree.symbol
