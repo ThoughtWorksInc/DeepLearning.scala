@@ -21,7 +21,7 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 ### Create a Stateless Future
 
     import com.qifun.statelessFuture.Future
-    val randomDoubleFuture = Future {
+    val randomDoubleFuture: Future.Stateless[Double] = Future {
       println("Generating a random Double...")
       math.random()
     }
@@ -70,7 +70,7 @@ Output:
     The second random Double is 0.6134780449033244.
     After running the Future.
 
-Note the magic `await` postfix, which invokes the the former Stateless Future `randomDoubleFuture`. It looks like normal Scala method calls, but does not block any thread.
+Note the magic `await` postfix, which invokes the the former Stateless Future `randomDoubleFuture`. It looks like a normal Scala method calls, but does not block any thread.
 
 ### A complex example with control structures
 
@@ -81,7 +81,7 @@ Note the magic `await` postfix, which invokes the the former Stateless Future `r
     val executor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor
     
     // Manually implements a Stateless Future, which is the asynchronous version of `Thread.sleep()`
-    def asyncSleep(duration: Duration) = new Future[Unit] {
+    def asyncSleep(duration: Duration) = new Future.Stateless[Unit] {
       import scala.util.control.TailCalls._
       def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) = {
         executor.schedule(new Runnable {
@@ -189,8 +189,6 @@ Regardless of the familiar veneers between Stateless Futures and `scala.concurre
 The Stateless Futures are pure functional, thus they will never store result values or exceptions. Instead, Stateless Futures evaluate lazily, and they do the same job every time you invoke `foreach` or `onComplete`. The behavior of Stateless Futures is more like monads in Haskell than futures in Java.
 
 Also, there is no `isComplete` method in Stateless Futures. As a result, the users of Stateless Futures are forced not to share futures between threads, not to check the states in futures. They have to care about control flows instead of threads, and build the control flows by defining Stateless Futures.
-
-By the way, Stateless Futures can be easy adapted to other stateful future implementation, and then the users can use the other future's stateful API on the adapted futures. For example, you can perform `scala.concurrent.Await.result` on a Stateless Future which is implicitly adapted to a `Future.ToConcurrentFuture`. By this approach, I have [ported](https://github.com/Atry/stateless-future-test) the most of `scala.async` test cases for Stateless Futures.
 
 ### Threading-free Model
 
