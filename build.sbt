@@ -2,13 +2,15 @@ organization := "com.qifun"
 
 name := "stateless-future-util"
 
-version := "0.1.0-SNAPSHOT"
+version := "0.1.0"
 
-libraryDependencies += "com.qifun" %% "stateless-future" % "0.2.0-SNAPSHOT"
+libraryDependencies += "com.qifun" %% "stateless-future" % "0.2.1"
 
 libraryDependencies += "com.dongxiguo" %% "fastring" % "0.2.4"
 
 libraryDependencies += "com.dongxiguo" %% "zero-log" % "0.3.5"
+
+libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
 scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xlint", "-feature")
 
