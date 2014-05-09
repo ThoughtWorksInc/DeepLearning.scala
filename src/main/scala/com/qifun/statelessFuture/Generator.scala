@@ -1,15 +1,9 @@
 package com.qifun.statelessFuture
 
-import scala.collection.IterableLike
-import scala.util.continuations._
 import scala.collection.LinearSeqOptimized
 import scala.collection.immutable.LinearSeq
 import scala.collection.generic.GenericTraversableTemplate
-import scala.collection.AbstractSeq
-import scala.collection.generic.GenericCompanion
 import scala.collection.generic.SeqFactory
-import scala.collection.GenTraversableOnce
-import scala.collection.generic.CanBuildFrom
 import scala.util.control.TailCalls._
 import scala.util.control.Exception.Catcher
 
@@ -19,7 +13,6 @@ final object Generator extends SeqFactory[Generator] {
     val i = newBuilder[Int]
     i += 1
     println(i.result)
-    
   }
   
   final class Builder[Element](private var future: Awaitable[Unit, Generator[Element]] = null) extends scala.collection.mutable.Builder[Element, Generator[Element]] {
