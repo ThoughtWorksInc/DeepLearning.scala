@@ -28,7 +28,7 @@ import scala.Left
 import scala.Right
 
 object Promise {
-  def apply[AwaitResult] = new Promise[AwaitResult]
+  def apply[AwaitResult] = new Promise[AwaitResult](new AtomicReference(Left(Nil)))
 
   private implicit class Scala210TailRec[A](underlying: TailRec[A]) {
     final def flatMap[B](f: A => TailRec[B]): TailRec[B] = {
@@ -42,7 +42,10 @@ object Promise {
  * A [[Future.Stateful]] that will be completed when another [[Future]] being completed.
  * @param state The internal state that should never be accessed by other modules.
  */
-final class Promise[AwaitResult] private (val state: AtomicReference[Either[List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]] = new AtomicReference[Either[List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]](Left(Nil))) extends AnyVal with Future.Stateful[AwaitResult] { // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
+final class Promise[AwaitResult] private (
+  // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
+  val state: AtomicReference[Either[List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]])
+  extends AnyVal with Future.Stateful[AwaitResult] {
 
   // 为了能在Scala 2.10中编译通过
   import Promise.Scala210TailRec
@@ -89,7 +92,7 @@ final class Promise[AwaitResult] private (val state: AtomicReference[Either[List
 
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
-   * @throws java.lang.IllegalStateException Passed to `catcher` when this [[Promise]] being completed more once. 
+   * @throws java.lang.IllegalStateException Passed to `catcher` when this [[Promise]] being completed more once.
    */
   final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
