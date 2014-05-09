@@ -11,14 +11,14 @@ object AwaitableFactory {
     import c.universe._
     val Apply(TypeApply(Select(factory, _), List(t)), _) = c.macroApplication
     val factoryName = newTermName(c.fresh("yangBoAwaitableFactory"))
-    val factoryVal = c.Expr(ValDef (Modifiers(), factoryName, TypeTree(), factory))
+    val factoryVal = c.Expr(ValDef(Modifiers(), factoryName, TypeTree(), factory))
     val result = ANormalForm.applyMacroWithType(c)(block, t, Select(Ident(factoryName), newTypeName("TailRecResult")))
     reify {
       factoryVal.splice
       result.splice
     }
   }
-  
+
   final def apply[TailRecResult] = new AwaitableFactory[TailRecResult] {}
 
 }
