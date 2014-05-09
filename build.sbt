@@ -10,6 +10,8 @@ libraryDependencies += "com.dongxiguo" %% "fastring" % "0.2.4"
 
 libraryDependencies += "com.dongxiguo" %% "zero-log" % "0.3.5"
 
+libraryDependencies += "com.dongxiguo.zero-log" %% "context" % "0.3.5"
+
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
 scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xlint", "-feature")
