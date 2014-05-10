@@ -57,7 +57,7 @@ class SocketTest {
             val serverSocket = AsynchronousServerSocketChannel.open(channelGroup)
             try {
               serverSocket.bind(null)
-              new Zip(
+              Zip(
                 Promise completeWith Future[Unit] {
                   val socket0 = AsynchronousSocketChannel.open()
                   try {

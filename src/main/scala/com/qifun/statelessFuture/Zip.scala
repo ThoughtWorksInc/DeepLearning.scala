@@ -5,7 +5,7 @@ import scala.util.Failure
 import scala.util.control.Exception.Catcher
 import scala.util.control.TailCalls._
 
-final class Zip[ThisAwaitResult, ThatAwaitResult](
+final case class Zip[ThisAwaitResult, ThatAwaitResult](
   thisFuture: Future.Stateful[ThisAwaitResult],
   thatFuture: Future.Stateful[ThatAwaitResult]) extends Future.Stateful[(ThisAwaitResult, ThatAwaitResult)] {
 
@@ -16,7 +16,7 @@ final class Zip[ThisAwaitResult, ThatAwaitResult](
       case (_, Some(Failure(e))) => Some(Failure(e))
       case _ => None
     }
-  }
+  } 
 
   override final def onComplete(handler: ((ThisAwaitResult, ThatAwaitResult)) => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
     thisFuture.onComplete { thisSuccess =>
