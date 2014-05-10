@@ -28,12 +28,19 @@ import scala.Left
 import scala.Right
 
 object Promise {
+
   def apply[AwaitResult] = new Promise[AwaitResult](new AtomicReference(Left(Nil)))
 
   private implicit class Scala210TailRec[A](underlying: TailRec[A]) {
     final def flatMap[B](f: A => TailRec[B]): TailRec[B] = {
       tailcall(f(underlying.result))
     }
+  }
+
+  final def completeWith[AwaitResult](other: Future[AwaitResult]): Promise[AwaitResult] = {
+    val result = Promise[AwaitResult]
+    result.completeWith(other).result
+    result
   }
 
 }
