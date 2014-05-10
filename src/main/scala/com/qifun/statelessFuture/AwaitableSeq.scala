@@ -9,38 +9,22 @@ import scala.reflect.macros.Context
 
 object AwaitableSeq {
 
-  import scala.language.implicitConversions
+  def apply[A, TailRecResult](underlying: LinearSeq[A]) = new AwaitableSeq[A, TailRecResult](underlying)
 
-  implicit def toUnderlyingSeq[A](awaitableSeq: AwaitableSeq[A, _]) = awaitableSeq.underlying
+  /**
+   * @usecase def apply[A, TailRecResult](collection: Iterable[A]): AwaitableSeq[A, TailRecResult] = ???
+   */
+  def apply[A, TailRecResult, Origin](origin: Origin)(implicit toFuture: Origin => Generator[A]#Future[Unit]) = new AwaitableSeq[A, TailRecResult](toFuture(origin))
 
-  implicit final class LinearSeqAsAwaitableSeq[A](underlying: LinearSeq[A]) {
-    final def asFutureSeq = new AwaitableSeq[A, Unit](underlying)
-    final def asAwaitableSeq[TailRecResult] = new AwaitableSeq[A, TailRecResult](underlying)
-  }
+  type FutureSeq[A] = AwaitableSeq[A, Unit]
 
-  implicit class GeneratorAsAwaitableSeq[A, Origin](origin: Origin)(implicit toFuture: Origin => Generator[A]#Future[Unit]) {
-    final def asFutureSeq = new AwaitableSeq[A, Unit](toFuture(origin))
-    final def asAwaitableSeq[TailRecResult] = new AwaitableSeq[A, TailRecResult](toFuture(origin))
-  }
+  object FutureSeq {
+    def apply[A](underlying: LinearSeq[A]) = new FutureSeq[A](underlying)
 
-  implicit final class ArrayAsAwaitableSeq[A](underlying: Array[A]) {
-    final def asFutureSeq = new AwaitableSeq[A, Unit](underlying: Generator[A]#Future[Unit])
-    final def asAwaitableSeq[TailRecResult] = new AwaitableSeq[A, TailRecResult](underlying: Generator[A]#Future[Unit])
-  }
-
-  implicit final class IndexedSeqAsAwaitableSeq[A](underlying: IndexedSeq[A]) {
-    final def asFutureSeq = new AwaitableSeq[A, Unit](underlying: Generator[A]#Future[Unit])
-    final def asAwaitableSeq[TailRecResult] = new AwaitableSeq[A, TailRecResult](underlying: Generator[A]#Future[Unit])
-  }
-
-  implicit final class IterableAsAwaitableSeq[A](underlying: Iterable[A]) {
-    final def asFutureSeq = new AwaitableSeq[A, Unit](underlying: Generator[A]#Future[Unit])
-    final def asAwaitableSeq[TailRecResult] = new AwaitableSeq[A, TailRecResult](underlying: Generator[A]#Future[Unit])
-  }
-
-  implicit final class IteratorAsAwaitableSeq[A](underlying: Iterator[A]) {
-    final def asFutureSeq = new AwaitableSeq[A, Unit](underlying: Generator[A]#Future[Unit])
-    final def asAwaitableSeq[TailRecResult] = new AwaitableSeq[A, TailRecResult](underlying: Generator[A]#Future[Unit])
+    /**
+     * @usecase def apply[A](collection: Iterable[A]): FutureSeq[A] = ???
+     */
+    def apply[A, Origin](underlying: Origin)(implicit toFuture: Origin => Generator[A]#Future[Unit]) = new FutureSeq[A](toFuture(underlying))
   }
 
   final def flatMapMacro(c: Context)(f: c.Expr[Nothing => Any]): c.Expr[Nothing] = {
