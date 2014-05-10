@@ -28,8 +28,9 @@ import scala.annotation.tailrec
 import com.qifun.statelessFuture.Future
 import scala.util.control.TailCalls._
 import scala.util.control.Exception.Catcher
+import scala.concurrent.duration.Duration
 
-protected object SocketWritingQueue {
+private object SocketWritingQueue {
   implicit private val (logger, formatter, appender) = ZeroLoggerFactory.newLogger(this)
   import formatter._
 
@@ -64,8 +65,27 @@ trait SocketWritingQueue {
   private val state = new AtomicReference[SocketWritingQueue.State](SocketWritingQueue.Idle(Nil))
 
   protected val socket: AsynchronousSocketChannel
-  protected def writingTimeout: Long
-  protected def writingTimeoutUnit: TimeUnit
+
+  protected def writingTimeout: Duration
+
+  private def writingTimeoutLong: Long = {
+    if (writingTimeout.isFinite) {
+      writingTimeout.length match {
+        case 0L => throw new IllegalArgumentException("writingTimeout must not be zero!")
+        case l => l
+      }
+    } else {
+      0L
+    }
+  }
+
+  private def writingTimeoutUnit: TimeUnit = {
+    if (writingTimeout.isFinite) {
+      writingTimeout.unit
+    } else {
+      TimeUnit.SECONDS
+    }
+  }
 
   @tailrec
   final def flush() {
@@ -157,7 +177,7 @@ trait SocketWritingQueue {
       buffers,
       0,
       buffers.length,
-      writingTimeout,
+      writingTimeoutLong,
       writingTimeoutUnit).await
   }
 

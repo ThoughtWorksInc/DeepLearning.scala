@@ -28,6 +28,7 @@ import java.nio.channels.AsynchronousByteChannel
 import java.util.concurrent.TimeUnit
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.FileLock
+import java.net.SocketAddress
 
 object Nio2 {
 
@@ -61,6 +62,9 @@ object Nio2 {
 
   final def accept(serverSocket: AsynchronousServerSocketChannel) =
     Nio2Future[AsynchronousSocketChannel] { serverSocket.accept(null, _) }
+
+  final def connect(socket: AsynchronousSocketChannel, address: SocketAddress) =
+    Nio2Future[Void] { socket.connect(address, null, _) }
 
   final def read(fd: AsynchronousFileChannel, position: Long, buffer: ByteBuffer) =
     Nio2Future[Integer] { fd.read(buffer, position, null, _) }

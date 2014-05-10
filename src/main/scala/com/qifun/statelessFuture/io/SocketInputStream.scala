@@ -27,20 +27,10 @@ import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 import java.io.IOException
 import com.dongxiguo.fastring.Fastring.Implicits._
+import scala.concurrent.duration.Duration
 
-object SocketInputStream {
+private object SocketInputStream {
   implicit private val (logger, formatter, appender) = ZeroLoggerFactory.newLogger(this)
-  import formatter._
-
-  final def apply(s: AsynchronousSocketChannel, t: Long, tu: TimeUnit, bs: Int = 1500) =
-    new SocketInputStream {
-      override protected final def readingTimeout: Long = t
-
-      override protected final def readingTimeoutUnit: TimeUnit = tu
-
-      override protected final val socket = s
-    }
-
 }
 
 abstract class SocketInputStream extends InputStream {
@@ -56,9 +46,26 @@ abstract class SocketInputStream extends InputStream {
    */
   protected def minBufferSizePerRead = 1500
 
-  protected def readingTimeout: Long
+  protected def readingTimeout: Duration
 
-  protected def readingTimeoutUnit: TimeUnit
+  private def readingTimeoutLong: Long = {
+    if (readingTimeout.isFinite) {
+      readingTimeout.length match {
+        case 0L => throw new IllegalArgumentException("writingTimeout must not be zero!")
+        case l => l
+      }
+    } else {
+      0L
+    }
+  }
+
+  private def readingTimeoutUnit: TimeUnit = {
+    if (readingTimeout.isFinite) {
+      readingTimeout.unit
+    } else {
+      TimeUnit.SECONDS
+    }
+  }
 
   override final def available: Int = _available
 
@@ -175,7 +182,7 @@ abstract class SocketInputStream extends InputStream {
       Nio2.read(
         socket,
         buffers, offset, length,
-        readingTimeout, readingTimeoutUnit).await
+        readingTimeoutLong, readingTimeoutUnit).await
     if (n >= 0 && n < bytesToRead) {
       val newOffset = buffers.indexWhere(
         { buffer => buffer.hasRemaining },
@@ -190,7 +197,7 @@ abstract class SocketInputStream extends InputStream {
   @throws(classOf[IOException])
   private def readChannel(bytesToRead: Int, buffer: ByteBuffer): Future[Unit] = Future {
     val n =
-      Nio2.read(socket, buffer, readingTimeout, readingTimeoutUnit).await
+      Nio2.read(socket, buffer, readingTimeoutLong, readingTimeoutUnit).await
     if (n >= 0 && n < bytesToRead) {
       readChannel(bytesToRead - n, buffer).await
     }
@@ -226,12 +233,6 @@ abstract class SocketInputStream extends InputStream {
       }
     }
   }
-
-  /**
-   * Workaround to enable
-   * <code>asynchronousInputStream.available = 123</code> syntax.
-   */
-  @inline final def available(implicit dummy: DummyImplicit): Int = available()
 
   /**
    * 准备若干个字节的数据。
