@@ -93,6 +93,7 @@ final class Promise[AwaitResult] private (
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
    * @throws java.lang.IllegalStateException Passed to `catcher` when this [[Promise]] being completed more once.
+   * @usecase def completeWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
   final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
@@ -106,7 +107,7 @@ final class Promise[AwaitResult] private (
     }
   }
 
-  // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
+  // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
   private def tryComplete(value: Try[AwaitResult]): TailRec[Unit] = {
     state.get match {
       case oldState @ Left(handlers) => {
@@ -125,6 +126,7 @@ final class Promise[AwaitResult] private (
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
    * Unlike [[#completeWith]], no exception will be created when this [[Promise]] being completed more once.
+   * @usecase def tryCompleteWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
   final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
@@ -138,7 +140,7 @@ final class Promise[AwaitResult] private (
     }
   }
 
-  // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
+  // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
   override final def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
     state.get match {
       case Right(value) => {
