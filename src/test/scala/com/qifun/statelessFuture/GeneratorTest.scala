@@ -2,6 +2,7 @@ package com.qifun.statelessFuture
 import org.junit._
 import scala.annotation.tailrec
 import Assert._
+import com.qifun.statelessFuture.AwaitableSeq._
 class GeneratorTest {
 
   @Test
@@ -11,9 +12,12 @@ class GeneratorTest {
       'H'.await
       gen("ello": _*).await
       gen(',', ' ').await
-      val world = "World!".iterator
+      val world = "Wo".iterator
       while (world.hasNext) {
         world.next().await
+      }
+      for (c <- generatorFutureSeq("rld!")) {
+        gen(c).await
       }
     }
     assertEquals(seq.mkString, "Hello, World!")
@@ -37,7 +41,7 @@ class GeneratorTest {
       if (layer == 0) {
         seq
       } else {
-        wrap(seq: gen.Future[Unit], layer - 1)
+        wrap(Generator.Seq(seq), layer - 1)
       }
     }
 

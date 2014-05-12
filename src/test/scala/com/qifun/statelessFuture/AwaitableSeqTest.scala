@@ -2,14 +2,14 @@ package com.qifun.statelessFuture
 
 import org.junit.Test
 import org.junit.Assert._
-import AwaitableSeq.FutureSeq
+import com.qifun.statelessFuture.AwaitableSeq._
 
 class AwaitableSeqTest {
   @Test
   def `simple yield`() {
     val l = List(1, 2, 3)
     val f = Future {
-      for (i <- FutureSeq(l)) yield {
+      for (i <- futureSeq(l)) yield {
         val sb = Seq.newBuilder[Int]
         sb += i
         Future {
@@ -34,11 +34,11 @@ class AwaitableSeqTest {
     val l3 = Array(7, 8)
     val f = Future {
       for {
-        i <- FutureSeq(l1)
+        i <- futureSeq(l1)
         if i != 2
-        j <- FutureSeq(l2)
+        j <- futureSeq(l2)
         d = j + i
-        k <- FutureSeq(l3)
+        k <- futureSeq(l3)
       } yield {
         val sb = Seq.newBuilder[Int]
         sb += i
@@ -64,7 +64,7 @@ class AwaitableSeqTest {
     val sb = Seq.newBuilder[Int]
     val l = List(1, 2, 3)
     val f = Future {
-      for (i <- FutureSeq(l)) {
+      for (i <- futureSeq(l)) {
         sb += i
         Future {
           sb += 99
@@ -86,10 +86,10 @@ class AwaitableSeqTest {
     val l3 = Array(7, 8)
     val f = Future {
       for {
-        i <- FutureSeq(l1)
+        i <- futureSeq(l1)
         if i != 2
-        j <- FutureSeq(l2)
-        k <- FutureSeq(l3)
+        j <- futureSeq(l2)
+        k <- futureSeq(l3)
       } {
         sb += i
         Future {

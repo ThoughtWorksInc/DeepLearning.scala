@@ -1,31 +1,25 @@
 package com.qifun.statelessFuture
 
 import scala.collection.LinearSeq
-import scala.collection.generic.CanBuildFrom
-import scala.collection.GenTraversableOnce
-import scala.collection.generic.CanCombineFrom
-import scala.collection.parallel.Combiner
 import scala.reflect.macros.Context
 
 object AwaitableSeq {
 
-  def apply[A, TailRecResult](underlying: LinearSeq[A]) = new AwaitableSeq[A, TailRecResult](underlying)
+  final def apply[A, TailRecResult](underlying: LinearSeq[A]) = new AwaitableSeq[A, TailRecResult](underlying)
 
-  /**
-   * @usecase def apply[A, TailRecResult](collection: Iterable[A]): AwaitableSeq[A, TailRecResult] = ???
-   */
-  def apply[A, TailRecResult, Origin](origin: Origin)(implicit toFuture: Origin => Generator[A]#Future[Unit]) = new AwaitableSeq[A, TailRecResult](toFuture(origin))
+  final def apply[A, TailRecResult](underlying: TraversableOnce[A]) = new AwaitableSeq[A, TailRecResult](Generator.Seq(underlying))
 
-  type FutureSeq[A] = AwaitableSeq[A, Unit]
+  private type FutureSeq[A] = AwaitableSeq[A, Unit]
 
-  object FutureSeq {
-    def apply[A](underlying: LinearSeq[A]) = new FutureSeq[A](underlying)
+  final def futureSeq[A](underlying: LinearSeq[A]) = new FutureSeq[A](underlying)
 
-    /**
-     * @usecase def apply[A](collection: Iterable[A]): FutureSeq[A] = ???
-     */
-    def apply[A, Origin](underlying: Origin)(implicit toFuture: Origin => Generator[A]#Future[Unit]) = new FutureSeq[A](toFuture(underlying))
-  }
+  final def futureSeq[A](underlying: TraversableOnce[A]) = new FutureSeq[A](Generator.Seq(underlying))
+
+  private type GeneratorFutureSeq[A] = AwaitableSeq[A, Generator.Seq[A]]
+
+  final def generatorFutureSeq[A](underlying: LinearSeq[A]) = new GeneratorFutureSeq[A](underlying)
+
+  final def generatorFutureSeq[A](underlying: TraversableOnce[A]) = new GeneratorFutureSeq[A](Generator.Seq(underlying))
 
   final def flatMapMacro(c: Context)(f: c.Expr[Nothing => Any]): c.Expr[Nothing] = {
     import c.universe._
@@ -149,7 +143,7 @@ final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
         f(current).map { that =>
           Generator[B].Future {
             left.await
-            Generator.linearSeqToFuture(that.underlying).await
+            Generator[B].apply(that.underlying: _*).await
           }
         }
       }.await)

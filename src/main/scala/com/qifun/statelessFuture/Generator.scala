@@ -6,7 +6,6 @@ import scala.collection.generic.GenericTraversableTemplate
 import scala.collection.generic.SeqFactory
 import scala.util.control.TailCalls._
 import scala.util.control.Exception.Catcher
-import scala.collection.mutable.ArrayBuilder
 import scala.collection.mutable.LazyBuilder
 import scala.collection.mutable.ListBuffer
 
@@ -15,6 +14,10 @@ object Generator {
   final object Seq extends SeqFactory[Generator.Seq] {
 
     override final def apply[Element](elements: Element*): Generator.Seq[Element] = {
+      runtimeCollectionToFuture(elements)
+    }
+
+    final def apply[Element](elements: TraversableOnce[Element]): Generator.Seq[Element] = {
       runtimeCollectionToFuture(elements)
     }
 
@@ -84,7 +87,7 @@ object Generator {
     future.onComplete { u => done(Generator.Seq.Empty) }(PartialFunction.empty).result
   }
 
-  implicit final def indexedSeqToFuture[Element](seq: scala.collection.IndexedSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+  private def indexedSeqToFuture[Element](seq: scala.collection.IndexedSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     def indexedSeqToFuture(i: Int): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
       Generator[Element].Future {
         if (i < seq.length) {
@@ -96,26 +99,14 @@ object Generator {
     indexedSeqToFuture(0)
   }
 
-  implicit final def arrayToFuture[Element](array: Array[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
-    def arrayToFuture(i: Int): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
-      Generator[Element].Future {
-        if (i < array.length) {
-          Generator[Element].apply(array(i)).await
-          arrayToFuture(i + 1).await
-        }
-      }
-    }
-    arrayToFuture(0)
-  }
-
-  implicit final def linearSeqToFuture[Element](seq: scala.collection.LinearSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = Generator[Element].Future {
+  private def linearSeqToFuture[Element](seq: scala.collection.LinearSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = Generator[Element].Future {
     if (seq.nonEmpty) {
       Generator[Element].apply(seq.head).await
       linearSeqToFuture(seq.tail).await
     }
   }
 
-  implicit final def iteratorToFuture[Element](i: Iterator[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+  private def iteratorToFuture[Element](i: Iterator[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     // 为了给当前环境加锁，创建一个Upvalue对象
     // 当多个线程并发调用onComplete的时候，upvalueIterator就不会坏掉。
     object Upvalue { upvalue =>
@@ -136,10 +127,11 @@ object Generator {
   }
 
   @inline
-  implicit final def iterableToFuture[U, Element](iterable: scala.collection.Iterable[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+  private def iterableToFuture[Element, Origin](iterable: Iterable[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     iteratorToFuture(iterable.iterator)
   }
 
+  @inline
   private def runtimeCollectionToFuture[Element](elements: TraversableOnce[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     elements match {
       case seq: LinearSeq[Element] => linearSeqToFuture(seq)
