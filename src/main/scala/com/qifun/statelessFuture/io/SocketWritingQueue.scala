@@ -185,7 +185,7 @@ trait SocketWritingQueue {
    * 当且仅当没有要发送的缓冲区时，抛出Rewind
    */
   @tailrec
-  private def writeMore(remainingBuffers: Iterator[ByteBuffer]) {
+  private final def writeMore(remainingBuffers: Iterator[ByteBuffer]) {
     val oldState = state.get
     oldState match {
       case SocketWritingQueue.Running(Nil) =>
