@@ -14,7 +14,15 @@ libraryDependencies += "com.dongxiguo.zero-log" %% "context" % "0.3.5"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
-scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xlint", "-feature")
+scalacOptions ++= Seq("-optimize", "-unchecked", "-Xlint", "-feature")
+
+scalacOptions <++= (scalaVersion) map { sv =>
+  if (sv.startsWith("2.10.")) {
+    Seq("-deprecation") // Fully compatible with 2.10.x 
+  } else {
+    Seq() // May use deprecated API in 2.11.x
+  }
+}
 
 crossScalaVersions := Seq("2.10.4", "2.11.0")
 
