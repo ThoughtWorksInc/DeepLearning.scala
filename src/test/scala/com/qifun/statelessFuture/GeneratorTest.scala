@@ -3,7 +3,21 @@ import org.junit._
 import scala.annotation.tailrec
 import Assert._
 import com.qifun.statelessFuture.AwaitableSeq._
+import java.io.File
 class GeneratorTest {
+
+  @Test
+  def `foreach with a diffent type`() {
+    val sourceDirectoriesValue: Seq[File] = Seq(new File("xxxxxx"), new File("foobar"))
+    implicit val gen = Generator[String]
+    val seq: gen.OutputSeq = gen.Future[Unit] {
+      gen.futureSeq(sourceDirectoriesValue).foreach { d =>
+        gen("-I", d.getPath).await
+      }
+      gen("--cache-dir", "xx").await
+    }
+    assertEquals(Seq("-I", "xxxxxx", "-I", "foobar", "--cache-dir", "xx"), seq)
+  }
 
   @Test
   def `generate "Hello, World!"`() {
@@ -16,7 +30,7 @@ class GeneratorTest {
       while (world.hasNext) {
         world.next().await
       }
-      for (c <- generatorFutureSeq("rld!")) {
+      for (c <- gen.futureSeq("rld!")) {
         gen(c).await
       }
     }

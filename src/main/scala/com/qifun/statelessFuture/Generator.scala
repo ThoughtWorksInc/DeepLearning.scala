@@ -154,6 +154,12 @@ final case class Generator[Element]() extends (Element => Awaitable[Unit, Genera
 
   type Future[AwaitResult] = Awaitable[AwaitResult, OutputSeq]
 
+  private type FutureSeq[A] = AwaitableSeq[A, Generator.Seq[Element]]
+
+  final def futureSeq[A](underlying: LinearSeq[A]) = new FutureSeq[A](underlying)
+
+  final def futureSeq[A](underlying: TraversableOnce[A]) = new FutureSeq[A](Generator.Seq(underlying))
+
   private[Generator]type Stateless[AwaitResult] = Awaitable.Stateless[AwaitResult, OutputSeq]
 
   @inline

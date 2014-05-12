@@ -15,12 +15,6 @@ object AwaitableSeq {
 
   final def futureSeq[A](underlying: TraversableOnce[A]) = new FutureSeq[A](Generator.Seq(underlying))
 
-  private type GeneratorFutureSeq[A] = AwaitableSeq[A, Generator.Seq[A]]
-
-  final def generatorFutureSeq[A](underlying: LinearSeq[A]) = new GeneratorFutureSeq[A](underlying)
-
-  final def generatorFutureSeq[A](underlying: TraversableOnce[A]) = new GeneratorFutureSeq[A](Generator.Seq(underlying))
-
   final def flatMapMacro(c: Context)(f: c.Expr[Nothing => Any]): c.Expr[Nothing] = {
     import c.universe._
 
