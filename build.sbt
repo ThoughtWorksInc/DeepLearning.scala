@@ -2,7 +2,7 @@ organization := "com.qifun"
 
 name := "stateless-future"
 
-version := "0.2.2-SNAPSHOT"
+version := "0.2.2"
 
 libraryDependencies <+= (scalaVersion) { sv =>
   "org.scala-lang" % "scala-reflect" % sv
