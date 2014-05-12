@@ -21,9 +21,16 @@ object Generator {
     override final def newBuilder[Element] = new LazyBuilder[Element, Generator.Seq[Element]] {
 
       private def toFuture(parts: ListBuffer[TraversableOnce[Element]]): Generator[Element]#Future[Unit] = {
-        Generator[Element].Future {
-          Generator.iteratorToFuture(parts.head.toIterator)
-          toFuture(parts.tail).await
+        parts.headOption match {
+          case Some(head) => {
+            Generator[Element].Future {
+              Generator.runtimeCollectionToFuture(head).await
+              toFuture(parts.tail).await
+            }
+          }
+          case None => {
+            Generator[Element].Future(())
+          }
         }
       }
 
