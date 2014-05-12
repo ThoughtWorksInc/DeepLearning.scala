@@ -218,7 +218,6 @@ object ANormalForm {
                     List(
                       Apply(Select(Super(This(tpnme.EMPTY), tpnme.EMPTY), nme.CONSTRUCTOR), List())),
                     Literal(Constant(())))),
-
                 DefDef(
                   Modifiers(OVERRIDE | FINAL),
                   newTermName("applyOrElse"),
@@ -259,15 +258,19 @@ object ANormalForm {
     }
 
     def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
-      val futureExpr = c.Expr(future)
+      val nextFutureName = newTermName(c.fresh("yangBoNextFuture"))
+      val futureExpr = c.Expr(ValDef(Modifiers(), nextFutureName, TypeTree(), future))
       val AwaitResult = newTermName(c.fresh("awaitValue"))
       val catcherExpr = c.Expr[Catcher[Nothing]](catcher)
+      val ANormalFormTree = reify(_root_.com.qifun.statelessFuture.ANormalForm).tree
+      val ForceOnCompleteName = newTermName("forceOnComplete")
+      val CatcherTree = catcher
       val onCompleteCallExpr = c.Expr(
         Apply(
           Apply(
-            Select(reify(_root_.com.qifun.statelessFuture.ANormalForm).tree, newTermName("forceOnComplete")),
+            Select(ANormalFormTree, ForceOnCompleteName),
             List(
-              Ident(newTermName("yangBoNextFuture")),
+              Ident(nextFutureName),
               {
                 val restTree = rest(Ident(AwaitResult))
                 val tailcallSymbol = reify(scala.util.control.TailCalls).tree.symbol
@@ -275,18 +278,22 @@ object ANormalForm {
                 val ApplyName = newTermName("apply")
                 val AsInstanceOfName = newTermName("asInstanceOf")
                 def function(awaitValDef: ValDef, restTree: Tree) = {
+                  val functionName = newTermName(c.fresh("yangBoHandler"))
                   val restExpr = c.Expr(restTree)
-                  Function(
-                    List(awaitValDef),
-                    reify {
-                      try {
-                        restExpr.splice
-                      } catch {
-                        case e if catcherExpr.splice.isDefinedAt(e) => {
-                          _root_.scala.util.control.TailCalls.tailcall(catcherExpr.splice(e))
-                        }
-                      }
-                    }.tree).setPos(future.pos)
+                  Block(
+                    List(
+                      DefDef(
+                        Modifiers(NoFlags, nme.EMPTY, List(Apply(Select(New(Ident(typeOf[scala.inline].typeSymbol)), nme.CONSTRUCTOR), List()))),
+                        functionName, List(), List(List(awaitValDef)), TypeTree(), reify {
+                          try {
+                            restExpr.splice
+                          } catch {
+                            case e if catcherExpr.splice.isDefinedAt(e) => {
+                              _root_.scala.util.control.TailCalls.tailcall(catcherExpr.splice(e))
+                            }
+                          }
+                        }.tree)),
+                    Ident(functionName))
                 }
                 restTree match {
                   case Block(
@@ -317,8 +324,9 @@ object ANormalForm {
               })),
           List(catcher)))
       reify {
-        val yangBoNextFuture = futureExpr.splice
-        _root_.scala.util.control.TailCalls.tailcall { onCompleteCallExpr.splice }
+        futureExpr.splice
+        @inline def yangBoTail = onCompleteCallExpr.splice
+        _root_.scala.util.control.TailCalls.tailcall { yangBoTail }
       }.tree
     }
 
