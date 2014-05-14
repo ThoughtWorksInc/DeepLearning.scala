@@ -267,9 +267,9 @@ Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
 Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and run the test cases to check these limitations.
 
 ## Links
-* [stateless-future API document](http://central.maven.org/maven2/com/qifun/stateless-future_2.11/0.2.1/stateless-future_2.11-0.2.1-javadoc.jar)
-* [Utilities for stateless-future](https://github.com/Atry/stateless-future-util)
-* [Akka intergration for stateless-future](https://github.com/Atry/stateless-future-akka)
+* [The API document](http://central.maven.org/maven2/com/qifun/stateless-future_2.11/0.2.1/stateless-future_2.11-0.2.1-javadoc.jar)
+* [Utilities](https://github.com/Atry/stateless-future-util)
+* [Akka intergration](https://github.com/Atry/stateless-future-akka)
 * [Tests and examples](https://github.com/Atry/stateless-future-test/tree/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test)
 
 <hr/>
