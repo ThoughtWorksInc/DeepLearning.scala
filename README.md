@@ -268,10 +268,8 @@ Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and
 
 ## Links
 * [stateless-future API document](http://central.maven.org/maven2/com/qifun/stateless-future_2.11/0.2.1/stateless-future_2.11-0.2.1-javadoc.jar)
-* [stateless-future-util](https://github.com/Atry/stateless-future-util)
-* [stateless-future-util API document](http://central.maven.org/maven2/com/qifun/stateless-future-util_2.11/0.2.0/stateless-future-util_2.11-0.2.0-javadoc.jar)
-* [stateless-future-akka](https://github.com/Atry/stateless-future-akka)
-* [stateless-future-akka API document](http://central.maven.org/maven2/com/qifun/stateless-future-akka_2.11/0.1.1/stateless-future-akka_2.11-0.1.1-javadoc.jar)
+* [Utilities for stateless-future](https://github.com/Atry/stateless-future-util)
+* [Akka intergration for stateless-future](https://github.com/Atry/stateless-future-akka)
 * [Tests and examples](https://github.com/Atry/stateless-future-test/tree/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test)
 
 <hr/>
