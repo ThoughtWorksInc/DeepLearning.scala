@@ -26,7 +26,7 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
       math.random()
     }
 
-A Stateless Future instance is lazy, only evaluating when you query it. Thus there is nothing printed when you create the Stateless Future.
+A Stateless Future instance is lazy, only evaluated when you query it. Thus there is nothing printed when you create the Stateless Future.
 
 
 ### Read from a Stateless Future
