@@ -31,7 +31,7 @@ trait AwaitableFactory[TRR] {
 
   /**
    * Returns a stateless [[Awaitable]] that evaluates the `block`.
-   * @param block The asynchronous operation that will perform later. Note that all [[Awaitable#await]] calls must be in the `block`.
+   * @param block The asynchronous operation that will perform later. Note that all [[Awaitable.await]] calls must be in the `block`.
    */
   final def apply[AwaitResult](block: AwaitResult): Awaitable[AwaitResult, TailRecResult] = macro AwaitableFactory.applyMacro
 
