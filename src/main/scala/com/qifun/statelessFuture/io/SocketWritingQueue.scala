@@ -55,8 +55,8 @@ private object SocketWritingQueue {
 }
 
 /**
- * <code>SocketWritingQueue</code>是线程安全的，允许多个线程向这里提交要写入的数据。
- * 提交的缓冲区将按提交顺序排队写入
+ * 本[[SocketWritingQueue]]保证线程安全，允许多个线程向这里提交要写入的数据。
+ * [[enqueue]]提交的缓冲区将按提交顺序排队写入，而不会混合。
  */
 trait SocketWritingQueue {
   import SocketWritingQueue.logger
@@ -104,7 +104,7 @@ trait SocketWritingQueue {
   }
 
   /**
-   * 立即关闭SocketWritingQueue关联的socket，中断所有正在发送的数据。可以多次调用。
+   * 立即关闭本[[SocketWritingQueue]]关联的socket，中断所有正在发送的数据。可以多次调用。
    */
   final def interrupt() {
     state.getAndSet(SocketWritingQueue.Interrupted) match {
@@ -116,9 +116,9 @@ trait SocketWritingQueue {
   }
 
   /**
-   * 关闭`SocketWritingQueue`.
+   * 关闭本[[SocketWritingQueue]]。
    * 如果存在正在发送的数据，当这些数据发送完时，底层套接字才会真正被关闭。
-   * 如果多次调用`close()`，只有第一次调用有效，后面几次会被忽略
+   * 如果多次调用[[close]]，只有第一次调用有效，后面几次会被忽略
    */
   @tailrec
   final def shutDown() {
@@ -181,9 +181,6 @@ trait SocketWritingQueue {
       writingTimeoutUnit).await
   }
 
-  /**
-   * 当且仅当没有要发送的缓冲区时，抛出Rewind
-   */
   @tailrec
   private final def writeMore(remainingBuffers: Iterator[ByteBuffer]) {
     val oldState = state.get
@@ -248,7 +245,7 @@ trait SocketWritingQueue {
   }
 
   /**
-   * @throws IllegalStateException <code>SocketWritingQueue</code>已经关闭
+   * @throws IllegalStateException 本[[SocketWritingQueue]]已经关闭
    */
   @tailrec
   @throws(classOf[IllegalStateException])
@@ -274,7 +271,7 @@ trait SocketWritingQueue {
   }
 
   /**
-   * @throws IllegalStateException <code>SocketWritingQueue</code>已经关闭
+   * @throws IllegalStateException 本[[SocketWritingQueue]]已经关闭
    */
   @tailrec
   final def enqueue(buffer: ByteBuffer) {
