@@ -179,7 +179,7 @@ abstract class SocketInputStream extends InputStream {
     bytesToRead: Long, buffers: Array[ByteBuffer],
     offset: Int, length: Int): Future[Unit] = Future {
     val n =
-      Nio2.read(
+      Nio2Future.read(
         socket,
         buffers, offset, length,
         readingTimeoutLong, readingTimeoutUnit).await
@@ -197,7 +197,7 @@ abstract class SocketInputStream extends InputStream {
   @throws(classOf[IOException])
   private def readChannel(bytesToRead: Int, buffer: ByteBuffer): Future[Unit] = Future {
     val n =
-      Nio2.read(socket, buffer, readingTimeoutLong, readingTimeoutUnit).await
+      Nio2Future.read(socket, buffer, readingTimeoutLong, readingTimeoutUnit).await
     if (n >= 0 && n < bytesToRead) {
       readChannel(bytesToRead - n, buffer).await
     }

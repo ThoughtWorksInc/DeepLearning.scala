@@ -61,7 +61,7 @@ class SocketTest {
                 Promise completeWith Future[Unit] {
                   val socket0 = AsynchronousSocketChannel.open()
                   try {
-                    Nio2.connect(socket0, new InetSocketAddress("localhost", serverSocket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort)).await
+                    Nio2Future.connect(socket0, new InetSocketAddress("localhost", serverSocket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort)).await
                     val stream0 = new SocketInputStream with SocketWritingQueue {
                       val socket = socket0
                       def readingTimeout = Duration.Inf
@@ -82,7 +82,7 @@ class SocketTest {
                   }
                 },
                 Promise completeWith Future {
-                  val socket1 = Nio2.accept(serverSocket).await
+                  val socket1 = Nio2Future.accept(serverSocket).await
                   val stream1 = new SocketInputStream with SocketWritingQueue {
                     val socket = socket1
                     def readingTimeout = Duration.Inf

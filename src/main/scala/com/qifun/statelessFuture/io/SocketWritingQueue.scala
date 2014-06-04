@@ -172,7 +172,7 @@ trait SocketWritingQueue {
   }
 
   private def writeChannel(buffers: Array[ByteBuffer]) = Future {
-    Nio2.write(
+    Nio2Future.write(
       socket,
       buffers,
       0,

@@ -30,7 +30,20 @@ import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.FileLock
 import java.net.SocketAddress
 
-object Nio2 {
+final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with Future.Stateless[A] {
+
+  override final def onComplete(handler: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+    try {
+      underlying(new Nio2Future.HandlerToCompletionHandler(handler))
+    } catch {
+      case e if catcher.isDefinedAt(e) => catcher(e)
+    }
+    done(())
+  }
+
+}
+
+object Nio2Future {
 
   private final class HandlerToCompletionHandler[A](handler: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) extends CompletionHandler[A, Null] {
     override final def completed(a: A, unused: Null) {
@@ -39,19 +52,6 @@ object Nio2 {
     override final def failed(throwable: Throwable, unused: Null) {
       catcher.applyOrElse(throwable, { e: Throwable => throw e }).result
     }
-  }
-
-  final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with Future.Stateless[A] {
-
-    override final def onComplete(handler: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-      try {
-        underlying(new HandlerToCompletionHandler(handler))
-      } catch {
-        case e if catcher.isDefinedAt(e) => catcher(e)
-      }
-      done(())
-    }
-
   }
 
   final def lock(fd: AsynchronousFileChannel) =
