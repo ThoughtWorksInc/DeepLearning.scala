@@ -168,10 +168,18 @@ abstract class SocketInputStream extends InputStream {
     socket.close()
   }
 
+  /**
+   * @note Overriding this method in child class of [[SocketInputStream]] is forbidden. 
+   */
   override final def mark(readlimit: Int) { super.mark(readlimit) }
 
-  override final def markSupported() = super.markSupported()
+  /**
+   * @note Overriding this method in child class of [[SocketInputStream]] is forbidden. 
+   */  override final def markSupported() = super.markSupported()
 
+  /**
+   * @note Overriding this method in child class of [[SocketInputStream]] is forbidden. 
+   */
   override final def reset() { super.reset() }
 
   @throws(classOf[IOException])
