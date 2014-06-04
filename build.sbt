@@ -2,7 +2,7 @@ organization := "com.qifun"
 
 name := "stateless-future-util"
 
-version := "0.3.2-SNAPSHOT"
+version := "0.4.0-SNAPSHOT"
 
 libraryDependencies += "com.qifun" %% "stateless-future" % "0.2.2"
 
@@ -24,7 +24,7 @@ scalacOptions <++= (scalaVersion) map { sv =>
   }
 }
 
-crossScalaVersions := Seq("2.10.4", "2.11.0")
+crossScalaVersions := Seq("2.10.4", "2.11.1")
 
 incOptions := incOptions.value.withNameHashing(true)
 
