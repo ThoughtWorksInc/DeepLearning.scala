@@ -73,6 +73,9 @@ abstract class SocketInputStream extends InputStream {
 
   private var _available: Int = _
 
+  /**
+   * @note 如果[[available_=]]返回的[[Future]]操作正在执行，将导致未定义行为。
+   */
   override final def read(): Int = {
     if (_available > 0) {
       if (buffers.isEmpty) {
@@ -145,24 +148,24 @@ abstract class SocketInputStream extends InputStream {
   }
 
   /**
-   * @note 当 prepare 未完毕时调用skip将导致未定义行为。
+   * @note 如果[[available_=]]返回的[[Future]]操作正在执行，将导致未定义行为。
    */
   override final def skip(len: Long): Long = skip(len, 0)
 
   /**
-   * @note 当 prepare 未完毕时调用read将导致未定义行为。
+   * @note 如果[[available_=]]返回的[[Future]]操作正在执行，将导致未定义行为。
    */
   override final def read(b: Array[Byte]): Int = read(b, 0, b.length, 0)
 
   /**
-   * @note 当 prepare 未完毕时调用read将导致未定义行为。
+   * @note 如果[[available_=]]返回的[[Future]]操作正在执行，将导致未定义行为。
    */
   override final def read(b: Array[Byte], off: Int, len: Int): Int = {
     read(b, off, len, 0)
   }
 
   /**
-   * Close the associated socket.
+   * Close [[socket]].
    */
   override final def close() {
     socket.close()
@@ -243,11 +246,15 @@ abstract class SocketInputStream extends InputStream {
   }
 
   /**
-   * 准备若干个字节的数据。
+   * 准备`bytesRequired`字节的数据。
+   * 
+   * @return 返回的[[Future]]成功执行完毕后，[[available]]会变为`bytesRequired`.
+   * 
    * @throws java.io.EOFException 如果对面已经断开连接，会触发本异常
+   * @example (available = 20).await // 等待20字节的数据
    */
   @throws(classOf[EOFException])
-  final def available_=(bytesRequired: Int): Future[Unit] = Future {
+  final def available_=(bytesRequired: Int): Future.Stateless[Unit] = Future {
     logger.fine {
       fast"Bytes avaliable now: ${available.toString}, expected: ${bytesRequired.toString}"
     }

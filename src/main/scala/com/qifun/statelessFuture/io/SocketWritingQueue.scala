@@ -46,7 +46,7 @@ private object SocketWritingQueue {
     val buffers: List[ByteBuffer]) extends State
 
   /**
-   * 表示socket.close()已经调用过
+   * 表示[[socket.close]]已经调用过
    */
   private case object Closed extends State
 
@@ -55,13 +55,17 @@ private object SocketWritingQueue {
 }
 
 /**
- * 本[[SocketWritingQueue]]保证线程安全，允许多个线程向这里提交要写入的数据。
+ * 写入Socket的缓冲数据队列。
+ *
+ * @note 本[[SocketWritingQueue]]保证线程安全，允许多个线程向这里提交要写入的数据。
  * [[enqueue]]提交的缓冲区将按提交顺序排队写入，而不会混合。
  */
 trait SocketWritingQueue {
+
   import SocketWritingQueue.logger
   import SocketWritingQueue.formatter
   import SocketWritingQueue.appender
+
   private val state = new AtomicReference[SocketWritingQueue.State](SocketWritingQueue.Idle(Nil))
 
   protected val socket: AsynchronousSocketChannel
@@ -104,7 +108,10 @@ trait SocketWritingQueue {
   }
 
   /**
-   * 立即关闭本[[SocketWritingQueue]]关联的socket，中断所有正在发送的数据。可以多次调用。
+   * 强行关闭本[[SocketWritingQueue]]。
+   *
+   * 立即关闭[[socket]]，抛弃所有尚未发送的数据。
+   * 如果多次调用[[interrupt]]，只有第一次调用有效，后面几次会被忽略。
    */
   final def interrupt() {
     state.getAndSet(SocketWritingQueue.Interrupted) match {
@@ -116,9 +123,10 @@ trait SocketWritingQueue {
   }
 
   /**
-   * 关闭本[[SocketWritingQueue]]。
-   * 如果存在正在发送的数据，当这些数据发送完时，底层套接字才会真正被关闭。
-   * 如果多次调用[[close]]，只有第一次调用有效，后面几次会被忽略
+   * 优雅的关闭本[[SocketWritingQueue]]。
+   *
+   * 如果本[[SocketWritingQueue]]队列中存在尚未发送的数据，那么只有当这些数据全部交给[[socket]]发送后，[[socket]]才会真正被关闭。
+   * 如果多次调用[[shutDown]]，只有第一次调用有效，后面几次会被忽略。
    */
   @tailrec
   final def shutDown() {
@@ -253,13 +261,19 @@ trait SocketWritingQueue {
     val oldState = state.get
     oldState match {
       case SocketWritingQueue.Idle(buffers) =>
-        val newState = SocketWritingQueue.Idle(b.foldLeft(buffers) { _.::(_) })
+        val newState = SocketWritingQueue.Idle(
+          b.foldLeft(buffers) { (buffers, newBuffer) =>
+            newBuffer :: buffers
+          })
         if (!state.compareAndSet(oldState, newState)) {
           // retry
           enqueue(b: _*)
         }
       case SocketWritingQueue.Running(buffers) =>
-        val newState = SocketWritingQueue.Running(b.foldLeft(buffers) { _.::(_) })
+        val newState = SocketWritingQueue.Running(
+          b.foldLeft(buffers) { (buffers, newBuffer) =>
+            newBuffer :: buffers
+          })
         if (!state.compareAndSet(oldState, newState)) {
           // retry
           enqueue(b: _*)
