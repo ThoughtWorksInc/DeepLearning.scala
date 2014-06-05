@@ -26,7 +26,7 @@ class GeneratorTest {
   @Test
   def `foreach with a diffent type`() {
     val sourceDirectoriesValue: Seq[File] = Seq(new File("xxxxxx"), new File("foobar"))
-    implicit val gen = Generator[String]
+    val gen = Generator[String]
     val seq: gen.OutputSeq = gen.Future[Unit] {
       gen.futureSeq(sourceDirectoriesValue).foreach { d =>
         gen("-I", d.getPath).await
