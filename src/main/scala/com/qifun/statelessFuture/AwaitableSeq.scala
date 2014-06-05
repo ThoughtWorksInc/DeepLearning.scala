@@ -120,6 +120,28 @@ object AwaitableSeq {
 
 }
 
+/**
+ * A wrapper that prevents compiler errors when you invoke [[Awaitable.await]] in a `for` block.
+ * 
+ * For example:
+ * 
+ * {{{
+ * for (element <- seq) {
+ *   // Compiler error: `await` must be enclosed in a `Future` block
+ *   doSomething(element).await
+ * }
+ * }}}
+ * 
+ * You need wrap the original `seq` in a [[AwaitableSeq.futureSeq]]:
+ * 
+ * {{{
+ * for (element <- AwaitableSeq.futureSeq(seq)) {
+ *   // No compiler error now
+ *   doSomething(element).await
+ * }
+ * }}}
+ * 
+ */
 final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
 
   type TailRecResult = TRR
