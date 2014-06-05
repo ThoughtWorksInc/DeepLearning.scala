@@ -35,7 +35,7 @@ sealed trait Awaitable[+AwaitResult, TailRecResult] extends Any { outer =>
 
   /**
    * Suspends this [[Awaitable]] until the asynchronous operation being completed, and then returns the result of the asynchronous operation.
-   * @note The code after `await` and the code before `await` may be evaluated in different `Thread`.
+   * @note The code after [[await]] and the code before [[await]] may be evaluated in different threads.
    * @note This method must be in a [[Future.apply]] block or [[Awaitable.apply]] block.
    */
   @compileTimeOnly("`await` must be enclosed in a `Future` block")
