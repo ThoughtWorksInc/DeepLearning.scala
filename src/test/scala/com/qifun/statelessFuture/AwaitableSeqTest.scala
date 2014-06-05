@@ -23,7 +23,7 @@ import com.qifun.statelessFuture.AwaitableSeq._
 
 class AwaitableSeqTest {
   @Test
-  def `simple yield`() {
+  def `simple for/yield`() {
     val l = List(1, 2, 3)
     val f = Future {
       for (i <- futureSeq(l)) yield {
@@ -45,7 +45,7 @@ class AwaitableSeqTest {
   }
 
   @Test
-  def `complex yield`() {
+  def `complex for/yield`() {
     val l1 = List(1, 2, 3)
     val l2 = Vector(4, 5, 6)
     val l3 = Array(7, 8)
@@ -77,7 +77,7 @@ class AwaitableSeqTest {
   }
 
   @Test
-  def `simple list comprehension`() {
+  def `simple for`() {
     val sb = Seq.newBuilder[Int]
     val l = List(1, 2, 3)
     val f = Future {
@@ -96,7 +96,7 @@ class AwaitableSeqTest {
   }
 
   @Test
-  def `complex list comprehension`() {
+  def `complex for`() {
     val sb = Seq.newBuilder[Int]
     val l1 = List(1, 2, 3)
     val l2 = Vector(4, 5, 6)
