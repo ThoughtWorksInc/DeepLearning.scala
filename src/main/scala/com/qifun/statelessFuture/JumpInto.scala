@@ -23,7 +23,7 @@ import java.util.concurrent.Executor
 
 /**
  * Let the code after [[JumpInto.await]] run in `executor`.
- * @param executor Where the code after [[JumpInto.await]] run.
+ * @param executor Where the code after [[JumpInto.await]] runs.
  */
 final case class JumpInto[TailRecResult](executor: Executor) extends Future.Stateless[Unit] {
 
