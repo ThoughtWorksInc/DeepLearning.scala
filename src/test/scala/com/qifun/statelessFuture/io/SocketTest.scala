@@ -35,73 +35,70 @@ class SocketTest {
 
   @Test
   def pingPong() {
-    object MyException extends Exception
+    val executor = Executors.newSingleThreadScheduledExecutor
     try {
-      Blocking.blockingAwait(Future {
-        val executor = Executors.newSingleThreadScheduledExecutor
+      val channelGroup = AsynchronousChannelGroup.withThreadPool(executor)
+      try {
+        val serverSocket = AsynchronousServerSocketChannel.open(channelGroup)
         try {
-          val channelGroup = AsynchronousChannelGroup.withThreadPool(executor)
-          try {
-            val serverSocket = AsynchronousServerSocketChannel.open(channelGroup)
+          serverSocket.bind(null)
+          object MyException extends Exception
+          val clientFuture = Future[Unit] {
+            val socket0 = AsynchronousSocketChannel.open()
             try {
-              serverSocket.bind(null)
-              Zip(
-                Promise completeWith Future[Unit] {
-                  val socket0 = AsynchronousSocketChannel.open()
-                  try {
-                    Nio2Future.connect(socket0, new InetSocketAddress("localhost", serverSocket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort)).await
-                    val stream0 = new SocketInputStream with SocketWritingQueue {
-                      val socket = socket0
-                      def readingTimeout = Duration.Inf
-                      def writingTimeout = 3.seconds
-                    }
-                    stream0.enqueue(ByteBuffer.wrap("ping".getBytes("UTF-8")))
-                    stream0.flush()
-                    stream0.available_=(4).await
-                    assertEquals(4, stream0.available)
-                    val pong = Array.ofDim[Byte](4)
-                    val numBytesRead = stream0.read(pong)
-                    assertEquals(4, numBytesRead)
-                    assertEquals("pong", new String(pong, "UTF-8"))
-                    stream0.interrupt()
-                    throw MyException
-                  } finally {
-                    socket0.close()
-                  }
-                },
-                Promise completeWith Future {
-                  val socket1 = Nio2Future.accept(serverSocket).await
-                  val stream1 = new SocketInputStream with SocketWritingQueue {
-                    val socket = socket1
-                    def readingTimeout = Duration.Inf
-                    def writingTimeout = 3.seconds
-                  }
-                  try {
-                    stream1.available_=(4).await
-                    val ping = Array.ofDim[Byte](4)
-                    val numBytesRead = stream1.read(ping)
-                    assertEquals(4, numBytesRead)
-                    assertEquals("ping", new String(ping, "UTF-8"))
-                    stream1.enqueue(ByteBuffer.wrap("pong".getBytes("UTF-8")))
-                    stream1.shutDown()
-                  } finally {
-                    socket1.close()
-                  }
-
-                }).await
+              Nio2Future.connect(socket0, new InetSocketAddress("localhost", serverSocket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort)).await
+              val stream0 = new SocketInputStream with SocketWritingQueue {
+                val socket = socket0
+                def readingTimeout = Duration.Inf
+                def writingTimeout = 3.seconds
+              }
+              stream0.enqueue(ByteBuffer.wrap("ping".getBytes("UTF-8")))
+              stream0.flush()
+              stream0.available_=(4).await
+              assertEquals(4, stream0.available)
+              val pong = Array.ofDim[Byte](4)
+              val numBytesRead = stream0.read(pong)
+              assertEquals(4, numBytesRead)
+              assertEquals("pong", new String(pong, "UTF-8"))
+              stream0.interrupt()
+              throw MyException
             } finally {
-              serverSocket.close()
+              socket0.close()
             }
-          } finally {
-            channelGroup.shutdown()
+          }
+          val serverFuture = Future {
+            val socket1 = Nio2Future.accept(serverSocket).await
+            val stream1 = new SocketInputStream with SocketWritingQueue {
+              val socket = socket1
+              def readingTimeout = Duration.Inf
+              def writingTimeout = 3.seconds
+            }
+            try {
+              stream1.available_=(4).await
+              val ping = Array.ofDim[Byte](4)
+              val numBytesRead = stream1.read(ping)
+              assertEquals(4, numBytesRead)
+              assertEquals("ping", new String(ping, "UTF-8"))
+              stream1.enqueue(ByteBuffer.wrap("pong".getBytes("UTF-8")))
+              stream1.shutDown()
+            } finally {
+              socket1.close()
+            }
+          }
+          try {
+            Blocking.blockingAwait(Zip(Promise.completeWith(clientFuture), Promise.completeWith(serverFuture)))
+          } catch {
+            case MyException =>
           }
         } finally {
-          executor.shutdownNow()
+          serverSocket.close()
         }
-      })
-      throw new AssertionError("Expect MyException!")
-    } catch {
-      case MyException =>
+      } finally {
+        channelGroup.shutdown()
+      }
+    } finally {
+      executor.shutdownNow()
     }
+
   }
 }

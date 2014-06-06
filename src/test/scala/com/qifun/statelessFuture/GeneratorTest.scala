@@ -26,7 +26,7 @@ class GeneratorTest {
   @Test
   def `foreach with a diffent type`() {
     val sourceDirectoriesValue: Seq[File] = Seq(new File("xxxxxx"), new File("foobar"))
-    implicit val gen = Generator[String]
+    val gen = Generator[String]
     val seq: gen.OutputSeq = gen.Future[Unit] {
       gen.futureSeq(sourceDirectoriesValue).foreach { d =>
         gen("-I", d.getPath).await
@@ -51,7 +51,17 @@ class GeneratorTest {
         gen(c).await
       }
     }
-    assertEquals(seq.mkString, "Hello, World!")
+    assertEquals("Hello, World!", seq.mkString)
+  }
+
+  @Test
+  def `generate Any elements`() {
+    implicit val gen = Generator[Any]
+    val seq: gen.OutputSeq = gen.Future {
+      // gen(1).await // Does not compile due to https://issues.scala-lang.org/browse/SI-2991
+      (gen: (Any => gen.Future[Unit]))(1).await
+    }
+    assertEquals(Seq(1), seq)
   }
 
   @Test
