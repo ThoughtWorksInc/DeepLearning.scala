@@ -33,35 +33,6 @@ import java.nio.ByteBuffer
 
 class SocketTest {
 
-  private def blockingAwait[A](future: Future[A]): A = {
-    val lock = new AnyRef
-    lock.synchronized {
-      @volatile var result: Option[Try[A]] = None
-      implicit def catcher: Catcher[Unit] = {
-        case e: Exception => {
-          lock.synchronized {
-            result = Some(Failure(e))
-            lock.notifyAll()
-          }
-        }
-      }
-      future.foreach { u =>
-        lock.synchronized {
-          result = Some(Success(u))
-          lock.notify()
-        }
-      }
-      while (result == None) {
-        lock.wait()
-      }
-      val Some(some) = result
-      some match {
-        case Success(u) => u
-        case Failure(e) => throw e
-      }
-    }
-  }
-
   @Test
   def pingPong() {
     val executor = Executors.newSingleThreadScheduledExecutor
@@ -115,7 +86,7 @@ class SocketTest {
             }
           }
           try {
-            blockingAwait(Zip(Promise.completeWith(clientFuture), Promise.completeWith(serverFuture)))
+            Blocking.blockingAwait(Zip(Promise.completeWith(clientFuture), Promise.completeWith(serverFuture)))
           } catch {
             case MyException =>
           }
