@@ -113,7 +113,6 @@ class SocketTest {
             } finally {
               socket1.close()
             }
-
           }
           try {
             blockingAwait(Zip(Promise.completeWith(clientFuture), Promise.completeWith(serverFuture)))
