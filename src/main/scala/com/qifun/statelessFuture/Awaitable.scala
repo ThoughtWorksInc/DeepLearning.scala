@@ -27,7 +27,7 @@ import scala.util.Failure
 
 /**
  * Something that will be completed in the future.
- * @tparam AwaitResult The type that [[#await]] returns.
+ * @tparam AwaitResult The type that [[await]] returns.
  * @tparam TailRecResult The response type, should be `Unit` in most cases.
  * @see [[Future]]
  */
@@ -35,14 +35,14 @@ sealed trait Awaitable[+AwaitResult, TailRecResult] extends Any { outer =>
 
   /**
    * Suspends this [[Awaitable]] until the asynchronous operation being completed, and then returns the result of the asynchronous operation.
-   * @note The code after `await` and the code before `await` may be evaluated in different `Thread`.
-   * @note This method must be in a [[Future#apply]] block or [[Awaitable#apply]] block.
+   * @note The code after [[await]] and the code before [[await]] may be evaluated in different threads.
+   * @note This method must be in a [[Future.apply]] block or [[Awaitable.apply]] block.
    */
   @compileTimeOnly("`await` must be enclosed in a `Future` block")
   final def await: AwaitResult = ???
 
   /**
-   * Like [[#foreach]], except this method supports tail-call optimization.
+   * Like [[foreach]], except this method supports tail-call optimization.
    */
   def onComplete(handler: AwaitResult => TailRec[TailRecResult])(implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult]
 
@@ -155,7 +155,7 @@ object Awaitable {
   }
 
   /**
-   * An stateless [[Awaitable]] that starts a new asynchronous operation whenever [[#onComplete]] or [[#foreach]] being called.
+   * An stateless [[Awaitable]] that starts a new asynchronous operation whenever [[onComplete]] or [[foreach]] being called.
    * @note The result value of the operation will never store in this [[Stateless]].
    */
   trait Stateless[+AwaitResult, TailRecResult] extends Any with Awaitable[AwaitResult, TailRecResult]
@@ -164,7 +164,7 @@ object Awaitable {
   
   /**
    * Returns a stateless [[Awaitable]] that evaluates the `block`.
-   * @param block The asynchronous operation that will perform later. Note that all [[Awaitable#await]] calls must be in the `block`. 
+   * @param block The asynchronous operation that will perform later. Note that all [[Awaitable.await]] calls must be in the `block`. 
    */
   def apply[AwaitResult, TailRecResult](block: => AwaitResult): Awaitable.Stateless[AwaitResult, TailRecResult] = macro ANormalForm.applyMacro
 

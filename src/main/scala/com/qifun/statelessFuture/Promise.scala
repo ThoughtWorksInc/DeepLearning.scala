@@ -132,7 +132,7 @@ final class Promise[AwaitResult] private (
 
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
-   * Unlike [[#completeWith]], no exception will be created when this [[Promise]] being completed more once.
+   * Unlike [[completeWith]], no exception will be created when this [[Promise]] being completed more once.
    * @usecase def tryCompleteWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
   final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
