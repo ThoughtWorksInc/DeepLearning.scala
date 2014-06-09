@@ -116,6 +116,7 @@ class SocketTest {
           }
           try {
             blockingAwait(Zip(Promise.completeWith(clientFuture), Promise.completeWith(serverFuture)))
+            throw new AssertionError("Expect MyException.")
           } catch {
             case MyException =>
           }
