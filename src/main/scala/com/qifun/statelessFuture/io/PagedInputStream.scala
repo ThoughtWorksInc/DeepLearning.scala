@@ -31,10 +31,8 @@ private[io] class PagedInputStream private[io] (
     }
   }
 
-  final def duplicate(): PagedInputStream = {
-    new PagedInputStream(
-      buffers.map(_.duplicate),
-      _available)
+  final def duplicate: PagedInputStream = {
+    new PagedInputStream(buffers.map(_.duplicate), _available)
   }
 
   @tailrec
