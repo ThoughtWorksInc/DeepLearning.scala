@@ -54,7 +54,9 @@ class SocketTest {
               }
               stream0.enqueue(ByteBuffer.wrap("ping".getBytes("UTF-8")))
               stream0.flush()
+              println("1")
               stream0.available_=(4).await
+              println("2")
               assertEquals(4, stream0.available)
               val pong = Array.ofDim[Byte](4)
               val numBytesRead = stream0.read(pong)
@@ -74,15 +76,16 @@ class SocketTest {
               def writingTimeout = 3.seconds
             }
             try {
+              println("3")
               stream1.available_=(4).await
+              println("4")
               val ping = Array.ofDim[Byte](4)
               val numBytesRead = stream1.read(ping)
               assertEquals(4, numBytesRead)
               assertEquals("ping", new String(ping, "UTF-8"))
               stream1.enqueue(ByteBuffer.wrap("pong".getBytes("UTF-8")))
-              stream1.shutDown()
             } finally {
-              socket1.close()
+              stream1.shutDown()
             }
           }
           try {
