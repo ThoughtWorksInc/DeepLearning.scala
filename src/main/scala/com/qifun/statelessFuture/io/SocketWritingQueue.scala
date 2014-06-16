@@ -253,30 +253,32 @@ trait SocketWritingQueue {
   }
 
   /**
-   * @throws IllegalStateException 本[[SocketWritingQueue]]已经关闭
+   * Add `buffers` to this [[SocketWritingQueue]].
+   * 
+   * If this [[SocketWritingQueue]] is closing or closed,
+   * the enqueue operation will be ignored.
    */
   @tailrec
-  @throws(classOf[IllegalStateException])
-  final def enqueue(b: ByteBuffer*) {
+  final def enqueue(buffers: ByteBuffer*) {
     val oldState = state.get
     oldState match {
-      case SocketWritingQueue.Idle(buffers) =>
+      case SocketWritingQueue.Idle(oldBuffers) =>
         val newState = SocketWritingQueue.Idle(
-          b.foldLeft(buffers) { (buffers, newBuffer) =>
-            newBuffer :: buffers
+          buffers.foldLeft(oldBuffers) { (oldBuffers, newBuffer) =>
+            newBuffer :: oldBuffers
           })
         if (!state.compareAndSet(oldState, newState)) {
           // retry
-          enqueue(b: _*)
+          enqueue(buffers: _*)
         }
-      case SocketWritingQueue.Running(buffers) =>
+      case SocketWritingQueue.Running(oldBuffers) =>
         val newState = SocketWritingQueue.Running(
-          b.foldLeft(buffers) { (buffers, newBuffer) =>
-            newBuffer :: buffers
+          buffers.foldLeft(oldBuffers) { (oldBuffers, newBuffer) =>
+            newBuffer :: oldBuffers
           })
         if (!state.compareAndSet(oldState, newState)) {
           // retry
-          enqueue(b: _*)
+          enqueue(buffers: _*)
         }
       case SocketWritingQueue.Interrupted |
         SocketWritingQueue.Closing(_) |
@@ -285,7 +287,10 @@ trait SocketWritingQueue {
   }
 
   /**
-   * @throws IllegalStateException 本[[SocketWritingQueue]]已经关闭
+   * Add `buffer` to this [[SocketWritingQueue]].
+   * 
+   * If this [[SocketWritingQueue]] is closing or closed,
+   * the enqueue operation will be ignored.
    */
   @tailrec
   final def enqueue(buffer: ByteBuffer) {
