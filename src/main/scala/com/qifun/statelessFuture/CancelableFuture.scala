@@ -37,7 +37,7 @@ private object CancelableFuture {
 
 /**
  * A [[Future.Stateful]] that will be completed when another [[Future]] being completed.
- * @param state The internal state that should never be accessed by other modules.
+ * @param stateReference The internal stateReference that should never be accessed by other modules.
  */
 trait CancelableFuture[AwaitResult]
   extends Any with Future.Stateful[AwaitResult] {
@@ -45,14 +45,18 @@ trait CancelableFuture[AwaitResult]
   // 为了能在Scala 2.10中编译通过
   import CancelableFuture.Scala210TailRec
 
+  private type CancelFunction = () => Unit
+
+  private type State = Either[(CancelFunction, List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])]), Try[AwaitResult]]
+
   // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
-  protected def state: AtomicReference[Either[(() => Unit, List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])]), Try[AwaitResult]]]
+  protected def stateReference: AtomicReference[State]
 
   final def cancel() {
-    state.get match {
+    stateReference.get match {
       case oldState @ Left((cancelFunction, handlers)) => {
         val value = Failure(new CancellationException)
-        if (state.compareAndSet(oldState, Right(value))) {
+        if (stateReference.compareAndSet(oldState, Right(value))) {
           cancelFunction()
           tailcall(dispatch(handlers, value))
         } else {
@@ -87,13 +91,13 @@ trait CancelableFuture[AwaitResult]
     }
   }
 
-  override final def value = state.get.right.toOption
+  override final def value = stateReference.get.right.toOption
 
   // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
   protected final def complete(value: Try[AwaitResult]): TailRec[Unit] = {
-    state.get match {
+    stateReference.get match {
       case oldState @ Left((cancel, handlers)) => {
-        if (state.compareAndSet(oldState, Right(value))) {
+        if (stateReference.compareAndSet(oldState, Right(value))) {
           tailcall(dispatch(handlers, value))
         } else {
           complete(value)
@@ -124,9 +128,9 @@ trait CancelableFuture[AwaitResult]
 
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
   protected final def tryComplete(value: Try[AwaitResult]): TailRec[Unit] = {
-    state.get match {
+    stateReference.get match {
       case oldState @ Left((cancel, handlers)) => {
-        if (state.compareAndSet(oldState, Right(value))) {
+        if (stateReference.compareAndSet(oldState, Right(value))) {
           tailcall(dispatch(handlers, value))
         } else {
           tryComplete(value)
@@ -157,7 +161,7 @@ trait CancelableFuture[AwaitResult]
 
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
   override final def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-    state.get match {
+    stateReference.get match {
       case Right(value) => {
         value match {
           case Success(a) => {
@@ -173,7 +177,7 @@ trait CancelableFuture[AwaitResult]
         }
       }
       case oldState @ Left((cancel, tail)) => {
-        if (state.compareAndSet(oldState, Left((cancel, (body, catcher) :: tail)))) {
+        if (stateReference.compareAndSet(oldState, Left((cancel, (body, catcher) :: tail)))) {
           done(())
         } else {
           onComplete(body)
