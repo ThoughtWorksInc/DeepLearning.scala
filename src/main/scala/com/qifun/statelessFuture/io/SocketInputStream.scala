@@ -28,12 +28,18 @@ import java.util.concurrent.TimeUnit
 import java.io.IOException
 import com.dongxiguo.fastring.Fastring.Implicits._
 import scala.concurrent.duration.Duration
+import scala.collection.generic.Growable
 
 private object SocketInputStream {
   implicit private val (logger, formatter, appender) = ZeroLoggerFactory.newLogger(this)
 }
 
-abstract class SocketInputStream extends PagedInputStream {
+/**
+ * @define This SocketInputStream
+ */
+abstract class SocketInputStream
+  extends PagedInputStream(collection.mutable.Queue.empty[ByteBuffer])
+  with LimitablePagedInputStream {
   import SocketInputStream._
   import formatter._
 
@@ -64,8 +70,6 @@ abstract class SocketInputStream extends PagedInputStream {
       TimeUnit.SECONDS
     }
   }
-
-  final def capacity = buffers.foldLeft(0) { _ + _.remaining }
 
   /**
    * Close [[socket]].
@@ -138,7 +142,7 @@ abstract class SocketInputStream extends PagedInputStream {
    * 准备`bytesRequired`字节的数据。
    *
    * @return 返回的[[Future]]成功执行完毕后，[[available]]会变为`bytesRequired`.
-   *
+   * @note 在[[available_=]]返回的[[Future]]执行完毕前，如果调用[[read]]或[[skip]]，将导致未定义行为。
    * @throws java.io.EOFException 如果对面已经断开连接，会触发本异常
    * @example (available = 20).await // 等待20字节的数据
    */
@@ -154,27 +158,38 @@ abstract class SocketInputStream extends PagedInputStream {
         externalRead(bytesRequired - c).await
       } catch {
         case e: Exception =>
-          _available = math.min(bytesRequired, capacity)
+          limit = math.min(bytesRequired, capacity)
           logger.severe(e)
           throw e
       }
       val newCapacity = capacity
       if (bytesRequired > newCapacity) {
-        _available = newCapacity
+        limit = newCapacity
         println(SocketInputStream.this)
         val e = new EOFException
         logger.warning(e)
         throw e
       } else {
-        _available = bytesRequired
+        limit = bytesRequired
       }
     } else {
       logger.finest("Bytes avaiable is enough. Don't read from socket.")
-      _available = bytesRequired
+      limit = bytesRequired
     }
     logger.finer {
-      fast"Bytes avaiable is ${_available.toString} now."
+      fast"Bytes avaiable is ${limit.toString} now."
     }
   }
 
+  override final def move(output: Growable[ByteBuffer], length: Long): Long = {
+    super.move(output, math.min(length, limit)) match {
+      case 0 if length > 0 => {
+        -1
+      }
+      case result => {
+        limit -= result.toInt
+        result
+      }
+    }
+  }
 }
