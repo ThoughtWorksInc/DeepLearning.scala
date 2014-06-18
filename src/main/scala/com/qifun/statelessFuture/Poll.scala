@@ -7,7 +7,7 @@ import scala.util.Try
 
 object Poll {
   /**
-   * Returns a [[PollFuture]] that completes when any one of the `futures` completes,
+   * Returns a [[Poll]] that completes when any one of the `futures` completes,
    * and fails when any one of the `futures` fails,
    */
   def apply[AwaitResult](futures: CancelableFuture[AwaitResult]*) = {
