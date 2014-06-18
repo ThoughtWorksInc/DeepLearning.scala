@@ -35,7 +35,7 @@ object AwaitableSeq {
   final def flatMapMacro(c: Context)(f: c.Expr[Nothing => Any]): c.Expr[Nothing] = {
     import c.universe._
 
-    val Apply(TypeApply(Select(thisTree, _), List(b, _)), _) = c.macroApplication
+    val Apply(TypeApply(Select(thisTree, _), List(b)), _) = c.macroApplication
     val thisName = newTermName(c.fresh("yangBoAwaitableSeq"))
     val thisVal = c.Expr(ValDef(Modifiers(), thisName, TypeTree(), thisTree))
     val TypeRef(_, _, List(_, tailRecResultType)) = thisTree.tpe.widen
@@ -64,7 +64,7 @@ object AwaitableSeq {
 
   final def mapMacro(c: Context)(f: c.Expr[Nothing => Any]): c.Expr[Nothing] = {
     import c.universe._
-    val Apply(TypeApply(Select(thisTree, _), List(b, _)), _) = c.macroApplication
+    val Apply(TypeApply(Select(thisTree, _), List(b)), _) = c.macroApplication
     val thisName = newTermName(c.fresh("yangBoAwaitableSeq"))
     val thisVal = c.Expr(ValDef(Modifiers(), thisName, TypeTree(), thisTree))
     val TypeRef(_, _, List(_, tailRecResultType)) = thisTree.tpe.widen
@@ -132,7 +132,7 @@ object AwaitableSeq {
  * }
  * }}}
  * 
- * You need wrap the original `seq` in a [[AwaitableSeq.futureSeq]]:
+ * To suppress the error, wrap the original `seq` in a [[AwaitableSeq.futureSeq]]:
  * 
  * {{{
  * for (element <- AwaitableSeq.futureSeq(seq)) {
@@ -170,7 +170,7 @@ final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
     }
   }
 
-  final def awaitableFlatMap[B, That](f: A => Future[AwaitableSeq[B, TailRecResult]]) = Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
+  final def awaitableFlatMap[B](f: A => Future[AwaitableSeq[B, TailRecResult]]) = Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
     new AwaitableSeq[B, TailRecResult](
       foldLeft(Generator[B].Future {}) { (left, current) =>
         f(current).map { that =>
@@ -182,7 +182,7 @@ final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
       }.await)
   }
 
-  final def awaitableMap[B, That](f: A => Future[B]) = Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
+  final def awaitableMap[B](f: A => Future[B]) = Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
     new AwaitableSeq[B, TailRecResult](
       Generator.futureToGeneratorSeq(
         foldLeft(Generator[B].Future {}) { (left, current) =>
@@ -217,7 +217,7 @@ final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
 
   import scala.language.experimental.macros
 
-  final def flatMap[B, That](f: A => AwaitableSeq[B, TailRecResult]): AwaitableSeq[B, TailRecResult] = macro AwaitableSeq.flatMapMacro
-  final def map[B, That](f: A => B): AwaitableSeq[B, TailRecResult] = macro AwaitableSeq.mapMacro
+  final def flatMap[B](f: A => AwaitableSeq[B, TailRecResult]): AwaitableSeq[B, TailRecResult] = macro AwaitableSeq.flatMapMacro
+  final def map[B](f: A => B): AwaitableSeq[B, TailRecResult] = macro AwaitableSeq.mapMacro
   final def foreach[U](f: A => U): Unit = macro AwaitableSeq.foreachMacro
 }
