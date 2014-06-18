@@ -165,7 +165,6 @@ abstract class SocketInputStream
       val newCapacity = capacity
       if (bytesRequired > newCapacity) {
         limit = newCapacity
-        println(SocketInputStream.this)
         val e = new EOFException
         logger.warning(e)
         throw e
