@@ -1,5 +1,5 @@
-stateless-future-util
-=====================
+Utilities for Stateless Future
+==============================
 
 ## Installation
 
