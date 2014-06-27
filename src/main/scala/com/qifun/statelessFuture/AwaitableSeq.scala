@@ -16,9 +16,12 @@
  */
 
 package com.qifun.statelessFuture
+package util
 
 import scala.collection.LinearSeq
 import scala.reflect.macros.Context
+import com.qifun.statelessFuture.ANormalForm
+import com.qifun.statelessFuture.Awaitable
 
 object AwaitableSeq {
 

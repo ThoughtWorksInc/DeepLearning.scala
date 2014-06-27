@@ -16,6 +16,7 @@
  */
 
 package com.qifun.statelessFuture
+package util
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.util.control.Exception.Catcher

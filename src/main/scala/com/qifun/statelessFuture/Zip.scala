@@ -16,6 +16,7 @@
  */
 
 package com.qifun.statelessFuture
+package util
 
 import scala.util.Success
 import scala.util.Failure

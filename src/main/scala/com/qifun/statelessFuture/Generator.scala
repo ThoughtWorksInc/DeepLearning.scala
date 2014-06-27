@@ -16,6 +16,7 @@
  */
 
 package com.qifun.statelessFuture
+package util
 
 import scala.collection.LinearSeqOptimized
 import scala.collection.immutable.LinearSeq
@@ -25,6 +26,7 @@ import scala.util.control.TailCalls._
 import scala.util.control.Exception.Catcher
 import scala.collection.mutable.LazyBuilder
 import scala.collection.mutable.ListBuffer
+import scala.language.implicitConversions
 
 object Generator {
 
