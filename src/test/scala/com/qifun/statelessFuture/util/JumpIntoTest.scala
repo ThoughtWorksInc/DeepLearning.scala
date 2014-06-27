@@ -1,4 +1,5 @@
 package com.qifun.statelessFuture
+package util
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.SECONDS

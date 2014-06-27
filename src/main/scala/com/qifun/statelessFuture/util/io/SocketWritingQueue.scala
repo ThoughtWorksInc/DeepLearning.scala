@@ -16,6 +16,7 @@
  */
 
 package com.qifun.statelessFuture
+package util
 package io
 
 import java.io.IOException

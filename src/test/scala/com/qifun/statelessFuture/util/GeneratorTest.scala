@@ -16,10 +16,12 @@
  */
 
 package com.qifun.statelessFuture
+package util
+
 import org.junit._
 import scala.annotation.tailrec
 import Assert._
-import com.qifun.statelessFuture.AwaitableSeq._
+import com.qifun.statelessFuture.util.AwaitableSeq._
 import java.io.File
 class GeneratorTest {
 

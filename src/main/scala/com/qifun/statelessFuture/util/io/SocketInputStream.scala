@@ -16,6 +16,7 @@
  */
 
 package com.qifun.statelessFuture
+package util
 package io
 
 import scala.util.control.Exception.Catcher
