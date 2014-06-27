@@ -27,7 +27,7 @@ import scala.util.control.Exception.Catcher
  * A [[Future.Stateful]] that will be completed when another [[Future]] being completed.
  * @param stateReference The internal stateReference that should never be accessed by other modules.
  */
-trait CancelableFuture[AwaitResult] extends Any with Future.Stateful[AwaitResult] {
+trait CancellableFuture[AwaitResult] extends Any with Future.Stateful[AwaitResult] {
 
   def cancel(): Unit
 

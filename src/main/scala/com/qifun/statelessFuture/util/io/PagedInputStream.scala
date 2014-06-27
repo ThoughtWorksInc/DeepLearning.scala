@@ -85,8 +85,6 @@ private[io] class PagedInputStream(
 
   override def skip(len: Long): Long = skip(len, 0)
 
-  override final def read(b: Array[Byte]): Int = read(b, 0, b.length, 0)
-
   override def read(b: Array[Byte], off: Int, len: Int): Int = {
     read(b, off, len, 0)
   }

@@ -24,18 +24,18 @@ import scala.util.Success
 
 object Sleep {
 
-  def apply(executor: ScheduledExecutorService, duration: Duration): CancelablePromise[Unit] = {
+  def apply(executor: ScheduledExecutorService, duration: Duration): Sleep = {
     if (duration.isFinite) {
       object UnderlyingRunnable extends Runnable {
         val underlyingFuture = executor.schedule(this, duration.length, duration.unit)
-        val result = CancelablePromise[Unit] { () => underlyingFuture.cancel(false) }
+        val result = CancellablePromise[Unit] { () => underlyingFuture.cancel(false) }
         override final def run() {
           result.tryComplete(Success(()))
         }
       }
       UnderlyingRunnable.result
     } else {
-      CancelablePromise { () => }
+      CancellablePromise { () => }
     }
   }
 

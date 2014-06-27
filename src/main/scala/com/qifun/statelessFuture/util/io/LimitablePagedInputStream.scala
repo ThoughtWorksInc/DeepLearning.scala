@@ -6,17 +6,18 @@ import java.nio.ByteBuffer
 import scala.collection.generic.Growable
 import java.io.InputStream
 
-
 /**
  * @define This LimitablePagedInputStream
  */
 private[io] trait LimitablePagedInputStream extends InputStream {
 
   private[io] var limit: Int = 0
-  
+
   override final def available = limit
 
   final def capacity = super.available
+
+  override final def read(b: Array[Byte]): Int = super.read(b)
 
   override abstract final def read(): Int = {
     if (limit > 0) {

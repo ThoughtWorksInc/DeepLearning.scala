@@ -27,7 +27,7 @@ import scala.util.Success
 import scala.util.Try
 import scala.collection.concurrent.TrieMap
 
-object CancelablePromise {
+object CancellablePromise {
 
   private implicit class Scala210TailRec[A](underlying: TailRec[A]) {
     final def flatMap[B](f: A => TailRec[B]): TailRec[B] = {
@@ -44,7 +44,7 @@ object CancelablePromise {
   private type Underlying[AwaitResult] = AtomicReference[State[AwaitResult]]
 
   final def apply[AwaitResult](cancel: CancelFunction) =
-    new CancelablePromise[AwaitResult](new Underlying[AwaitResult](Left((cancel, Nil))))
+    new CancellablePromise[AwaitResult](new Underlying[AwaitResult](Left((cancel, Nil))))
 
   private val EmptyCancelFunction: CancelFunction = { () => }
 
@@ -55,10 +55,10 @@ object CancelablePromise {
  *
  * @param stateReference The internal stateReference that should never be accessed by other modules.
  */
-final class CancelablePromise[AwaitResult] private (
+final class CancellablePromise[AwaitResult] private (
   // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
-  val stateReference: CancelablePromise.Underlying[AwaitResult])
-  extends AnyVal with CancelableFuture[AwaitResult] {
+  val stateReference: CancellablePromise.Underlying[AwaitResult])
+  extends AnyVal with CancellableFuture[AwaitResult] {
 
   // 提供类似C#的隐式参数CancellationToken，对用户来说比较易用。
   // 提供CancelableFuture，对实现者来说，更自然，因为更贴近Java底层的API。而且也避免了一处事件回调。
@@ -83,7 +83,7 @@ final class CancelablePromise[AwaitResult] private (
 
   private def dispatch(handlers: List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
     // 为了能在Scala 2.10中编译通过
-    import CancelablePromise.Scala210TailRec
+    import CancellablePromise.Scala210TailRec
     handlers match {
       case Nil => done(())
       case (body, catcher) :: tail => {
@@ -118,14 +118,14 @@ final class CancelablePromise[AwaitResult] private (
         }
       }
       case Right(origin) => {
-        throw new IllegalStateException("Cannot complete a CancelablePromise twice!")
+        throw new IllegalStateException("Cannot complete a CancellablePromise twice!")
       }
     }
   }
 
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
-   * @throws java.lang.IllegalStateException Passed to `catcher` when this [[CancelablePromise]] being completed more once.
+   * @throws java.lang.IllegalStateException Passed to `catcher` when this [[CancellablePromise]] being completed more once.
    * @usecase def completeWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
   protected final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
@@ -158,7 +158,7 @@ final class CancelablePromise[AwaitResult] private (
 
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
-   * Unlike [[completeWith]], no exception will be created when this [[CancelablePromise]] being completed more once.
+   * Unlike [[completeWith]], no exception will be created when this [[CancellablePromise]] being completed more once.
    * @usecase def tryCompleteWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
   final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
