@@ -1,5 +1,5 @@
 /*
- * stateless-future
+ * stateless-future-util
  * Copyright 2014 深圳岂凡网络有限公司 (Shenzhen QiFun Network Corp., LTD)
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,10 @@
 package com.qifun.statelessFuture
 package util
 
+import java.util.concurrent.atomic.AtomicReference
+import scala.util.Try
+import scala.util.control.TailCalls._
+import scala.util.control.Exception.Catcher
 
 /**
  * A [[Future.Stateful]] that will be completed when another [[Future]] being completed.
@@ -27,4 +31,11 @@ trait CancelableFuture[AwaitResult] extends Any with Future.Stateful[AwaitResult
 
   def cancel(): Unit
 
+  final def cancelWith(implicit cancellationToken: CancellationToken) = {
+    val registration = cancellationToken.register(() => cancel())
+    foreach(_ => cancellationToken.unregister(registration)) {
+      case _ => cancellationToken.unregister(registration)
+    }
+    this
+  }
 }
