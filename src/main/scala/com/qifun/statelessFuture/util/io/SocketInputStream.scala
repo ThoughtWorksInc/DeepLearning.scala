@@ -145,7 +145,7 @@ abstract class SocketInputStream
    * @return 返回的[[Future]]成功执行完毕后，[[available]]会变为`bytesRequired`.
    * @note 在[[available_=]]返回的[[Future]]执行完毕前，如果调用[[read]]或[[skip]]，将导致未定义行为。
    * @throws java.io.EOFException 如果对面已经断开连接，会触发本异常
-   * @example (available = 20).await // 等待20字节的数据
+   * @example (socketInputStream.available = 20).await // 等待20字节的数据
    */
   @throws(classOf[EOFException])
   final def available_=(bytesRequired: Int): Future.Stateless[Unit] = Future {

@@ -17,8 +17,6 @@ private[io] trait LimitablePagedInputStream extends InputStream {
 
   final def capacity = super.available
 
-  override final def read(b: Array[Byte]): Int = super.read(b)
-
   override abstract final def read(): Int = {
     if (limit > 0) {
       super.read() match {
@@ -38,7 +36,7 @@ private[io] trait LimitablePagedInputStream extends InputStream {
     // 因 math.min(len, limit) <= limit，
     // 且 result <= math.min(len, limit)
     // 所以可以断定 result <= limit
-    // 又因limit是个Int，所以limit一定也能用Int表示，
+    // 又因limit是个Int，所以result一定也能用Int表示，
     // 所以，这里的toInt不会溢出。
     limit -= result.toInt
     result
@@ -55,5 +53,10 @@ private[io] trait LimitablePagedInputStream extends InputStream {
       }
     }
   }
+
+  override final def read(b: Array[Byte]): Int = {
+    read(b, 0, b.length)
+  }
+
 
 }

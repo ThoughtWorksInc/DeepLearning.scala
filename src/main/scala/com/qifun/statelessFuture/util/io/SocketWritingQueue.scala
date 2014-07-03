@@ -180,14 +180,14 @@ trait SocketWritingQueue {
     }
   }
 
-  private def writeChannel(buffers: Array[ByteBuffer]) = Future {
+  private def writeChannel(buffers: Array[ByteBuffer]) = {
     Nio2Future.write(
       socket,
       buffers,
       0,
       buffers.length,
       writingTimeoutLong,
-      writingTimeoutUnit).await
+      writingTimeoutUnit)
   }
 
   @tailrec
@@ -241,8 +241,7 @@ trait SocketWritingQueue {
         // 本身不处理，关闭socket通知读线程来处理
         interrupt()
     }
-    Future[Unit] {
-      val bytesWritten = writeChannel(buffers).await
+    for (bytesWritten <- writeChannel(buffers)) {
       val nextIndex = buffers indexWhere { _.hasRemaining }
       val remainingBuffers = nextIndex match {
         case -1 => Iterator.empty
@@ -250,12 +249,12 @@ trait SocketWritingQueue {
           buffers.view(nextIndex, buffers.length).iterator
       }
       writeMore(remainingBuffers)
-    }.foreach { unused => }
+    }
   }
 
   /**
    * Add `buffers` to this [[SocketWritingQueue]].
-   * 
+   *
    * If this [[SocketWritingQueue]] is closing or closed,
    * the enqueue operation will be ignored.
    */
@@ -289,7 +288,7 @@ trait SocketWritingQueue {
 
   /**
    * Add `buffer` to this [[SocketWritingQueue]].
-   * 
+   *
    * If this [[SocketWritingQueue]] is closing or closed,
    * the enqueue operation will be ignored.
    */
