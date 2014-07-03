@@ -25,7 +25,6 @@ import scala.util.Failure
 import java.util.concurrent.CancellationException
 import scala.util.Success
 import scala.util.Try
-import scala.collection.concurrent.TrieMap
 
 object CancellablePromise {
 
