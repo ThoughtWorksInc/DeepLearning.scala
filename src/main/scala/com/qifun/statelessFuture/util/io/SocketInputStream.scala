@@ -160,7 +160,7 @@ abstract class SocketInputStream
       } catch {
         case e: Exception =>
           limit = math.min(bytesRequired, capacity)
-          logger.severe(e)
+          logger.fine(e)
           throw e
       }
       val newCapacity = capacity
