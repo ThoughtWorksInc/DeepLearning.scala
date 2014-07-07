@@ -19,7 +19,6 @@ package com.qifun.statelessFuture
 package util
 package io
 
-
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import scala.util.control.Exception.Catcher
@@ -31,6 +30,7 @@ import java.util.concurrent.TimeUnit
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.FileLock
 import java.net.SocketAddress
+import java.nio.channels.ShutdownChannelGroupException
 
 final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with Future.Stateless[A] {
 
@@ -63,7 +63,15 @@ object Nio2Future {
     Nio2Future[FileLock] { fd.lock(position, size, shared, null, _) }
 
   final def accept(serverSocket: AsynchronousServerSocketChannel) =
-    Nio2Future[AsynchronousSocketChannel] { serverSocket.accept(null, _) }
+    Nio2Future[AsynchronousSocketChannel] { completionHandler =>
+      try {
+        serverSocket.accept(null, completionHandler)
+      } catch {
+        case e: ShutdownChannelGroupException =>
+          // An IOException is passed to completionHandler.
+          // Do nothing here, since you may not want to invoke the catcher twice.
+      }
+    }
 
   final def connect(socket: AsynchronousSocketChannel, address: SocketAddress) =
     Nio2Future[Void] { socket.connect(address, null, _) }
