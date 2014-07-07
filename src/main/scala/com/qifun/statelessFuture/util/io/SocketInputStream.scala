@@ -160,7 +160,7 @@ abstract class SocketInputStream
       } catch {
         case e: Exception =>
           limit = math.min(bytesRequired, capacity)
-          logger.severe(e)
+          logger.fine(e)
           throw e
       }
       val newCapacity = capacity
@@ -173,11 +173,11 @@ abstract class SocketInputStream
         limit = bytesRequired
       }
     } else {
-      logger.finest("Bytes avaiable is enough. Don't read from socket.")
+      logger.finest("Bytes available is enough. Don't read from socket.")
       limit = bytesRequired
     }
     logger.finer {
-      fast"Bytes avaiable is ${limit.toString} now."
+      fast"Bytes available is ${limit.toString} now."
     }
   }
 
