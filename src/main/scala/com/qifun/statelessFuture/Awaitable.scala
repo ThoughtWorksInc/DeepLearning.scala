@@ -46,11 +46,10 @@ sealed trait Awaitable[+AwaitResult, TailRecResult] extends Any { outer =>
    */
   def onComplete(handler: AwaitResult => TailRec[TailRecResult])(implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult]
 
-
   /**
    * Asks this [[Awaitable]] to pass result to `handler` when the asynchronous operation being completed,
    * or to pass the exception to `catcher` when the asynchronous operation being failed,
-   * and starts the asynchronous operation if this [[Awaitable]] is an [[Awaitable.Stateless]]. 
+   * and starts the asynchronous operation if this [[Awaitable]] is an [[Awaitable.Stateless]].
    */
   final def foreach(handler: AwaitResult => TailRecResult)(implicit catcher: Catcher[TailRecResult]): TailRecResult = {
     onComplete { a =>
@@ -82,12 +81,11 @@ sealed trait Awaitable[+AwaitResult, TailRecResult] extends Any { outer =>
     }
   }
 
-
   /**
    * Returns a new [[Awaitable.Stateless]] composed of this [[Awaitable]] and the `condition`.
    * The new [[Awaitable.Stateless]] will pass the original result to `condition` when the original asynchronous operation being completed,
    * or pass the exception to `catcher` when the original asynchronous operation being failed.
-   * 
+   *
    * @throws java.util.NoSuchElementException Passes to `catcher` if the `condition` returns `false`.
    */
   final def withFilter(condition: AwaitResult => Boolean) = new Awaitable.Stateless[AwaitResult, TailRecResult] {
@@ -161,10 +159,10 @@ object Awaitable {
   trait Stateless[+AwaitResult, TailRecResult] extends Any with Awaitable[AwaitResult, TailRecResult]
 
   import scala.language.experimental.macros
-  
+
   /**
    * Returns a stateless [[Awaitable]] that evaluates the `block`.
-   * @param block The asynchronous operation that will perform later. Note that all [[Awaitable.await]] calls must be in the `block`. 
+   * @param block The asynchronous operation that will perform later. Note that all [[Awaitable.await]] calls must be in the `block`.
    */
   def apply[AwaitResult, TailRecResult](block: => AwaitResult): Awaitable.Stateless[AwaitResult, TailRecResult] = macro ANormalForm.applyMacro
 
