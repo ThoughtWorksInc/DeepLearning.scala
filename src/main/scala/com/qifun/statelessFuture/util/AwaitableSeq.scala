@@ -25,9 +25,11 @@ import com.qifun.statelessFuture.Awaitable
 
 object AwaitableSeq {
 
-  final def apply[A, TailRecResult](underlying: LinearSeq[A]) = new AwaitableSeq[A, TailRecResult](underlying)
+  final def apply[A, TailRecResult](underlying: LinearSeq[A]) =
+    new AwaitableSeq[A, TailRecResult](underlying)
 
-  final def apply[A, TailRecResult](underlying: TraversableOnce[A]) = new AwaitableSeq[A, TailRecResult](Generator.Seq(underlying))
+  final def apply[A, TailRecResult](underlying: TraversableOnce[A]) =
+    new AwaitableSeq[A, TailRecResult](Generator.Seq(underlying))
 
   private type FutureSeq[A] = AwaitableSeq[A, Unit]
 
@@ -125,25 +127,25 @@ object AwaitableSeq {
 
 /**
  * A wrapper that prevents compiler errors when you invoke [[Awaitable.await]] in a `for` block.
- * 
+ *
  * For example:
- * 
+ *
  * {{{
  * for (element <- seq) {
  *   // Compiler error: `await` must be enclosed in a `Future` block
  *   doSomething(element).await
  * }
  * }}}
- * 
+ *
  * To suppress the error, wrap the original `seq` in a [[AwaitableSeq.futureSeq]]:
- * 
+ *
  * {{{
  * for (element <- AwaitableSeq.futureSeq(seq)) {
  *   // No compiler error now
  *   doSomething(element).await
  * }
  * }}}
- * 
+ *
  */
 final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
 
@@ -173,29 +175,33 @@ final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
     }
   }
 
-  final def awaitableFlatMap[B](f: A => Future[AwaitableSeq[B, TailRecResult]]) = Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
-    new AwaitableSeq[B, TailRecResult](
-      foldLeft(Generator[B].Future {}) { (left, current) =>
-        f(current).map { that =>
-          Generator[B].Future {
-            left.await
-            Generator[B].apply(that.underlying: _*).await
-          }
-        }
-      }.await)
-  }
-
-  final def awaitableMap[B](f: A => Future[B]) = Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
-    new AwaitableSeq[B, TailRecResult](
-      Generator.futureToGeneratorSeq(
+  final def awaitableFlatMap[B](f: A => Future[AwaitableSeq[B, TailRecResult]]) = {
+    Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
+      new AwaitableSeq[B, TailRecResult](
         foldLeft(Generator[B].Future {}) { (left, current) =>
           f(current).map { that =>
             Generator[B].Future {
               left.await
-              Generator[B].apply(that).await
+              Generator[B].apply(that.underlying: _*).await
             }
           }
-        }.await))
+        }.await)
+    }
+  }
+
+  final def awaitableMap[B](f: A => Future[B]) = {
+    Awaitable[AwaitableSeq[B, TailRecResult], TailRecResult] {
+      new AwaitableSeq[B, TailRecResult](
+        Generator.futureToGeneratorSeq(
+          foldLeft(Generator[B].Future {}) { (left, current) =>
+            f(current).map { that =>
+              Generator[B].Future {
+                left.await
+                Generator[B].apply(that).await
+              }
+            }
+          }.await))
+    }
   }
 
   final def awaitableForeach[U](f: A => Future[U]) = Awaitable[Unit, TailRecResult] {

@@ -102,11 +102,13 @@ object Generator {
   import scala.language.implicitConversions
 
   @inline
-  implicit final def futureToGeneratorSeq[U, Element](future: Generator[Element]#Future[U]): Generator[Element]#OutputSeq = {
+  implicit final def futureToGeneratorSeq[U, Element](
+    future: Generator[Element]#Future[U]): Generator[Element]#OutputSeq = {
     future.onComplete { u => done(Generator.Seq.Empty) }(PartialFunction.empty).result
   }
 
-  private def indexedSeqToFuture[Element](seq: scala.collection.IndexedSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+  private def indexedSeqToFuture[Element](
+    seq: scala.collection.IndexedSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     def indexedSeqToFuture(i: Int): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
       Generator[Element].Future {
         if (i < seq.length) {
@@ -118,10 +120,13 @@ object Generator {
     indexedSeqToFuture(0)
   }
 
-  private def linearSeqToFuture[Element](seq: scala.collection.LinearSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = Generator[Element].Future {
-    if (seq.nonEmpty) {
-      Generator[Element].apply(seq.head).await
-      linearSeqToFuture(seq.tail).await
+  private def linearSeqToFuture[Element](
+    seq: scala.collection.LinearSeq[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+    Generator[Element].Future {
+      if (seq.nonEmpty) {
+        Generator[Element].apply(seq.head).await
+        linearSeqToFuture(seq.tail).await
+      }
     }
   }
 
@@ -146,12 +151,14 @@ object Generator {
   }
 
   @inline
-  private def iterableToFuture[Element, Origin](iterable: Iterable[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+  private def iterableToFuture[Element, Origin](
+    iterable: Iterable[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     iteratorToFuture(iterable.iterator)
   }
 
   @inline
-  private def runtimeCollectionToFuture[Element](elements: TraversableOnce[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
+  private def runtimeCollectionToFuture[Element](
+    elements: TraversableOnce[Element]): Awaitable.Stateless[Unit, Generator.Seq[Element]] = {
     elements match {
       case seq: LinearSeq[Element] => linearSeqToFuture(seq)
       case seq: IndexedSeq[Element] => indexedSeqToFuture(seq)
@@ -185,7 +192,9 @@ final case class Generator[Element]() extends (Element => Awaitable[Unit, Genera
   final def apply(element: Element): Future.Stateless[Unit] = new Awaitable.Stateless[Unit, OutputSeq] {
     private type TailRecResult = OutputSeq
     private type AwaitResult = Unit
-    override final def onComplete(handler: AwaitResult => TailRec[TailRecResult])(implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult] = {
+    override final def onComplete(
+      handler: AwaitResult => TailRec[TailRecResult])(
+        implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult] = {
       done(Generator.Seq.NonEmpty(element, handler))
     }
   }

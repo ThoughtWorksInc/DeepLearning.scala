@@ -126,7 +126,9 @@ trait SocketWritingQueue {
   /**
    * 优雅的关闭本[[SocketWritingQueue]]。
    *
-   * 如果本[[SocketWritingQueue]]队列中存在尚未发送的数据，那么只有当这些数据全部交给[[socket]]发送后，[[socket]]才会真正被关闭。
+   * 如果本[[SocketWritingQueue]]队列中存在尚未发送的数据，
+   * 那么只有当这些数据全部交给[[socket]]发送后，[[socket]]才会真正被关闭。
+   * 
    * 如果多次调用[[shutDown]]，只有第一次调用有效，后面几次会被忽略。
    */
   @tailrec

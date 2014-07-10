@@ -6,7 +6,7 @@ import scala.util.control.Exception.Catcher
 
 /**
  * A simple future implemented by [[foreachFunction]].
- * 
+ *
  * @param foreachFunction The function that provides implementation for [[foreach]].
  */
 final class FunctionFuture[AwaitResult](val foreachFunction: (AwaitResult => Unit, Catcher[Unit]) => Unit)

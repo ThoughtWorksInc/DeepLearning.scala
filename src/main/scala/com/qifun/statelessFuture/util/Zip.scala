@@ -34,9 +34,11 @@ final case class Zip[ThisAwaitResult, ThatAwaitResult](
       case (_, Some(Failure(e))) => Some(Failure(e))
       case _ => None
     }
-  } 
+  }
 
-  override final def onComplete(handler: ((ThisAwaitResult, ThatAwaitResult)) => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+  override final def onComplete(
+    handler: ((ThisAwaitResult, ThatAwaitResult)) => TailRec[Unit])(
+      implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
     thisFuture.onComplete { thisSuccess =>
       thatFuture.onComplete { thatSuccess =>
         handler((thisSuccess, thatSuccess))

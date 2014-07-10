@@ -80,7 +80,8 @@ final class CancellablePromise[AwaitResult] private (
     }
   }
 
-  private def dispatch(handlers: List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
+  private def dispatch(
+    handlers: List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
     // 为了能在Scala 2.10中编译通过
     import CancellablePromise.Scala210TailRec
     handlers match {
@@ -124,10 +125,12 @@ final class CancellablePromise[AwaitResult] private (
 
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
-   * @throws java.lang.IllegalStateException Passed to `catcher` when this [[CancellablePromise]] being completed more once.
+   * @throws java.lang.IllegalStateException when this [[CancellablePromise]] is completed more once.
    * @usecase def completeWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
-  protected final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
+  protected final def completeWith[OriginalAwaitResult](
+    other: Future[OriginalAwaitResult])(
+      implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
       val value = Success(view(b))
       tailcall(complete(value))
@@ -160,7 +163,9 @@ final class CancellablePromise[AwaitResult] private (
    * Unlike [[completeWith]], no exception will be created when this [[CancellablePromise]] being completed more once.
    * @usecase def tryCompleteWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
-  final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
+  final def tryCompleteWith[OriginalAwaitResult](
+    other: Future[OriginalAwaitResult])(
+      implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
       val value = Success(view(b))
       tailcall(tryComplete(value))
@@ -173,7 +178,9 @@ final class CancellablePromise[AwaitResult] private (
   }
 
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
-  override final def onComplete(body: AwaitResult => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+  override final def onComplete(
+    body: AwaitResult => TailRec[Unit])(
+      implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
     stateReference.get match {
       case Right(value) => {
         value match {

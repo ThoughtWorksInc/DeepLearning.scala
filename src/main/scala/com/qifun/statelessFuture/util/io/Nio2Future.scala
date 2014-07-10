@@ -32,9 +32,12 @@ import java.nio.channels.FileLock
 import java.net.SocketAddress
 import java.nio.channels.ShutdownChannelGroupException
 
-final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with Future.Stateless[A] {
+final case class Nio2Future[A](
+  val underlying: CompletionHandler[A, Null] => Unit) extends AnyVal with Future.Stateless[A] {
 
-  override final def onComplete(handler: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+  override final def onComplete(
+    handler: A => TailRec[Unit])(
+      implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
     try {
       underlying(new Nio2Future.HandlerToCompletionHandler(handler))
     } catch {
@@ -47,7 +50,10 @@ final case class Nio2Future[A](val underlying: CompletionHandler[A, Null] => Uni
 
 object Nio2Future {
 
-  private final class HandlerToCompletionHandler[A](handler: A => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]) extends CompletionHandler[A, Null] {
+  private final class HandlerToCompletionHandler[A](
+    handler: A => TailRec[Unit])(
+      implicit catcher: Catcher[TailRec[Unit]])
+    extends CompletionHandler[A, Null] {
     override final def completed(a: A, unused: Null) {
       handler(a).result
     }
@@ -68,8 +74,8 @@ object Nio2Future {
         serverSocket.accept(null, completionHandler)
       } catch {
         case e: ShutdownChannelGroupException =>
-          // An IOException is passed to completionHandler.
-          // Do nothing here, since you may not want to invoke the catcher twice.
+        // An IOException is passed to completionHandler.
+        // Do nothing here, since you may not want to invoke the catcher twice.
       }
     }
 
@@ -85,7 +91,13 @@ object Nio2Future {
   final def read(socket: AsynchronousSocketChannel, buffer: ByteBuffer, timeout: Long, unit: TimeUnit) =
     Nio2Future[Integer] { socket.read(buffer, timeout, unit, null, _) }
 
-  final def read(socket: AsynchronousSocketChannel, buffer: Array[ByteBuffer], offset: Int, length: Int, timeout: Long, unit: TimeUnit) =
+  final def read(
+    socket: AsynchronousSocketChannel,
+    buffer: Array[ByteBuffer],
+    offset: Int,
+    length: Int,
+    timeout: Long,
+    unit: TimeUnit) =
     Nio2Future[java.lang.Long] { socket.read(buffer, offset, length, timeout, unit, null, _) }
 
   final def write(fd: AsynchronousFileChannel, position: Long, buffer: ByteBuffer) =
@@ -97,7 +109,13 @@ object Nio2Future {
   final def write(socket: AsynchronousSocketChannel, buffer: ByteBuffer, timeout: Long, unit: TimeUnit) =
     Nio2Future[Integer] { socket.write(buffer, timeout, unit, null, _) }
 
-  final def write(socket: AsynchronousSocketChannel, buffer: Array[ByteBuffer], offset: Int, length: Int, timeout: Long, unit: TimeUnit) =
+  final def write(
+    socket: AsynchronousSocketChannel,
+    buffer: Array[ByteBuffer],
+    offset: Int,
+    length: Int,
+    timeout: Long,
+    unit: TimeUnit) =
     Nio2Future[java.lang.Long] { socket.write(buffer, offset, length, timeout, unit, null, _) }
 
 }
