@@ -14,7 +14,7 @@ libraryDependencies += "com.dongxiguo.zero-log" %% "context" % "0.3.5"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
-scalacOptions ++= Seq("-optimize", "-unchecked", "-Xlint", "-feature")
+scalacOptions ++= Seq("-optimize", "-unchecked", "-Xlint", "-feature", "-Ywarn-value-discard")
 
 scalacOptions <++= (scalaVersion) map { sv =>
   if (sv.startsWith("2.10.")) {

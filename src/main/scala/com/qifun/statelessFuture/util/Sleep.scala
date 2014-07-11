@@ -30,7 +30,7 @@ object Sleep {
         val underlyingFuture = executor.schedule(this, duration.length, duration.unit)
         val result = CancellablePromise[Unit] { () => underlyingFuture.cancel(false) }
         override final def run() {
-          result.tryComplete(Success(()))
+          result.tryComplete(Success(())).result
         }
       }
       UnderlyingRunnable.result
