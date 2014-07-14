@@ -99,7 +99,7 @@ trait Promise[AwaitResult]
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
    * @throws java.lang.IllegalStateException Passed to `catcher` when this [[Promise]] being completed more once.
-   * @usecase def completeWith(other: Future[AwaitResult]): TailRec[Unit] = ???
+   * @usecase def completeWith(other: Future[AwaitResult]): Unit = ???
    */
   final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): Unit = {
     implicit def catcher: Catcher[TailRec[Unit]] = {
@@ -133,7 +133,7 @@ trait Promise[AwaitResult]
   /**
    * Starts a waiting operation that will be completed when `other` being completed.
    * Unlike [[completeWith]], no exception will be created when this [[Promise]] being completed more once.
-   * @usecase def tryCompleteWith(other: Future[AwaitResult]): TailRec[Unit] = ???
+   * @usecase def tryCompleteWith(other: Future[AwaitResult]): Unit = ???
    */
   final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): Unit = {
     implicit def catcher: Catcher[TailRec[Unit]] = {
