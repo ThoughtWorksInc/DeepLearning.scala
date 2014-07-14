@@ -44,7 +44,8 @@ class SocketTest {
         try {
           serverSocket.bind(null)
           object MyException extends Exception
-          val clientFuture = Future[Unit] {
+          val clientPromise = Promise[Unit]
+          clientPromise completeWith Future[Unit] {
             val socket0 = AsynchronousSocketChannel.open()
             try {
               Nio2Future.connect(socket0, new InetSocketAddress("localhost", serverSocket.getLocalAddress.asInstanceOf[InetSocketAddress].getPort)).await
@@ -67,7 +68,8 @@ class SocketTest {
               socket0.close()
             }
           }
-          val serverFuture = Future {
+          val serverPromise = Promise[Unit]
+          serverPromise completeWith Future {
             val socket1 = Nio2Future.accept(serverSocket).await
             val stream1 = new SocketInputStream with SocketWritingQueue {
               val socket = socket1
@@ -86,10 +88,7 @@ class SocketTest {
             }
           }
           try {
-            Blocking.blockingAwait(Zip(
-                {val a = Promise[Unit];a.completeWith(clientFuture);a},
-                {val b = Promise[Unit];b.completeWith(serverFuture);b}
-                ))
+            Blocking.blockingAwait(Zip(clientPromise, serverPromise))
             throw new AssertionError("Expect MyException.")
           } catch {
             case MyException =>
