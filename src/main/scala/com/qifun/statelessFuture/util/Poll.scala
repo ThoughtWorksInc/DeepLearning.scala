@@ -17,20 +17,29 @@
 
 package com.qifun.statelessFuture.util
 
+import scala.util.control.Exception.Catcher
+import scala.util.control.TailCalls
+import java.util.concurrent.CancellationException
+
 object Poll {
 
   /**
    * Returns a [[Poll]] that completes when any one of the `futures` completes,
    * and fails when any one of the `futures` fails.
-   * 
-   * When a [[Poll]] completes, it cancels all [[futures]]. 
+   *
+   * When a [[Poll]] completes, it cancels all [[futures]].
    */
   def apply[AwaitResult](futures: CancellableFuture[AwaitResult]*): Poll[AwaitResult] = {
-    val result = CancellablePromise[AwaitResult] { () =>
-      for (future <- futures) {
-        future.cancel()
-      }
+    val result = CancellablePromise[AwaitResult]
+    val onCancel: Catcher[Unit] = {
+      case _: CancellationException =>
+        for (future <- futures) {
+          future.cancel()
+        }
     }
+    (for (_ <- result) {
+      // success
+    })(onCancel)
     for (future <- futures) {
       result.tryCompleteWith(future)
     }

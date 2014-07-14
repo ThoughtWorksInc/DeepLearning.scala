@@ -21,6 +21,8 @@ package util
 import scala.concurrent.duration.Duration
 import java.util.concurrent.ScheduledExecutorService
 import scala.util.Success
+import java.util.concurrent.CancellationException
+import scala.util.control.Exception.Catcher
 
 object Sleep {
 
@@ -28,14 +30,21 @@ object Sleep {
     if (duration.isFinite) {
       object UnderlyingRunnable extends Runnable {
         val underlyingFuture = executor.schedule(this, duration.length, duration.unit)
-        val result = CancellablePromise[Unit] { () => underlyingFuture.cancel(false) }
+        val onCancel: Catcher[Unit] = {
+          case _: CancellationException =>
+            underlyingFuture.cancel(false)
+        }
+        val result = CancellablePromise[Unit]
+        (for (_ <- result) {
+          // success
+        })(onCancel)
         override final def run() {
           result.tryComplete(Success(())).result
         }
       }
       UnderlyingRunnable.result
     } else {
-      CancellablePromise { () => }
+      CancellablePromise[Unit]
     }
   }
 
