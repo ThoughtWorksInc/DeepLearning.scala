@@ -31,11 +31,10 @@ trait CancellableFuture[AwaitResult] extends Any with Future.Stateful[AwaitResul
 
   def cancel(): Unit
 
-  final def cancelWith(implicit cancellationToken: CancellationToken) = {
+  final def cancelWith(implicit cancellationToken: CancellationToken): Unit = {
     val registration = cancellationToken.register(() => cancel())
     foreach(_ => cancellationToken.unregister(registration)) {
       case _ => cancellationToken.unregister(registration)
     }
-    this
   }
 }

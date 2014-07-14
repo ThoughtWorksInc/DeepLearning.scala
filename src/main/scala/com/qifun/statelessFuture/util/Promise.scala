@@ -24,10 +24,11 @@ import scala.util.control.TailCalls._
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
+import scala.collection.immutable.Queue
 
 object Promise {
 
-  def apply[AwaitResult] = new Promise[AwaitResult](new AtomicReference(Left(Nil)))
+  def apply[AwaitResult] = new Promise[AwaitResult](new AtomicReference(Left(Queue.empty)))
 
   private implicit class Scala210TailRec[A](underlying: TailRec[A]) {
     final def flatMap[B](f: A => TailRec[B]): TailRec[B] = {
@@ -49,16 +50,20 @@ object Promise {
  */
 final class Promise[AwaitResult] private (
   // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
-  val state: AtomicReference[Either[List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]])
+  val state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]])
   extends AnyVal with Future.Stateful[AwaitResult] {
 
   // 为了能在Scala 2.10中编译通过
   import Promise.Scala210TailRec
 
-  private def dispatch(handlers: List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
-    handlers match {
-      case Nil => done(())
-      case (body, catcher) :: tail => {
+  private def dispatch(
+    handlers: Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])],
+    value: Try[AwaitResult]): TailRec[Unit] = {
+    handlers.dequeueOption match {
+      case None => {
+        done(())
+      }
+      case Some(((body, catcher), tail)) => {
         (value match {
           case Success(a) => {
             body(a)
@@ -67,7 +72,7 @@ final class Promise[AwaitResult] private (
             if (catcher.isDefinedAt(e)) {
               catcher(e)
             } else {
-              throw e
+              done(())
             }
           }
         }).flatMap { _ =>
@@ -80,7 +85,7 @@ final class Promise[AwaitResult] private (
   override final def value = state.get.right.toOption
 
   // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
-  private def complete(value: Try[AwaitResult]): TailRec[Unit] = {
+  final def complete(value: Try[AwaitResult]): TailRec[Unit] = {
     state.get match {
       case oldState @ Left(handlers) => {
         if (state.compareAndSet(oldState, Right(value))) {
@@ -113,7 +118,7 @@ final class Promise[AwaitResult] private (
   }
 
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
-  private def tryComplete(value: Try[AwaitResult]): TailRec[Unit] = {
+  final def tryComplete(value: Try[AwaitResult]): TailRec[Unit] = {
     state.get match {
       case oldState @ Left(handlers) => {
         if (state.compareAndSet(oldState, Right(value))) {
@@ -163,7 +168,7 @@ final class Promise[AwaitResult] private (
         }
       }
       case oldState @ Left(tail) => {
-        if (state.compareAndSet(oldState, Left((body, catcher) :: tail))) {
+        if (state.compareAndSet(oldState, Left(tail.enqueue((body, catcher))))) {
           done(())
         } else {
           onComplete(body)

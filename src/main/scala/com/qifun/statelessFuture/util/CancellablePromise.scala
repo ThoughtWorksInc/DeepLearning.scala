@@ -25,6 +25,7 @@ import scala.util.Failure
 import java.util.concurrent.CancellationException
 import scala.util.Success
 import scala.util.Try
+import scala.collection.immutable.Queue
 
 object CancellablePromise {
 
@@ -36,16 +37,14 @@ object CancellablePromise {
 
   private type CancelFunction = () => Unit
 
-  private type HandlerList[AwaitResult] = List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])]
+  private type HandlerList[AwaitResult] = Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])]
 
-  private type State[AwaitResult] = Either[(CancelFunction, HandlerList[AwaitResult]), Try[AwaitResult]]
+  private type State[AwaitResult] = Either[HandlerList[AwaitResult], Try[AwaitResult]]
 
   private type Underlying[AwaitResult] = AtomicReference[State[AwaitResult]]
 
-  final def apply[AwaitResult](cancel: CancelFunction) =
-    new CancellablePromise[AwaitResult](new Underlying[AwaitResult](Left((cancel, Nil))))
-
-  private val EmptyCancelFunction: CancelFunction = { () => }
+  final def apply[AwaitResult] =
+    new CancellablePromise[AwaitResult](new Underlying[AwaitResult](Left(Queue.empty)))
 
 }
 
@@ -65,10 +64,9 @@ final class CancellablePromise[AwaitResult] private (
 
   final def cancel() {
     stateReference.get match {
-      case oldState @ Left((cancelFunction, handlers)) => {
+      case oldState @ Left(handlers) => {
         val value = Failure(new CancellationException)
         if (stateReference.compareAndSet(oldState, Right(value))) {
-          cancelFunction()
           tailcall(dispatch(handlers, value))
         } else {
           cancel()
@@ -81,12 +79,14 @@ final class CancellablePromise[AwaitResult] private (
   }
 
   private def dispatch(
-    handlers: List[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
+    handlers: Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], value: Try[AwaitResult]): TailRec[Unit] = {
     // 为了能在Scala 2.10中编译通过
     import CancellablePromise.Scala210TailRec
-    handlers match {
-      case Nil => done(())
-      case (body, catcher) :: tail => {
+    handlers.dequeueOption match {
+      case None => {
+        done(())
+      }
+      case Some(((body, catcher), tail)) => {
         (value match {
           case Success(a) => {
             body(a)
@@ -95,7 +95,7 @@ final class CancellablePromise[AwaitResult] private (
             if (catcher.isDefinedAt(e)) {
               catcher(e)
             } else {
-              throw e
+              done(())
             }
           }
         }).flatMap { _ =>
@@ -108,9 +108,9 @@ final class CancellablePromise[AwaitResult] private (
   override final def value = stateReference.get.right.toOption
 
   // @tailrec // Comment this because of https://issues.scala-lang.org/browse/SI-6574
-  protected final def complete(value: Try[AwaitResult]): TailRec[Unit] = {
+  final def complete(value: Try[AwaitResult]): TailRec[Unit] = {
     stateReference.get match {
-      case oldState @ Left((cancel, handlers)) => {
+      case oldState @ Left(handlers) => {
         if (stateReference.compareAndSet(oldState, Right(value))) {
           tailcall(dispatch(handlers, value))
         } else {
@@ -128,7 +128,7 @@ final class CancellablePromise[AwaitResult] private (
    * @throws java.lang.IllegalStateException when this [[CancellablePromise]] is completed more once.
    * @usecase def completeWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
-  protected final def completeWith[OriginalAwaitResult](
+  final def completeWith[OriginalAwaitResult](
     other: Future[OriginalAwaitResult])(
       implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
     other.onComplete { b =>
@@ -145,7 +145,7 @@ final class CancellablePromise[AwaitResult] private (
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
   final def tryComplete(value: Try[AwaitResult]): TailRec[Unit] = {
     stateReference.get match {
-      case oldState @ Left((cancel, handlers)) => {
+      case oldState @ Left(handlers) => {
         if (stateReference.compareAndSet(oldState, Right(value))) {
           tailcall(dispatch(handlers, value))
         } else {
@@ -196,8 +196,8 @@ final class CancellablePromise[AwaitResult] private (
           }
         }
       }
-      case oldState @ Left((cancel, tail)) => {
-        if (stateReference.compareAndSet(oldState, Left((cancel, (body, catcher) :: tail)))) {
+      case oldState @ Left(tail) => {
+        if (stateReference.compareAndSet(oldState, Left(tail.enqueue((body, catcher))))) {
           done(())
         } else {
           onComplete(body)
