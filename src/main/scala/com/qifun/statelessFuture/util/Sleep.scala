@@ -39,7 +39,7 @@ object Sleep {
           // success
         })(onCancel)
         override final def run() {
-          result.tryComplete(Success(()))
+          result.tryComplete(Success(())).result
         }
       }
       UnderlyingRunnable.result
