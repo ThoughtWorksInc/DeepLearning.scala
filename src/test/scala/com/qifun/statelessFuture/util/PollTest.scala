@@ -28,7 +28,7 @@ class PollTest {
         future1State = true
         println("future1 hass been completed")
       }.await
-    }).result
+    })
 
     val myCancellableFuture2 = CancellablePromise[Unit]
 
@@ -41,7 +41,7 @@ class PollTest {
         future2State = true
       }.await
       println("future2 hass been completed")
-    }).result
+    })
 
     val myCancellableFuture3 = CancellablePromise[Unit]
 
@@ -54,7 +54,7 @@ class PollTest {
         future3State = true
       }.await
       println("future3 hass been completed")
-    }).result
+    })
 
     val myPoll = Poll(myCancellableFuture1, myCancellableFuture2, myCancellableFuture3)
 

@@ -15,7 +15,8 @@ class ZipTest {
     val myFuture: Future.Stateless[Unit] = Future[Unit] {
 
       
-      val future1: Future.Stateful[Unit] = Promise.completeWith(Future[Unit] {
+      val future1 = Promise[Unit]
+      future1.completeWith(Future[Unit] {
         JumpInto(executor).await
         Future {
           println(System.currentTimeMillis())
@@ -26,7 +27,8 @@ class ZipTest {
       })
 
       
-      val future2: Future.Stateful[Unit] = Promise.completeWith(Future[Unit] {
+      val future2 = Promise[Unit]
+      future2.completeWith(Future[Unit] {
         JumpInto(executor).await
         Future {
           println(System.currentTimeMillis())

@@ -86,7 +86,10 @@ class SocketTest {
             }
           }
           try {
-            Blocking.blockingAwait(Zip(Promise.completeWith(clientFuture), Promise.completeWith(serverFuture)))
+            Blocking.blockingAwait(Zip(
+                {val a = Promise[Unit];a.completeWith(clientFuture);a},
+                {val b = Promise[Unit];b.completeWith(serverFuture);b}
+                ))
             throw new AssertionError("Expect MyException.")
           } catch {
             case MyException =>

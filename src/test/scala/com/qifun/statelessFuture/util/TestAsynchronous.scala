@@ -17,7 +17,8 @@ class TestAsynchronous {
     val executor = Executors.newCachedThreadPool()
     @volatile var afterLoop: Long = -2
     @volatile var outOfFuture: Long = -1
-    val future: Future.Stateful[Unit] = Promise.completeWith(Future[Unit] {
+    val future = Promise[Unit]
+    future.completeWith(Future[Unit] {
       JumpInto(executor).await
       Future {
         for (i <- 1 to 100000000) {
@@ -33,7 +34,7 @@ class TestAsynchronous {
       println("An exception occured when I was sleeping: " + e.getMessage)
     }
   }
-    (for(unit <- future) assertEquals(afterLoop, outOfFuture))
+    (for(unit <- future) assert(afterLoop > outOfFuture))
     Blocking.blockingAwait(future)
   }
 

@@ -22,7 +22,8 @@ class SleepTest {
     val executor = Executors.newSingleThreadScheduledExecutor
     val arrayBuffer = scala.collection.mutable.ArrayBuffer(0)
     
-    val sleep: Future.Stateful[Unit] = Promise.completeWith(Future[Unit] {
+    val sleep = Promise[Unit]
+    sleep.completeWith(Future[Unit] {
       val sleep1s = Sleep(executor, 1.seconds)
       sleep1s.await
       Future[Unit] {
