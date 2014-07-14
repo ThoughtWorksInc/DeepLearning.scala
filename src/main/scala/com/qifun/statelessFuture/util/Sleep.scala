@@ -32,7 +32,7 @@ object Sleep {
         val underlyingFuture = executor.schedule(this, duration.length, duration.unit)
         val onCancel: Catcher[Unit] = {
           case _: CancellationException =>
-            underlyingFuture.cancel(false)
+            val _ = underlyingFuture.cancel(false)
         }
         val result = CancellablePromise[Unit]
         (for (_ <- result) {

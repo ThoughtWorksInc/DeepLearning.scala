@@ -205,7 +205,7 @@ final class AwaitableSeq[A, TRR](val underlying: LinearSeq[A]) {
   }
 
   final def awaitableForeach[U](f: A => Future[U]) = Awaitable[Unit, TailRecResult] {
-    foldLeft[Any](()) { (left, current) =>
+    val _ = foldLeft[Any](()) { (left, current) =>
       f(current)
     }.await
   }
