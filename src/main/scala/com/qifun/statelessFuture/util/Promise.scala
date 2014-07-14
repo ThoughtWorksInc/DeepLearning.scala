@@ -40,12 +40,6 @@ object Promise {
     }
   }
 
-  final def completeWith[AwaitResult](other: Future[AwaitResult]): AnyValPromise[AwaitResult] = {
-    val result = Promise[AwaitResult]
-    result.completeWith(other).result
-    result
-  }
-
 }
 
 /**
@@ -107,16 +101,17 @@ trait Promise[AwaitResult]
    * @throws java.lang.IllegalStateException Passed to `catcher` when this [[Promise]] being completed more once.
    * @usecase def completeWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
-  final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
-    other.onComplete { b =>
-      val value = Success(view(b))
-      tailcall(complete(value))
-    } {
+  final def completeWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): Unit = {
+    implicit def catcher: Catcher[TailRec[Unit]] = {
       case e: Throwable => {
         val value = Failure(e)
         tailcall(complete(value))
       }
     }
+    (other onComplete { b =>
+      val value = Success(view(b))
+      tailcall(complete(value))
+    }).result
   }
 
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
@@ -140,16 +135,17 @@ trait Promise[AwaitResult]
    * Unlike [[completeWith]], no exception will be created when this [[Promise]] being completed more once.
    * @usecase def tryCompleteWith(other: Future[AwaitResult]): TailRec[Unit] = ???
    */
-  final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): TailRec[Unit] = {
-    other.onComplete { b =>
-      val value = Success(view(b))
-      tailcall(tryComplete(value))
-    } {
+  final def tryCompleteWith[OriginalAwaitResult](other: Future[OriginalAwaitResult])(implicit view: OriginalAwaitResult => AwaitResult): Unit = {
+    implicit def catcher: Catcher[TailRec[Unit]] = {
       case e: Throwable => {
         val value = Failure(e)
         tailcall(tryComplete(value))
       }
     }
+    (other.onComplete { b =>
+      val value = Success(view(b))
+      tailcall(tryComplete(value))
+    }).result
   }
 
   // @tailrec // Comment this annotation because of https://issues.scala-lang.org/browse/SI-6574
