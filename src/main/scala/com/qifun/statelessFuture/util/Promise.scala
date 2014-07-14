@@ -28,7 +28,11 @@ import scala.collection.immutable.Queue
 
 object Promise {
 
-  def apply[AwaitResult] = new Promise[AwaitResult](new AtomicReference(Left(Queue.empty)))
+  final class AnyValPromise[AwaitResult] private[Promise] (
+    val state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]])
+    extends AnyVal with Promise[AwaitResult]
+
+  def apply[AwaitResult] = new AnyValPromise[AwaitResult](new AtomicReference(Left(Queue.empty)))
 
   private implicit class Scala210TailRec[A](underlying: TailRec[A]) {
     final def flatMap[B](f: A => TailRec[B]): TailRec[B] = {
@@ -36,7 +40,7 @@ object Promise {
     }
   }
 
-  final def completeWith[AwaitResult](other: Future[AwaitResult]): Promise[AwaitResult] = {
+  final def completeWith[AwaitResult](other: Future[AwaitResult]): AnyValPromise[AwaitResult] = {
     val result = Promise[AwaitResult]
     result.completeWith(other).result
     result
@@ -48,36 +52,34 @@ object Promise {
  * A [[Future.Stateful]] that will be completed when another [[Future]] being completed.
  * @param state The internal state that should never be accessed by other modules.
  */
-final class Promise[AwaitResult] private (
-  // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
-  val state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]])
-  extends AnyVal with Future.Stateful[AwaitResult] {
+trait Promise[AwaitResult]
+  extends Any with Future.Stateful[AwaitResult] {
 
+  // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
+  protected val state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]]
   // 为了能在Scala 2.10中编译通过
   import Promise.Scala210TailRec
 
   private def dispatch(
     handlers: Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])],
     value: Try[AwaitResult]): TailRec[Unit] = {
-    handlers.dequeueOption match {
-      case None => {
-        done(())
-      }
-      case Some(((body, catcher), tail)) => {
-        (value match {
-          case Success(a) => {
-            body(a)
-          }
-          case Failure(e) => {
-            if (catcher.isDefinedAt(e)) {
-              catcher(e)
-            } else {
-              done(())
-            }
-          }
-        }).flatMap { _ =>
-          dispatch(tail, value)
+    if (handlers.isEmpty) {
+      done(())
+    } else {
+      val ((body, catcher), tail) = handlers.dequeue
+      (value match {
+        case Success(a) => {
+          body(a)
         }
+        case Failure(e) => {
+          if (catcher.isDefinedAt(e)) {
+            catcher(e)
+          } else {
+            done(())
+          }
+        }
+      }).flatMap { _ =>
+        dispatch(tail, value)
       }
     }
   }
