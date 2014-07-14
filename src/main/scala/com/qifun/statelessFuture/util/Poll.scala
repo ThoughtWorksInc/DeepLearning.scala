@@ -26,8 +26,6 @@ object Poll {
   /**
    * Returns a [[Poll]] that completes when any one of the `futures` completes,
    * and fails when any one of the `futures` fails.
-   *
-   * When a [[Poll]] completes, it cancels all [[futures]].
    */
   def apply[AwaitResult](futures: CancellableFuture[AwaitResult]*): Poll[AwaitResult] = {
     val result = CancellablePromise[AwaitResult]
