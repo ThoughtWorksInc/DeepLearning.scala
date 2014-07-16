@@ -2,8 +2,8 @@ package com.qifun.statelessFuture
 
 package object util {
 
-  type Poll[AwaitResult] = CancellablePromise[AwaitResult]
+  type Poll[AwaitResult] = CancellableFuture[AwaitResult]
 
-  type Sleep = CancellablePromise[Unit]
+  type Sleep = CancellableFuture[Unit]
 
 }
