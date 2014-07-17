@@ -67,15 +67,15 @@ class PollTest {
     for (result <- myPoll) {
       println("Poll return a result")
       println(s"the state of futures: 1:$future1State 2:$future2State 3:$future3State")
-      assert(future1State && (!future2State) && (!future3State))
+      assertTrue(future1State && (!future2State) && (!future3State))
       hasFinished = true
     }
     Blocking.blockingAwait(myPoll)
-    assert(hasFinished)
+    assertTrue(hasFinished)
     println("afterBlockingAwait for Poll")
     Blocking.blockingAwait(myCancellableFuture2)
-    assert(future2State)
+    assertTrue(future2State)
     Blocking.blockingAwait(myCancellableFuture3)
-    assert(future3State)
+    assertTrue(future3State)
   }
 }
