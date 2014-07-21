@@ -88,7 +88,11 @@ class SocketTest {
             }
           }
           try {
-            Blocking.blockingAwait(Zip(clientPromise, serverPromise))
+            val zippedFuture = for {
+              _ <- clientPromise
+              _ <- serverPromise
+            } yield ()
+            Blocking.blockingAwait(zippedFuture)
             throw new AssertionError("Expect MyException.")
           } catch {
             case MyException =>
@@ -105,3 +109,4 @@ class SocketTest {
 
   }
 }
+// vim: et sts=2 st=2
