@@ -38,13 +38,14 @@ class SleepTest {
 
     })
 
-
-
+    assertFalse(sleep.isCompleted)
     println("Before the evaluation of the Stateless Future `sleep`.")
     arrayBuffer += 3;
     Blocking.blockingAwait(sleep)
+    assertTrue(sleep.isCompleted)
     assertArrayEquals(arrayBuffer.toArray, Array(0,3,1,2))
-    
-    //    }
+
   }
+  
+
 }
