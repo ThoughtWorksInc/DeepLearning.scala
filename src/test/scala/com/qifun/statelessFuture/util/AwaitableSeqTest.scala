@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.Assert._
 import com.qifun.statelessFuture.util.AwaitableSeq._
 
-class AwaitableSeqTest {
+final class AwaitableSeqTest {
   @Test
   def `simple for/yield`() {
     val l = List(1, 2, 3)

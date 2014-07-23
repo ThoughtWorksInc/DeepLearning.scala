@@ -22,10 +22,11 @@ import org.junit.Assert._
 import scala.concurrent.duration._
 import java.util.concurrent.Executors
 import scala.util.control.Exception.Catcher
+
 /**
  * To make sure it's running Asynchronously
  */
-class TestAsynchronous {
+final class TestAsynchronous {
 
   @Test
   def `HelloWorldTest`() {

@@ -23,7 +23,8 @@ import scala.annotation.tailrec
 import Assert._
 import com.qifun.statelessFuture.util.AwaitableSeq._
 import java.io.File
-class GeneratorTest {
+
+final class GeneratorTest {
 
   @Test
   def `foreach with a diffent type`() {

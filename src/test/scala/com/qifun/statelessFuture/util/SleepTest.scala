@@ -30,9 +30,7 @@ import org.junit.Test
 import org.junit.Assert._
 import scala.util.control.TailCalls._
 
-
-
-class SleepTest {
+final class SleepTest {
   @Test
   def `testSleep`() {
     val executor = Executors.newSingleThreadScheduledExecutor
