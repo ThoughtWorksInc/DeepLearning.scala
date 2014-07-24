@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.Assert._
 import scala.util.control.Exception.Catcher
 
-class PollTest {
+final class PollTest {
   @Test
   def `pollTest1`() {
     val executor = Executors.newCachedThreadPool()

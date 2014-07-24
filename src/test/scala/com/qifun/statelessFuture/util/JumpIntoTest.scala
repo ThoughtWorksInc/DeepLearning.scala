@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadFactory
 import scala.collection.mutable.ListBuffer
 import AwaitableSeq._
 
-class JumpIntoTest {
+final class JumpIntoTest {
 
   @Test
   def `jump into test`() {
