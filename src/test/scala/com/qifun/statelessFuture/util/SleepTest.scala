@@ -42,12 +42,12 @@ final class SleepTest {
       sleep1s.await
       Future[Unit] {
         println(s"I have slept 1 Seconds.")
-        arrayBuffer += 1;
+        val _ = arrayBuffer += 1;
       }.await
       
       Future[Unit] {
         println(s"Another future.")
-        arrayBuffer += 2;
+        val _ = arrayBuffer += 2;
       }.await
 
     })

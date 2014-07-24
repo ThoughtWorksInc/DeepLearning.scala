@@ -104,7 +104,7 @@ class SocketTest {
         channelGroup.shutdown()
       }
     } finally {
-      executor.shutdownNow()
+      assertTrue(executor.shutdownNow().isEmpty)
     }
 
   }
