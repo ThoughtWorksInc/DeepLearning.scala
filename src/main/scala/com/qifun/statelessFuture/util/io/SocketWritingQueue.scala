@@ -259,6 +259,10 @@ trait SocketWritingQueue {
    *
    * If this [[SocketWritingQueue]] is closing or closed,
    * the enqueue operation will be ignored.
+   * 
+   * @note This [[SocketWritingQueue]] will change `position` in each of `buffers`,
+   * but will not change the content of these `buffers`.
+   * To prevent this behavior, please `duplicate` these `buffers` before [[enqueue]].
    */
   @tailrec
   final def enqueue(buffers: ByteBuffer*) {
@@ -293,6 +297,10 @@ trait SocketWritingQueue {
    *
    * If this [[SocketWritingQueue]] is closing or closed,
    * the enqueue operation will be ignored.
+   *
+   * @note This [[SocketWritingQueue]] will change `position` in each of `buffers`,
+   * but will not change the content of these `buffers`.
+   * To prevent this behavior, please `duplicate` these `buffers` before [[enqueue]].
    */
   @tailrec
   final def enqueue(buffer: ByteBuffer) {
