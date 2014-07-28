@@ -22,6 +22,7 @@ import scala.collection.LinearSeq
 import scala.reflect.macros.Context
 import com.qifun.statelessFuture.ANormalForm
 import com.qifun.statelessFuture.Awaitable
+import com.qifun.statelessFuture.util.Generator.GeneratorSeq
 
 object AwaitableSeq {
 
@@ -29,13 +30,13 @@ object AwaitableSeq {
     new AwaitableSeq[A, TailRecResult](underlying)
 
   final def apply[A, TailRecResult](underlying: TraversableOnce[A]) =
-    new AwaitableSeq[A, TailRecResult](Generator.Seq(underlying))
+    new AwaitableSeq[A, TailRecResult](GeneratorSeq(underlying))
 
   private type FutureSeq[A] = AwaitableSeq[A, Unit]
 
   final def futureSeq[A](underlying: LinearSeq[A]) = new FutureSeq[A](underlying)
 
-  final def futureSeq[A](underlying: TraversableOnce[A]) = new FutureSeq[A](Generator.Seq(underlying))
+  final def futureSeq[A](underlying: TraversableOnce[A]) = new FutureSeq[A](GeneratorSeq(underlying))
 
   final def flatMapMacro(c: Context)(f: c.Expr[Nothing => Any]): c.Expr[Nothing] = {
     import c.universe._

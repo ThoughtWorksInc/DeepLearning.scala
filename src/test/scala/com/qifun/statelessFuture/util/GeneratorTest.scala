@@ -23,6 +23,7 @@ import scala.annotation.tailrec
 import Assert._
 import com.qifun.statelessFuture.util.AwaitableSeq._
 import java.io.File
+import com.qifun.statelessFuture.util.Generator.GeneratorSeq
 
 final class GeneratorTest {
 
@@ -85,7 +86,7 @@ final class GeneratorTest {
       if (layer == 0) {
         seq
       } else {
-        wrap(Generator.Seq(seq), layer - 1)
+        wrap(GeneratorSeq(seq), layer - 1)
       }
     }
 
