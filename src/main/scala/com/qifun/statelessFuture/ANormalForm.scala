@@ -268,7 +268,9 @@ object ANormalForm {
       val onCompleteCallExpr = c.Expr(
         Apply(
           Apply(
-            Select(ANormalFormTree, ForceOnCompleteName),
+            TypeApply(
+              Select(ANormalFormTree, ForceOnCompleteName),
+              List(tailRecResultTypeTree)),
             List(
               Ident(nextFutureName),
               {
