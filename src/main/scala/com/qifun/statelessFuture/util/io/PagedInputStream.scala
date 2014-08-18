@@ -25,7 +25,7 @@ private[io] class PagedInputStream(
     } else {
       val buffer = buffers.front
       try {
-        val result = buffer.get
+        val result = buffer.get.toInt & 0xFF
         if (buffer.remaining == 0) {
           buffers.dequeue()
         }
