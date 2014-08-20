@@ -19,20 +19,26 @@ private[io] class PagedInputStream(
 
   override def available = buffers.foldLeft(0) { _ + _.remaining }
 
+  @tailrec
   override def read(): Int = {
     if (buffers.isEmpty) {
       -1
     } else {
       val buffer = buffers.front
-      try {
-        val result = buffer.get.toInt & 0xFF
-        if (buffer.remaining == 0) {
-          buffers.dequeue()
+      if (buffer.remaining() == 0) {
+        buffers.dequeue()
+        read()
+      } else {
+        try {
+          val result = buffer.get().toInt & 0xFF
+          if (buffer.remaining == 0) {
+            buffers.dequeue()
+          }
+          result
+        } catch {
+          case _: BufferUnderflowException =>
+            -1
         }
-        result
-      } catch {
-        case _: BufferUnderflowException =>
-          -1
       }
     }
 
@@ -89,7 +95,6 @@ private[io] class PagedInputStream(
     read(b, off, len, 0)
   }
 
-
   @tailrec
   private def move(output: Growable[ByteBuffer], length: Long, count: Long): Long = {
     if (buffers.isEmpty || length == 0) {
@@ -114,7 +119,7 @@ private[io] class PagedInputStream(
   /**
    * Read `length` bytes data from this [[$This]],
    * and append these data to `output`.
-   * 
+   *
    * @return Number of bytes actually been processed, which may be less than `length`.
    */
   def move(output: Growable[ByteBuffer], length: Long): Long = {
