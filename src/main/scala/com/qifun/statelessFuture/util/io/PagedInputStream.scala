@@ -19,14 +19,14 @@ private[io] class PagedInputStream(
   override def available = buffers.foldLeft(0) { _ + _.remaining }
 
   @tailrec
-  override def read(): Int = {
+  private def privateRead(): Int = {
     if (buffers.isEmpty) {
       -1
     } else {
       val buffer = buffers.front
       if (buffer.remaining() == 0) {
         buffers.dequeue()
-        read()
+        privateRead()
       } else {
         val result = buffer.get().toInt & 0xFF
         if (buffer.remaining == 0) {
@@ -35,8 +35,9 @@ private[io] class PagedInputStream(
         result
       }
     }
-
   }
+
+  override def read(): Int = privateRead()
 
   @tailrec
   private def read(b: Array[Byte], off: Int, len: Int, count: Int): Int = {
