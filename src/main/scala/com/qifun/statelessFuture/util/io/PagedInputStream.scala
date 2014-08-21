@@ -111,7 +111,7 @@ private[io] class PagedInputStream(
   }
 
   /**
-   * Read `length` bytes data from this [[$This]],
+   * Reads `length` bytes data from this [[$This]],
    * and appends these data to `output`.
    *
    * @return Number of bytes actually been processed, which may be less than `length`.
