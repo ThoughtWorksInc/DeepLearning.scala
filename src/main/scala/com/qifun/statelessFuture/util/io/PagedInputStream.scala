@@ -18,16 +18,22 @@ private[io] class PagedInputStream(
 
   override def available = buffers.foldLeft(0) { _ + _.remaining }
 
+  @tailrec
   override def read(): Int = {
     if (buffers.isEmpty) {
       -1
     } else {
       val buffer = buffers.front
-      val result = buffer.get.toInt & 0xFF
-      if (buffer.remaining == 0) {
+      if (buffer.remaining() == 0) {
         buffers.dequeue()
+        read()
+      } else {
+        val result = buffer.get().toInt & 0xFF
+        if (buffer.remaining == 0) {
+          buffers.dequeue()
+        }
+        result
       }
-      result
     }
 
   }
