@@ -79,6 +79,9 @@ abstract class SocketInputStream
     socket.close()
   }
 
+  /**
+   * Reads data from channel, until the bytes read is not less than `bytesToRead`
+   */
   @throws(classOf[IOException])
   private def readChannel(
     bytesToRead: Long, buffers: Array[ByteBuffer],
@@ -99,6 +102,9 @@ abstract class SocketInputStream
     }
   }
 
+  /**
+   * Reads data from channel, until the bytes read is not less than `bytesToRead`
+   */
   @throws(classOf[IOException])
   private def readChannel(bytesToRead: Int, buffer: ByteBuffer): Future[Unit] = Future {
     val n =
@@ -178,18 +184,6 @@ abstract class SocketInputStream
     }
     logger.finer {
       fast"Bytes available is ${limit.toString} now."
-    }
-  }
-
-  override final def move(output: Growable[ByteBuffer], length: Long): Long = {
-    super.move(output, math.min(length, limit)) match {
-      case 0 if length > 0 => {
-        -1
-      }
-      case result => {
-        limit -= result.toInt
-        result
-      }
     }
   }
 }

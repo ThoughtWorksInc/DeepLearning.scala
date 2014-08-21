@@ -9,7 +9,7 @@ import java.io.InputStream
 /**
  * @define This LimitablePagedInputStream
  */
-private[io] trait LimitablePagedInputStream extends InputStream {
+private[io] trait LimitablePagedInputStream extends PagedInputStream {
 
   private[io] var limit: Int = 0
 
@@ -56,6 +56,18 @@ private[io] trait LimitablePagedInputStream extends InputStream {
 
   override final def read(b: Array[Byte]): Int = {
     read(b, 0, b.length)
+  }
+
+  override final def move(output: Growable[ByteBuffer], length: Long): Long = {
+    super.move(output, math.min(length, limit)) match {
+      case 0 if length > 0 => {
+        -1
+      }
+      case result => {
+        limit -= result.toInt
+        result
+      }
+    }
   }
 
 
