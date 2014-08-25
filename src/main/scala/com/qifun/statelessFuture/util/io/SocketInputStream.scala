@@ -136,7 +136,7 @@ abstract class SocketInputStream
         buffer0.flip()
         buffers.enqueue(buffer0)
         buffer1.flip()
-        buffers.enqueue(buffer0, buffer1)
+        buffers.enqueue(buffer1)
       } else {
         readChannel(bytesToRead, buffer0).await
         buffer0.flip()
