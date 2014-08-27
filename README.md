@@ -260,9 +260,10 @@ Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
 
 ## Known issues
 
- * `lazy val`s in magic `Future` block are not supported.
+ * `lazy val`s in magic `Future` block are not supported, due to [scala issue 8499](https://issues.scala-lang.org/browse/SI-8499).
+ * `unapplySeq`s in magic `Future` block are not supported, due to [scala issue 8825](https://issues.scala-lang.org/browse/SI-8825).
  * In [some rare cases](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/match0/Match0.scala#L85), if you create multiple `val` with same name in one `Future` block, the last `val` may be referred unexpectly.
- * [Some complex existential types](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/uncheckedBounds/UncheckedBoundsSpec.scala) may cause compiler errors.
+ * [Some complex existential types](https://github.com/Atry/stateless-future-test/blob/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test/run/uncheckedBounds/UncheckedBoundsSpec.scala) may cause compiler errors, , due to [scala issue 8500](https://issues.scala-lang.org/browse/SI-8500).
 
 Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and run the test cases to check these limitations.
 
