@@ -23,29 +23,41 @@ import java.util.concurrent.ScheduledExecutorService
 import scala.util.Success
 import java.util.concurrent.CancellationException
 import scala.util.control.Exception.Catcher
+import java.util.concurrent.ScheduledFuture
 
 object Sleep {
 
-  def apply(executor: ScheduledExecutorService, duration: Duration): Sleep = {
+  def start(promise: Promise[Unit], executor: ScheduledExecutorService, duration: Duration): Unit = {
     if (duration.isFinite) {
-      object UnderlyingRunnable extends Runnable {
-        val underlyingFuture = executor.schedule(this, duration.length, duration.unit)
-        val onCancel: Catcher[Unit] = {
-          case _: CancellationException =>
-            val _ = underlyingFuture.cancel(false)
-        }
-        val result = CancellablePromise[Unit]
-        (for (_ <- result) {
-          // success
-        })(onCancel)
+      val _ = new Runnable {
+
         override final def run() {
-          result.tryComplete(Success(())).result
+          promise.tryComplete(Success(())).result
         }
+
+        private def startTimer(): ScheduledFuture[_] = {
+          (for (_ <- promise) {
+            // success
+          }) {
+            case _: CancellationException =>
+              val _ = underlyingFuture.cancel(false)
+          }
+          executor.schedule(this, duration.length, duration.unit)
+        }
+
+        /**
+         * @note 此处 startTimer()有副作用，是为了避免把underlyingFuture设为var
+         */ 
+        private val underlyingFuture = startTimer()
+
       }
-      UnderlyingRunnable.result
-    } else {
-      CancellablePromise[Unit]
     }
+  }
+
+  def apply(executor: ScheduledExecutorService, duration: Duration): Sleep = {
+    val result = CancellablePromise[Unit]
+    start(result, executor, duration)
+    result
   }
 
 }
