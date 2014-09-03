@@ -35,20 +35,17 @@ object Sleep {
           promise.tryComplete(Success(())).result
         }
 
-        private def startTimer(): ScheduledFuture[_] = {
-          (for (_ <- promise) {
-            // success
-          }) {
-            case _: CancellationException =>
-              val _ = underlyingFuture.cancel(false)
-          }
-        }
-
         /**
          * @note 此处 startTimer()有副作用，是为了避免把underlyingFuture设为var
          */ 
-        private val underlyingFuture = startTimer()
-        executor.schedule(this, duration.length, duration.unit)
+        private val underlyingFuture = executor.schedule(this, duration.length, duration.unit)
+
+        (for (_ <- promise) {
+          // success
+        }) {
+          case _: CancellationException =>
+            val _ = underlyingFuture.cancel(false)
+        }
 
       }
     }
