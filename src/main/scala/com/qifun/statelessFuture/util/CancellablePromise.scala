@@ -26,6 +26,7 @@ import java.util.concurrent.CancellationException
 import scala.util.Success
 import scala.util.Try
 import scala.collection.immutable.Queue
+import scala.util.control.NoStackTrace
 
 object CancellablePromise {
 
@@ -50,6 +51,8 @@ object CancellablePromise {
     val state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]])
     extends AnyVal with CancellablePromise[AwaitResult]
 
+  private val CancellationFailure = Failure(new CancellationException)
+
 }
 
 /**
@@ -65,7 +68,7 @@ trait CancellablePromise[AwaitResult]
   // 如果做人工智能，总是需要自己实现类似CancellationToken的机制。比如我先前做的Interruptor.
 
   final def cancel() {
-    tryComplete(Failure(new CancellationException)).result
+    tryComplete(CancellablePromise.CancellationFailure).result
   }
 
 }
