@@ -42,13 +42,13 @@ object Sleep {
             case _: CancellationException =>
               val _ = underlyingFuture.cancel(false)
           }
-          executor.schedule(this, duration.length, duration.unit)
         }
 
         /**
          * @note 此处 startTimer()有副作用，是为了避免把underlyingFuture设为var
          */ 
         private val underlyingFuture = startTimer()
+        executor.schedule(this, duration.length, duration.unit)
 
       }
     }
