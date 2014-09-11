@@ -79,17 +79,12 @@ final class PollTest {
         println("An exception occured when I was sleeping: " + e.getMessage)
       }
     }
-    var hasFinished = false
-    for (result <- myPoll) {
-      println("Poll return a result")
-      println(s"the state of futures: 1:isFuture1Finished 2:isFuture2Finished 3:isFuture3Finished")
-      assertTrue(isFuture1Finished)
-      assertFalse(isFuture2Finished)
-      assertFalse(isFuture3Finished)
-      hasFinished = true
-    }
     Blocking.blockingAwait(myPoll)
-    assertTrue(hasFinished)
+    println("Poll return a result")
+    println(s"the state of futures: 1:isFuture1Finished 2:isFuture2Finished 3:isFuture3Finished")
+    assertTrue(isFuture1Finished)
+    assertFalse(isFuture2Finished)
+    assertFalse(isFuture3Finished)
     println("afterBlockingAwait for Poll")
     Blocking.blockingAwait(myCancellableFuture2)
     assertTrue(isFuture2Finished)
