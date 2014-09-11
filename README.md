@@ -1,6 +1,8 @@
 Utilities for Stateless Future
 ==============================
 
+<div align="right"><a href="https://travis-ci.org/qifun/stateless-future-util"><img alt="Build Status" src="https://travis-ci.org/qifun/stateless-future-util.png?branch=master"/></a></div>
+
 ## Installation
 
 Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
