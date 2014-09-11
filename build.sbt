@@ -2,7 +2,7 @@ organization := "com.qifun"
 
 name := "stateless-future-util"
 
-version := "0.5.0"
+version := "0.5.1-SNAPSHOT"
 
 libraryDependencies += "com.qifun" %% "stateless-future" % "0.3.1"
 
