@@ -7,3 +7,8 @@ scala:
 jdk:
   - oraclejdk7
   - openjdk7
+
+matrix:
+  allow_failures:
+    - scala: 2.10.4
+  
