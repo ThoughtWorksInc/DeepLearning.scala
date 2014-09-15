@@ -173,7 +173,7 @@ abstract class SocketInputStream
       if (bytesRequired > newCapacity) {
         limit = newCapacity
         val e = new EOFException
-        logger.warning(e)
+        logger.fine(e)
         throw e
       } else {
         limit = bytesRequired
