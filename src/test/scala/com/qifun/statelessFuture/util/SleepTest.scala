@@ -30,7 +30,12 @@ import org.junit.Test
 import org.junit.Assert._
 import scala.util.control.TailCalls._
 
+object SleepTest {
+  private implicit val (logger, formatter, appender) = ZeroLoggerFactory.newLogger(this)
+}
+
 final class SleepTest {
+  import SleepTest._
   @Test
   def `testSleep`() {
     val executor = Executors.newSingleThreadScheduledExecutor
@@ -41,19 +46,19 @@ final class SleepTest {
       val sleep1s = Sleep(executor, 1.seconds)
       sleep1s.await
       Future[Unit] {
-        println(s"I have slept 1 Seconds.")
+        logger.fine(s"I have slept 1 Seconds.")
         val _ = arrayBuffer += 1;
       }.await
       
       Future[Unit] {
-        println(s"Another future.")
+        logger.fine(s"Another future.")
         val _ = arrayBuffer += 2;
       }.await
 
     })
 
     assertFalse(sleep.isCompleted)
-    println("Before the evaluation of the Stateless Future `sleep`.")
+    logger.fine("Before the evaluation of the Stateless Future `sleep`.")
     arrayBuffer += 3;
     Blocking.blockingAwait(sleep)
     assertTrue(sleep.isCompleted)

@@ -23,11 +23,15 @@ import scala.concurrent.duration._
 import java.util.concurrent.Executors
 import scala.util.control.Exception.Catcher
 
+object TestAsynchronous {
+  private implicit val (logger, formatter, appender) = ZeroLoggerFactory.newLogger(this)
+}
+
 /**
  * To make sure it's running Asynchronously
  */
 final class TestAsynchronous {
-
+  import TestAsynchronous._
   @Test
   def `HelloWorldTest`() {
     @volatile var tmp: Double = 0
@@ -49,7 +53,7 @@ final class TestAsynchronous {
     // When `sleep10seconds` is running, it could report failures to this catcher
     implicit def catcher: Catcher[Unit] = {
       case e: Exception => {
-        println("An exception occured when I was sleeping: " + e.getMessage)
+        logger.warning("An exception occured when I was sleeping: " + e.getMessage)
       }
     }
     for (unit <- future) assertTrue(afterLoop > outOfFuture)
@@ -62,30 +66,30 @@ final class TestAsynchronous {
     var randomFutureCalledCounter: Int = 0;
 
     val randomDoubleFuture: Future.Stateless[Double] = Future {
-      println("Generating a random Double...")
+      logger.fine("Generating a random Double...")
       randomFutureCalledCounter += 1
       scala.math.random
     }
 
     val anotherFuture = Future[Unit] {
-      println("I am going to read the first random Double.")
+      logger.fine("I am going to read the first random Double.")
       assertEquals(randomFutureCalledCounter, 0)
       val randomDouble1 = randomDoubleFuture.await
       assertEquals(randomFutureCalledCounter, 1)
-      println(s"The first random Double is $randomDouble1.")
-      println("I am going to read the second random Double.")
+      logger.fine(s"The first random Double is $randomDouble1.")
+      logger.fine("I am going to read the second random Double.")
       val randomDouble2 = randomDoubleFuture.await
       assertEquals(randomFutureCalledCounter, 2)
-      println(s"The second random Double is $randomDouble1.")
+      logger.fine(s"The second random Double is $randomDouble1.")
     }
     assertTrue(randomFutureCalledCounter < 2)
-    println("Before running the Future.")
+    logger.fine("Before running the Future.")
     implicit def catcher: Catcher[Unit] = {
       case e: Exception => {
-        println("An exception occured when I was sleeping: " + e.getMessage)
+        logger.warning("An exception occured when I was sleeping: " + e.getMessage)
       }
     }
     Blocking.blockingAwait(anotherFuture)
-    println("After running the Future.")
+    logger.fine("After running the Future.")
   }
 }
