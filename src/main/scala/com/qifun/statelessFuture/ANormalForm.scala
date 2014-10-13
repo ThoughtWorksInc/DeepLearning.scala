@@ -469,7 +469,12 @@ object ANormalForm {
           def transformBlock(stats: List[Tree])(implicit forceAwait: Set[Name]): (Tree, Boolean) = {
             stats match {
               case Nil => {
-                (transform(expr, catcher, new NotTailcall {
+                (transform(expr, catcher, new Rest {
+
+                  override final def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree)(implicit forceAwait: Set[Name]): Tree = {
+                    Block(Nil, rest.transformAwait(future, awaitTypeTree, catcher))
+                  }
+                  
                   override final def apply(transformedExpr: Tree) =
                     Block(Nil, rest(transformedExpr))
                 }), false)
@@ -556,7 +561,6 @@ object ANormalForm {
           })
         }
         case LabelDef(name, params, rhs) => {
-          val breakName = newTermName(c.fresh("yangBoBreak"))
           Block(
             List(
               DefDef(Modifiers(),
@@ -638,6 +642,7 @@ object ANormalForm {
                         new Rest {
 
                           override final def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree)(implicit forceAwait: Set[Name]): Tree = {
+
                             val nextFutureName = newTermName(c.fresh("yangBoNextFuture"))
                             val futureExpr = c.Expr(ValDef(Modifiers(), nextFutureName, TypeTree(), future))
                             val onCompleteCallExpr = c.Expr(
@@ -687,7 +692,7 @@ object ANormalForm {
       newFutureAsType(tree, TypeTree(tree.tpe.widen))
     }
     val result = newFutureAsType(futureBody.tree, macroAwaitResultTypeTree)(Set.empty)
-    //      c.warning(c.enclosingPosition, show(result))
+    // c.warning(c.enclosingPosition, show(result))
     c.Expr(
       TypeApply(
         Select(
