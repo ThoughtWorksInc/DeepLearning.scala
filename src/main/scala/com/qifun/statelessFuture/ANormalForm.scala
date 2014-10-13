@@ -309,19 +309,6 @@ object ANormalForm {
                       Ident(functionName))
                   }
                   restTree match {
-                    case Block(
-                      List(ValDef(_, capturedResultName1, _, Ident(AwaitResult))),
-                      Apply(
-                        Select(tailCallsTree, TailcallName),
-                        List(
-                          Apply(
-                            Select(
-                              capturedReturnTree,
-                              ApplyName),
-                            List(Ident(capturedResultName2)))))) if capturedResultName1 == capturedResultName2 && tailCallsTree.symbol == tailcallSymbol => {
-                      // 尾调用优化
-                      capturedReturnTree
-                    }
                     case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult))), expr) => {
                       // 参数名优化
                       function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), expr)
