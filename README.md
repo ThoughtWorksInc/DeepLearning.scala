@@ -17,7 +17,7 @@ There was a [continuation plugin](http://www.scala-lang.org/old/node/2096) for S
 | Tail call optimization in "A-Normal Form" | Yes | No | No |
 | Pattern matching in "A-Normal Form" | Yes | Yes | Yes, but buggy |
 | Lazy val in "A-Normal Form" | No, because of [some underlying scala.reflect bugs](https://issues.scala-lang.org/browse/SI-8499) | Only for those contain no `await` | Yes, but buggy |
-0
+
 ## Usage
 
 ### Create a Stateless Future
