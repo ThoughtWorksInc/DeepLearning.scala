@@ -156,13 +156,15 @@ object ANormalForm {
         case head :: tail => {
           head match {
             case Typed(origin, typeTree) =>
-              transform(origin, catcher, { transformedOrigin =>
-                val parameterName = newTermName(c.fresh("yangBoParameter"))
-                Block(
-                  List(ValDef(Modifiers(), parameterName, TypeTree(), transformedOrigin).setPos(origin.pos)),
-                  transformParameterList(if (isByNameParam.nonEmpty) isByNameParam.tail else Nil, tail, catcher, { transformedTail =>
-                    rest(treeCopy.Typed(head, Ident(parameterName), typeTree) :: transformedTail)
-                  }))
+              transform(origin, catcher, new NotTailcall {
+                override final def apply(transformedOrigin: Tree) = {
+                  val parameterName = newTermName(c.fresh("yangBoParameter"))
+                  Block(
+                    List(ValDef(Modifiers(), parameterName, TypeTree(), transformedOrigin).setPos(origin.pos)),
+                    transformParameterList(if (isByNameParam.nonEmpty) isByNameParam.tail else Nil, tail, catcher, { transformedTail =>
+                      rest(treeCopy.Typed(head, Ident(parameterName), typeTree) :: transformedTail)
+                    }))
+                }
               })
             case _ if isByNameParam.nonEmpty && isByNameParam.head => {
               checkNakedAwait(head, "await must not be used under a by-name argument.")
@@ -171,13 +173,15 @@ object ANormalForm {
               })
             }
             case _ =>
-              transform(head, catcher, { transformedHead =>
-                val parameterName = newTermName(c.fresh("yangBoParameter"))
-                Block(
-                  List(ValDef(Modifiers(), parameterName, TypeTree(), transformedHead).setPos(head.pos)),
-                  transformParameterList(if (isByNameParam.nonEmpty) isByNameParam.tail else Nil, tail, catcher, { transformedTail =>
-                    rest(Ident(parameterName) :: transformedTail)
-                  }))
+              transform(head, catcher, new NotTailcall {
+                override final def apply(transformedHead: Tree) = {
+                  val parameterName = newTermName(c.fresh("yangBoParameter"))
+                  Block(
+                    List(ValDef(Modifiers(), parameterName, TypeTree(), transformedHead).setPos(head.pos)),
+                    transformParameterList(if (isByNameParam.nonEmpty) isByNameParam.tail else Nil, tail, catcher, { transformedTail =>
+                      rest(Ident(parameterName) :: transformedTail)
+                    }))
+                }
               })
 
           }
@@ -257,82 +261,91 @@ object ANormalForm {
 
     }
 
-    def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
-      val nextFutureName = newTermName(c.fresh("yangBoNextFuture"))
-      val futureExpr = c.Expr(ValDef(Modifiers(), nextFutureName, TypeTree(), future))
-      val AwaitResult = newTermName(c.fresh("awaitValue"))
-      val catcherExpr = c.Expr[Catcher[Nothing]](catcher)
-      val ANormalFormTree = reify(_root_.com.qifun.statelessFuture.ANormalForm).tree
-      val ForceOnCompleteName = newTermName("forceOnComplete")
-      val CatcherTree = catcher
-      val onCompleteCallExpr = c.Expr(
-        Apply(
-          Apply(
-            TypeApply(
-              Select(ANormalFormTree, ForceOnCompleteName),
-              List(tailRecResultTypeTree)),
-            List(
-              Ident(nextFutureName),
-              {
-                val restTree = rest(Ident(AwaitResult))
-                val tailcallSymbol = reify(scala.util.control.TailCalls).tree.symbol
-                val TailcallName = newTermName("tailcall")
-                val ApplyName = newTermName("apply")
-                val AsInstanceOfName = newTermName("asInstanceOf")
-                def function(awaitValDef: ValDef, restTree: Tree) = {
-                  val functionName = newTermName(c.fresh("yangBoHandler"))
-                  val restExpr = c.Expr(restTree)
-                  Block(
-                    List(
-                      DefDef(
-                        Modifiers(NoFlags, nme.EMPTY, List(Apply(Select(New(Ident(typeOf[scala.inline].typeSymbol)), nme.CONSTRUCTOR), List()))),
-                        functionName, List(), List(List(awaitValDef)), TypeTree(), reify {
-                          try {
-                            restExpr.splice
-                          } catch {
-                            case e if catcherExpr.splice.isDefinedAt(e) => {
-                              _root_.scala.util.control.TailCalls.tailcall(catcherExpr.splice(e))
-                            }
-                          }
-                        }.tree)),
-                    Ident(functionName))
-                }
-                restTree match {
-                  case Block(
-                    List(ValDef(_, capturedResultName1, _, Ident(AwaitResult))),
-                    Apply(
-                      Select(tailCallsTree, TailcallName),
-                      List(
-                        Apply(
-                          Select(
-                            capturedReturnTree,
-                            ApplyName),
-                          List(Ident(capturedResultName2)))))) if capturedResultName1 == capturedResultName2 && tailCallsTree.symbol == tailcallSymbol => {
-                    // 尾调用优化
-                    capturedReturnTree
-                  }
-                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult))), expr) => {
-                    // 参数名优化
-                    function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), expr)
-                  }
-                  case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult)), restStates @ _*), expr) => {
-                    // 参数名优化
-                    function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), Block(restStates.toList, expr))
-                  }
-                  case _ => {
-                    function(ValDef(Modifiers(PARAM), AwaitResult, awaitTypeTree, EmptyTree), restTree)
-                  }
-                }
-              })),
-          List(catcher)))
-      reify {
-        futureExpr.splice
-        @inline def yangBoTail = onCompleteCallExpr.splice
-        _root_.scala.util.control.TailCalls.tailcall { yangBoTail }
-      }.tree
+    sealed trait Rest {
+      def apply(former: Tree): Tree
+      def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree)(implicit forceAwait: Set[Name]): Tree
     }
 
-    def transform(tree: Tree, catcher: Tree, rest: (Tree) => Tree)(implicit forceAwait: Set[Name]): Tree = {
+    // ClassFormatError will be thrown if changing NotTailcall to a trait. scalac's Bug?
+    abstract class NotTailcall extends Rest {
+      override final def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree)(implicit forceAwait: Set[Name]): Tree = {
+        val nextFutureName = newTermName(c.fresh("yangBoNextFuture"))
+        val futureExpr = c.Expr(ValDef(Modifiers(), nextFutureName, TypeTree(), future))
+        val AwaitResult = newTermName(c.fresh("awaitValue"))
+        val catcherExpr = c.Expr[Catcher[Nothing]](catcher)
+        val ANormalFormTree = reify(_root_.com.qifun.statelessFuture.ANormalForm).tree
+        val ForceOnCompleteName = newTermName("forceOnComplete")
+        val CatcherTree = catcher
+        val onCompleteCallExpr = c.Expr(
+          Apply(
+            Apply(
+              TypeApply(
+                Select(ANormalFormTree, ForceOnCompleteName),
+                List(tailRecResultTypeTree)),
+              List(
+                Ident(nextFutureName),
+                {
+                  val restTree = NotTailcall.this(Ident(AwaitResult))
+                  val tailcallSymbol = reify(scala.util.control.TailCalls).tree.symbol
+                  val TailcallName = newTermName("tailcall")
+                  val ApplyName = newTermName("apply")
+                  val AsInstanceOfName = newTermName("asInstanceOf")
+                  def function(awaitValDef: ValDef, restTree: Tree) = {
+                    val functionName = newTermName(c.fresh("yangBoHandler"))
+                    val restExpr = c.Expr(restTree)
+                    Block(
+                      List(
+                        DefDef(
+                          Modifiers(NoFlags, nme.EMPTY, List(Apply(Select(New(Ident(typeOf[scala.inline].typeSymbol)), nme.CONSTRUCTOR), List()))),
+                          functionName, List(), List(List(awaitValDef)), TypeTree(), reify {
+                            try {
+                              restExpr.splice
+                            } catch {
+                              case e if catcherExpr.splice.isDefinedAt(e) => {
+                                _root_.scala.util.control.TailCalls.tailcall(catcherExpr.splice(e))
+                              }
+                            }
+                          }.tree)),
+                      Ident(functionName))
+                  }
+                  restTree match {
+                    case Block(
+                      List(ValDef(_, capturedResultName1, _, Ident(AwaitResult))),
+                      Apply(
+                        Select(tailCallsTree, TailcallName),
+                        List(
+                          Apply(
+                            Select(
+                              capturedReturnTree,
+                              ApplyName),
+                            List(Ident(capturedResultName2)))))) if capturedResultName1 == capturedResultName2 && tailCallsTree.symbol == tailcallSymbol => {
+                      // 尾调用优化
+                      capturedReturnTree
+                    }
+                    case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult))), expr) => {
+                      // 参数名优化
+                      function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), expr)
+                    }
+                    case Block(List(oldVal @ ValDef(_, capturedResultName, _, Ident(AwaitResult)), restStates @ _*), expr) => {
+                      // 参数名优化
+                      function(treeCopy.ValDef(oldVal, Modifiers(PARAM), capturedResultName, awaitTypeTree, EmptyTree), Block(restStates.toList, expr))
+                    }
+                    case _ => {
+                      function(ValDef(Modifiers(PARAM), AwaitResult, awaitTypeTree, EmptyTree), restTree)
+                    }
+                  }
+                })),
+            List(catcher)))
+        reify {
+          futureExpr.splice
+          @inline def yangBoTail = onCompleteCallExpr.splice
+          _root_.scala.util.control.TailCalls.tailcall { yangBoTail }
+        }.tree
+      }
+
+    }
+
+    def transform(tree: Tree, catcher: Tree, rest: Rest)(implicit forceAwait: Set[Name]): Tree = {
       tree match {
         case Try(block, catches, finalizer) => {
           val futureName = newTermName(c.fresh("tryCatchFinallyFuture"))
@@ -362,7 +375,7 @@ object ANormalForm {
                       checkNakedAwait(finalizer, "await must not be used under a finally.")
                       finalizer
                     })))),
-            transformAwait(Ident(futureName), TypeTree(tree.tpe), catcher, rest))
+            rest.transformAwait(Ident(futureName), TypeTree(tree.tpe), catcher))
 
         }
         case ClassDef(mods, _, _, _) => {
@@ -393,50 +406,52 @@ object ANormalForm {
           rest(tree)
         }
         case Select(future, await) if await.decoded == "await" && future.tpe <:< futureType => {
-          transform(future, catcher, { (transformedFuture) =>
-            transformAwait(transformedFuture, TypeTree(tree.tpe), catcher, rest)
+          transform(future, catcher, new NotTailcall {
+            override final def apply(transformedFuture: Tree) = rest.transformAwait(transformedFuture, TypeTree(tree.tpe), catcher)
           })
         }
         case Select(instance, field) => {
-          transform(instance, catcher, { (transformedInstance) =>
-            rest(treeCopy.Select(tree, transformedInstance, field))
+          transform(instance, catcher, new NotTailcall {
+            override final def apply(transformedInstance: Tree) = rest(treeCopy.Select(tree, transformedInstance, field))
           })
         }
         case TypeApply(method, parameters) => {
-          transform(method, catcher, { (transformedMethod) =>
-            rest(treeCopy.TypeApply(tree, transformedMethod, parameters))
+          transform(method, catcher, new NotTailcall {
+            override final def apply(transformedMethod: Tree) = rest(treeCopy.TypeApply(tree, transformedMethod, parameters))
           })
         }
         case Apply(method @ Ident(name), parameters) if forceAwait(name) => {
           transformParameterList(Nil, parameters, catcher, { (transformedParameters) =>
-            transformAwait(treeCopy.Apply(tree, Ident(name), transformedParameters), TypeTree(tree.tpe).asInstanceOf[TypTree], catcher, rest)
+            rest.transformAwait(treeCopy.Apply(tree, Ident(name), transformedParameters), TypeTree(tree.tpe).asInstanceOf[TypTree], catcher)
           })
         }
         case Apply(method, parameters) => {
-          transform(method, catcher, { (transformedMethod) =>
-            val isByNameParam = method.symbol match {
-              case AndSymbol | OrSymbol => {
-                List(true)
-              }
-              case _ => {
-                method.tpe match {
-                  case MethodType(params, _) => {
-                    for (param <- params) yield {
-                      param.asTerm.isByNameParam
+          transform(method, catcher, new NotTailcall {
+            override final def apply(transformedMethod: Tree) = {
+              val isByNameParam = method.symbol match {
+                case AndSymbol | OrSymbol => {
+                  List(true)
+                }
+                case _ => {
+                  method.tpe match {
+                    case MethodType(params, _) => {
+                      for (param <- params) yield {
+                        param.asTerm.isByNameParam
+                      }
                     }
-                  }
-                  case _ => {
-                    Nil
+                    case _ => {
+                      Nil
+                    }
                   }
                 }
               }
+              transformParameterList(isByNameParam, parameters, catcher, { (transformedParameters) =>
+                rest(treeCopy.Apply(
+                  tree,
+                  transformedMethod,
+                  transformedParameters))
+              })
             }
-            transformParameterList(isByNameParam, parameters, catcher, { (transformedParameters) =>
-              rest(treeCopy.Apply(
-                tree,
-                transformedMethod,
-                transformedParameters))
-            })
           })
         }
         case Block(stats, expr) => {
@@ -454,13 +469,14 @@ object ANormalForm {
           def transformBlock(stats: List[Tree])(implicit forceAwait: Set[Name]): (Tree, Boolean) = {
             stats match {
               case Nil => {
-                (transform(expr, catcher, { (transformedExpr) =>
-                  Block(Nil, rest(transformedExpr))
+                (transform(expr, catcher, new NotTailcall {
+                  override final def apply(transformedExpr: Tree) =
+                    Block(Nil, rest(transformedExpr))
                 }), false)
               }
               case head :: tail => {
-                (transform(head, catcher,
-                  { (transformedHead) =>
+                (transform(head, catcher, new NotTailcall {
+                  override final def apply(transformedHead: Tree) =
                     transformedHead match {
                       case _: Ident | _: Literal => {
                         val (block, _) = transformBlock(tail)
@@ -470,67 +486,73 @@ object ANormalForm {
                         addHead(transformedHead, transformBlock(tail))
                       }
                     }
-                  }), true)
+                }), true)
               }
             }
           }
           Block(Nil, transformBlock(stats)._1)
         }
         case ValDef(mods, name, tpt, rhs) => {
-          transform(rhs, catcher, { (transformedRhs) =>
-            rest(treeCopy.ValDef(tree, mods, name, tpt, transformedRhs))
+          transform(rhs, catcher, new NotTailcall {
+            override final def apply(transformedRhs: Tree) =
+              rest(treeCopy.ValDef(tree, mods, name, tpt, transformedRhs))
           })
         }
         case Assign(left, right) => {
-          transform(left, catcher, { (transformedLeft) =>
-            transform(right, catcher, { (transformedRight) =>
-              rest(treeCopy.Assign(tree, transformedLeft, transformedRight))
-            })
+          transform(left, catcher, new NotTailcall {
+            override final def apply(transformedLeft: Tree) =
+              transform(right, catcher, new NotTailcall {
+                override final def apply(transformedRight: Tree) =
+                  rest(treeCopy.Assign(tree, transformedLeft, transformedRight))
+              })
           })
         }
         case Match(selector, cases) => {
-          transform(selector, catcher, { (transformedSelector) =>
-            transformAwait(
-              treeCopy.Match(
-                tree,
-                transformedSelector,
-                for (originCaseDef @ CaseDef(pat, guard, body) <- cases) yield {
-                  checkNakedAwait(guard, "await must not be used under a pattern guard.")
-                  treeCopy.CaseDef(originCaseDef,
-                    pat,
-                    guard,
-                    newFutureAsType(body, TypeTree(tree.tpe)).tree)
-                }),
-              TypeTree(tree.tpe),
-              catcher,
-              rest)
+          transform(selector, catcher, new NotTailcall {
+            override final def apply(transformedSelector: Tree) =
+              rest.transformAwait(
+                treeCopy.Match(
+                  tree,
+                  transformedSelector,
+                  for (originCaseDef @ CaseDef(pat, guard, body) <- cases) yield {
+                    checkNakedAwait(guard, "await must not be used under a pattern guard.")
+                    treeCopy.CaseDef(originCaseDef,
+                      pat,
+                      guard,
+                      newFutureAsType(body, TypeTree(tree.tpe)).tree)
+                  }),
+                TypeTree(tree.tpe),
+                catcher)
           })
         }
         case If(cond, thenp, elsep) => {
-          transform(cond, catcher, { (transformedCond) =>
-            transformAwait(
-              If(
-                transformedCond,
-                newFuture(thenp).tree,
-                newFuture(elsep).tree),
-              TypeTree(tree.tpe),
-              catcher,
-              rest)
+          transform(cond, catcher, new NotTailcall {
+            override final def apply(transformedCond: Tree) =
+              rest.transformAwait(
+                If(
+                  transformedCond,
+                  newFuture(thenp).tree,
+                  newFuture(elsep).tree),
+                TypeTree(tree.tpe),
+                catcher)
           })
         }
         case Throw(throwable) => {
-          transform(throwable, catcher, { (transformedThrowable) =>
-            rest(treeCopy.Throw(tree, transformedThrowable))
+          transform(throwable, catcher, new NotTailcall {
+            override final def apply(transformedThrowable: Tree) =
+              rest(treeCopy.Throw(tree, transformedThrowable))
           })
         }
         case Typed(expr, tpt) => {
-          transform(expr, catcher, { (transformedExpr) =>
-            rest(treeCopy.Typed(tree, transformedExpr, tpt))
+          transform(expr, catcher, new NotTailcall {
+            override final def apply(transformedExpr: Tree) =
+              rest(treeCopy.Typed(tree, transformedExpr, tpt))
           })
         }
         case Annotated(annot, arg) => {
-          transform(arg, catcher, { (transformedArg) =>
-            rest(treeCopy.Annotated(tree, annot, transformedArg))
+          transform(arg, catcher, new NotTailcall {
+            override final def apply(transformedArg: Tree) =
+              rest(treeCopy.Annotated(tree, annot, transformedArg))
           })
         }
         case LabelDef(name, params, rhs) => {
@@ -546,13 +568,12 @@ object ANormalForm {
                   }),
                 AppliedTypeTree(Ident(futureType.typeSymbol), List(TypeTree(tree.tpe), tailRecResultTypeTree)),
                 newFuture(rhs)(forceAwait + name).tree)),
-            transformAwait(
+            rest.transformAwait(
               Apply(
                 Ident(name),
                 params),
               TypeTree(tree.tpe),
-              catcher,
-              rest))
+              catcher))
         }
         case _: Return => {
           c.error(tree.pos, "return is illegal.")
@@ -569,9 +590,12 @@ object ANormalForm {
 
       val statelessFutureTypeTree = AppliedTypeTree(Ident(statelessFutureType.typeSymbol), List(awaitValueTypeTree, tailRecResultTypeTree))
       val futureClassTypeTree = AppliedTypeTree(Ident(futureClassType.typeSymbol), List(awaitValueTypeTree, tailRecResultTypeTree))
+      val ANormalFormTree = reify(_root_.com.qifun.statelessFuture.ANormalForm).tree
+      val ForceOnCompleteName = newTermName("forceOnComplete")
 
       val futureName = newTypeName(c.fresh("YangBoFuture"))
       val returnName = newTermName(c.fresh("yangBoReturn"))
+
       val catcherName = newTermName(c.fresh("yangBoCatcher"))
       c.Expr(
         Block(
@@ -611,14 +635,39 @@ object ANormalForm {
                       val tryBodyExpr = c.Expr(transform(
                         tree,
                         Ident(catcherName),
-                        { (x) =>
-                          val resultExpr = c.Expr(x)
-                          val returnExpr = c.Expr[Any => Nothing](Ident(returnName))
-                          reify {
-                            val result = resultExpr.splice
-                            // Workaround for some nested Future blocks.
-                            _root_.scala.util.control.TailCalls.tailcall((returnExpr.splice).asInstanceOf[Any => _root_.scala.util.control.TailCalls.TailRec[Nothing]].apply(result))
-                          }.tree
+                        new Rest {
+
+                          override final def transformAwait(future: Tree, awaitTypeTree: TypTree, catcher: Tree)(implicit forceAwait: Set[Name]): Tree = {
+                            val nextFutureName = newTermName(c.fresh("yangBoNextFuture"))
+                            val futureExpr = c.Expr(ValDef(Modifiers(), nextFutureName, TypeTree(), future))
+                            val onCompleteCallExpr = c.Expr(
+                              Apply(
+                                Apply(
+                                  TypeApply(
+                                    Select(ANormalFormTree, ForceOnCompleteName),
+                                    List(tailRecResultTypeTree)),
+                                  List(
+                                    Ident(nextFutureName),
+                                    Ident(returnName))),
+                                List(catcher)))
+
+                            reify {
+                              futureExpr.splice
+                              @inline def yangBoTail = onCompleteCallExpr.splice
+                              _root_.scala.util.control.TailCalls.tailcall { yangBoTail }
+                            }.tree
+
+                          }
+
+                          override final def apply(x: Tree) = {
+                            val resultExpr = c.Expr(x)
+                            val returnExpr = c.Expr[Any => Nothing](Ident(returnName))
+                            reify {
+                              val result = resultExpr.splice
+                              // Workaround for some nested Future blocks.
+                              _root_.scala.util.control.TailCalls.tailcall((returnExpr.splice).asInstanceOf[Any => _root_.scala.util.control.TailCalls.TailRec[Nothing]].apply(result))
+                            }.tree
+                          }
                         }))
                       reify {
                         try {
