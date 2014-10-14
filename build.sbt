@@ -12,7 +12,16 @@ libraryDependencies += "com.dongxiguo" %% "zero-log" % "0.3.6"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
-scalacOptions ++= Seq("-optimize", "-unchecked", "-Xlint", "-feature", "-Ywarn-value-discard")
+// Disable optimizer due to https://issues.scala-lang.org/browse/SI-8906
+// scalacOptions += "-optimize"
+
+scalacOptions += "-unchecked"
+
+scalacOptions += "-Xlint"
+
+scalacOptions += "-feature"
+
+scalacOptions += "-Ywarn-value-discard"
 
 scalacOptions <++= (scalaVersion) map { sv =>
   if (sv.startsWith("2.10.")) {
