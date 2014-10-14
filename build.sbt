@@ -2,9 +2,9 @@ organization := "com.qifun"
 
 name := "stateless-future-util"
 
-version := "0.5.1-SNAPSHOT"
+version := "0.5.1"
 
-libraryDependencies += "com.qifun" %% "stateless-future" % "0.3.1"
+libraryDependencies += "com.qifun" %% "stateless-future" % "0.3.2"
 
 libraryDependencies += "com.dongxiguo" %% "fastring" % "0.2.4"
 
