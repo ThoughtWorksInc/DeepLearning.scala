@@ -256,7 +256,7 @@ See [this example](https://github.com/Atry/stateless-future-test/blob/2.10.x/tes
 
 Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
 
-    libraryDependencies += "com.qifun" %% "stateless-future" % "0.3.1"
+    libraryDependencies += "com.qifun" %% "stateless-future" % "0.3.2"
 
 `stateless-future` should work with Scala 2.10.3, 2.10.4, or 2.11.x.
 
