@@ -39,31 +39,23 @@ final class SleepTest {
   @Test
   def `testSleep`() {
     val executor = Executors.newSingleThreadScheduledExecutor
-    val arrayBuffer = scala.collection.mutable.ArrayBuffer(0)
-    
+    val sleepTime = 1.seconds
+    val startTime = System.currentTimeMillis().milliseconds
     val sleep = Promise[Unit]
     sleep.completeWith(Future[Unit] {
       val sleep1s = Sleep(executor, 1.seconds)
       sleep1s.await
       Future[Unit] {
         logger.fine(s"I have slept 1 Seconds.")
-        val _ = arrayBuffer += 1;
       }.await
-      
-      Future[Unit] {
-        logger.fine(s"Another future.")
-        val _ = arrayBuffer += 2;
-      }.await
-
     })
-
     assertFalse(sleep.isCompleted)
     logger.fine("Before the evaluation of the Stateless Future `sleep`.")
-    arrayBuffer += 3;
     Blocking.blockingAwait(sleep)
+    val finishTime = System.currentTimeMillis().milliseconds
+    val actuallySleepTime = finishTime - startTime
     assertTrue(sleep.isCompleted)
-    assertArrayEquals(Array(0,3,1,2), arrayBuffer.toArray)
-
+    assertTrue(actuallySleepTime >= sleepTime)
   }
   
 
