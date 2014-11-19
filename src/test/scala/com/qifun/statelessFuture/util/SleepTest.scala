@@ -62,7 +62,7 @@ final class SleepTest {
     arrayBuffer += 3;
     Blocking.blockingAwait(sleep)
     assertTrue(sleep.isCompleted)
-    assertArrayEquals(arrayBuffer.toArray, Array(0,3,1,2))
+    assertArrayEquals(Array(0,3,1,2), arrayBuffer.toArray)
 
   }
   
