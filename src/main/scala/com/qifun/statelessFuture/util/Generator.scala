@@ -19,7 +19,7 @@ package com.qifun.statelessFuture
 package util
 
 import scala.collection.LinearSeqOptimized
-import scala.collection.immutable.LinearSeq
+import scala.collection.LinearSeq
 import scala.collection.generic.GenericTraversableTemplate
 import scala.collection.generic.SeqFactory
 import scala.util.control.TailCalls._
@@ -91,7 +91,7 @@ object Generator {
   }
 
   sealed abstract class GeneratorSeq[+Element] extends scala.collection.immutable.Seq[Element]
-    with LinearSeq[Element]
+    with scala.collection.immutable.LinearSeq[Element]
     with GenericTraversableTemplate[Element, GeneratorSeq]
     with LinearSeqOptimized[Element, GeneratorSeq[Element]] {
 
