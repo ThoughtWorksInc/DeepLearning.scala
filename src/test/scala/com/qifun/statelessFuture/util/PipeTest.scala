@@ -123,7 +123,7 @@ class PipeTest {
   }
 
   @Test
-  def `await should work in for loop with futureSeq`(): Unit = {
+  def `await should work in a for loop with futureSeq`(): Unit = {
     case class MyEvent(i: Int)
 
     val pipe = Pipe[MyEvent]
