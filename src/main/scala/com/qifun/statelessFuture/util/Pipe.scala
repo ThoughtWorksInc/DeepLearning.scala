@@ -4,8 +4,8 @@ import com.qifun.statelessFuture.Awaitable
 import scala.util.control.TailCalls._
 import scala.util.control.Exception.Catcher
 import java.util.concurrent.atomic.AtomicReference
-
 import com.qifun.statelessFuture.AwaitableFactory
+import scala.collection.LinearSeq
 
 object Pipe {
 
@@ -87,4 +87,11 @@ final case class Pipe[Event]() {
     new Pipe.Writer[Event](Pipe.WaitingForEvent(writer.transitionFunction))
   }
 
+  private type FutureSeq[A] = AwaitableSeq[A, TransitionFunction[Event]]
+
+  final def futureSeq[A](underlying: LinearSeq[A]) = new FutureSeq[A](underlying)
+
+  final def futureSeq[A](underlying: TraversableOnce[A]) = new FutureSeq[A](Generator.GeneratorSeq(underlying))
+
+  
 }

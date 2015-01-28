@@ -122,4 +122,24 @@ class PipeTest {
 
   }
 
+  @Test
+  def `await should work in a for loop with futureSeq`(): Unit = {
+    case class MyEvent(i: Int)
+
+    val pipe = Pipe[MyEvent]
+    def read() = pipe.read()
+    val writer = pipe.start(pipe.Future {
+      for (i <- pipe.futureSeq(0 until 10)) {
+        assertEquals(i, pipe.read().await.i)
+      }
+      pipe.read().await // Never returns
+      throw new IllegalStateException("Unreachable code!")
+    })
+
+    for (i <- 0 until 10) {
+      writer.write(MyEvent(i))
+    }
+
+  }
+
 }
