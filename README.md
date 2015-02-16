@@ -3,7 +3,7 @@ Stateless Future
 
 <div align="right"><a href="https://travis-ci.org/qifun/stateless-future"><img alt="Build Status" src="https://travis-ci.org/qifun/stateless-future.png?branch=master"/></a></div>
 
-**Stateless Future** is a set of Domain-specific language for asynchronous programming, in the pure functional favor.
+**Stateless Future** is a set of Domain-specific language for asynchronous programming, in the pure functional flavor.
 
 Stateless Futures provide similar API to `scala.concurrent.Future` and [scala.async](http://docs.scala-lang.org/sips/pending/async.html), except Stateless Futures are simpler, cleaner, and more powerful than `scala.concurrent.Future` and `scala.async`.
 
@@ -272,7 +272,7 @@ Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and
 ## Links
 * [The API document](http://qforce.qifun.com/stateless-future/0.3.1-SNAPSHOT/api/com/qifun/statelessFuture/package.html)
 * [Utilities](https://github.com/Atry/stateless-future-util)
-* [Akka intergration](https://github.com/Atry/stateless-future-akka)
+* [Akka intregration](https://github.com/Atry/stateless-future-akka)
 * [Tests and examples](https://github.com/Atry/stateless-future-test/tree/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test)
 
 <hr/>
