@@ -272,7 +272,7 @@ Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and
 ## Links
 * [The API document](http://qforce.qifun.com/stateless-future/0.3.1-SNAPSHOT/api/com/qifun/statelessFuture/package.html)
 * [Utilities](https://github.com/Atry/stateless-future-util)
-* [Akka intregration](https://github.com/Atry/stateless-future-akka)
+* [Akka integration](https://github.com/Atry/stateless-future-akka)
 * [Tests and examples](https://github.com/Atry/stateless-future-test/tree/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test)
 
 <hr/>
