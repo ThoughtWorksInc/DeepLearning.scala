@@ -47,13 +47,13 @@ Output:
 ### Another Stateless Future that invokes the former Stateless Future twice.
 
     val anotherFuture = Future {
-      println("I am going to read the first random Double."
+      println("I am going to read the first random Double.")
       val randomDouble1 = randomDoubleFuture.await
-      println(s"The first random Double is $randomDouble1."
+      println(s"The first random Double is $randomDouble1.")
       
-      println("I am going to read the second random Double."
+      println("I am going to read the second random Double.")
       val randomDouble2 = randomDoubleFuture.await
-      println(s"The second random Double is $randomDouble1."
+      println(s"The second random Double is $randomDouble1.")
     }
     
     println("Before running the Future.")
