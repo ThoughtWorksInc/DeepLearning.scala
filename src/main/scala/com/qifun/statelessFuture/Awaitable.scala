@@ -180,7 +180,7 @@ object Awaitable {
     new Future.FromConcurrentFuture(underlying)
   }
 
-  implicit def toConcurrentFuture[AwaitResult](underlying: Future.Stateful[AwaitResult])(implicit intialExecutionContext: ExecutionContext) = {
+  implicit def toConcurrentFuture[AwaitResult](underlying: Future.Stateful[AwaitResult]) = {
     new Future.ToConcurrentFuture(underlying)
   }
 
