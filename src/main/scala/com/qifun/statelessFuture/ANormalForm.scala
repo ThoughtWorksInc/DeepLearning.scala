@@ -538,7 +538,7 @@ object ANormalForm {
         case Typed(expr, tpt) => {
           transform(expr, catcher, new NotTailcall {
             override final def apply(transformedExpr: Tree) =
-              rest(treeCopy.Typed(tree, transformedExpr, tpt))
+              rest(treeCopy.Typed(tree, transformedExpr, TypeTree(tpt.tpe)))
           })
         }
         case Annotated(annot, arg) => {
