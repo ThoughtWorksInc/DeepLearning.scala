@@ -270,7 +270,7 @@ Put these lines in your `build.sbt` if you use [Sbt](http://www.scala-sbt.org/):
 Clone [stateless-future-test](https://github.com/Atry/stateless-future-test) and run the test cases to check these limitations.
 
 ## Links
-* [The API document](http://qforce.qifun.com/stateless-future/0.3.1-SNAPSHOT/api/com/qifun/statelessFuture/package.html)
+* [The API documentation](https://oss.sonatype.org/service/local/repositories/releases/archive/com/qifun/stateless-future_2.11/0.4.0/stateless-future_2.11-0.4.0-javadoc.jar/!/index.html)
 * [Utilities](https://github.com/Atry/stateless-future-util)
 * [Akka integration](https://github.com/Atry/stateless-future-akka)
 * [Tests and examples](https://github.com/Atry/stateless-future-test/tree/2.10.x/test/src/test/scala/com/qifun/statelessFuture/test)
