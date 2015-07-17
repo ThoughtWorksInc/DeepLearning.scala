@@ -220,7 +220,7 @@ Unlike `scala.actors.Future`s, `scala.concurrent.Future`s are designed to handle
       case other: Exception => throw new RuntimeException(other)
     }
     val catcher3: Catcher[Unit] = {
-      case e: java.io.IOException => println("catcher4")
+      case e: java.io.IOException => println("catcher3")
       case other: Exception => throw new RuntimeException(other)
     }
     val catcher4: Catcher[Unit] = { case e: Exception => println("catcher4") }
