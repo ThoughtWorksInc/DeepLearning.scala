@@ -535,7 +535,7 @@ object ANormalForm {
               rest(treeCopy.Throw(tree, transformedThrowable))
           })
         }
-        case Typed(expr, tpt@Ident(nme.WILDCARD_STAR)) => {
+        case Typed(expr, tpt@Ident(tpnme.WILDCARD_STAR)) => {
           transform(expr, catcher, new NotTailcall {
             override final def apply(transformedExpr: Tree) =
               rest(treeCopy.Typed(tree, transformedExpr, tpt))
