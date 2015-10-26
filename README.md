@@ -53,7 +53,7 @@ Output:
       
       println("I am going to read the second random Double.")
       val randomDouble2 = randomDoubleFuture.await
-      println(s"The second random Double is $randomDouble1.")
+      println(s"The second random Double is $randomDouble2.")
     }
     
     println("Before running the Future.")
