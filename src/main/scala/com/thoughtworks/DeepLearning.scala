@@ -28,21 +28,17 @@ object DeepLearning {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
 
-  trait HasSelfType {
+  sealed trait Bifunction[Input] {
 
-    type Self >: this.type <: HasSelfType
+    type Self >: this.type <: Bifunction[Input]
 
     def self: Self = this
-
-  }
-
-  sealed trait Bifunction[Input] extends HasSelfType {
 
     type Output
 
     import Bifunction._
 
-    trait BifunctionPatch extends Patch[Self]
+    type BifunctionPatch = Bifunction.BifunctionPatch[Self]
 
     trait Patches {
 
@@ -63,6 +59,8 @@ object DeepLearning {
   }
 
   object Bifunction {
+
+    protected trait BifunctionPatch[F <: Bifunction[_]] extends Patch[F]
 
     type Ast[Input, +Output0] = T forSome {
       type T <: Bifunction[Input] {
@@ -89,13 +87,7 @@ object DeepLearning {
 
         override def backward(outputPatch: Patch[_ >: A]) = new Patches {
 
-          override def functionPatch: BifunctionPatch = new BifunctionPatch {
-
-            override def merge(anotherPatch: Patch[Id[A]]): Patch[Id[A]] = this
-
-            override def apply(weight: Id[A]): Id[A] = weight
-
-          }
+          override def functionPatch: BifunctionPatch = NoChange()
 
           override def inputPatch: Patch[_ >: A] = outputPatch
         }
@@ -103,10 +95,21 @@ object DeepLearning {
 
     }
 
+    object Compose {
+
+      final case class ComposePatch[A, B, C](f: Patch[Ast[B, C]], g: Patch[Ast[A, B]]) extends BifunctionPatch[Compose[A, B, C]] {
+        override def merge(anotherPatch: Patch[Compose[A, B, C]]): Patch[Compose[A, B, C]] = ???
+
+        override def apply(weight: Compose[A, B, C]): Compose[A, B, C] = {
+          Compose(f.apply(weight.f.self), g.apply(weight.g.self))
+        }
+      }
+
+    }
 
     final case class Compose[A, B, C](f: Ast[B, C], g: Ast[A, B]) extends Bifunction[A] {
       self =>
-
+import Compose._
       override type Output = C
 
       override type Self = Compose[A, B, C]
@@ -124,15 +127,8 @@ object DeepLearning {
 
           lazy val patchesG = cacheG.backward(patchesF.inputPatch)
 
-          override def functionPatch = new BifunctionPatch {
+          override def functionPatch = ComposePatch(patchesF.functionPatch.asInstanceOf[Patch[Ast[B, C]]], patchesG.functionPatch.asInstanceOf[Patch[Ast[A, B]]])
 
-            override def apply(weight: Compose[A, B, C]): Compose[A, B, C] = {
-              Compose(patchesF.functionPatch.apply(weight.f.self), patchesG.functionPatch.apply(weight.g.self))
-            }
-
-            override def merge(anotherPatch: Patch[Compose[A, B, C]]): Patch[Compose[A, B, C]] = ???
-
-          }
 
           override def inputPatch: Patch[_ >: A] = patchesG.inputPatch
 
@@ -142,40 +138,25 @@ object DeepLearning {
 
     }
 
-    trait Bifunction2[Input0, Input1] extends Bifunction[Input0] {
+    object Bifunction2 {
 
-      type Output2
-
-      final case class PartialAppliedBifunction(input0: Input0)
+      final case class PartialAppliedBifunction[Input0, Input1, Output0, F <: Bifunction2[Input0, Input1]]
+      (input0: Input0, f: F {type Output2 = Output0})
         extends Bifunction[Input1] {
 
-        type Output = Output2
+        type Output = Output0
 
-        type Self = PartialAppliedBifunction
-
-        final case class CurriedPatch(input0Patch: Patch[_ >: Input0]) extends BifunctionPatch {
-
-          override def apply(weight: Self): Self = {
-            PartialAppliedBifunction(input0Patch.apply(weight.input0).asInstanceOf[Input0])
-          }
-
-          override def merge(anotherPatch: Patch[Self]): Patch[Self] = {
-            anotherPatch match {
-              case CurriedPatch(anotherPatches) =>
-                CurriedPatch(input0Patch.asInstanceOf[Patch[Input0]].merge(anotherPatches.asInstanceOf[Patch[Input0]]))
-            }
-          }
-        }
+        type Self = PartialAppliedBifunction[Input0, Input1, Output0, F]
 
         override def forward(input1: Input1) = new Cache {
-          val cache2 = forward2(input0, input1)
+          val cache2 = f.forward2(input0, input1)
 
           override def output = cache2.output
 
           override def backward(outputPatch: Patch[_ >: Output]) = new Patches {
             val patches = cache2.backward(outputPatch)
 
-            override def functionPatch = CurriedPatch(patches.input0Patch)
+            override def functionPatch = PartialAppliedPatch[Input0, Input1, Output0, F](patches.input0Patch)
 
             override def inputPatch: Patch[_ >: Input1] = patches.input1Patch
           }
@@ -183,7 +164,31 @@ object DeepLearning {
 
       }
 
-      type Output = PartialAppliedBifunction
+      final case class PartialAppliedPatch[Input0, Input1, Output0, F <: Bifunction2[Input0, Input1]]
+      (input0Patch: Patch[_ >: Input0])
+        extends BifunctionPatch[PartialAppliedBifunction[Input0, Input1, Output0, F]] {
+
+        override def apply(weight: PartialAppliedBifunction[Input0, Input1, Output0, F]): PartialAppliedBifunction[Input0, Input1, Output0, F] = {
+          PartialAppliedBifunction(input0Patch.apply(weight.input0).asInstanceOf[Input0], weight.f)
+        }
+
+        override def merge(anotherPatch: Patch[PartialAppliedBifunction[Input0, Input1, Output0, F]]): Patch[PartialAppliedBifunction[Input0, Input1, Output0, F]] = {
+          anotherPatch match {
+            case PartialAppliedPatch(anotherPatches) =>
+              PartialAppliedPatch(input0Patch.asInstanceOf[Patch[Input0]].merge(anotherPatches.asInstanceOf[Patch[Input0]]))
+          }
+        }
+      }
+
+    }
+
+    trait Bifunction2[Input0, Input1] extends Bifunction[Input0] {
+
+      import Bifunction2._
+
+      type Output2
+
+      type Output = PartialAppliedBifunction[Input0, Input1, Output2, Self]
 
       type Self >: this.type <: Bifunction2[Input0, Input1]
 
@@ -203,23 +208,24 @@ object DeepLearning {
 
       override def forward(input0: Input0) = new Cache {
 
-        override val output = PartialAppliedBifunction(input0)
+        override val output: Output = new Output(input0, Bifunction2.this)
 
-        override def backward(outputPatch: Patch[_ >: PartialAppliedBifunction]) = new Patches {
-          override def functionPatch = new BifunctionPatch {
-
-            override def apply(weight: Self): Self = weight
-
-            override def merge(anotherPatch: Patch[Self]): Patch[Self] = anotherPatch
-          }
+        override def backward(outputPatch: Patch[_ >: Output]) = new Patches {
+          override def functionPatch = NoChange()
 
           override def inputPatch: Patch[_ >: Input0] = outputPatch match {
-            case output.CurriedPatch(input0Patch) => input0Patch
+            case PartialAppliedPatch(input0Patch) => input0Patch.asInstanceOf[Patch[_ >: Input0]]
           }
         }
 
       }
 
+    }
+
+    final case class NoChange[Weight <: Bifunction[_]]() extends BifunctionPatch[Weight] {
+      override def merge(anotherPatch: Patch[Weight]): Patch[Weight] = anotherPatch
+
+      override def apply(weight: Weight): Weight = weight
     }
 
     final case object Multiply extends Bifunction2[INDArray, INDArray] {
@@ -231,6 +237,7 @@ object DeepLearning {
     }
 
     final case class Substitute[A, B, C](x: Ast[A, Ast[B, C]], y: Ast[A, B]) extends Bifunction[A] {
+
       override type Output = C
 
       override def forward(input: A) = new Cache {
@@ -255,11 +262,7 @@ object DeepLearning {
               Substitute[A, B, C](patchesX.functionPatch.asInstanceOf[Patch[Ast[A, Ast[B, C]]]].apply(weight.x), patchesY.functionPatch.asInstanceOf[Patch[Ast[A, B]]].apply(weight.y))
             }
 
-            override def merge(anotherPatch: Patch[Self]) = new Patch[Self] {
-              override def apply(weight: Substitute[A, B, C]): Substitute[A, B, C] = ??? //  Substitute[A, B, C](weight.x)
-
-              override def merge(anotherPatch: Patch[Substitute[A, B, C]]): Patch[Substitute[A, B, C]] = ???
-            }
+            override def merge(anotherPatch: Patch[Self]) = ???
           }
 
           override def inputPatch: Patch[A] = patchesX.inputPatch.asInstanceOf[Patch[A]].merge(patchesY.inputPatch.asInstanceOf[Patch[A]])
