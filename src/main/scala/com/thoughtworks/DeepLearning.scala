@@ -31,7 +31,21 @@ object DeepLearning {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
 
-  sealed trait Bifunction[Input, Output] {
+  trait Patchable {
+    type Self >: this.type <: Patchable.Aux[Self]
+
+    type Patch <: Bifunction.Patch[Self]
+  }
+
+  object Patchable {
+
+    type Aux[A] = Patchable {
+      type Self = A
+    }
+
+  }
+
+  sealed trait Bifunction[Input <: Patchable, Output <: Patchable] extends Patchable {
 
     type Self >: this.type <: Bifunction.Aux[Input, Output, Self]
 
@@ -39,10 +53,10 @@ object DeepLearning {
 
     type WeightPatch <: Bifunction.Patch[Self]
 
-    def forward(input: Input): Cache
+    def forward[SpecificInput <: Input](input: Input): Cache[SpecificInput]
 
-    final type Cache = Bifunction.Cache[Output, Patches]
-    final type Patches = Bifunction.Patches[Input, WeightPatch]
+    final type Cache[SpecificInput] = Bifunction.Cache[Output, Patches[SpecificInput]]
+    final type Patches[SpecificInput] = Bifunction.Patches[SpecificInput, WeightPatch]
 
   }
 
@@ -66,7 +80,7 @@ object DeepLearning {
 
     }
 
-    trait Patches[Input, BifunctionPatch <: Patch[_ <: Ast[_, _]]] {
+    trait Patches[Input, BifunctionPatch <: Patch[_ <: Ast[_ >: Input, _]]] {
 
       def inputPatch: Patch[Input]
 
@@ -106,7 +120,7 @@ object DeepLearning {
       override type Self = MultiplyN
       override type WeightPatch = MultipleNPatch
 
-      override def forward(input: INDArray) = new Cache {
+      override def forward[I <: INDArray](input: INDArray) = new Cache[I] {
 
         type Output = INDArray
 
@@ -248,6 +262,8 @@ object DeepLearning {
 
         override def backward(outputPatch: Patch[Output]) = new Patches {
 
+          lazy val patchesF = cacheF.backward(outputPatch)
+          lazy val patchesG = cacheG.backward(patchesF.inputPatch)
 
           override def inputPatch: Bifunction.Patch[A] = ???
 
