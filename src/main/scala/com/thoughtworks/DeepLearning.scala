@@ -1,9 +1,9 @@
 package com.thoughtworks
 
 
-import com.thoughtworks.DeepLearning.Bifunction.Compose.Patch
-import com.thoughtworks.DeepLearning.Bifunction.MultiplyN.MultipleNPatch
-import com.thoughtworks.DeepLearning.Bifunction.Patch.{Delta, NoChange}
+import com.thoughtworks.DeepLearning.Differentiable.Immutable.ConstantDifference
+import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta
+import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta.{HasChange, NoChange}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
@@ -12,7 +12,7 @@ import shapeless.{::, DepFn0, DepFn1, DepFn2, HList, HNil, Poly0, PolyApply, the
 
 import scala.language.existentials
 import scala.language.higherKinds
-import scalaz.{Apply, Arrow, Category, Choice, Compose, Split, Strong}
+import scalaz.{Apply, Arrow, Category, Choice, Compose, Semigroup, Split, Strong}
 
 object DeepLearning {
 
@@ -26,414 +26,213 @@ object DeepLearning {
 
   trait SKICombinator[=>:[_, _]] extends Substitution[=>:] with Constant[=>:] with Category[=>:]
 
-
   trait Multiply[=>:[_, _]] {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
 
-  trait Patchable {
-    type Self >: this.type <: Patchable.Aux[Self]
+  trait Semigroupable {
+    type Self >: this.type
 
-    type Patch <: Bifunction.Patch[Self]
+    def append(other: Self): Self
   }
 
-  object Patchable {
+  object Semigroupable {
 
-    type Aux[A] = Patchable {
-      type Self = A
+    type Aux[Self0] = Semigroupable {
+      type Self = Self0
+    }
+
+    implicit def semigroupableSemigroup[A <: Aux[A]] = new Semigroup[A] {
+      override def append(f1: A, f2: => A): A = f1.append(f2)
     }
 
   }
 
-  sealed trait Bifunction[Input <: Patchable, Output <: Patchable] extends Patchable {
+  trait Differentiable[Value] {
 
-    type Self >: this.type <: Bifunction.Aux[Input, Output, Self]
+    type Self >: this.type
 
-    def self: Self = this
+    type Difference <: Semigroupable
 
-    type WeightPatch <: Bifunction.Patch[Self]
-
-    def forward[SpecificInput <: Input](input: Input): Cache[SpecificInput]
-
-    final type Cache[SpecificInput] = Bifunction.Cache[Output, Patches[SpecificInput]]
-    final type Patches[SpecificInput] = Bifunction.Patches[SpecificInput, WeightPatch]
+    def applyPatch(patch: Difference, learningRate: Double): Self
 
   }
 
-  object Bifunction {
+  object Differentiable {
 
-    trait Patch[Weight] {
-      def updated(weight: Weight, learningRate: Double): Weight
-    }
+    object Immutable {
 
-    object Patch {
+      object ConstantDifference extends Semigroupable {
+        override type Self = this.type
 
-      final case class NoChange[Weight]() extends Patch[Weight] {
-        override def updated(weight: Weight, learningRate: Double): Weight = weight
+        override def append(other: Self): Self = this
       }
 
-      final case class Delta(delta: INDArray) extends Patch[INDArray] {
-        override def updated(weight: INDArray, learningRate: Double): INDArray = {
-          weight - delta * learningRate
+    }
+
+    trait Immutable {
+      _: Differentiable[_] =>
+      final override type Difference = ConstantDifference.type
+
+      final override def applyPatch(patch: Difference, learningRate: Double): Self = this
+    }
+
+    type Aux[Value, Difference0 <: Semigroupable, Self0] = Differentiable[Value] {
+      type Difference = Difference0
+      type Self = Self0
+    }
+
+    object DifferentialbeINDArray {
+
+      sealed trait Delta extends Semigroupable {
+        type Self = Delta
+      }
+
+      object Delta {
+
+        case object NoChange extends Delta {
+          override def append(other: Self): Self = other
         }
-      }
 
-    }
-
-    trait Patches[Input, BifunctionPatch <: Patch[_ <: Ast[_ >: Input, _]]] {
-
-      def inputPatch: Patch[Input]
-
-      def weightPatch: BifunctionPatch
-
-    }
-
-    trait Cache[Output0, Patches <: Bifunction.Patches[_, _]] {
-
-      type Output <: Output0
-
-      def output: Output
-
-      def backward(outputPatch: Patch[Output]): Patches
-
-    }
-
-    type Aux[Input, Output, F] = Bifunction[Input, Output] {
-      type Self = F
-    }
-
-    type Ast[Input, Output] = Bifunction[Input, Output]
-
-    //    type Ast[Input, Output] = F forSome {type F <: Aux[Input, Output, F]}
-
-    object MultiplyN {
-
-      final case class MultipleNPatch(delta: INDArray) extends Patch[MultiplyN] {
-        override def updated(weight: MultiplyN, learningRate: Double) = {
-          MultiplyN(weight.n - delta * learningRate)
-        }
-      }
-
-    }
-
-    final case class MultiplyN(n: INDArray) extends Bifunction[INDArray, INDArray] {
-      override type Self = MultiplyN
-      override type WeightPatch = MultipleNPatch
-
-      override def forward[I <: INDArray](input: INDArray) = new Cache[I] {
-
-        type Output = INDArray
-
-        override def output = n * input
-
-        override def backward(outputPatch: Patch[INDArray]) = {
-          val Delta(deltaOutput) = outputPatch
-          new Patches {
-            override def weightPatch = MultipleNPatch(deltaOutput * input)
-
-            override def inputPatch = Delta(deltaOutput * n)
+        final case class HasChange(delta: INDArray) extends Delta {
+          override def append(other: Delta): Delta = other match {
+            case NoChange => this
+            case HasChange(otherChanges) => HasChange(delta + otherChanges)
           }
         }
+
       }
 
     }
 
-    object BinaryMultiply extends Bifunction[INDArray, Ast[INDArray, INDArray]] {
-      override type Self = this.type
-      override type WeightPatch = NoChange[BinaryMultiply.type]
+    final case class DifferentialbeINDArray(value: INDArray) extends Differentiable[INDArray] {
+      override type Difference = DifferentialbeINDArray.Delta
 
-      override def forward(input: INDArray) = new Cache {
+      override type Self = DifferentialbeINDArray
 
-        type Output = MultiplyN
-
-        override def output = MultiplyN(input)
-
-        override def backward(outputPatch: Patch[MultiplyN]) = new Patches {
-
-          override def weightPatch: NoChange[BinaryMultiply.type] = NoChange()
-
-          override def inputPatch: Delta = {
-            outputPatch match {
-              case MultipleNPatch(delta) => Delta(delta)
-            }
-          }
+      override def applyPatch(patch: Delta, learningRate: Double): DifferentialbeINDArray = {
+        patch match {
+          case NoChange => this
+          case HasChange(delta) => copy(value + delta * learningRate)
         }
       }
+    }
+
+    trait DifferentiableFunction[Input, Output] extends Differentiable[DifferentiableFunction[Input, Output]] {
+
+      def forward[InputDifference <: Semigroupable, InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable]]
+      (input: InputDifferentiable): DifferentiableFunction.Cache[Input, InputDifference, InputDifferentiable, Output, Self]
 
     }
 
-    //    trait Bifunction2 extends Bifunction[]
+    object DifferentiableFunction {
 
 
-    //
-    //  object Bifunction {
-    //
-    //    protected trait WeightPatch[F <: Bifunction[_]] extends Patch[F]
-    //
-    //    type Ast[Input, +Output0] = T forSome {
-    //      type T <: Bifunction[Input] {
-    //        type Self = T
-    //        type Output <: Output0
-    //      }
-    //    }
-    //
-    //    sealed trait Patch[Weight] {
-    //      def apply(weight: Weight): Weight
-    //
-    //      def merge(anotherPatch: Patch[Weight]): Patch[Weight]
-    //    }
-    //
-    //    final case class Id[A]() extends Bifunction[A] {
-    //
-    //      override type Output = A
-    //
-    //      override type Self = Id[A]
-    //
-    //      override def forward(input: A) = new Cache {
-    //
-    //        override def output = input
-    //
-    //        override def backward(outputPatch: Patch[_ >: A]) = new Patches {
-    //
-    //          override def weightPatch: WeightPatch = NoChange()
-    //
-    //          override def inputPatch: Patch[_ >: A] = outputPatch
-    //        }
-    //      }
-    //
-    //    }
-    //
-    object Compose {
+      trait Differences[Input, InputDifference <: Semigroupable, InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable], Weight] {
 
-      final case class Patch[A, B, C](f: Bifunction.Patch[Ast[B, C]], g: Bifunction.Patch[Ast[A, B]]) extends Bifunction.Patch[Compose[A, B, C]] {
-        //      final case class ComposePatch[A, B, C](f: Patch[Ast[B, C]], g: Patch[Ast[A, B]]) extends WeightPatch[Compose[A, B, C]] {
-        //        override def merge(anotherPatch: Patch[Compose[A, B, C]]): Patch[Compose[A, B, C]] = ???
+        type WeightDifference <: Semigroupable
+
+        type WeightDifferentiable <: Differentiable.Aux[Weight, WeightDifference, WeightDifferentiable]
+
+        def inputDifference: InputDifference
+
+        def weightDifference: WeightDifference
+
+      }
+
+      trait Cache[Input, InputDifference <: Semigroupable, InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable], Output, Weight] {
+
+        type OutputDifference <: Semigroupable
+
+        type OutputDifferentiable <: Differentiable.Aux[Output, OutputDifference, OutputDifferentiable]
+
+        def output: OutputDifferentiable
+
+        def backward(difference: OutputDifference): Differences[Input, InputDifference, InputDifferentiable, Weight]
+
+      }
+
+      object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with Immutable {
+
+        override type Self = Multiply.type
+
         //
-        //        override def apply(weight: Compose[A, B, C]): Compose[A, B, C] = {
-        //          Compose(f.apply(weight.f.self), g.apply(weight.g.self))
+        //        override def forward(input: Differentiable[INDArray]) = new Cache[INDArray, DifferentiableFunction[INDArray, INDArray], Self] {
+        //          override def output: OutputDifferentiable = ???
+        //
+        //          override def backward(difference: OutputDifference): Differences[INDArray, Self] = ???
         //        }
-        //      }
+        //        override def forward[InputDifference <: Semigroupable, InputDifferentiable <: Aux[INDArray, InputDifference, InputDifferentiable]](input: InputDifferentiable) = {
+        //          new Cache[INDArray, InputDifference, InputDifferentiable, DifferentiableFunction[INDArray, INDArray], Self] {
+        ////            override type OutputDifference = this.type
         //
-        override def updated(weight: Compose[A, B, C], learningRate: Double): Compose[A, B, C] = ???
-      }
+        //            override def output: OutputDifference = ???
+        //
+        //            override def backward(difference: this.type): Differences[INDArray, InputDifference, InputDifferentiable, Self] = ???
+        //          }
+        //        }
+        final case class PartialAppliedFunction(input0: DifferentialbeINDArray)
+          extends DifferentiableFunction[INDArray, INDArray] {
+          override type Self = PartialAppliedFunction
+          override type Difference = Delta
 
-    }
+          override def forward[InputDifference <: Semigroupable, InputDifferentiable <: Aux[INDArray, InputDifference, InputDifferentiable]]
+          (input1: InputDifferentiable) = new Cache[INDArray, InputDifference, InputDifferentiable, INDArray, Self] {
 
-    //
-    final case class Compose[A, B, C](f: Ast[B, C], g: Ast[A, B]) extends Bifunction[A, C] {
-      //      self =>
-      //import Compose._
+            override type OutputDifference = Delta
 
-      override type Self = Compose[A, B, C]
-      //
-      //      override def forward(input: A) = new Cache {
-      //
-      //        override def output = cacheF.output
-      //
-      //        lazy val cacheG = g.forward(input)
-      //        lazy val cacheF = f.forward(cacheG.output)
-      //
-      //        override def backward(outputPatch: Patch[_ >: C]) = new Patches {
-      //
-      //          lazy val patchesF = cacheF.backward(outputPatch)
-      //
-      //          lazy val patchesG = cacheG.backward(patchesF.inputPatch)
-      //
-      //          override def weightPatch = ComposePatch(patchesF.weightPatch.asInstanceOf[Patch[Ast[B, C]]], patchesG.weightPatch.asInstanceOf[Patch[Ast[A, B]]])
-      //
-      //
-      //          override def inputPatch: Patch[_ >: A] = patchesG.inputPatch
-      //
-      //        }
-      //
-      //      }
-      //
-      override type WeightPatch = Compose.Patch[A, B, C]
+            override type OutputDifferentiable = DifferentialbeINDArray
 
-      override def forward(input: A): Cache {
-        val cacheF: f.Cache
-      } = new Cache {
-        lazy val cacheF = f.forward(cacheG.output)
-        lazy val cacheG = g.forward(input)
+            override def output: OutputDifferentiable = {
+              input0 match {
+                case DifferentialbeINDArray(data0) =>
+                  input1 match {
+                    case DifferentialbeINDArray(data1) =>
+                      DifferentialbeINDArray(data0 + data1)
+                  }
+              }
+            }
 
-        override type Output = cacheF.Output
+            override def backward(difference: OutputDifference) = ???
+//            new Differences[INDArray, InputDifference, InputDifferentiable, PartialAppliedFunction[InputDifference, InputDifferentiable]] {
+//
+//              override def inputDifference: InputDifference = ???
+//
+//              override def weightDifference: WeightDifference = ???
+//            }
+          }
 
-        override def output = cacheF.output
+          override def applyPatch(patch: Difference, learningRate: Double): Self = {
+            PartialAppliedFunction(input0.applyPatch(patch, learningRate))
+          }
+        }
 
-        override def backward(outputPatch: Patch[Output]) = new Patches {
+        override def forward[InputDifference <: Semigroupable, InputDifferentiable <: Aux[INDArray, InputDifference, InputDifferentiable]]
+        (input: InputDifferentiable) = new Cache[INDArray, InputDifference, InputDifferentiable, DifferentiableFunction[INDArray, INDArray], Self] {
 
-          lazy val patchesF = cacheF.backward(outputPatch)
-          lazy val patchesG = cacheG.backward(patchesF.inputPatch)
+//          override type OutputDifferentiable =
 
-          override def inputPatch: Bifunction.Patch[A] = ???
+          override def output: OutputDifferentiable = ???
 
-          override def weightPatch: Compose.Patch[A, B, C] = ???
-
+          override def backward(difference: OutputDifference): Differences[INDArray, InputDifference, InputDifferentiable, Multiply.type] = ???
         }
       }
+
+      implicit object DifferentiableFunctionInstances extends SKICombinator[DifferentiableFunction] with Multiply[DifferentiableFunction] {
+
+        override def multiply: DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] = Multiply
+
+        override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
+
+        override def id[A]: DifferentiableFunction[A, A] = ???
+
+        override def constant[A, B, C](x: DifferentiableFunction[A, B]): DifferentiableFunction[C, DifferentiableFunction[A, B]] = ???
+
+        override def substitute[A, B, C](x: DifferentiableFunction[A, DifferentiableFunction[B, C]], y: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
+      }
+
     }
 
-    //
-    //    object Bifunction2 {
-    //
-    //      final case class PartialAppliedBifunction[Input0, Input1, Output0, F <: Bifunction2[Input0, Input1]]
-    //      (input0: Input0, f: F {type Output2 = Output0})
-    //        extends Bifunction[Input1] {
-    //
-    //        type Output = Output0
-    //
-    //        type Self = PartialAppliedBifunction[Input0, Input1, Output0, F]
-    //
-    //        override def forward(input1: Input1) = new Cache {
-    //          val cache2 = f.forward2(input0, input1)
-    //
-    //          override def output = cache2.output
-    //
-    //          override def backward(outputPatch: Patch[_ >: Output]) = new Patches {
-    //            val patches = cache2.backward(outputPatch)
-    //
-    //            override def weightPatch = PartialAppliedPatch[Input0, Input1, Output0, F](patches.input0Patch)
-    //
-    //            override def inputPatch: Patch[_ >: Input1] = patches.input1Patch
-    //          }
-    //        }
-    //
-    //      }
-    //
-    //      final case class PartialAppliedPatch[Input0, Input1, Output0, F <: Bifunction2[Input0, Input1]]
-    //      (input0Patch: Patch[_ >: Input0])
-    //        extends WeightPatch[PartialAppliedBifunction[Input0, Input1, Output0, F]] {
-    //
-    //        override def apply(weight: PartialAppliedBifunction[Input0, Input1, Output0, F]): PartialAppliedBifunction[Input0, Input1, Output0, F] = {
-    //          PartialAppliedBifunction(input0Patch.apply(weight.input0).asInstanceOf[Input0], weight.f)
-    //        }
-    //
-    //        override def merge(anotherPatch: Patch[PartialAppliedBifunction[Input0, Input1, Output0, F]]): Patch[PartialAppliedBifunction[Input0, Input1, Output0, F]] = {
-    //          anotherPatch match {
-    //            case PartialAppliedPatch(anotherPatches) =>
-    //              PartialAppliedPatch(input0Patch.asInstanceOf[Patch[Input0]].merge(anotherPatches.asInstanceOf[Patch[Input0]]))
-    //          }
-    //        }
-    //      }
-    //
-    //    }
-    //
-    //    trait Bifunction2[Input0, Input1] extends Bifunction[Input0] {
-    //
-    //      import Bifunction2._
-    //
-    //      type Output2
-    //
-    //      type Output = PartialAppliedBifunction[Input0, Input1, Output2, Self]
-    //
-    //      type Self >: this.type <: Bifunction2[Input0, Input1]
-    //
-    //      trait Patches2 {
-    //        def input0Patch: Patch[_ >: Input0]
-    //
-    //        def input1Patch: Patch[_ >: Input1]
-    //      }
-    //
-    //      trait Cache2 {
-    //        def output: Output2
-    //
-    //        def backward(outputPatch: Patch[_ >: Output2]): Patches2
-    //      }
-    //
-    //      def forward2(input0: Input0, input1: Input1): Cache2
-    //
-    //      override def forward(input0: Input0) = new Cache {
-    //
-    //        override val output: Output = new Output(input0, Bifunction2.this)
-    //
-    //        override def backward(outputPatch: Patch[_ >: Output]) = new Patches {
-    //          override def weightPatch = NoChange()
-    //
-    //          override def inputPatch: Patch[_ >: Input0] = outputPatch match {
-    //            case PartialAppliedPatch(input0Patch) => input0Patch.asInstanceOf[Patch[_ >: Input0]]
-    //          }
-    //        }
-    //
-    //      }
-    //
-    //    }
-    //
-    //    final case class NoChange[Weight <: Bifunction[_]]() extends WeightPatch[Weight] {
-    //      override def merge(anotherPatch: Patch[Weight]): Patch[Weight] = anotherPatch
-    //
-    //      override def apply(weight: Weight): Weight = weight
-    //    }
-    //
-    //    final case object Multiply extends Bifunction2[INDArray, INDArray] {
-    //      override type Output2 = INDArray
-    //      override type Self = Multiply.type
-    //
-    //      override def forward2(input0: INDArray, input1: INDArray): Cache2 = ???
-    //
-    //    }
-    //
-    //    final case class Substitute[A, B, C](x: Ast[A, Ast[B, C]], y: Ast[A, B]) extends Bifunction[A] {
-    //
-    //      override type Output = C
-    //
-    //      override def forward(input: A) = new Cache {
-    //
-    //        lazy val cacheX0 = x.forward(input)
-    //        lazy val cacheY = y.forward(input)
-    //        lazy val x1: Ast[B, C] = cacheX0.output
-    //        lazy val cacheX1 = x1.forward(cacheY.output)
-    //
-    //        override def output: C = cacheX1.output
-    //
-    //        override def backward(outputPatch: Patch[_ >: C]) = new Patches {
-    //
-    //          lazy val patchesX1 = cacheX1.backward(outputPatch)
-    //
-    //          lazy val patchesY = cacheY.backward(patchesX1.inputPatch)
-    //
-    //          lazy val patchesX = cacheX0.backward(patchesX1.weightPatch.asInstanceOf[Patch[Ast[B, C]]])
-    //
-    //          override def weightPatch = new WeightPatch {
-    //            override def apply(weight: Self): Self = {
-    //              Substitute[A, B, C](patchesX.weightPatch.asInstanceOf[Patch[Ast[A, Ast[B, C]]]].apply(weight.x), patchesY.weightPatch.asInstanceOf[Patch[Ast[A, B]]].apply(weight.y))
-    //            }
-    //
-    //            override def merge(anotherPatch: Patch[Self]) = ???
-    //          }
-    //
-    //          override def inputPatch: Patch[A] = patchesX.inputPatch.asInstanceOf[Patch[A]].merge(patchesY.inputPatch.asInstanceOf[Patch[A]])
-    //
-    //        }
-    //      }
-    //
-    //      override type Self = Substitute[A, B, C]
-    //    }
-    //
-    implicit object BifunctionInstances extends SKICombinator[Ast] with Multiply[Ast] {
-      //      override def id[A] = Id[A]
-      //
-      //      override def compose[A, B, C](f: Ast[B, C], g: Ast[A, B]) = new Compose[A, B, C](f, g)
-      //
-      //      def constant[A, B, C](x: Ast[A, B]): Ast[C, Ast[A, B]] = ???
-      //
-      //      def substitute[A, B, C](x: Ast[A, Ast[B, C]], y: Ast[A, B]): Ast[A, C] = Substitute[A, B, C](x, y)
-      //
-      override def multiply = BinaryMultiply
-
-      //
-      //
-      override def compose[A, B, C](f: Ast[B, C], g: Ast[A, B]): Ast[A, C] = ???
-
-      override def constant[A, B, C](x: Ast[A, B]): Ast[C, Ast[A, B]] = ???
-
-      override def id[A]: Ast[A, A] = ???
-
-      override def substitute[A, B, C](x: Ast[A, Ast[B, C]], y: Ast[A, B]): Ast[A, C] = ???
-    }
-
-    //
   }
-
-  //
 
 }
