@@ -53,7 +53,7 @@ object DeepLearning {
 
     type Self >: this.type
 
-    type Difference <: Semigroupable
+    type Difference <: Semigroupable.Aux[Difference]
 
     def applyPatch(patch: Difference, learningRate: Double): Self
 
@@ -122,18 +122,14 @@ object DeepLearning {
     trait DifferentiableFunction[Input, Output] extends Differentiable[DifferentiableFunction[Input, Output]] {
 
       def forward[InputDifference <: Semigroupable.Aux[InputDifference], InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable]]
-      (input: InputDifferentiable): DifferentiableFunction.Cache[Input, InputDifference, InputDifferentiable, Output, Self]
+      (input: InputDifferentiable): DifferentiableFunction.Cache[Output, InputDifference, Difference]
 
     }
 
     object DifferentiableFunction {
 
 
-      trait Differences[Input, InputDifference <: Semigroupable.Aux[InputDifference], InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable], Weight] {
-
-        type WeightDifference <: Semigroupable.Aux[WeightDifference]
-
-        type WeightDifferentiable <: Differentiable.Aux[Weight, WeightDifference, WeightDifferentiable]
+      trait Differences[InputDifference <: Semigroupable.Aux[InputDifference], WeightDifference <: Semigroupable.Aux[WeightDifference]] {
 
         def inputDifference: InputDifference
 
@@ -141,7 +137,7 @@ object DeepLearning {
 
       }
 
-      trait Cache[Input, InputDifference <: Semigroupable.Aux[InputDifference], InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable], Output, Weight] {
+      trait Cache[Output, InputDifference <: Semigroupable.Aux[InputDifference], WeightDifference <: Semigroupable.Aux[WeightDifference]] {
 
         type OutputDifference <: Semigroupable.Aux[OutputDifference]
 
@@ -149,7 +145,7 @@ object DeepLearning {
 
         def output: OutputDifferentiable
 
-        def backward(difference: OutputDifference): Differences[Input, InputDifference, InputDifferentiable, Weight]
+        def backward(difference: OutputDifference): Differences[InputDifference, WeightDifference]
 
       }
 
@@ -158,21 +154,6 @@ object DeepLearning {
 
         override type Self = Multiply.type
 
-        //
-        //        override def forward(input: Differentiable[INDArray]) = new Cache[INDArray, DifferentiableFunction[INDArray, INDArray], Self] {
-        //          override def output: OutputDifferentiable = ???
-        //
-        //          override def backward(difference: OutputDifference): Differences[INDArray, Self] = ???
-        //        }
-        //        override def forward[InputDifference <: Semigroupable.Aux[_], InputDifferentiable <: Aux[INDArray, InputDifference, InputDifferentiable]](input: InputDifferentiable) = {
-        //          new Cache[INDArray, InputDifference, InputDifferentiable, DifferentiableFunction[INDArray, INDArray], Self] {
-        ////            override type OutputDifference = this.type
-        //
-        //            override def output: OutputDifference = ???
-        //
-        //            override def backward(difference: this.type): Differences[INDArray, InputDifference, InputDifferentiable, Self] = ???
-        //          }
-        //        }
         object PartialAppliedFunction {
 
           final case class PartialAppliedDifference[Difference0 <: Semigroupable.Aux[Difference0], Difference1 <: Semigroupable.Aux[Difference1]]
@@ -194,7 +175,7 @@ object DeepLearning {
           override type Difference = PartialAppliedFunction.PartialAppliedDifference[outer.Difference, InputDifference0]
 
           override def forward[InputDifference1 <: Semigroupable.Aux[InputDifference1], InputDifferentiable1 <: Aux[INDArray, InputDifference1, InputDifferentiable1]]
-          (input1: InputDifferentiable1) = new Cache[INDArray, InputDifference1, InputDifferentiable1, INDArray, Self] {
+          (input1: InputDifferentiable1) = new Cache[INDArray, InputDifference1, Difference] {
 
             override type OutputDifference = Delta
 
@@ -221,13 +202,13 @@ object DeepLearning {
         }
 
         override def forward[InputDifference <: Semigroupable.Aux[InputDifference], InputDifferentiable <: Aux[INDArray, InputDifference, InputDifferentiable]]
-        (input: InputDifferentiable) = new Cache[INDArray, InputDifference, InputDifferentiable, DifferentiableFunction[INDArray, INDArray], Self] {
+        (input: InputDifferentiable) = new Cache[DifferentiableFunction[INDArray, INDArray], InputDifference, Difference] {
 
           //          override type OutputDifferentiable =
 
           override def output: OutputDifferentiable = ???
 
-          override def backward(difference: OutputDifference): Differences[INDArray, InputDifference, InputDifferentiable, Multiply.type] = ???
+          override def backward(difference: OutputDifference): Differences[InputDifference, Difference] = ???
         }
       }
 
