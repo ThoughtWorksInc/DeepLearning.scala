@@ -1,9 +1,6 @@
 package com.thoughtworks
 
 
-import com.thoughtworks.DeepLearning.Differentiable.Immutable.ConstantDifference
-import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta
-import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta.{NonZeroDelta, ZeroDelta}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
@@ -30,203 +27,192 @@ object DeepLearning {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
 
-  trait Semigroupable {
-    type Self >: this.type
+  sealed trait Patch[Data, Difference0] extends Semigroup[Difference0] {
+    type Difference = Difference0
 
-    def append(other: Self): Self
+    def applyPatch(weight: Data, patch: Difference0, learningRate: Double): Data
   }
 
-  object Semigroupable {
+  object NeverChange
 
-    type Aux[Self0] = Semigroupable {
+  object Patch {
+
+    implicit object INDArrayPatch extends Patch[INDArray, INDArray] {
+      override def applyPatch(weight: INDArray, patch: INDArray, learningRate: Double): INDArray = {
+        weight + patch * learningRate
+      }
+
+      override def append(f1: INDArray, f2: => INDArray): INDArray = {
+        f1 + f2
+      }
+    }
+
+    implicit def neverChangePatch[Data <: Singleton] = new Patch[Data, NeverChange.type] {
+      override final def applyPatch(weight: Data, patch: Difference, learningRate: Double) = weight
+
+      override final def append(f1: NeverChange.type, f2: => NeverChange.type) = NeverChange
+    }
+  }
+
+  trait DifferentiableFunction[-Input, +Output] {
+
+    type Self >: this.type <: DifferentiableFunction[Input, Output]
+
+    type WeightDifference
+
+    implicit def weightPatch: Patch[Self, WeightDifference]
+
+    def forward(input: Input)(implicit expectedInputPatch: Patch[_ <: Input, _]): DifferentiableFunction.Cache[_ <: Output, expectedInputPatch.Difference, WeightDifference]
+
+  }
+
+  object DifferentiableFunction {
+
+    trait Differences[InputDifference, WeightDifference] {
+      outer =>
+
+      def inputDifference: InputDifference
+
+      def weightDifference: WeightDifference
+
+    }
+
+    trait Cache[Output, InputDifference, WeightDifference] {
+
+      type OutputDifference
+
+      implicit def outputPatch: Patch[Output, OutputDifference]
+
+      def output: Output
+
+      def backward(difference: OutputDifference): Differences[InputDifference, WeightDifference]
+
+      final def unsafeCast[Output1, InputDifference1, WeightDifference1] = {
+        asInstanceOf[Cache[Output1, InputDifference1, WeightDifference1]]
+      }
+
+    }
+
+    type Aux[Input, Output, Self0] = DifferentiableFunction[Input, Output] {
       type Self = Self0
     }
 
+    object PartialApplied {
 
-    implicit def semigroupableSemigroup[A <: Aux[A]] = new Semigroup[A] {
-      override def append(f1: A, f2: => A): A = f1.append(f2)
-    }
+      final case class PartialAppliedDifference[InputDifference, FDifference]
+      (inputDifference: InputDifference, weightDifference: FDifference)
+        extends Differences[InputDifference, FDifference]
 
-  }
-
-  trait Differentiable[Value] {
-
-    type Self >: this.type
-
-    type Difference <: Semigroupable.Aux[Difference]
-
-    def applyPatch(patch: Difference, learningRate: Double): Self
-
-  }
-
-  object Differentiable {
-
-    object Immutable {
-
-      object ConstantDifference extends Semigroupable {
-        override type Self = this.type
-
-        override def append(other: Self): Self = this
-      }
-
-    }
-
-    trait Immutable {
-      _: Differentiable[_] =>
-      final override type Difference = ConstantDifference.type
-
-      final override def applyPatch(patch: Difference, learningRate: Double): Self = this
-    }
-
-    type Aux[Value, Difference0 <: Semigroupable.Aux[Difference0], Self0] = Differentiable[Value] {
-      type Difference = Difference0
-      type Self = Self0
-    }
-
-    object DifferentialbeINDArray {
-
-      sealed trait Delta extends Semigroupable {
-        type Self = Delta
-      }
-
-      object Delta {
-
-        case object ZeroDelta extends Delta {
-          override def append(other: Self): Self = other
-        }
-
-        final case class NonZeroDelta(delta: INDArray) extends Delta {
-          override def append(other: Delta): Delta = other match {
-            case ZeroDelta => this
-            case NonZeroDelta(otherChanges) => NonZeroDelta(delta + otherChanges)
-          }
-        }
-
-      }
+      // TODO: Should implement it via shapeless.Generic
+      //
+      //      object PartialAppliedDifference {
+      //
+      //        implicit def partialAppliedPatch[Input0, Input1, Output, InputDifference0, FDifference, P <: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], F <: DifferentiableFunction.Aux[Input0, P, F] {
+      //          type WeightDifference = FDifference
+      //        }]
+      //        (
+      //          implicit inputPatch: Patch[Input0, InputDifference0],
+      //          weightPatch: Patch[F, FDifference]
+      //        ) = new Patch[PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], PartialAppliedDifference[InputDifference0, FDifference]] {
+      //          override def applyPatch(weight: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], patch: PartialAppliedDifference[InputDifference0, FDifference], learningRate: Double): PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F] = {
+      //            new PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F](
+      //              inputPatch.applyPatch(weight.input0, patch.inputDifference, learningRate),
+      //              weightPatch.applyPatch(weight.f, patch.weightDifference, learningRate)
+      //            )
+      //          }
+      //
+      //          override def append(f1: PartialAppliedDifference[InputDifference0, FDifference], f2: => PartialAppliedDifference[InputDifference0, FDifference]): PartialAppliedDifference[InputDifference0, FDifference] = {
+      //            new PartialAppliedDifference[InputDifference0, FDifference](
+      //              inputPatch.append(f1.inputDifference, f2.inputDifference),
+      //              weightPatch.append(f1.weightDifference, f2.weightDifference)
+      //            )
+      //
+      //          }
+      //        }
+      //
+      //      }
 
     }
 
-    final case class DifferentialbeINDArray(value: INDArray) extends Differentiable[INDArray] {
-      override type Difference = DifferentialbeINDArray.Delta
 
-      override type Self = DifferentialbeINDArray
+    final case class PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F <: DifferentiableFunction.Aux[Input0, _, F] {
+      type WeightDifference = FDifference
+    }]
+    (input0: Input0, f: F)
+    (implicit inputPatch: Patch[Input0, InputDifference0])
+      extends DifferentiableFunction[Input1, Output]
+        with Cache[PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], InputDifference0, FDifference] {
 
-      override def applyPatch(patch: Delta, learningRate: Double): DifferentialbeINDArray = {
-        patch match {
-          case ZeroDelta => this
-          case NonZeroDelta(delta) => copy(value + delta * learningRate)
-        }
-      }
-    }
+      type Self = PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F]
 
-    trait DifferentiableFunction[Input, Output] extends Differentiable[DifferentiableFunction[Input, Output]] {
+      type WeightDifference = PartialApplied.PartialAppliedDifference[InputDifference0, FDifference]
 
-      def forward[InputDifference <: Semigroupable.Aux[InputDifference], InputDifferentiable <: Differentiable.Aux[Input, InputDifference, InputDifferentiable]]
-      (input: InputDifferentiable): DifferentiableFunction.Cache[Output, InputDifference, Difference]
-
-    }
-
-    object DifferentiableFunction {
-
-
-      trait Differences[InputDifference <: Semigroupable.Aux[InputDifference], WeightDifference <: Semigroupable.Aux[WeightDifference]] {
-
-        def inputDifference: InputDifference
-
-        def weightDifference: WeightDifference
-
-      }
-
-      trait Cache[Output, InputDifference <: Semigroupable.Aux[InputDifference], WeightDifference <: Semigroupable.Aux[WeightDifference]] {
-
-        type OutputDifference <: Semigroupable.Aux[OutputDifference]
-
-        type OutputDifferentiable <: Differentiable.Aux[Output, OutputDifference, OutputDifferentiable]
-
-        def output: OutputDifferentiable
-
-        def backward(difference: OutputDifference): Differences[InputDifference, WeightDifference]
-
-      }
-
-      object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with Immutable {
-        outer =>
-
-        override type Self = Multiply.type
-
-        object PartialAppliedFunction {
-
-          final case class PartialAppliedDifference[Difference0 <: Semigroupable.Aux[Difference0], Difference1 <: Semigroupable.Aux[Difference1]]
-          (difference0: Difference0, difference1: Difference1) extends Semigroupable {
-            override type Self = PartialAppliedDifference[Difference0, Difference1]
-
-            override def append(other: Self): Self = new Self(difference0.append(other.difference0), difference1.append(other.difference1))
-          }
-
-        }
-
-        final case class PartialAppliedFunction[
-        InputDifference0 <: Semigroupable.Aux[InputDifference0],
-        InputDifferentiable0 <: Aux[INDArray, InputDifference0, InputDifferentiable0]
-        ]
-        (input0: InputDifferentiable0)
-          extends DifferentiableFunction[INDArray, INDArray] {
-          override type Self = outer.Self#PartialAppliedFunction[InputDifference0, InputDifferentiable0]
-          override type Difference = PartialAppliedFunction.PartialAppliedDifference[outer.Difference, InputDifference0]
-
-          override def forward[InputDifference1 <: Semigroupable.Aux[InputDifference1], InputDifferentiable1 <: Aux[INDArray, InputDifference1, InputDifferentiable1]]
-          (input1: InputDifferentiable1) = new Cache[INDArray, InputDifference1, Difference] {
-
-            override type OutputDifference = Delta
-
-            override type OutputDifferentiable = DifferentialbeINDArray
-
-            override def output: OutputDifferentiable = {
-              (input0: Aux[INDArray, _, _]) match {
-                case DifferentialbeINDArray(data0) =>
-                  input1 match {
-                    case DifferentialbeINDArray(data1) =>
-                      DifferentialbeINDArray(data0 + data1)
-                  }
-              }
-            }
-
-            override def backward(difference: OutputDifference) = ???
+      override implicit def weightPatch = {
+        new Patch[Self, WeightDifference] {
+          override def applyPatch(weight: Self, patch: WeightDifference, learningRate: Double): Self = {
+            new Self(
+              inputPatch.applyPatch(weight.input0, patch.inputDifference, learningRate),
+              weight.f.weightPatch.applyPatch(weight.f, patch.weightDifference, learningRate)
+            )
 
           }
 
-          override def applyPatch(patch: Difference, learningRate: Double): Self = {
-            val newOuter = outer.applyPatch(patch.difference0, learningRate)
-            newOuter.PartialAppliedFunction[InputDifference0, InputDifferentiable0](input0.applyPatch(patch.difference1, learningRate))
+          override def append(f1: WeightDifference, f2: => WeightDifference): WeightDifference = {
+            new WeightDifference(
+              inputPatch.append(f1.inputDifference, f2.inputDifference),
+              f.weightPatch.append(f1.weightDifference, f2.weightDifference)
+            )
           }
         }
+      }
 
-        override def forward[InputDifference <: Semigroupable.Aux[InputDifference], InputDifferentiable <: Aux[INDArray, InputDifference, InputDifferentiable]]
-        (input: InputDifferentiable) = new Cache[DifferentiableFunction[INDArray, INDArray], InputDifference, Difference] {
+      override def output: Self = this
 
-          //          override type OutputDifferentiable =
+      override def forward(input: Input1)(implicit inputPatch: Patch[_ <: Input1, _]): Cache[_ <: Output, inputPatch.Difference, WeightDifference] = ???
 
-          override def output: OutputDifferentiable = ???
+      type OutputDifference = WeightDifference
 
-          override def backward(difference: OutputDifference): Differences[InputDifference, Difference] = ???
+      override implicit def outputPatch: Patch[Self, OutputDifference] = weightPatch
+
+      override def backward(difference: OutputDifference): WeightDifference = difference
+
+    }
+
+
+    trait PureFunction {
+      _: DifferentiableFunction[_, _] with Singleton =>
+      override type Self = this.type
+
+      override type WeightDifference = NeverChange.type
+
+      override implicit def weightPatch: Patch[Self, WeightDifference] = Patch.neverChangePatch
+    }
+
+    object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with PureFunction {
+      override def forward(input: INDArray)(implicit inputPatch: Patch[_ <: INDArray, _]): Cache[_ <: PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type], inputPatch.Difference, WeightDifference] = {
+        inputPatch match {
+          case Patch.INDArrayPatch =>
+            PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type](input, Multiply.this)
+          case _ =>
+            throw new IllegalArgumentException(s"Unsupported patch type ${inputPatch}")
         }
-      }
+      }.unsafeCast
+    }
 
-      implicit object DifferentiableFunctionInstances extends SKICombinator[DifferentiableFunction] with Multiply[DifferentiableFunction] {
+    implicit object DifferentiableFunctionInstances extends SKICombinator[DifferentiableFunction] with Multiply[DifferentiableFunction] {
 
-        override def multiply: DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] = Multiply
+      override def multiply: DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] = Multiply
 
-        override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
+      override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
 
-        override def id[A]: DifferentiableFunction[A, A] = ???
+      override def id[A]: DifferentiableFunction[A, A] = ???
 
-        override def constant[A, B, C](x: DifferentiableFunction[A, B]): DifferentiableFunction[C, DifferentiableFunction[A, B]] = ???
+      override def constant[A, B, C](x: DifferentiableFunction[A, B]): DifferentiableFunction[C, DifferentiableFunction[A, B]] = ???
 
-        override def substitute[A, B, C](x: DifferentiableFunction[A, DifferentiableFunction[B, C]], y: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
-      }
-
+      override def substitute[A, B, C](x: DifferentiableFunction[A, DifferentiableFunction[B, C]], y: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
     }
 
   }
 
 }
+
