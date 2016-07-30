@@ -3,7 +3,7 @@ package com.thoughtworks
 
 import com.thoughtworks.DeepLearning.Differentiable.Immutable.ConstantDifference
 import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta
-import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta.{HasChange, NoChange}
+import com.thoughtworks.DeepLearning.Differentiable.DifferentialbeINDArray.Delta.{NonZeroDelta, ZeroDelta}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
@@ -91,14 +91,14 @@ object DeepLearning {
 
       object Delta {
 
-        case object NoChange extends Delta {
+        case object ZeroDelta extends Delta {
           override def append(other: Self): Self = other
         }
 
-        final case class HasChange(delta: INDArray) extends Delta {
+        final case class NonZeroDelta(delta: INDArray) extends Delta {
           override def append(other: Delta): Delta = other match {
-            case NoChange => this
-            case HasChange(otherChanges) => HasChange(delta + otherChanges)
+            case ZeroDelta => this
+            case NonZeroDelta(otherChanges) => NonZeroDelta(delta + otherChanges)
           }
         }
 
@@ -113,8 +113,8 @@ object DeepLearning {
 
       override def applyPatch(patch: Delta, learningRate: Double): DifferentialbeINDArray = {
         patch match {
-          case NoChange => this
-          case HasChange(delta) => copy(value + delta * learningRate)
+          case ZeroDelta => this
+          case NonZeroDelta(delta) => copy(value + delta * learningRate)
         }
       }
     }
