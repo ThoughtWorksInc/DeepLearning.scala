@@ -1,12 +1,11 @@
 package com.thoughtworks
 
 
-import com.thoughtworks.DeepLearning.Patch.NeverChangePatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import org.nd4j.linalg.ops.transforms.Transforms._
-import shapeless.{::, DepFn0, DepFn1, DepFn2, Generic, HList, HNil, Poly0, PolyApply, the}
+import shapeless.{::, DepFn0, DepFn1, DepFn2, Generic, HList, HNil, Poly0, PolyApply, Widen, the}
 
 import scala.language.existentials
 import scala.language.higherKinds
@@ -72,30 +71,41 @@ object DeepLearning {
       override def append(f1: NeverChange.type, f2: => NeverChange.type) = NeverChange
     }
 
-    implicit def hconsPatch[Head, HeadDifference, Tail <: HList, TailDifference](implicit headPatch: Patch[Head, HeadDifference], tailPatch: Patch[Tail, TailDifference]): Patch[Head :: Tail, (HeadDifference, TailDifference)] = {
-      new Patch[Head :: Tail, (HeadDifference, TailDifference)] {
-        override def applyPatch(weight: Head :: Tail, patch: (HeadDifference, TailDifference), learningRate: Double): Head :: Tail = {
-          headPatch.applyPatch(weight.head, patch._1, learningRate) :: tailPatch.applyPatch(weight.tail, patch._2, learningRate)
-        }
-
-        override def append(f1: (HeadDifference, TailDifference), f2: => (HeadDifference, TailDifference)): (HeadDifference, TailDifference) = {
-          headPatch.append(f1._1, f2._1) -> tailPatch.append(f1._2, f2._2)
-        }
-      }
-    }
-
-    def genericPatch[Data <: Product, L <: HList, Difference]
-    (implicit generic: Generic.Aux[Data, L], hlistPatch: Patch[L, Difference]): Patch[Data, Difference] = {
-      new Patch[Data, Difference] {
-        override def applyPatch(weight: Data, patch: Difference, learningRate: Double): Data = {
-          generic.from(hlistPatch.applyPatch(generic.to(weight), patch, learningRate))
-        }
-
-        override def append(f1: Difference, f2: => Difference): Difference = hlistPatch.append(f1, f2)
-      }
-    }
-
     implicit def neverChangePatch[Data <: Singleton] = new NeverChangePatch[Data]
+
+    implicit object HNilPatch extends Patch[HNil, HNil] {
+      override def applyPatch(weight: HNil, patch: HNil, learningRate: Double) = HNil
+
+      override def append(f1: HNil, f2: => HNil) = HNil
+    }
+
+    implicit def hconsPatch[Head, HeadDifference, Tail <: HList, TailDifference <: HList]
+    (implicit headPatch: Patch[Head, HeadDifference], tailPatch: Patch[Tail, TailDifference]): Patch[Head :: Tail, HeadDifference :: TailDifference] = {
+      new Patch[Head :: Tail, HeadDifference :: TailDifference] {
+        override def applyPatch(weight: Head :: Tail, patch: HeadDifference :: TailDifference, learningRate: Double): Head :: Tail = {
+          headPatch.applyPatch(weight.head, patch.head, learningRate) :: tailPatch.applyPatch(weight.tail, patch.tail, learningRate)
+        }
+
+        override def append(f1: HeadDifference :: TailDifference, f2: => HeadDifference :: TailDifference): HeadDifference :: TailDifference = {
+          headPatch.append(f1.head, f2.head) :: tailPatch.append(f1.tail, f2.tail)
+        }
+      }
+    }
+
+    implicit def genericPatch[Data <: Product, Difference <: Product, DataList <: HList, DiffereceList <: HList]
+    (
+      implicit genericData: Generic.Aux[Data, DataList],
+      genericDifference: Generic.Aux[Difference, DiffereceList],
+      hlistPatch: Patch[DataList, DiffereceList]
+    ) = new Patch[Data, Difference] {
+      override def applyPatch(weight: Data, patch: Difference, learningRate: Double): Data = {
+        genericData.from(hlistPatch.applyPatch(genericData.to(weight), genericDifference.to(patch), learningRate))
+      }
+
+      override def append(f1: Difference, f2: => Difference): Difference = {
+        genericDifference.from(hlistPatch.append(genericDifference.to(f1), genericDifference.to(f2)))
+      }
+    }
   }
 
   final case class PatchOps[Data, Difference0](override val self: Data, override val patch: Patch[Data, Difference0]) extends Ops[Data] with Differentiable {
@@ -157,35 +167,6 @@ object DeepLearning {
       (inputDifference: InputDifference, weightDifference: FDifference)
         extends Differences[InputDifference, FDifference]
 
-      // TODO: Should implement it via shapeless.Generic
-      //
-      //      object PartialAppliedDifference {
-      //
-      //        implicit def partialAppliedPatch[Input0, Input1, Output, InputDifference0, FDifference, P <: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], F <: DifferentiableFunction.Aux[Input0, P, F] {
-      //          type Difference = FDifference
-      //        }]
-      //        (
-      //          implicit inputPatch: Patch[Input0, InputDifference0],
-      //          patch: Patch[F, FDifference]
-      //        ) = new Patch[PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], PartialAppliedDifference[InputDifference0, FDifference]] {
-      //          override def applyPatch(weight: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], patch: PartialAppliedDifference[InputDifference0, FDifference], learningRate: Double): PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F] = {
-      //            new PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F](
-      //              inputPatch.applyPatch(weight.input0, patch.inputDifference, learningRate),
-      //              patch.applyPatch(weight.f, patch.weightDifference, learningRate)
-      //            )
-      //          }
-      //
-      //          override def append(f1: PartialAppliedDifference[InputDifference0, FDifference], f2: => PartialAppliedDifference[InputDifference0, FDifference]): PartialAppliedDifference[InputDifference0, FDifference] = {
-      //            new PartialAppliedDifference[InputDifference0, FDifference](
-      //              inputPatch.append(f1.inputDifference, f2.inputDifference),
-      //              patch.append(f1.weightDifference, f2.weightDifference)
-      //            )
-      //
-      //          }
-      //        }
-      //
-      //      }
-
     }
 
 
@@ -201,23 +182,12 @@ object DeepLearning {
 
       type Difference = PartialApplied.PartialAppliedDifference[InputDifference0, FDifference]
 
-      override implicit def patch = {
-        new Patch[Self, Difference] {
-          override def applyPatch(weight: Self, patch: Difference, learningRate: Double): Self = {
-            new Self(
-              inputPatch.applyPatch(weight.input0, patch.inputDifference, learningRate),
-              weight.f.patch.applyPatch(weight.f, patch.weightDifference, learningRate)
-            )
-
-          }
-
-          override def append(f1: Difference, f2: => Difference): Difference = {
-            new Difference(
-              inputPatch.append(f1.inputDifference, f2.inputDifference),
-              f.patch.append(f1.weightDifference, f2.weightDifference)
-            )
-          }
-        }
+      override implicit def patch: Patch[Self, Difference] = {
+        Patch.genericPatch(
+          Generic[Self],
+          Generic[Difference],
+          Patch.hconsPatch(inputPatch, Patch.hconsPatch(f.patch, Patch.HNilPatch))
+        )
       }
 
       override def output: Self = this
@@ -228,10 +198,9 @@ object DeepLearning {
 
       override implicit def outputPatch: Patch[Self, OutputDifference] = patch
 
-      override def backward(difference: OutputDifference): Difference = difference
+      override def backward(difference: Difference): Difference = difference
 
     }
-
 
     trait PureFunction {
       _: DifferentiableFunction[_, _] with Singleton =>
