@@ -1,6 +1,7 @@
 package com.thoughtworks
 
 
+import com.thoughtworks.DeepLearning.Patch.NeverChangePatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
@@ -9,6 +10,7 @@ import shapeless.{::, DepFn0, DepFn1, DepFn2, HList, HNil, Poly0, PolyApply, the
 
 import scala.language.existentials
 import scala.language.higherKinds
+import scalaz.syntax.Ops
 import scalaz.{Apply, Arrow, Category, Choice, Compose, Semigroup, Split, Strong}
 
 object DeepLearning {
@@ -27,10 +29,27 @@ object DeepLearning {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
 
-  sealed trait Patch[Data, Difference0] extends Semigroup[Difference0] {
-    type Difference = Difference0
+  sealed trait Patch[Data, Difference] extends Semigroup[Difference] {
+    def applyPatch(weight: Data, patch: Difference, learningRate: Double): Data
+  }
 
-    def applyPatch(weight: Data, patch: Difference0, learningRate: Double): Data
+  sealed trait Differentiable {
+
+    type Difference
+
+    type Self
+
+    def self: Self
+
+    implicit def patch: Patch[Self, Difference]
+
+  }
+
+  object Differentiable {
+    type Aux[Data, Difference0] = Differentiable {
+      type Self = Data
+      type Difference = Difference0
+    }
   }
 
   object NeverChange
@@ -47,37 +66,50 @@ object DeepLearning {
       }
     }
 
-    implicit def neverChangePatch[Data <: Singleton] = new Patch[Data, NeverChange.type] {
-      override final def applyPatch(weight: Data, patch: Difference, learningRate: Double) = weight
+    final case class NeverChangePatch[Data <: Singleton]() extends Patch[Data, NeverChange.type] {
+      override def applyPatch(weight: Data, patch: NeverChange.type, learningRate: Double) = weight
 
-      override final def append(f1: NeverChange.type, f2: => NeverChange.type) = NeverChange
+      override def append(f1: NeverChange.type, f2: => NeverChange.type) = NeverChange
+
     }
+
+    implicit def neverChangePatch[Data <: Singleton] = new NeverChangePatch[Data]
   }
 
-  trait DifferentiableFunction[-Input, +Output] {
+  final case class PatchOps[Data, Difference0](override val self: Data, override val patch: Patch[Data, Difference0]) extends Ops[Data] with Differentiable {
+
+    override type Self = Data
+
+    type Difference = Difference0
+
+  }
+
+  trait DifferentiableFunction[-Input, +Output] extends Differentiable {
 
     type Self >: this.type <: DifferentiableFunction[Input, Output]
 
-    type WeightDifference
+    type Difference
 
-    implicit def weightPatch: Patch[Self, WeightDifference]
+    final def self: Self = this
 
-    def forward(input: Input)(implicit expectedInputPatch: Patch[_ <: Input, _]): DifferentiableFunction.Cache[_ <: Output, expectedInputPatch.Difference, WeightDifference]
+    implicit def patch: Patch[Self, Difference]
+
+    def forward(input: Differentiable.Aux[_ <: Input, _]): DifferentiableFunction.Cache[_ <: Output, input.Difference, Difference]
 
   }
 
   object DifferentiableFunction {
 
-    trait Differences[InputDifference, WeightDifference] {
+    trait Differences[InputDifference, Difference] {
       outer =>
 
       def inputDifference: InputDifference
 
-      def weightDifference: WeightDifference
+      def weightDifference: Difference
 
     }
 
-    trait Cache[Output, InputDifference, WeightDifference] {
+    trait Cache[Output, InputDifference, Difference] {
 
       type OutputDifference
 
@@ -85,7 +117,7 @@ object DeepLearning {
 
       def output: Output
 
-      def backward(difference: OutputDifference): Differences[InputDifference, WeightDifference]
+      def backward(difference: OutputDifference): Differences[InputDifference, Difference]
 
       final def unsafeCast[Output1, InputDifference1, WeightDifference1] = {
         asInstanceOf[Cache[Output1, InputDifference1, WeightDifference1]]
@@ -108,23 +140,23 @@ object DeepLearning {
       //      object PartialAppliedDifference {
       //
       //        implicit def partialAppliedPatch[Input0, Input1, Output, InputDifference0, FDifference, P <: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], F <: DifferentiableFunction.Aux[Input0, P, F] {
-      //          type WeightDifference = FDifference
+      //          type Difference = FDifference
       //        }]
       //        (
       //          implicit inputPatch: Patch[Input0, InputDifference0],
-      //          weightPatch: Patch[F, FDifference]
+      //          patch: Patch[F, FDifference]
       //        ) = new Patch[PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], PartialAppliedDifference[InputDifference0, FDifference]] {
       //          override def applyPatch(weight: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], patch: PartialAppliedDifference[InputDifference0, FDifference], learningRate: Double): PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F] = {
       //            new PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F](
       //              inputPatch.applyPatch(weight.input0, patch.inputDifference, learningRate),
-      //              weightPatch.applyPatch(weight.f, patch.weightDifference, learningRate)
+      //              patch.applyPatch(weight.f, patch.weightDifference, learningRate)
       //            )
       //          }
       //
       //          override def append(f1: PartialAppliedDifference[InputDifference0, FDifference], f2: => PartialAppliedDifference[InputDifference0, FDifference]): PartialAppliedDifference[InputDifference0, FDifference] = {
       //            new PartialAppliedDifference[InputDifference0, FDifference](
       //              inputPatch.append(f1.inputDifference, f2.inputDifference),
-      //              weightPatch.append(f1.weightDifference, f2.weightDifference)
+      //              patch.append(f1.weightDifference, f2.weightDifference)
       //            )
       //
       //          }
@@ -136,7 +168,7 @@ object DeepLearning {
 
 
     final case class PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F <: DifferentiableFunction.Aux[Input0, _, F] {
-      type WeightDifference = FDifference
+      type Difference = FDifference
     }]
     (input0: Input0, f: F)
     (implicit inputPatch: Patch[Input0, InputDifference0])
@@ -145,22 +177,22 @@ object DeepLearning {
 
       type Self = PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F]
 
-      type WeightDifference = PartialApplied.PartialAppliedDifference[InputDifference0, FDifference]
+      type Difference = PartialApplied.PartialAppliedDifference[InputDifference0, FDifference]
 
-      override implicit def weightPatch = {
-        new Patch[Self, WeightDifference] {
-          override def applyPatch(weight: Self, patch: WeightDifference, learningRate: Double): Self = {
+      override implicit def patch = {
+        new Patch[Self, Difference] {
+          override def applyPatch(weight: Self, patch: Difference, learningRate: Double): Self = {
             new Self(
               inputPatch.applyPatch(weight.input0, patch.inputDifference, learningRate),
-              weight.f.weightPatch.applyPatch(weight.f, patch.weightDifference, learningRate)
+              weight.f.patch.applyPatch(weight.f, patch.weightDifference, learningRate)
             )
 
           }
 
-          override def append(f1: WeightDifference, f2: => WeightDifference): WeightDifference = {
-            new WeightDifference(
+          override def append(f1: Difference, f2: => Difference): Difference = {
+            new Difference(
               inputPatch.append(f1.inputDifference, f2.inputDifference),
-              f.weightPatch.append(f1.weightDifference, f2.weightDifference)
+              f.patch.append(f1.weightDifference, f2.weightDifference)
             )
           }
         }
@@ -168,13 +200,13 @@ object DeepLearning {
 
       override def output: Self = this
 
-      override def forward(input: Input1)(implicit inputPatch: Patch[_ <: Input1, _]): Cache[_ <: Output, inputPatch.Difference, WeightDifference] = ???
+      override def forward(input: Differentiable.Aux[_ <: Input1, _]): Cache[_ <: Output, input.Difference, Difference] = ???
 
-      type OutputDifference = WeightDifference
+      type OutputDifference = Difference
 
-      override implicit def outputPatch: Patch[Self, OutputDifference] = weightPatch
+      override implicit def outputPatch: Patch[Self, OutputDifference] = patch
 
-      override def backward(difference: OutputDifference): WeightDifference = difference
+      override def backward(difference: OutputDifference): Difference = difference
 
     }
 
@@ -183,17 +215,17 @@ object DeepLearning {
       _: DifferentiableFunction[_, _] with Singleton =>
       override type Self = this.type
 
-      override type WeightDifference = NeverChange.type
+      override type Difference = NeverChange.type
 
-      override implicit def weightPatch: Patch[Self, WeightDifference] = Patch.neverChangePatch
+      override implicit def patch: Patch[Self, Difference] = Patch.neverChangePatch
     }
 
     object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with PureFunction {
-      override def forward(input: INDArray)(implicit inputPatch: Patch[_ <: INDArray, _]): Cache[_ <: PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type], inputPatch.Difference, WeightDifference] = {
-        inputPatch match {
-          case Patch.INDArrayPatch =>
-            PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type](input, Multiply.this)
-          case _ =>
+      override def forward(input: Differentiable.Aux[_ <: INDArray, _]): Cache[_ <: PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type], input.Difference, Difference] = {
+        input match {
+          case PatchOps(inputData, Patch.INDArrayPatch) =>
+            PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type](inputData, Multiply.this)
+          case inputPatch =>
             throw new IllegalArgumentException(s"Unsupported patch type ${inputPatch}")
         }
       }.unsafeCast
