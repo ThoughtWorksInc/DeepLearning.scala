@@ -71,26 +71,26 @@ object DeepLearning {
       override def append(f1: HNil, f2: => HNil) = HNil
     }
 
-    implicit def hconsPatch[Head, HeadDifference, Tail <: HList, TailDifference <: HList](implicit headPatch: Patch[Head, HeadDifference], tailPatch: Patch[Tail, TailDifference]): Patch[Head :: Tail, HeadDifference :: TailDifference] = {
-      new Patch[Head :: Tail, HeadDifference :: TailDifference] {
-        override def applyPatch(weight: Head :: Tail, patch: HeadDifference :: TailDifference, learningRate: Double): Head :: Tail = {
-          headPatch.applyPatch(weight.head, patch.head, learningRate) :: tailPatch.applyPatch(weight.tail, patch.tail, learningRate)
+    implicit def hconsPatch[Head, HeadDifference, Tail <: HList, TailDifference](implicit headPatch: Patch[Head, HeadDifference], tailPatch: Patch[Tail, TailDifference]): Patch[Head :: Tail, (HeadDifference, TailDifference)] = {
+      new Patch[Head :: Tail, (HeadDifference, TailDifference)] {
+        override def applyPatch(weight: Head :: Tail, patch: (HeadDifference, TailDifference), learningRate: Double): Head :: Tail = {
+          headPatch.applyPatch(weight.head, patch._1, learningRate) :: tailPatch.applyPatch(weight.tail, patch._2, learningRate)
         }
 
-        override def append(f1: HeadDifference :: TailDifference, f2: => HeadDifference :: TailDifference): HeadDifference :: TailDifference = {
-          headPatch.append(f1.head, f2.head) :: tailPatch.append(f1.tail, f2.tail)
+        override def append(f1: (HeadDifference, TailDifference), f2: => (HeadDifference, TailDifference)): (HeadDifference, TailDifference) = {
+          headPatch.append(f1._1, f2._1) -> tailPatch.append(f1._2, f2._2)
         }
       }
     }
 
-    def genericPatch[Data <: Product, L <: HList, DifferenceL <: HList]
-    (implicit generic: Generic.Aux[Data, L], hlistPatch: Patch[L, DifferenceL]): Patch[Data, DifferenceL] = {
-      new Patch[Data, DifferenceL] {
-        override def applyPatch(weight: Data, patch: DifferenceL, learningRate: Double): Data = {
+    def genericPatch[Data <: Product, L <: HList, Difference]
+    (implicit generic: Generic.Aux[Data, L], hlistPatch: Patch[L, Difference]): Patch[Data, Difference] = {
+      new Patch[Data, Difference] {
+        override def applyPatch(weight: Data, patch: Difference, learningRate: Double): Data = {
           generic.from(hlistPatch.applyPatch(generic.to(weight), patch, learningRate))
         }
 
-        override def append(f1: DifferenceL, f2: => DifferenceL): DifferenceL = hlistPatch.append(f1, f2)
+        override def append(f1: Difference, f2: => Difference): Difference = hlistPatch.append(f1, f2)
       }
     }
   }
