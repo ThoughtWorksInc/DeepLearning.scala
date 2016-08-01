@@ -1,11 +1,12 @@
 package com.thoughtworks
 
 
+import com.thoughtworks.DeepLearning.Patch.NeverChangePatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import org.nd4j.linalg.ops.transforms.Transforms._
-import shapeless.{::, DepFn0, DepFn1, DepFn2, Generic, HList, HNil, Poly0, PolyApply, Widen, the}
+import shapeless.{::, DepFn0, DepFn1, DepFn2, Generic, HList, HNil, Poly0, PolyApply, the}
 
 import scala.language.existentials
 import scala.language.higherKinds
@@ -65,10 +66,10 @@ object DeepLearning {
       }
     }
 
-    implicit object HNilPatch extends Patch[HNil, HNil] {
-      override def applyPatch(weight: HNil, patch: HNil, learningRate: Double) = HNil
+    final case class NeverChangePatch[Data <: Singleton]() extends Patch[Data, NeverChange.type] {
+      override def applyPatch(weight: Data, patch: NeverChange.type, learningRate: Double) = weight
 
-      override def append(f1: HNil, f2: => HNil) = HNil
+      override def append(f1: NeverChange.type, f2: => NeverChange.type) = NeverChange
     }
 
     implicit def hconsPatch[Head, HeadDifference, Tail <: HList, TailDifference](implicit headPatch: Patch[Head, HeadDifference], tailPatch: Patch[Tail, TailDifference]): Patch[Head :: Tail, (HeadDifference, TailDifference)] = {
@@ -93,6 +94,8 @@ object DeepLearning {
         override def append(f1: Difference, f2: => Difference): Difference = hlistPatch.append(f1, f2)
       }
     }
+
+    implicit def neverChangePatch[Data <: Singleton] = new NeverChangePatch[Data]
   }
 
   final case class PatchOps[Data, Difference0](override val self: Data, override val patch: Patch[Data, Difference0]) extends Ops[Data] with Differentiable {
@@ -157,9 +160,6 @@ object DeepLearning {
       // TODO: Should implement it via shapeless.Generic
       //
       //      object PartialAppliedDifference {
-      //        implicit def partialAppliedPatch[Input0, Input1, Output, InputDifference0, FDifference, P <: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], F <: DifferentiableFunction.Aux[Input0, P, F] {
-      //
-      //        }
       //
       //        implicit def partialAppliedPatch[Input0, Input1, Output, InputDifference0, FDifference, P <: PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], F <: DifferentiableFunction.Aux[Input0, P, F] {
       //          type Difference = FDifference
@@ -232,21 +232,25 @@ object DeepLearning {
 
     }
 
-    case object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] {
-      override def forward(input: Differentiable.Aux[_ <: INDArray, _]): Cache[_ <: PartialApplied[INDArray, INDArray, INDArray, INDArray, Difference, Multiply.type], input.Difference, Difference] = {
+
+    trait PureFunction {
+      _: DifferentiableFunction[_, _] with Singleton =>
+      override type Self = this.type
+
+      override type Difference = NeverChange.type
+
+      override implicit def patch: Patch[Self, Difference] = Patch.neverChangePatch
+    }
+
+    object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with PureFunction {
+      override def forward(input: Differentiable.Aux[_ <: INDArray, _]): Cache[_ <: PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type], input.Difference, Difference] = {
         input match {
           case PatchOps(inputData, Patch.INDArrayPatch) =>
-            PartialApplied[INDArray, INDArray, INDArray, INDArray, Difference, Multiply.type](inputData, Multiply.this)
+            PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type](inputData, Multiply.this)
           case inputPatch =>
             throw new IllegalArgumentException(s"Unsupported patch type ${inputPatch}")
         }
       }.unsafeCast
-
-      override type Self = Multiply.type
-
-      override type Difference = HNil
-
-      override implicit def patch = Patch.genericPatch(Generic[Multiply.type], Patch.HNilPatch)
     }
 
     implicit object DifferentiableFunctionInstances extends SKICombinator[DifferentiableFunction] with Multiply[DifferentiableFunction] {
