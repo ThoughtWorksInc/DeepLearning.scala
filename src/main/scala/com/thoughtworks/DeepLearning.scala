@@ -1,6 +1,7 @@
 package com.thoughtworks
 
 
+import com.thoughtworks.DeepLearning.Differentiable.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
@@ -151,13 +152,13 @@ object DeepLearning {
 
     }
 
-    trait Cache[Output, InputDifference, Difference] {
+    trait Cache[Output0, InputDifference, Difference] {
+
+      type Output = Output0
 
       type OutputDifference
 
-      implicit def outputPatch: Patch[Output, OutputDifference]
-
-      def output: Output
+      def output: Differentiable.Aux[Output, OutputDifference]
 
       def backward(difference: OutputDifference): Differences[InputDifference, Difference]
 
@@ -188,8 +189,6 @@ object DeepLearning {
       override def output: Self = this
 
       type OutputDifference = Difference
-
-      override implicit def outputPatch: Patch[Self, OutputDifference] = patch
 
       override def backward(difference: Difference): Difference = difference
 
@@ -228,9 +227,7 @@ object DeepLearning {
             new Cache[INDArray, INDArray, Difference] {
               type OutputDifference = INDArray
 
-              override implicit def outputPatch: Patch[INDArray, OutputDifference] = Patch.INDArrayPatch
-
-              override def output: INDArray = input0Data * input1Data
+              override def output = PatchOps(input0Data * input1Data, Patch.INDArrayPatch)
 
               override def backward(difference: OutputDifference) = new Differences[INDArray, Difference] {
                 override def inputDifference: INDArray = input0Data
@@ -245,9 +242,9 @@ object DeepLearning {
       }.unsafeCast
     }
 
-    object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with PureFunction {
+    object Multiply extends DifferentiableFunction[INDArray, PartialAppliedMultiply] with PureFunction {
 
-      override def forward(input0: Differentiable.Aux[_ <: INDArray, _]): Cache[_ <: PartialAppliedMultiply, input0.Difference, Difference] = {
+      override def forward(input0: Differentiable.Aux[_ <: INDArray, _]): Cache[PartialAppliedMultiply, input0.Difference, Difference] = {
         input0 match {
           case PatchOps(inputData, Patch.INDArrayPatch) =>
             PartialAppliedMultiply(inputData, Multiply.this)
@@ -257,11 +254,69 @@ object DeepLearning {
       }.unsafeCast
     }
 
+    final case class Compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]) extends DifferentiableFunction[A, C] {
+      outer =>
+
+      type F = f.Self
+      type G = g.Self
+      override type Self = Compose[A, B, C] {
+        type F = f.Self
+        type G = g.Self
+      }
+
+      override type Difference = (f.Difference, g.Difference)
+
+      override def forward(input: Differentiable.Aux[_ <: A, _]): Cache[_ <: C, input.Difference, Difference] = {
+        val cacheG: Cache[_ <: B, input.Difference, g.Difference] = g.forward(input)
+        val cacheF: Cache[_ <: C, cacheG.OutputDifference, f.Difference] = f.forward(cacheG.output: Differentiable.Aux[cacheG.Output, cacheG.OutputDifference]).unsafeCast
+        new Cache[cacheF.Output, input.Difference, Difference] {
+
+          override type OutputDifference = cacheF.OutputDifference
+
+          override def backward(difference: OutputDifference): Differences[input.Difference, (f.Difference, g.Difference)] = {
+
+            val differencesF: Differences[cacheG.OutputDifference, f.Difference] = cacheF.backward(difference)
+
+            cacheG.backward(differencesF.inputDifference)
+
+            new Differences[input.Difference, (f.Difference, g.Difference)] {
+              override def inputDifference: input.Difference = ???
+
+              override def weightDifference: (f.Difference, g.Difference) = ???
+            }
+
+          }
+
+          override def output: Differentiable.Aux[Output, cacheF.OutputDifference] = cacheF.output
+
+        }.unsafeCast
+
+      }
+
+      override implicit def patch: Patch[Self, (f.Difference, g.Difference)] = {
+        // Avoid reference from the Patch type class to outer Compose.this
+        val fPatch = f.patch
+        val gPatch = g.patch
+        new Patch[Self, (f.Difference, g.Difference)] {
+          override def applyPatch(weight: Self, patch: (f.Difference, g.Difference), learningRate: Double): Self = {
+            new Compose[A, B, C](
+              fPatch.applyPatch(weight.f.asInstanceOf[F], patch._1, learningRate),
+              gPatch.applyPatch(weight.g.asInstanceOf[G], patch._2, learningRate)
+            ).asInstanceOf[Self]
+          }
+
+          override def append(f1: (f.Difference, g.Difference), f2: => (f.Difference, g.Difference)): (f.Difference, g.Difference) = {
+            (fPatch.append(f1._1, f2._1), gPatch.append(f1._2, f2._2))
+          }
+        }
+      }
+    }
+
     implicit object DifferentiableFunctionInstances extends SKICombinator[DifferentiableFunction] with Multiply[DifferentiableFunction] {
 
       override def multiply: DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] = Multiply
 
-      override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
+      override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]) = Compose(f, g)
 
       override def id[A]: DifferentiableFunction[A, A] = ???
 
