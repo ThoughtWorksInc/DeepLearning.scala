@@ -137,7 +137,7 @@ object DeepLearning {
 
     implicit def patch: Patch[Self, Difference]
 
-    def forward(input: Differentiable.Aux[_ <: Input, _]): DifferentiableFunction.Cache[_ <: Output, input.Difference, Difference]
+    def forward[InputData <: Input, InputDifference](input: Differentiable.Aux[InputData, InputDifference]): DifferentiableFunction.Cache[_ <: Output, InputDifference, Difference]
 
   }
 
@@ -221,7 +221,7 @@ object DeepLearning {
         )
       }
 
-      override def forward(input1: Differentiable.Aux[_ <: INDArray, _]): Cache[INDArray, input1.Difference, Difference] = {
+      override def forward[InputData <: INDArray, InputDifference](input1: Differentiable.Aux[InputData, InputDifference]): Cache[INDArray, InputDifference, Difference] = {
         input1 match {
           case PatchOps(input1Data, Patch.INDArrayPatch) =>
             new Cache[INDArray, INDArray, Difference] {
@@ -244,7 +244,7 @@ object DeepLearning {
 
     object Multiply extends DifferentiableFunction[INDArray, PartialAppliedMultiply] with PureFunction {
 
-      override def forward(input0: Differentiable.Aux[_ <: INDArray, _]): Cache[PartialAppliedMultiply, input0.Difference, Difference] = {
+      override def forward[InputData <: INDArray, InputDifference](input0: Differentiable.Aux[InputData, InputDifference]): Cache[PartialAppliedMultiply, InputDifference, Difference] = {
         input0 match {
           case PatchOps(inputData, Patch.INDArrayPatch) =>
             PartialAppliedMultiply(inputData, Multiply.this)
@@ -266,10 +266,10 @@ object DeepLearning {
 
       override type Difference = (f.Difference, g.Difference)
 
-      override def forward(input: Differentiable.Aux[_ <: A, _]): Cache[_ <: C, input.Difference, Difference] = {
-        val cacheG: Cache[_ <: B, input.Difference, g.Difference] = g.forward(input)
-        val cacheF: Cache[_ <: C, cacheG.OutputDifference, f.Difference] = f.forward(cacheG.output: Differentiable.Aux[cacheG.Output, cacheG.OutputDifference]).unsafeCast
-        new Cache[cacheF.Output, input.Difference, Difference] {
+      override def forward[InputData <: A, InputDifference](input: Differentiable.Aux[InputData, InputDifference]): Cache[_ <: C, InputDifference, Difference] = {
+        val cacheG: Cache[_ <: B, InputDifference, g.Difference] = g.forward(input)
+        val cacheF: Cache[_ <: C, cacheG.OutputDifference, f.Difference] = f.forward[cacheG.Output, cacheG.OutputDifference](cacheG.output).unsafeCast
+        new Cache[cacheF.Output, InputDifference, Difference] {
 
           override type OutputDifference = cacheF.OutputDifference
 
@@ -279,8 +279,8 @@ object DeepLearning {
 
             cacheG.backward(differencesF.inputDifference)
 
-            new Differences[input.Difference, (f.Difference, g.Difference)] {
-              override def inputDifference: input.Difference = ???
+            new Differences[InputDifference, (f.Difference, g.Difference)] {
+              override def inputDifference: InputDifference = ???
 
               override def weightDifference: (f.Difference, g.Difference) = ???
             }
@@ -289,7 +289,7 @@ object DeepLearning {
 
           override def output: Differentiable.Aux[Output, cacheF.OutputDifference] = cacheF.output
 
-        }.unsafeCast
+        }
 
       }
 
