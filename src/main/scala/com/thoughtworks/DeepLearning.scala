@@ -29,7 +29,9 @@ object DeepLearning {
   }
 
   sealed trait Patch[Data, Difference] extends Semigroup[Difference] {
+
     def applyPatch(weight: Data, patch: Difference, learningRate: Double): Data
+
   }
 
   sealed trait Differentiable {
@@ -54,6 +56,14 @@ object DeepLearning {
   object NeverChange
 
   object Patch {
+
+    implicit def wrapperPatch[Wrapper, Underlying, Difference](implicit genereic: Generic.Aux[Wrapper, Underlying :: HNil], underlyingPatch: Patch[Underlying, Difference]) = new Patch[Wrapper, Difference] {
+      override def applyPatch(weight: Wrapper, patch: Difference, learningRate: Double): Wrapper = {
+        genereic.from(underlyingPatch.applyPatch(genereic.to(weight).head, patch, learningRate) :: HNil)
+      }
+
+      override def append(f1: Difference, f2: => Difference): Difference = underlyingPatch.append(f1, f2)
+    }
 
     implicit object INDArrayPatch extends Patch[INDArray, INDArray] {
       override def applyPatch(weight: INDArray, patch: INDArray, learningRate: Double): INDArray = {
@@ -170,29 +180,12 @@ object DeepLearning {
     }
 
 
-    final case class PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F <: DifferentiableFunction.Aux[Input0, _, F] {
-      type Difference = FDifference
-    }]
-    (input0: Input0, f: F)
-    (implicit inputPatch: Patch[Input0, InputDifference0])
-      extends DifferentiableFunction[Input1, Output]
-        with Cache[PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F], InputDifference0, FDifference] {
-
-      type Self = PartialApplied[Input0, Input1, Output, InputDifference0, FDifference, F]
+    trait PartialApplied[InputDifference0, FDifference] {
+      _: DifferentiableFunction[_, _] with Cache[_, InputDifference0, FDifference] =>
 
       type Difference = PartialApplied.PartialAppliedDifference[InputDifference0, FDifference]
 
-      override implicit def patch: Patch[Self, Difference] = {
-        Patch.genericPatch(
-          Generic[Self],
-          Generic[Difference],
-          Patch.hconsPatch(inputPatch, Patch.hconsPatch(f.patch, Patch.HNilPatch))
-        )
-      }
-
       override def output: Self = this
-
-      override def forward(input: Differentiable.Aux[_ <: Input1, _]): Cache[_ <: Output, input.Difference, Difference] = ???
 
       type OutputDifference = Difference
 
@@ -211,13 +204,55 @@ object DeepLearning {
       override implicit def patch: Patch[Self, Difference] = Patch.neverChangePatch
     }
 
+
+    final case class PartialAppliedMultiply
+    (input0Data: INDArray, outer: Multiply.type)
+    (implicit protected val inputPatch: Patch[INDArray, INDArray])
+      extends DifferentiableFunction[INDArray, INDArray]
+        with Cache[PartialAppliedMultiply, INDArray, NeverChange.type]
+        with PartialApplied[INDArray, NeverChange.type] {
+
+      type Self = PartialAppliedMultiply
+
+      override implicit def patch: Patch[Self, Difference] = {
+        Patch.genericPatch(
+          Generic[Self],
+          Generic[Difference],
+          Patch.hconsPatch(inputPatch, Patch.hconsPatch(outer.patch, Patch.HNilPatch))
+        )
+      }
+
+      override def forward(input1: Differentiable.Aux[_ <: INDArray, _]): Cache[INDArray, input1.Difference, Difference] = {
+        input1 match {
+          case PatchOps(input1Data, Patch.INDArrayPatch) =>
+            new Cache[INDArray, INDArray, Difference] {
+              type OutputDifference = INDArray
+
+              override implicit def outputPatch: Patch[INDArray, OutputDifference] = Patch.INDArrayPatch
+
+              override def output: INDArray = input0Data * input1Data
+
+              override def backward(difference: OutputDifference) = new Differences[INDArray, Difference] {
+                override def inputDifference: INDArray = input0Data
+
+                override def weightDifference: Difference = new Difference(input1Data, NeverChange)
+              }
+            }
+          case _ =>
+            throw new IllegalArgumentException(s"Unsupported patch type ${input1}")
+
+        }
+      }.unsafeCast
+    }
+
     object Multiply extends DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] with PureFunction {
-      override def forward(input: Differentiable.Aux[_ <: INDArray, _]): Cache[_ <: PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type], input.Difference, Difference] = {
-        input match {
+
+      override def forward(input0: Differentiable.Aux[_ <: INDArray, _]): Cache[_ <: PartialAppliedMultiply, input0.Difference, Difference] = {
+        input0 match {
           case PatchOps(inputData, Patch.INDArrayPatch) =>
-            PartialApplied[INDArray, INDArray, INDArray, INDArray, NeverChange.type, Multiply.type](inputData, Multiply.this)
-          case inputPatch =>
-            throw new IllegalArgumentException(s"Unsupported patch type ${inputPatch}")
+            PartialAppliedMultiply(inputData, Multiply.this)
+          case _ =>
+            throw new IllegalArgumentException(s"Unsupported patch type ${input0}")
         }
       }.unsafeCast
     }
