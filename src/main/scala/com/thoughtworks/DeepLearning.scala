@@ -15,16 +15,6 @@ import scalaz.{Apply, Arrow, Category, Choice, Compose, Semigroup, Split, Strong
 
 object DeepLearning {
 
-  trait Substitution[=>:[_, _]] {
-    def substitute[A, B, C](x: A =>: B =>: C, y: A =>: B): A =>: C
-  }
-
-  trait Constant[=>:[_, _]] {
-    def constant[A, B, C](x: A =>: B): C =>: A =>: B
-  }
-
-  trait SKICombinator[=>:[_, _]] extends Substitution[=>:] with Constant[=>:] with Category[=>:]
-
   trait Multiply[=>:[_, _]] {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
@@ -129,7 +119,7 @@ object DeepLearning {
 
   trait DifferentiableFunction[-Input, +Output] extends Differentiable {
 
-    type Self >: this.type <: DifferentiableFunction[Input, Output]
+    type Self >: this.type <: DifferentiableFunction.Aux[Input, Output, Self]
 
     type Difference
 
@@ -254,15 +244,10 @@ object DeepLearning {
       }.unsafeCast
     }
 
-    final case class Compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]) extends DifferentiableFunction[A, C] {
+    final case class Compose[A, B, C, F <: DifferentiableFunction.Aux[B, C, F], G <: DifferentiableFunction.Aux[A, B, G]](f: F, g: G) extends DifferentiableFunction[A, C] {
       outer =>
 
-      type F = f.Self
-      type G = g.Self
-      override type Self = Compose[A, B, C] {
-        type F = f.Self
-        type G = g.Self
-      }
+      override type Self = Compose[A, B, C, F, G]
 
       override type Difference = (f.Difference, g.Difference)
 
@@ -277,12 +262,12 @@ object DeepLearning {
 
             val differencesF: Differences[cacheG.OutputDifference, f.Difference] = cacheF.backward(difference)
 
-            cacheG.backward(differencesF.inputDifference)
+            val differencesG = cacheG.backward(differencesF.inputDifference)
 
             new Differences[InputDifference, (f.Difference, g.Difference)] {
-              override def inputDifference: InputDifference = ???
+              override def inputDifference: InputDifference = differencesG.inputDifference
 
-              override def weightDifference: (f.Difference, g.Difference) = ???
+              override def weightDifference: (f.Difference, g.Difference) = (differencesF.weightDifference, differencesG.weightDifference)
             }
 
           }
@@ -293,36 +278,25 @@ object DeepLearning {
 
       }
 
-      override implicit def patch: Patch[Self, (f.Difference, g.Difference)] = {
-        // Avoid reference from the Patch type class to outer Compose.this
-        val fPatch = f.patch
-        val gPatch = g.patch
-        new Patch[Self, (f.Difference, g.Difference)] {
-          override def applyPatch(weight: Self, patch: (f.Difference, g.Difference), learningRate: Double): Self = {
-            new Compose[A, B, C](
-              fPatch.applyPatch(weight.f.asInstanceOf[F], patch._1, learningRate),
-              gPatch.applyPatch(weight.g.asInstanceOf[G], patch._2, learningRate)
-            ).asInstanceOf[Self]
-          }
-
-          override def append(f1: (f.Difference, g.Difference), f2: => (f.Difference, g.Difference)): (f.Difference, g.Difference) = {
-            (fPatch.append(f1._1, f2._1), gPatch.append(f1._2, f2._2))
-          }
-        }
+      override implicit def patch: Patch[Self, Difference] = {
+        Patch.genericPatch(Generic[Self], Generic[Difference], Patch.hconsPatch(f.patch, Patch.hconsPatch(g.patch, Patch.HNilPatch)))
       }
     }
 
-    implicit object DifferentiableFunctionInstances extends SKICombinator[DifferentiableFunction] with Multiply[DifferentiableFunction] {
+    implicit object DifferentiableFunctionInstances extends Split[DifferentiableFunction] with Category[DifferentiableFunction] with Multiply[DifferentiableFunction] {
 
       override def multiply: DifferentiableFunction[INDArray, DifferentiableFunction[INDArray, INDArray]] = Multiply
 
-      override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]) = Compose(f, g)
+      override def compose[A, B, C](f: DifferentiableFunction[B, C], g: DifferentiableFunction[A, B]) = {
+        new Compose[A, B, C, f.Self, g.Self](f, g)
+      }
+
+      override def split[A, B, C, D](f: DifferentiableFunction[A, B], g: DifferentiableFunction[C, D]): DifferentiableFunction[(A, C), (B, D)] = {
+        ???
+      }
 
       override def id[A]: DifferentiableFunction[A, A] = ???
 
-      override def constant[A, B, C](x: DifferentiableFunction[A, B]): DifferentiableFunction[C, DifferentiableFunction[A, B]] = ???
-
-      override def substitute[A, B, C](x: DifferentiableFunction[A, DifferentiableFunction[B, C]], y: DifferentiableFunction[A, B]): DifferentiableFunction[A, C] = ???
     }
 
   }
