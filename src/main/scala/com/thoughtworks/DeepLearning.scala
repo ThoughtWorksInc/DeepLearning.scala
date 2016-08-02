@@ -3,6 +3,7 @@ package com.thoughtworks
 
 import com.thoughtworks.DeepLearning.Differentiable.Aux
 import com.thoughtworks.DeepLearning.NeverChange
+import com.thoughtworks.DeepLearning.Patch.PairPatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -49,6 +50,20 @@ object DeepLearning {
   object NeverChange
 
   object Patch {
+
+    final case class PairPatch[Data0, Data1, Difference0, Difference1](implicit patch0: Patch[Data0, Difference0], patch1: Patch[Data1, Difference1]) extends Patch[(Data0, Data1), (Difference0, Difference1)] {
+      override def applyPatch(weight: (Data0, Data1), patch: (Difference0, Difference1), learningRate: Double): (Data0, Data1) = {
+        (patch0.applyPatch(weight._1, patch._1, learningRate), patch1.applyPatch(weight._2, patch._2, learningRate))
+      }
+
+      override def zero: (Difference0, Difference1) = {
+        (patch0.zero, patch1.zero)
+      }
+
+      override def append(f1: (Difference0, Difference1), f2: => (Difference0, Difference1)): (Difference0, Difference1) = {
+        (patch0.append(f1._1, f2._1), patch1.append(f1._2, f2._2))
+      }
+    }
 
     implicit def wrapperPatch[Wrapper, Underlying, Difference](implicit genereic: Generic.Aux[Wrapper, Underlying :: HNil], underlyingPatch: Patch[Underlying, Difference]) = new Patch[Wrapper, Difference] {
       override def applyPatch(weight: Wrapper, patch: Difference, learningRate: Double): Wrapper = {
@@ -360,6 +375,56 @@ object DeepLearning {
       }
     }
 
+    final case class First[A, B, C, FA <: DifferentiableFunction.Aux[A, B, FA]](fa: FA) extends DifferentiableFunction[(A, C), (B, C)] {
+
+      type Self = First[A, B, C, FA]
+
+      override type Difference = fa.Difference
+
+      override implicit def patch = {
+        Patch.wrapperPatch[Self, FA, Difference](Generic[Self], fa.patch)
+      }
+
+      override def forward[InputData <: (A, C), InputDifference](input: Differentiable.Aux[InputData, InputDifference]) = {
+        val (patch0: Patch[A, _], patch1: Patch[C, _]) = input.patch match {
+          case pairPatch: Patch.PairPatch[A, C, _, _] =>
+            (pairPatch.patch0, pairPatch.patch1)
+          case Patch.NeverChangePatch() =>
+            (Patch.NeverChangePatch(), Patch.NeverChangePatch())
+          case _ =>
+            throw new IllegalArgumentException
+        }
+        val (a, c) = input.self
+        val differentiableA = PatchOps(a, patch0)
+        val differentiableC = PatchOps(c, patch1)
+        val forwardFa = fa.forward(differentiableA)
+
+        val differentiableB = forwardFa.output
+        new Cache[(differentiableB.Self, differentiableC.Self), InputDifference, Difference] {
+          override type OutputDifference = (forwardFa.OutputDifference, differentiableC.Difference)
+
+          override def output = {
+            PatchOps[(differentiableB.Self, differentiableC.Self), OutputDifference](
+              (differentiableB.self: differentiableB.Self) -> (c: differentiableC.Self),
+              new PairPatch()(differentiableB.patch, patch1.asInstanceOf[Patch[differentiableC.Self, differentiableC.Difference]])
+            )
+          }
+
+          override def backward(difference: OutputDifference) = {
+            val differencesB = forwardFa.backward(difference._1)
+            new Differences[InputDifference, Difference] {
+              override def inputDifference: InputDifference = {
+                (differencesB.inputDifference, difference._2).asInstanceOf[InputDifference]
+              }
+              override def weightDifference: fa.Difference = {
+                differencesB.weightDifference
+              }
+            }
+          }
+        }
+      }.unsafeCast
+    }
+
     implicit object DifferentiableFunctionInstances extends Arrow[DifferentiableFunction] with Multiply[DifferentiableFunction] {
 
       override def multiply = Multiply
@@ -372,7 +437,7 @@ object DeepLearning {
 
       override def arr[A, B](f: (A) => B) = Arr(f)
 
-      override def first[A, B, C](fa: DifferentiableFunction[A, B]): DifferentiableFunction[(A, C), (B, C)] = ???
+      override def first[A, B, C](fa: DifferentiableFunction[A, B]) = First[A, B, C, fa.Self](fa)
 
     }
 
