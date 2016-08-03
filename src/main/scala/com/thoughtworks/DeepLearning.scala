@@ -387,11 +387,11 @@ object DeepLearning {
 
       override def forward[InputData <: (A, C), InputDifference](input: Differentiable.Aux[InputData, InputDifference]) = {
         val (a: A with AnyRef, c: C with AnyRef) = input.self // See
-        @inline def forward2[DataA >: a.type <: A, DataC >: c.type <: C, DifferenceA, DifferenceC](patchA: Patch[DataA, DifferenceA], patchC: Patch[DataC, DifferenceC]) = {
+        @inline def forwardAC[DataA >: a.type <: A, DataC >: c.type <: C, DifferenceA, DifferenceC](patchA: Patch[DataA, DifferenceA], patchC: Patch[DataC, DifferenceC]) = {
           val differentiableA = PatchOps[DataA, DifferenceA](a, patchA)
           val differentiableC = PatchOps[DataC, DifferenceC](c, patchC)
           type InputDifference = (DifferenceA, DifferenceC)
-          @inline def forward3[DataB](forwardFa: DifferentiableFunction.Cache[DataB, DifferenceA, fa.Difference]) = {
+          @inline def forwardB[DataB](forwardFa: DifferentiableFunction.Cache[DataB, DifferenceA, fa.Difference]) = {
             val differentiableB = forwardFa.output
             new Cache[(DataB, DataC), InputDifference, Difference] {
               override type OutputDifference = (forwardFa.OutputDifference, DifferenceC)
@@ -417,15 +417,15 @@ object DeepLearning {
               }
             }
           }
-          forward3(fa.forward(differentiableA))
+          forwardB(fa.forward(differentiableA))
         }
         type PatchA = Patch[_ >: a.type <: A, _]
         type PatchC = Patch[_ >: c.type <: C, _]
         (input.patch: AnyRef) match {
           case Patch.PairPatch(patch0, patch1) =>
-            forward2(patch0.asInstanceOf[PatchA], patch1.asInstanceOf[PatchC])
+            forwardAC(patch0.asInstanceOf[PatchA], patch1.asInstanceOf[PatchC])
           case Patch.NeverChangePatch() =>
-            forward2(Patch.NeverChangePatch[A, Any](), Patch.NeverChangePatch[C, Any]())
+            forwardAC(Patch.NeverChangePatch[A, Any](), Patch.NeverChangePatch[C, Any]())
           case _ =>
             throw new IllegalArgumentException
         }
