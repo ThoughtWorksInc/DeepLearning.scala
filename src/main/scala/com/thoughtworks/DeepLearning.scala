@@ -14,7 +14,7 @@ import shapeless.{::, DepFn0, DepFn1, DepFn2, Generic, HList, HNil, Poly0, PolyA
 import scala.language.existentials
 import scala.language.higherKinds
 import scalaz.syntax.Ops
-import scalaz.{Apply, Arrow, Category, Choice, Compose, Monoid, Semigroup, Split, Strong}
+import scalaz.{Apply, Arrow, Category, Choice, Compose, Monoid, Semigroup, Split, Strong, \/}
 
 object DeepLearning {
 
@@ -51,7 +51,7 @@ object DeepLearning {
 
   object Patch {
 
-    final case class PairPatch[Data0, Data1, Difference0, Difference1](implicit patch0: Patch[Data0, Difference0], patch1: Patch[Data1, Difference1]) extends Patch[(Data0, Data1), (Difference0, Difference1)] {
+    final case class PairPatch[Data0, Data1, Difference0, Difference1](patch0: Patch[Data0, Difference0], patch1: Patch[Data1, Difference1]) extends Patch[(Data0, Data1), (Difference0, Difference1)] {
       override def applyPatch(weight: (Data0, Data1), patch: (Difference0, Difference1), learningRate: Double): (Data0, Data1) = {
         (patch0.applyPatch(weight._1, patch._1, learningRate), patch1.applyPatch(weight._2, patch._2, learningRate))
       }
@@ -386,46 +386,79 @@ object DeepLearning {
       }
 
       override def forward[InputData <: (A, C), InputDifference](input: Differentiable.Aux[InputData, InputDifference]) = {
-        val (patch0: Patch[A, _], patch1: Patch[C, _]) = input.patch match {
-          case pairPatch: Patch.PairPatch[A, C, _, _] =>
-            (pairPatch.patch0, pairPatch.patch1)
-          case Patch.NeverChangePatch() =>
-            (Patch.NeverChangePatch(), Patch.NeverChangePatch())
-          case _ =>
-            throw new IllegalArgumentException
-        }
-        val (a, c) = input.self
-        val differentiableA = PatchOps(a, patch0)
-        val differentiableC = PatchOps(c, patch1)
-        val forwardFa = fa.forward(differentiableA)
+        val (a: A with AnyRef, c: C with AnyRef) = input.self // See
+        @inline def forward2[DataA >: a.type <: A, DataC >: c.type <: C, DifferenceA, DifferenceC](patchA: Patch[DataA, DifferenceA], patchC: Patch[DataC, DifferenceC]) = {
+          val differentiableA = PatchOps[DataA, DifferenceA](a, patchA)
+          val differentiableC = PatchOps[DataC, DifferenceC](c, patchC)
+          type InputDifference = (DifferenceA, DifferenceC)
+          @inline def forward3[DataB](forwardFa: DifferentiableFunction.Cache[DataB, DifferenceA, fa.Difference]) = {
+            val differentiableB = forwardFa.output
+            new Cache[(DataB, DataC), InputDifference, Difference] {
+              override type OutputDifference = (forwardFa.OutputDifference, DifferenceC)
 
-        val differentiableB = forwardFa.output
-        new Cache[(differentiableB.Self, differentiableC.Self), InputDifference, Difference] {
-          override type OutputDifference = (forwardFa.OutputDifference, differentiableC.Difference)
-
-          override def output = {
-            PatchOps[(differentiableB.Self, differentiableC.Self), OutputDifference](
-              (differentiableB.self: differentiableB.Self) -> (c: differentiableC.Self),
-              new PairPatch()(differentiableB.patch, patch1.asInstanceOf[Patch[differentiableC.Self, differentiableC.Difference]])
-            )
-          }
-
-          override def backward(difference: OutputDifference) = {
-            val differencesB = forwardFa.backward(difference._1)
-            new Differences[InputDifference, Difference] {
-              override def inputDifference: InputDifference = {
-                (differencesB.inputDifference, difference._2).asInstanceOf[InputDifference]
+              override def output = {
+                PatchOps(
+                  Tuple2[DataB, DataC](differentiableB.self, c),
+                  new PairPatch(differentiableB.patch, patchC)
+                )
               }
-              override def weightDifference: fa.Difference = {
-                differencesB.weightDifference
+
+              override def backward(difference: OutputDifference) = {
+                val differencesB = forwardFa.backward(difference._1)
+                new Differences[InputDifference, Difference] {
+                  override def inputDifference: (DifferenceA, DifferenceC) = {
+                    (differencesB.inputDifference, difference._2: DifferenceC)
+                  }
+
+                  override def weightDifference: fa.Difference = {
+                    differencesB.weightDifference
+                  }
+                }
               }
             }
           }
+          forward3(fa.forward(differentiableA))
+        }
+        type PatchA = Patch[_ >: a.type <: A, _]
+        type PatchC = Patch[_ >: c.type <: C, _]
+        (input.patch: AnyRef) match {
+          case Patch.PairPatch(patch0, patch1) =>
+            forward2(patch0.asInstanceOf[PatchA], patch1.asInstanceOf[PatchC])
+          case Patch.NeverChangePatch() =>
+            forward2(Patch.NeverChangePatch[A, Any](), Patch.NeverChangePatch[C, Any]())
+          case _ =>
+            throw new IllegalArgumentException
         }
       }.unsafeCast
     }
 
-    implicit object DifferentiableFunctionInstances extends Arrow[DifferentiableFunction] with Multiply[DifferentiableFunction] {
+    final case class Split[A, B, C, D, F <: DifferentiableFunction.Aux[A, B, F], G <: DifferentiableFunction.Aux[C, D, G]](f: F, g: G) extends DifferentiableFunction[(A, C), (B, D)] {
+
+      type Difference = (f.Difference, g.Difference)
+
+      type Self = Split[A, B, C, D, F, G]
+
+      override implicit def patch: Patch[Self, Difference] = {
+        Patch.genericPatch(Generic[Self], Generic[Difference], Patch.hconsPatch(f.patch, Patch.hconsPatch(g.patch, Patch.HNilPatch)))
+      }
+
+      override def forward[InputData <: (A, C), InputDifference](input: Differentiable.Aux[InputData, InputDifference]): Cache[_ <: (B, D), InputDifference, Difference] = {
+        type ACPatch = Patch.PairPatch[_ <: A, _ <: C, _, _]
+        type PatchA = Patch[_ <: A, _]
+        type PatchC = Patch[_ <: C, _]
+        val (patchA: PatchA, patchC: PatchC) = input.patch match {
+          case pairPatch: ACPatch =>
+            (pairPatch.patch0, pairPatch.patch1)
+          case Patch.NeverChangePatch() =>
+            (Patch.NeverChangePatch[A, Any](), Patch.NeverChangePatch[C, Any]())
+          case _ =>
+            throw new IllegalArgumentException
+        }
+        ???
+      }
+    }
+
+    implicit object DifferentiableFunctionInstances extends scalaz.Split[DifferentiableFunction] with Category[DifferentiableFunction] with scalaz.Choice[DifferentiableFunction] with Multiply[DifferentiableFunction] {
 
       override def multiply = Multiply
 
@@ -435,10 +468,13 @@ object DeepLearning {
 
       override def id[A] = Id[A]
 
-      override def arr[A, B](f: (A) => B) = Arr(f)
+      override def choice[A, B, C](f: => DifferentiableFunction[A, C], g: => DifferentiableFunction[B, C]): DifferentiableFunction[\/[A, B], C] = ???
 
-      override def first[A, B, C](fa: DifferentiableFunction[A, B]) = First[A, B, C, fa.Self](fa)
+      override def split[A, B, C, D](f: DifferentiableFunction[A, B], g: DifferentiableFunction[C, D]): DifferentiableFunction[(A, C), (B, D)] = ???
 
+      //      override def arr[A, B](f: (A) => B) = Arr(f)
+
+      //      override def first[A, B, C](fa: DifferentiableFunction[A, B]) = First[A, B, C, fa.Self](fa)
     }
 
   }
