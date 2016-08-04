@@ -614,6 +614,42 @@ object DeepLearning {
       // TODO: Override methods in Arrow
     }
 
+    import scalaz.Isomorphism.<=>
+
+    final case class Iso[A, B](isoSet: A <=> B) extends DifferentiableFunction[A, B] {
+
+      override type Self = Iso[A, B]
+
+      override type Difference = NeverChange.type
+
+      override implicit def patch = Patch.NeverChangePatch[Self, Difference]()
+
+      override def forward[InputData <: A, InputDifference](input: Differentiable.Aux[InputData, InputDifference]): Cache[_ <: B, InputDifference, Difference] = ???
+
+    }
+
+    final case class Select[A, B](lens: Lens[A, B]) extends DifferentiableFunction[A, B] {
+
+      override type Self = Select[A, B]
+
+      override type Difference = NeverChange.type
+
+      override implicit def patch = Patch.NeverChangePatch[Self, Difference]()
+
+      override def forward[InputData <: A, InputDifference](input: Differentiable.Aux[InputData, InputDifference]): Cache[_ <: B, InputDifference, Difference] = ???
+
+    }
+
+
+    //
+    //
+    //    def curry[=>: : scalaz.Split, A, B, C](f: (A, B) =>: C): A =>: B =>: C = {
+    //      DifferentiableFunctionInstances.empty
+    //      import scalaz.syntax.split._
+    //      Id[A]() -*- Id[B]()
+    //
+    //      ???
+    //    }
 
   }
 
