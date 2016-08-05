@@ -2,7 +2,6 @@ package com.thoughtworks
 
 
 import com.thoughtworks.Differentiable._
-import com.thoughtworks.Differentiable.Patch.PairPatch
 import com.thoughtworks.Differentiable.DifferentiableFunction
 import com.thoughtworks.Differentiable.DifferentiableFunction._
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -14,10 +13,37 @@ import shapeless.{::, DepFn0, DepFn1, DepFn2, Generic, HList, HNil, Poly0, PolyA
 
 import scala.language.existentials
 import scala.language.higherKinds
-import scalaz.syntax.Ops
-import scalaz.{-\/, Apply, Arrow, Category, Choice, Compose, Lens, Monoid, Semigroup, Split, Strong, \/, \/-}
 
 object DeepLearning {
+
+  implicit object INDArrayPatch extends Patch[INDArray, Option[INDArray]] {
+    override def applyPatch(weight: INDArray, patch: Option[INDArray], learningRate: Double): INDArray = {
+      patch match {
+        case None =>
+          weight
+        case Some(delta) =>
+          weight + delta * learningRate
+      }
+    }
+
+    override def combine(f1: Option[INDArray], f2: Option[INDArray]): Option[INDArray] = {
+      f1 match {
+        case None =>
+          f2 match {
+            case None => None
+            case Some(f2Delta) => Some(f2Delta)
+
+          }
+        case Some(f1Delta) =>
+          f2 match {
+            case None => Some(f1Delta)
+            case Some(f2Delta) => Some(f1Delta + f2Delta)
+          }
+      }
+    }
+
+    override def empty = None
+  }
 
   /**
     * Workaround for https://github.com/milessabin/shapeless/issues/626
@@ -75,7 +101,7 @@ object DeepLearning {
           new Cache[INDArray, INDArray, Difference] {
             type OutputDifference = Option[INDArray]
 
-            override def output = PatchOps(input0Data * differentiable1.self, Patch.INDArrayPatch)
+            override def output = Patch.Ops(input0Data * differentiable1.self, INDArrayPatch)
 
             override def backward(difference: OutputDifference) = new Differences[INDArray, Difference] {
               override def inputDifference: INDArray = input0Data

@@ -2,8 +2,6 @@ import org.apache.commons.lang3.SystemUtils
 
 incOptions := incOptions.value.withNameHashing(true).withRecompileOnMacroDef(false)
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.4"
-
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0-M15" % Test
 
 scalaVersion := "2.10.6"
@@ -27,8 +25,6 @@ def osClassifier(moduleId: ModuleID) = {
 }
 
 libraryDependencies += osClassifier("org.nd4j" % "nd4j-native" % "0.4-rc3.9" % Test classifier "")
-
-libraryDependencies += "org.scalaz" %%% "scalaz-scalacheck-binding" % "7.2.4"
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.1"
 
