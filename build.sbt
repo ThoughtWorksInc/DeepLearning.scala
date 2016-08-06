@@ -30,13 +30,7 @@ libraryDependencies += osClassifier("org.nd4j" % "nd4j-native" % "0.4-rc3.9" % T
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.1"
 
-libraryDependencies ++= {
-  if (scalaVersion.value.startsWith("2.10.")) {
-    Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
-  } else {
-    Seq()
-  }
-}
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 scalacOptions in Compile in doc += "-implicits"
 
