@@ -4,6 +4,7 @@ package com.thoughtworks
 import com.thoughtworks.Differentiable._
 import com.thoughtworks.Differentiable.DifferentiableFunction
 import com.thoughtworks.Differentiable.DifferentiableFunction._
+import com.thoughtworks.Differentiable.Patch.IsoPatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -54,50 +55,66 @@ object DeepLearning {
     def multiply: INDArray =>: INDArray =>: INDArray
   }
 
-  final case class PartiallyAppliedMultiply
-  (input0Data: INDArray, outer: Multiply.type)
-  (implicit protected val inputPatch: Patch[INDArray, Option[INDArray]])
-    extends DifferentiableFunction[INDArray, INDArray]
-      with Cache[PartiallyAppliedMultiply, Option[INDArray], NeverChange.type]
-      with PartiallyApplied[Option[INDArray], NeverChange.type] {
+  final case class PartiallyAppliedMultiply(input0Data: INDArray)
+    extends DifferentiableFunction[INDArray, INDArray] with CacheFunction[NeverChange.type] {
 
-    type Self = PartiallyAppliedMultiply
+    override type Difference = Option[INDArray]
 
+    override type Self = PartiallyAppliedMultiply
+
+    override type InputDifference = Option[INDArray]
 
     override implicit def patch: Patch[Self, Difference] = {
-      Patch.genericPatch(
-        Generic[Self],
-        Generic[PartiallyApplied.PartiallyAppliedDifference[Option[INDArray], NeverChange.type]],
-        Patch.hconsPatch(inputPatch, Patch.hconsPatch(outer.patch, Patch.HNilPatch))
-      )
+      new IsoPatch[INDArray, PartiallyAppliedMultiply, Option[INDArray]] {
+        override protected def fromPatch: Patch[INDArray, Option[INDArray]] = INDArrayPatch
+
+        override protected def forward(from: INDArray) = new PartiallyAppliedMultiply(from)
+
+        override protected def backward(to: PartiallyAppliedMultiply) = to.input0Data
+      }
     }
 
-    override def forward[InputData <: INDArray, InputDifference](input1: Differentiable.Aux[InputData, InputDifference]): Cache[INDArray, InputDifference, Difference] = {
+    override final def backward(difference: Difference) = new Differences[InputDifference, NeverChange.type] {
+      override def inputDifference: Option[INDArray] = difference
+
+      override def weightDifference = NeverChange
+    }
+
+    override def forward[InputData <: INDArray, InputDifference](input1: Differentiable.Aux[InputData, InputDifference]): Cache.Aux[INDArray, InputDifference, Difference] = {
       type ExpectedDifferentiable = Differentiable.Aux[_ <: INDArray, _ >: Option[INDArray]]
       input1 match {
         case differentiable1: ExpectedDifferentiable =>
-          new Cache[INDArray, INDArray, Difference] {
-            type OutputDifference = Option[INDArray]
+          new Cache[Difference] {
+            override type Output = INDArray
+            override type InputDifference = Option[INDArray]
+            override type OutputDifference = Option[INDArray]
 
             override def output = Differentiable(input0Data * differentiable1.self, INDArrayPatch)
 
-            override def backward(difference: OutputDifference) = new Differences[INDArray, Difference] {
-              override def inputDifference: INDArray = input0Data
+            override def backward(difference: OutputDifference) = new Differences[InputDifference, Difference] {
+              override def inputDifference: InputDifference = Some(input0Data)
 
-              override def weightDifference: Difference = new Difference(Some(differentiable1.self), NeverChange)
+              override def weightDifference: Difference = Some(differentiable1.self)
+
             }
           }
       }
     }.unsafeCast
   }
 
-  object Multiply extends DifferentiableFunction[INDArray, PartiallyAppliedMultiply] with PureFunction {
+  object Multiply extends DifferentiableFunction[INDArray, PartiallyAppliedMultiply] {
 
-    override def forward[InputData <: INDArray, InputDifference](input0: Differentiable.Aux[InputData, InputDifference]): Cache[PartiallyAppliedMultiply, InputDifference, Difference] = {
+    override type Self = Multiply.type
+
+    override type Difference = NeverChange.type
+
+    override implicit def patch = Patch.NeverChangePatch[Self, Difference]()
+
+    override def forward[InputData <: INDArray, InputDifference](input0: Differentiable.Aux[InputData, InputDifference]): Cache.Aux[PartiallyAppliedMultiply, InputDifference, Difference] = {
       type ExpectedDifferentiable = Differentiable.Aux[_ <: INDArray, _ >: Option[INDArray]]
       input0 match {
         case differentiable0: ExpectedDifferentiable =>
-          PartiallyAppliedMultiply(differentiable0.self, Multiply.this)
+          PartiallyAppliedMultiply(differentiable0.self)
       }
     }.unsafeCast
   }
