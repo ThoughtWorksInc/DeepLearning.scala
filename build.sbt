@@ -1,10 +1,12 @@
+name := "deep-learning"
+
+crossScalaVersions := Seq("2.10.6", "2.11.8")
+
 import org.apache.commons.lang3.SystemUtils
 
 incOptions := incOptions.value.withNameHashing(true).withRecompileOnMacroDef(false)
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0-M15" % Test
-
-scalaVersion := "2.10.6"
 
 classpathTypes += "maven-plugin"
 
