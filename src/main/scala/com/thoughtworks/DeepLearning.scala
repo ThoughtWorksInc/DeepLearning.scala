@@ -101,7 +101,7 @@ object DeepLearning {
           new Cache[INDArray, INDArray, Difference] {
             type OutputDifference = Option[INDArray]
 
-            override def output = Patch.Ops(input0Data * differentiable1.self, INDArrayPatch)
+            override def output = Differentiable(input0Data * differentiable1.self, INDArrayPatch)
 
             override def backward(difference: OutputDifference) = new Differences[INDArray, Difference] {
               override def inputDifference: INDArray = input0Data
