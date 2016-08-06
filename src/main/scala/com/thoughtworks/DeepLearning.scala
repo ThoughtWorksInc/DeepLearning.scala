@@ -56,7 +56,9 @@ object DeepLearning {
   }
 
   final case class PartiallyAppliedMultiply(input0Data: INDArray)
-    extends DifferentiableFunction[INDArray, INDArray] with CacheFunction[NeverChange.type] {
+    extends DifferentiableFunction[INDArray, INDArray] with CacheFunction {
+
+    override type WeightDifference = NeverChange.type
 
     override type Difference = Option[INDArray]
 
@@ -84,7 +86,8 @@ object DeepLearning {
       type ExpectedDifferentiable = Differentiable.Aux[_ <: INDArray, _ >: Option[INDArray]]
       input1 match {
         case differentiable1: ExpectedDifferentiable =>
-          new Cache[Difference] {
+          new Cache {
+            override type WeightDifference = Difference
             override type Output = INDArray
             override type InputDifference = Option[INDArray]
             override type OutputDifference = Option[INDArray]
