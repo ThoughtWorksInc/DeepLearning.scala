@@ -1,12 +1,14 @@
 package com.thoughtworks
 
 
+import cats.data.{Cokleisli, Kleisli}
 import cats.kernel.std.DoubleGroup
 import cats.{Applicative, Eval, Monoid}
 import com.thoughtworks.Differentiable.DifferentiableFunction.{AbstractDifferentiableFunction, BackwardPass, ForwardPass}
 import com.thoughtworks.Differentiable.Pure.NoPatch
 import com.thoughtworks.Differentiable.{DifferentiableFunction, _}
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import simulacrum.typeclass
@@ -24,6 +26,14 @@ object DeepLearning {
     }
 
     def evalInstances = Eval.now(DoublePatch)
+
+    implicit val lift = Kleisli { value: Double =>
+      DifferentiableDouble(Eval.now(value))
+    }
+
+    implicit val unlift = Cokleisli[Differentiable, Double, Double] {
+      case DifferentiableDouble(eval) => eval.value
+    }
 
   }
 
@@ -116,6 +126,43 @@ object DeepLearning {
     }
   }
 
+
+  @typeclass
+  trait PointfreeNegative[F[_]] {
+    def neg: F[INDArray => INDArray]
+  }
+
+  object Neg extends DifferentiableFunction[INDArray, INDArray] with Pure {
+    override def forward[InputData, InputDelta] = {
+      case DifferentiableINDArray(a) =>
+        val evalOutput = a.map(_.neg)
+        ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
+          BackwardPass(NoPatch.eval, outputDifference.map[Option[INDArray]](_.map(_.neg)))
+        })
+    }
+  }
+
+  @typeclass
+  trait PointfreeExponentiation[F[_]] {
+    def exp: F[INDArray => INDArray]
+  }
+
+  object Exp extends DifferentiableFunction[INDArray, INDArray] with Pure {
+    override def forward[InputData, InputDelta] = {
+      case DifferentiableINDArray(a) =>
+        val evalOutput = a.map(Transforms.exp)
+        ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
+          BackwardPass(NoPatch.eval, outputDifference.flatMap[Option[INDArray]] {
+            case None =>
+              Eval.now(None)
+            case Some(outputDelta) => evalOutput.map { output: INDArray =>
+              Some(output * outputDelta)
+            }
+          })
+        })
+    }
+  }
+
   @typeclass
   trait PointfreeAddition[F[_]] {
     def add: F[INDArray => INDArray => INDArray]
@@ -143,10 +190,10 @@ object DeepLearning {
 
   @typeclass
   trait PointfreeMultiplication[F[_]] {
-    def multiply: F[INDArray => INDArray => INDArray]
+    def mul: F[INDArray => INDArray => INDArray]
   }
 
-  object Multiply extends DifferentiableFunction[INDArray, INDArray => INDArray] with Pure {
+  object Mul extends DifferentiableFunction[INDArray, INDArray => INDArray] with Pure {
     override def forward[AData, ADelta] = {
       case DifferentiableINDArray(a) =>
         val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[INDArray, INDArray] {
@@ -223,16 +270,43 @@ object DeepLearning {
   }
 
   @typeclass
-  trait PointfreeDeepLearning[F[_]]extends PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F]
+  trait PointfreeDeepLearning[F[_]] extends PointfreeExponentiation[F] with PointfreeNegative[F] with PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F] {
 
-  implicit object DeepLearningInstances extends PointfreeDeepLearning[Differentiable]{
-    override def multiply = Multiply
+    final def relu(implicit pointfree: Pointfree[F], freezing: Freezing[F], liftDouble: Kleisli[F, Double, Double]) = {
+      import pointfree._
+      import freezing._
+      import Pointfree.ops._
+      flip[INDArray, Double, INDArray] ap max ap (freeze[Double] ap liftDouble(0.0))
+    }
+
+    final def fullyConnected(weight: F[INDArray], bias: F[INDArray])(implicit pointfree: Pointfree[F]) = {
+      import pointfree._
+      import Pointfree.ops._
+      pointfree.arrow.andThen[INDArray, INDArray, INDArray](flip[INDArray, INDArray, INDArray] ap dot ap weight, add ap bias)
+    }
+
+    final def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit pointfree: Pointfree[F], freezing: Freezing[F], liftDouble: Kleisli[F, Double, Double], liftINDArray: Kleisli[F, INDArray, INDArray]) = {
+      import pointfree._
+      import Pointfree.ops._
+      val fc = fullyConnected(liftINDArray(Nd4j.randn(inputSize, outputSize) / math.sqrt(inputSize / 2)), liftINDArray(Nd4j.zeros(outputSize)))
+      arrow.andThen[INDArray, INDArray, INDArray](fc, relu)
+    }
+
+  }
+
+  implicit object DeepLearningInstances extends PointfreeDeepLearning[Differentiable] {
+    override def mul = Mul
 
     override def dot = Dot
 
     override def add = Add
 
     override def max = Max
+
+    override def exp = Exp
+
+    override def neg = Neg
+
   }
 
 }
