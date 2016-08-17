@@ -222,8 +222,10 @@ object DeepLearning {
     }
   }
 
+  @typeclass
+  trait PointfreeDeepLearning[F[_]]extends PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F]
 
-  implicit object DeepLearningInstances extends PointfreeAddition[Differentiable] with PointfreeMultiplication[Differentiable] with PointfreeDot[Differentiable] with PointfreeMaximum[Differentiable] {
+  implicit object DeepLearningInstances extends PointfreeDeepLearning[Differentiable]{
     override def multiply = Multiply
 
     override def dot = Dot
