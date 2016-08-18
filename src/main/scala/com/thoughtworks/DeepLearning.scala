@@ -277,6 +277,31 @@ object DeepLearning {
     lift(a).withParameter[Parameter]
   }
 
+
+  object PointfreeDeepLearning {
+
+    trait WithParameter[F[_], Parameter] extends PointfreeFreezing.WithParameter[F, Parameter] with PointfreeDeepLearning[Lambda[X => F[Parameter => X]]] {
+      implicit protected def outer: PointfreeDeepLearning[F]
+
+      override def mul: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.mul.withParameter
+
+      override def exp: F[(Parameter) => (INDArray) => INDArray] = outer.exp.withParameter
+
+      override def add: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.add.withParameter
+
+      override def max: F[(Parameter) => (INDArray) => (Double) => INDArray] = outer.max.withParameter
+
+      override def neg: F[(Parameter) => (INDArray) => INDArray] = outer.neg.withParameter
+
+      override def dot: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.dot.withParameter
+    }
+
+    implicit def withParameterInstances[F[_], Parameter](implicit underlying: PointfreeDeepLearning[F]) = new WithParameter[F, Parameter] {
+      override implicit protected def outer = underlying
+    }
+
+  }
+
   @typeclass
   trait PointfreeDeepLearning[F[_]]
     extends PointfreeFreezing[F] with PointfreeExponentiation[F] with PointfreeNegative[F] with PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F] {
@@ -302,7 +327,7 @@ object DeepLearning {
 
     final def sigmoid(input: F[INDArray])(implicit liftDouble: Kleisli[F, Double, Double]): F[INDArray] = {
       //      implicit val deepLearningWithParameter = withParameterInstances[INDArray]
-      //      implicit def self = this
+      implicit def self = this
       //
       //      //    1 / ( 1+exp(-id))
       //
@@ -310,29 +335,14 @@ object DeepLearning {
       //      //      deepLearningWithParameter.freeze(liftDouble(1).withParameter[INDArray])
       //      ???
       //      ???
-      input
+      //      div ap liftDouble(1.0) ap (add ap liftDouble(1.0) ap (exp ap (neg ap input)))
+      ???
     }
 
-//    final def sigmoidF(implicit liftDouble: Kleisli[F, Double, Double]): F[INDArray => INDArray] = {
-//      implicit def self = this
-//      this.withParameterInstances[INDArray].sigmoid(id[INDArray])
-//    }
-
-    trait WithParameter[Parameter] extends super.WithParameter[Parameter] with PointfreeDeepLearning[Lambda[X => F[Parameter => X]]] {
-      override def mul: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.mul.withParameter
-
-      override def exp: F[(Parameter) => (INDArray) => INDArray] = outer.exp.withParameter
-
-      override def add: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.add.withParameter
-
-      override def max: F[(Parameter) => (INDArray) => (Double) => INDArray] = outer.max.withParameter
-
-      override def neg: F[(Parameter) => (INDArray) => INDArray] = outer.neg.withParameter
-
-      override def dot: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.dot.withParameter
+    final def sigmoidF(implicit liftDouble: Kleisli[F, Double, Double]): F[INDArray => INDArray] = {
+      implicit def self = this
+      PointfreeDeepLearning.withParameterInstances[F, INDArray](this).sigmoid(id[INDArray])
     }
-
-    override def withParameterInstances[Parameter] = new WithParameter[Parameter] {}
 
   }
 
