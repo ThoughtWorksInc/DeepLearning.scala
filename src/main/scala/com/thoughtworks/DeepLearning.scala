@@ -89,11 +89,6 @@ object DeepLearning {
     override val patch: Eval[_ <: Patch[Data, Delta]] = DifferentiableINDArray.evalInstances
   }
 
-  @typeclass
-  trait PointfreeMaximum[F[_]] {
-    def max: F[INDArray => Double => INDArray]
-  }
-
   object Max extends DifferentiableFunction[INDArray, Double => INDArray] with Pure {
     override def forward[InputData, InputDelta] = {
       case DifferentiableINDArray(a) =>
@@ -130,11 +125,6 @@ object DeepLearning {
   }
 
 
-  @typeclass
-  trait PointfreeNegative[F[_]] {
-    def neg: F[INDArray => INDArray]
-  }
-
   object Neg extends DifferentiableFunction[INDArray, INDArray] with Pure {
     override def forward[InputData, InputDelta] = {
       case DifferentiableINDArray(a) =>
@@ -145,10 +135,6 @@ object DeepLearning {
     }
   }
 
-  @typeclass
-  trait PointfreeExponentiation[F[_]] {
-    def exp: F[INDArray => INDArray]
-  }
 
   object Exp extends DifferentiableFunction[INDArray, INDArray] with Pure {
     override def forward[InputData, InputDelta] = {
@@ -164,11 +150,6 @@ object DeepLearning {
           })
         })
     }
-  }
-
-  @typeclass
-  trait PointfreeAddition[F[_]] {
-    def add: F[INDArray => INDArray => INDArray]
   }
 
   object Add extends DifferentiableFunction[INDArray, INDArray => INDArray] with Pure {
@@ -189,11 +170,6 @@ object DeepLearning {
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
-  }
-
-  @typeclass
-  trait PointfreeMultiplication[F[_]] {
-    def mul: F[INDArray => INDArray => INDArray]
   }
 
   object Mul extends DifferentiableFunction[INDArray, INDArray => INDArray] with Pure {
@@ -229,11 +205,6 @@ object DeepLearning {
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
-  }
-
-  @typeclass
-  trait PointfreeDot[F[_]] {
-    def dot: F[INDArray => INDArray => INDArray]
   }
 
   object Dot extends DifferentiableFunction[INDArray, INDArray => INDArray] with Pure {
@@ -303,8 +274,19 @@ object DeepLearning {
   }
 
   @typeclass
-  trait PointfreeDeepLearning[F[_]]
-    extends PointfreeFreezing[F] with PointfreeExponentiation[F] with PointfreeNegative[F] with PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F] {
+  trait PointfreeDeepLearning[F[_]] extends PointfreeFreezing[F] {
+
+    def exp: F[INDArray => INDArray]
+
+    def neg: F[INDArray => INDArray]
+
+    def mul: F[INDArray => INDArray => INDArray]
+
+    def dot: F[INDArray => INDArray => INDArray]
+
+    def add: F[INDArray => INDArray => INDArray]
+
+    def max: F[INDArray => Double => INDArray]
 
     final def relu(implicit liftDouble: Kleisli[F, Double, Double]) = {
       implicit def self = this
