@@ -1,12 +1,14 @@
 package com.thoughtworks
 
 
+import DeepLearning.PointfreeDeepLearning.ops._
 import cats.data.{Cokleisli, Kleisli}
 import cats.kernel.std.DoubleGroup
 import cats.{Applicative, Eval, Monoid}
 import com.thoughtworks.Differentiable.DifferentiableFunction.{AbstractDifferentiableFunction, BackwardPass, ForwardPass}
 import com.thoughtworks.Differentiable.Pure.NoPatch
 import com.thoughtworks.Differentiable.{DifferentiableFunction, _}
+import com.thoughtworks.Pointfree.Ski
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -16,6 +18,7 @@ import simulacrum.typeclass
 import scala.language.{existentials, higherKinds, implicitConversions}
 
 object DeepLearning {
+
 
   object DifferentiableDouble {
 
@@ -269,32 +272,71 @@ object DeepLearning {
     }
   }
 
-  @typeclass
-  trait PointfreeDeepLearning[F[_]] extends PointfreeExponentiation[F] with PointfreeNegative[F] with PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F] {
+  implicit def kleisliWithParameter[F[_], A, B, Parameter](implicit ski: Ski[F], lift: Kleisli[F, A, B]): Kleisli[Lambda[X => F[Parameter => X]], A, B] = Kleisli[Lambda[X => F[Parameter => X]], A, B] { a: A =>
+    import Ski.ops._
+    lift(a).withParameter[Parameter]
+  }
 
-    final def relu(implicit pointfree: Pointfree[F], freezing: Freezing[F], liftDouble: Kleisli[F, Double, Double]) = {
-      import pointfree._
-      import freezing._
-      import Pointfree.ops._
+  @typeclass
+  trait PointfreeDeepLearning[F[_]]
+    extends PointfreeFreezing[F] with PointfreeExponentiation[F] with PointfreeNegative[F] with PointfreeAddition[F] with PointfreeMultiplication[F] with PointfreeDot[F] with PointfreeMaximum[F] {
+
+    final def relu(implicit liftDouble: Kleisli[F, Double, Double]) = {
+      implicit def self = this
       flip[INDArray, Double, INDArray] ap max ap (freeze[Double] ap liftDouble(0.0))
     }
 
-    final def fullyConnected(weight: F[INDArray], bias: F[INDArray])(implicit pointfree: Pointfree[F]) = {
-      import pointfree._
-      import Pointfree.ops._
-      pointfree.arrow.andThen[INDArray, INDArray, INDArray](flip[INDArray, INDArray, INDArray] ap dot ap weight, add ap bias)
+    final def fullyConnected(weight: F[INDArray], bias: F[INDArray]) = {
+      implicit def self = this
+      andThen[INDArray, INDArray, INDArray](flip[INDArray, INDArray, INDArray] ap dot ap weight, add ap bias)
     }
 
-    final def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit pointfree: Pointfree[F], freezing: Freezing[F], liftDouble: Kleisli[F, Double, Double], liftINDArray: Kleisli[F, INDArray, INDArray]) = {
-      import pointfree._
-      import Pointfree.ops._
-      val fc = fullyConnected(liftINDArray(Nd4j.randn(inputSize, outputSize) / math.sqrt(inputSize / 2)), liftINDArray(Nd4j.zeros(outputSize)))
-      arrow.andThen[INDArray, INDArray, INDArray](fc, relu)
+    final def fullyConnectedThenRelu
+    (inputSize: Int, outputSize: Int)
+    (implicit liftDouble: Kleisli[F, Double, Double], liftINDArray: Kleisli[F, INDArray, INDArray])
+    : F[INDArray => INDArray] = {
+      implicit def self = this
+      val fc: F[INDArray => INDArray] = fullyConnected(liftINDArray(Nd4j.randn(inputSize, outputSize) / math.sqrt(inputSize / 2)), liftINDArray(Nd4j.zeros(outputSize)))
+      andThen[INDArray, INDArray, INDArray](fc, relu)
     }
+
+    final def sigmoid(input: F[INDArray])(implicit liftDouble: Kleisli[F, Double, Double]): F[INDArray] = {
+      //      implicit val deepLearningWithParameter = withParameterInstances[INDArray]
+      //      implicit def self = this
+      //
+      //      //    1 / ( 1+exp(-id))
+      //
+      //      deepLearningWithParameter.freeze[Double].ap (liftDouble(1).withParameter[INDArray])
+      //      //      deepLearningWithParameter.freeze(liftDouble(1).withParameter[INDArray])
+      //      ???
+      //      ???
+      input
+    }
+
+//    final def sigmoidF(implicit liftDouble: Kleisli[F, Double, Double]): F[INDArray => INDArray] = {
+//      implicit def self = this
+//      this.withParameterInstances[INDArray].sigmoid(id[INDArray])
+//    }
+
+    trait WithParameter[Parameter] extends super.WithParameter[Parameter] with PointfreeDeepLearning[Lambda[X => F[Parameter => X]]] {
+      override def mul: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.mul.withParameter
+
+      override def exp: F[(Parameter) => (INDArray) => INDArray] = outer.exp.withParameter
+
+      override def add: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.add.withParameter
+
+      override def max: F[(Parameter) => (INDArray) => (Double) => INDArray] = outer.max.withParameter
+
+      override def neg: F[(Parameter) => (INDArray) => INDArray] = outer.neg.withParameter
+
+      override def dot: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.dot.withParameter
+    }
+
+    override def withParameterInstances[Parameter] = new WithParameter[Parameter] {}
 
   }
 
-  implicit object DeepLearningInstances extends PointfreeDeepLearning[Differentiable] {
+  implicit object DeepLearningInstances extends PointfreeDeepLearning[Differentiable] with DifferentiableInstances {
     override def mul = Mul
 
     override def dot = Dot
