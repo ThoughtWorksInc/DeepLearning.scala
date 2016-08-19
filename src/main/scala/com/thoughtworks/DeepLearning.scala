@@ -48,6 +48,13 @@ object DeepLearning {
   }
 
   object DifferentiableINDArray {
+    val lift = Kleisli { value: INDArray =>
+      DifferentiableINDArray(Eval.now(value))
+    }
+
+    val unlift = Cokleisli[Differentiable, INDArray, INDArray] {
+      case DifferentiableINDArray(eval) => eval.value
+    }
 
     def evalInstances = Eval.now(INDArrayPatch)
 
@@ -125,12 +132,30 @@ object DeepLearning {
   }
 
 
-  object Neg extends DifferentiableFunction[INDArray, INDArray] with Pure {
+  object Negative extends DifferentiableFunction[INDArray, INDArray] with Pure {
     override def forward[InputData, InputDelta] = {
       case DifferentiableINDArray(a) =>
         val evalOutput = a.map(_.neg)
         ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference.map[Option[INDArray]](_.map(_.neg)))
+        })
+    }
+  }
+
+  object Reciprocal extends DifferentiableFunction[INDArray, INDArray] with Pure {
+    override def forward[InputData, InputDelta] = {
+      case DifferentiableINDArray(a) =>
+        val evalOutput = a.map(_ rdiv 1)
+        ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
+
+          BackwardPass(NoPatch.eval, outputDifference.flatMap[Option[INDArray]] {
+            case None =>
+              Eval.now(None)
+            case Some(outputDelta) =>
+              a.map { aValue: INDArray =>
+                Some(-outputDelta / (aValue * aValue))
+              }
+          })
         })
     }
   }
@@ -254,17 +279,23 @@ object DeepLearning {
     trait WithParameter[F[_], Parameter] extends PointfreeFreezing.WithParameter[F, Parameter] with PointfreeDeepLearning[Lambda[X => F[Parameter => X]]] {
       implicit protected def outer: PointfreeDeepLearning[F]
 
-      override def mul: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.mul.withParameter
+      override def liftDouble = kleisliWithParameter(outer, outer.liftDouble)
 
-      override def exp: F[(Parameter) => (INDArray) => INDArray] = outer.exp.withParameter
+      override def liftINDArray = kleisliWithParameter(outer, outer.liftINDArray)
 
-      override def add: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.add.withParameter
+      override def mul = outer.mul.withParameter
 
-      override def max: F[(Parameter) => (INDArray) => (Double) => INDArray] = outer.max.withParameter
+      override def exp = outer.exp.withParameter
 
-      override def neg: F[(Parameter) => (INDArray) => INDArray] = outer.neg.withParameter
+      override def add = outer.add.withParameter
 
-      override def dot: F[(Parameter) => (INDArray) => (INDArray) => INDArray] = outer.dot.withParameter
+      override def max = outer.max.withParameter
+
+      override def negative = outer.negative.withParameter
+
+      override def reciprocal = outer.reciprocal.withParameter
+
+      override def dot = outer.dot.withParameter
     }
 
     implicit def withParameterInstances[F[_], Parameter](implicit underlying: PointfreeDeepLearning[F]) = new WithParameter[F, Parameter] {
@@ -276,9 +307,15 @@ object DeepLearning {
   @typeclass
   trait PointfreeDeepLearning[F[_]] extends PointfreeFreezing[F] {
 
+    def liftDouble: Kleisli[F, Double, Double]
+
+    def liftINDArray: Kleisli[F, INDArray, INDArray]
+
     def exp: F[INDArray => INDArray]
 
-    def neg: F[INDArray => INDArray]
+    def reciprocal: F[INDArray => INDArray]
+
+    def negative: F[INDArray => INDArray]
 
     def mul: F[INDArray => INDArray => INDArray]
 
@@ -288,7 +325,7 @@ object DeepLearning {
 
     def max: F[INDArray => Double => INDArray]
 
-    final def relu(implicit liftDouble: Kleisli[F, Double, Double]) = {
+    final def relu = {
       implicit def self = this
       flip[INDArray, Double, INDArray] ap max ap (freeze[Double] ap liftDouble(0.0))
     }
@@ -300,14 +337,13 @@ object DeepLearning {
 
     final def fullyConnectedThenRelu
     (inputSize: Int, outputSize: Int)
-    (implicit liftDouble: Kleisli[F, Double, Double], liftINDArray: Kleisli[F, INDArray, INDArray])
     : F[INDArray => INDArray] = {
       implicit def self = this
       val fc: F[INDArray => INDArray] = fullyConnected(liftINDArray(Nd4j.randn(inputSize, outputSize) / math.sqrt(inputSize / 2)), liftINDArray(Nd4j.zeros(outputSize)))
       andThen[INDArray, INDArray, INDArray](fc, relu)
     }
 
-    final def sigmoid(input: F[INDArray])(implicit liftDouble: Kleisli[F, Double, Double]): F[INDArray] = {
+    final def sigmoid(input: F[INDArray]): F[INDArray] = {
       //      implicit val deepLearningWithParameter = withParameterInstances[INDArray]
       implicit def self = this
       //
@@ -317,7 +353,7 @@ object DeepLearning {
       //      //      deepLearningWithParameter.freeze(liftDouble(1).withParameter[INDArray])
       //      ???
       //      ???
-      //      div ap liftDouble(1.0) ap (add ap liftDouble(1.0) ap (exp ap (neg ap input)))
+      //      div ap liftDouble(1.0) ap (add ap liftDouble(1.0) ap (exp ap (negative ap input)))
       ???
     }
 
@@ -339,8 +375,13 @@ object DeepLearning {
 
     override def exp = Exp
 
-    override def neg = Neg
+    override def negative = Negative
 
+    override def reciprocal = Reciprocal
+
+    override def liftDouble: Kleisli[Differentiable, Double, Double] = DifferentiableDouble.lift
+
+    override def liftINDArray: Kleisli[Differentiable, INDArray, INDArray] = DifferentiableINDArray.lift
   }
 
 }
