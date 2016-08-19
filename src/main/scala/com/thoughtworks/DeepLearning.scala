@@ -31,15 +31,17 @@ trait DeepLearning[F[_]] {
 
   def liftINDArray: Kleisli[F, INDArray, Array2D]
 
-  def reciprocal: F[Array2D => Array2D]
+  def reciprocalDouble: F[Double => Double]
+
+  def reciprocalArray2D: F[Array2D => Array2D]
 
   def negative: F[Array2D => Array2D]
 
   def mul: F[Array2D => Array2D => Array2D]
 
-  def addArrayArray: F[Array2D => Array2D => Array2D]
+  def addArray2DArray2D: F[Array2D => Array2D => Array2D]
 
-  def addArrayDouble: F[Array2D => Double => Array2D]
+  def addArray2DDouble: F[Array2D => Double => Array2D]
 
   def addDoubleDouble: F[Double => Double => Double]
 
@@ -181,7 +183,19 @@ object DeepLearning {
     }
   }
 
-  object Reciprocal extends DifferentiableFunction[Array2D, Array2D] with Pure {
+  object ReciprocalDouble extends DifferentiableFunction[Double, Double] with Pure {
+    override def forward[InputData, InputDelta] = {
+      case DifferentiableDouble(a) =>
+        val evalOutput = a.map(1 / _)
+        ForwardPass(DifferentiableDouble(evalOutput), { outputDifference: Eval[_ <: Double] =>
+          BackwardPass(NoPatch.eval, Applicative[Eval].map2(outputDifference, outputDifference) { (outputDelta: Double, aValue: Double) =>
+            -outputDelta / (aValue * aValue)
+          })
+        })
+    }
+  }
+
+  object ReciprocalArray2D extends DifferentiableFunction[Array2D, Array2D] with Pure {
     override def forward[InputData, InputDelta] = {
       case DifferentiableINDArray(a) =>
         val evalOutput = a.map(_ rdiv 1)
@@ -396,13 +410,13 @@ object DeepLearning {
         override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
           implicit def self = PointfreeDeepLearning.this
           import PointfreeDeepLearning.ops._
-          addArrayDouble ap right ap left
+          addArray2DDouble ap right ap left
         }
 
         override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
           implicit def self = PointfreeDeepLearning.this
           import PointfreeDeepLearning.ops._
-          addArrayArray ap left ap right
+          addArray2DArray2D ap left ap right
         }
 
         override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
@@ -414,7 +428,7 @@ object DeepLearning {
         override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
           implicit def self = PointfreeDeepLearning.this
           import PointfreeDeepLearning.ops._
-          addArrayDouble ap left ap right
+          addArray2DDouble ap left ap right
         }
       })
     }
@@ -422,7 +436,7 @@ object DeepLearning {
     def -[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
       implicit def self = this
       import PointfreeDeepLearning.ops._
-      addArrayArray ap constrait(left) ap (negative ap right)
+      addArray2DArray2D ap constrait(left) ap (negative ap right)
     }
 
     def *[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
@@ -434,7 +448,7 @@ object DeepLearning {
     def /[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
       implicit def self = this
       import PointfreeDeepLearning.ops._
-      mul ap constrait(left) ap (reciprocal ap right)
+      mul ap constrait(left) ap (reciprocalArray2D ap right)
     }
 
     def unary_-[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
@@ -470,7 +484,7 @@ object DeepLearning {
     final def fullyConnected(weight: F[Array2D], bias: F[Array2D]) = {
       implicit def self = this
       import PointfreeDeepLearning.ops._
-      andThen[Array2D, Array2D, Array2D](flip[Array2D, Array2D, Array2D] ap dot ap weight, addArrayArray ap bias)
+      andThen[Array2D, Array2D, Array2D](flip[Array2D, Array2D, Array2D] ap dot ap weight, addArray2DArray2D ap bias)
     }
 
     final def fullyConnectedThenRelu
@@ -483,8 +497,6 @@ object DeepLearning {
     final def sigmoid(input: F[Array2D]): F[Array2D] = {
       import PointfreeDeepLearning.ops._
       implicit def self = this
-      //      liftDouble(1) /
-      //      liftDouble(1) + liftDouble(1)
       (liftDouble(1) + exp(-input))
       //      ???
     }
@@ -512,15 +524,17 @@ object DeepLearning {
 
       override def mul = outer.mul.withParameter
 
-      override def addArrayArray = outer.addArrayArray.withParameter
+      override def addArray2DArray2D = outer.addArray2DArray2D.withParameter
 
-      override def addArrayDouble = outer.addArrayDouble.withParameter
+      override def addArray2DDouble = outer.addArray2DDouble.withParameter
 
       override def addDoubleDouble = outer.addDoubleDouble.withParameter
 
       override def negative = outer.negative.withParameter
 
-      override def reciprocal = outer.reciprocal.withParameter
+      override def reciprocalArray2D = outer.reciprocalArray2D.withParameter
+
+      override def reciprocalDouble = outer.reciprocalDouble.withParameter
 
       override def max = (outer: DeepLearning[F]).max.withParameter
 
@@ -540,9 +554,9 @@ object DeepLearning {
 
     override def dot = Dot
 
-    override def addArrayArray = AddArrayArray
+    override def addArray2DArray2D = AddArrayArray
 
-    override def addArrayDouble = AddArrayDouble //: Differentiable[(INDArray) => (Double) => INDArray] = ???
+    override def addArray2DDouble = AddArrayDouble //: Differentiable[(INDArray) => (Double) => INDArray] = ???
 
     override def addDoubleDouble: Differentiable[(Double) => (Double) => Double] = ???
 
@@ -552,7 +566,9 @@ object DeepLearning {
 
     override def negative = Negative
 
-    override def reciprocal = Reciprocal
+    override def reciprocalArray2D = ReciprocalArray2D
+
+    override def reciprocalDouble = ReciprocalDouble
 
     override def liftDouble: Kleisli[Differentiable, Double, Double] = DifferentiableDouble.lift
 
