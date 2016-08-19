@@ -37,7 +37,11 @@ trait DeepLearning[F[_]] {
 
   def negative: F[Array2D => Array2D]
 
-  def mul: F[Array2D => Array2D => Array2D]
+  def multiplyArray2DArray2D: F[Array2D => Array2D => Array2D]
+
+  def multiplyArray2DDouble: F[Array2D => Double => Array2D]
+
+  def multiplyDoubleDouble: F[Double => Double => Double]
 
   def addArray2DArray2D: F[Array2D => Array2D => Array2D]
 
@@ -240,10 +244,47 @@ object DeepLearning {
                 aData + bData
               }.memoize
               ForwardPass(DifferentiableINDArray(output), { outputDifference: Eval[_ <: Option[INDArray]] =>
-                BackwardPass(outputDifference, outputDifference.map {
+                val aDelta: Eval[_ <: Option[INDArray]] = outputDifference
+                val bDelta: Eval[_ <: Double] = outputDifference.map {
                   case None => 0
                   case Some(od) => od.sumT
-                }.memoize)
+                }.memoize
+                BackwardPass(aDelta, bDelta)
+              })
+          }
+        }
+        ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
+          BackwardPass(NoPatch.eval, outputDifference)
+        })
+    }
+  }
+
+
+  object MultiplyArray2DDouble extends DifferentiableFunction[Array2D, Double => Array2D] with Pure {
+    override def forward[AData, ADelta] = {
+      case DifferentiableINDArray(a) =>
+        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Double, Array2D] {
+          override def forward[BData, BDelta] = {
+            case DifferentiableDouble(b) =>
+              val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: Double) =>
+                aData * bData
+              }.memoize
+              ForwardPass(DifferentiableINDArray(output), { outputDifference: Eval[_ <: Option[INDArray]] =>
+                val aDelta: Eval[_ <: Option[INDArray]] = outputDifference.flatMap[Option[INDArray]] {
+                  case None => Eval.now(None)
+                  case Some(outputDelta) =>
+                    b.map { bData: Double =>
+                      Some(outputDelta * bData)
+                    }
+                }.memoize
+                val bDelta: Eval[_ <: Double] = outputDifference.flatMap[Double] {
+                  case None => Eval.now(0.0)
+                  case Some(outputDelta) =>
+                    a.map { aData: INDArray =>
+                      (aData * outputDelta).sumT
+                    }
+                }.memoize
+                BackwardPass(aDelta, bDelta)
               })
           }
         }
@@ -273,7 +314,7 @@ object DeepLearning {
     }
   }
 
-  object Mul extends DifferentiableFunction[Array2D, Array2D => Array2D] with Pure {
+  object MultiplyArray2DArray2D extends DifferentiableFunction[Array2D, Array2D => Array2D] with Pure {
     override def forward[AData, ADelta] = {
       case DifferentiableINDArray(a) =>
         val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Array2D, Array2D] {
@@ -405,105 +446,105 @@ object DeepLearning {
   @typeclass
   trait PointfreeDeepLearning[F[_]] extends PointfreeFreezing[F] with DeepLearning[F] {
 
+    implicit private def self = this
+
+    import PointfreeDeepLearning.ops._
+
     def +[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
       dispatcher(left, right)(new BinaryOperator[F] {
         override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
-          implicit def self = PointfreeDeepLearning.this
-          import PointfreeDeepLearning.ops._
           addArray2DDouble ap right ap left
         }
 
         override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-          implicit def self = PointfreeDeepLearning.this
-          import PointfreeDeepLearning.ops._
           addArray2DArray2D ap left ap right
         }
 
         override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
-          implicit def self = PointfreeDeepLearning.this
-          import PointfreeDeepLearning.ops._
           addDoubleDouble ap left ap right
         }
 
         override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
-          implicit def self = PointfreeDeepLearning.this
-          import PointfreeDeepLearning.ops._
           addArray2DDouble ap left ap right
         }
       })
     }
 
     def -[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
       addArray2DArray2D ap constrait(left) ap (negative ap right)
     }
 
     def *[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
-      mul ap constrait(left) ap right
+      multiplyArray2DArray2D ap constrait(left) ap right
     }
 
-    def /[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
-      mul ap constrait(left) ap (reciprocalArray2D ap right)
+    def /[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
+      dispatcher(left, right)(new BinaryOperator[F] {
+        override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
+          multiplyArray2DDouble ap (reciprocalArray2D ap right) ap left
+        }
+
+        override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
+          multiplyArray2DArray2D ap left ap (reciprocalArray2D ap right)
+        }
+
+        override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
+          multiplyDoubleDouble ap left ap (reciprocalDouble ap right)
+        }
+
+        override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
+          multiplyArray2DDouble ap left ap (reciprocalDouble ap right)
+        }
+      })
     }
 
     def unary_-[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
       negative ap constrait(value)
     }
 
     def max[A](left: F[A], right: F[Double])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
       ap(max)(constrait(left)) ap right
     }
 
     def dot[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
       ap(dot)(constrait(left)) ap right
     }
 
     def exp[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
       ap(exp)(constrait(value))
     }
 
-    final def relu = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
-      flip[Array2D, Double, Array2D] ap max ap (freeze[Double] ap liftDouble(0.0))
+    //    final def relu = {
+    //      flip[Array2D, Double, Array2D] ap max ap (freeze[Double] ap liftDouble(0.0))
+    //    }
+    //
+    //    final def fullyConnected(weight: F[Array2D], bias: F[Array2D]) = {
+    //      andThen[Array2D, Array2D, Array2D](flip[Array2D, Array2D, Array2D] ap dot ap weight, addArray2DArray2D ap bias)
+    //    }
+    //
+    //    final def fullyConnectedThenRelu
+    //    (inputSize: Int, outputSize: Int)
+    //    : F[Array2D => Array2D] = {
+    //      val fc: F[Array2D => Array2D] = fullyConnected(, )
+    //      andThen[Array2D, Array2D, Array2D](fc, relu)
+    //    }
+
+    def sigmoid[A](input: F[A])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
+      liftDouble(1) / (liftDouble(1) + exp(-constrait(input)))
     }
 
-    final def fullyConnected(weight: F[Array2D], bias: F[Array2D]) = {
-      implicit def self = this
-      import PointfreeDeepLearning.ops._
-      andThen[Array2D, Array2D, Array2D](flip[Array2D, Array2D, Array2D] ap dot ap weight, addArray2DArray2D ap bias)
+    def relu[A](input: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
+      constrait(input).max(liftDouble(0))
     }
 
-    final def fullyConnectedThenRelu
-    (inputSize: Int, outputSize: Int)
-    : F[Array2D => Array2D] = {
-      val fc: F[Array2D => Array2D] = fullyConnected(liftINDArray(Nd4j.randn(inputSize, outputSize) / math.sqrt(inputSize / 2)), liftINDArray(Nd4j.zeros(outputSize)))
-      andThen[Array2D, Array2D, Array2D](fc, relu)
+    final def fullyConnected[A](input: F[A], weight: F[Array2D], bias: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
+      constrait(input) dot weight + bias
     }
 
-    final def sigmoid(input: F[Array2D]): F[Array2D] = {
-      import PointfreeDeepLearning.ops._
-      implicit def self = this
-      (liftDouble(1) + exp(-input))
-      //      ???
-    }
-
-    final def sigmoidF(implicit liftDouble: Kleisli[F, Double, Double]): F[Array2D => Array2D] = {
-      implicit def self = this
-      PointfreeDeepLearning.withParameterInstances[F, Array2D](this).sigmoid(id[Array2D])
+    final def fullyConnectedThenRelu[A](input: F[A], inputSize: Int, outputSize: Int)(implicit constrait: F[A] <:< F[Array2D]) = {
+      val weight = liftINDArray(Nd4j.randn(inputSize, outputSize) / math.sqrt(inputSize / 2))
+      val bias = liftINDArray(Nd4j.zeros(outputSize))
+      constrait(input).fullyConnected(weight, bias).relu
     }
 
   }
@@ -522,7 +563,11 @@ object DeepLearning {
 
       override def liftINDArray = kleisliWithParameter(outer, outer.liftINDArray)
 
-      override def mul = outer.mul.withParameter
+      override def multiplyArray2DArray2D = outer.multiplyArray2DArray2D.withParameter
+
+      override def multiplyArray2DDouble = outer.multiplyArray2DDouble.withParameter
+
+      override def multiplyDoubleDouble = outer.multiplyDoubleDouble.withParameter
 
       override def addArray2DArray2D = outer.addArray2DArray2D.withParameter
 
@@ -550,7 +595,11 @@ object DeepLearning {
   }
 
   implicit object DeepLearningInstances extends PointfreeDeepLearning[Differentiable] with DifferentiableInstances {
-    override def mul = Mul
+    override def multiplyArray2DArray2D = MultiplyArray2DArray2D
+
+    override def multiplyArray2DDouble = MultiplyArray2DDouble
+
+    override def multiplyDoubleDouble: Differentiable[(Double) => (Double) => Double] = ???
 
     override def dot = Dot
 
