@@ -2,6 +2,7 @@ package com.thoughtworks
 
 import com.thoughtworks.DeepLearning.{Array2D, DifferentiableINDArray, PointfreeDeepLearning}
 
+import scala.language.existentials
 import scala.language.higherKinds
 import Predef.{any2stringadd => _, _}
 import PointfreeDeepLearning.ops._
@@ -42,7 +43,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
 
     val myNetwork: Differentiable[Array2D => Array2D] = xorNetwork[Lambda[A => Differentiable[Array2D => A]]](PointfreeDeepLearning[Differentiable].id[Array2D])
 
-    val forwardPass = myNetwork.asInstanceOf[DifferentiableFunction[Array2D, Array2D]].forward(PointfreeDeepLearning[Differentiable].liftArray2D(
+    val forwardPass = myNetwork.asInstanceOf[DifferentiableFunction[Array2D, Array2D,_,_]].forward(PointfreeDeepLearning[Differentiable].liftArray2D(
       Array(
         Array(0.0, 0.0),
         Array(0.0, 1.0),

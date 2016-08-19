@@ -5,9 +5,10 @@ import cats.data.{Cokleisli, Kleisli}
 import cats.kernel.std.DoubleGroup
 import cats.{Applicative, Eval, Monoid}
 import com.thoughtworks.DeepLearning.BinaryOperator.OperatorDispatcher
-import com.thoughtworks.Differentiable.DifferentiableFunction.{AbstractDifferentiableFunction, BackwardPass, ForwardPass}
+import com.thoughtworks.Differentiable.DifferentiableFunction.Factory.PureForward
+import com.thoughtworks.Differentiable.DifferentiableFunction.{BackwardPass, ForwardPass}
 import com.thoughtworks.Differentiable.Pure.NoPatch
-import com.thoughtworks.Differentiable.{DifferentiableFunction, _}
+import com.thoughtworks.Differentiable._
 import com.thoughtworks.Pointfree.Ski
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -141,12 +142,12 @@ object DeepLearning {
     override val patch: Eval[_ <: Patch[Data, Delta]] = DifferentiableINDArray.evalInstances
   }
 
-  object Max extends DifferentiableFunction[Array2D, Double => Array2D] with Pure {
-    override def forward[InputData, InputDelta] = {
-      case DifferentiableINDArray(a) =>
-        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Double, Array2D] {
-          override def forward[BData, BDelta] = {
-            case DifferentiableDouble(b) =>
+  def Max = DifferentiableFunction pure new PureForward[Array2D, Double => Array2D] {
+    override def apply[InputData, InputDelta] = {
+      case (_, DifferentiableINDArray(a)) =>
+        val partiallyAppled1 = DifferentiableFunction.Factory[Double, Array2D](a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) { factory => new factory.Forward {
+          override def apply[BData, BDelta] = {
+            case (DifferentiableFunction(a, _, _, _), DifferentiableDouble(b)) =>
               val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: Double) =>
                 Transforms.max(aData, bData)
               }.memoize
@@ -170,6 +171,7 @@ object DeepLearning {
               })
           }
         }
+        }
         ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference)
         })
@@ -177,9 +179,9 @@ object DeepLearning {
   }
 
 
-  object Negative extends DifferentiableFunction[Array2D, Array2D] with Pure {
-    override def forward[InputData, InputDelta] = {
-      case DifferentiableINDArray(a) =>
+  def Negative = DifferentiableFunction pure new PureForward[Array2D, Array2D] {
+    override def apply[InputData, InputDelta] = {
+      case (_, DifferentiableINDArray(a)) =>
         val evalOutput = a.map(_.neg)
         ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference.map[Option[INDArray]](_.map(_.neg)))
@@ -187,9 +189,9 @@ object DeepLearning {
     }
   }
 
-  object ReciprocalDouble extends DifferentiableFunction[Double, Double] with Pure {
-    override def forward[InputData, InputDelta] = {
-      case DifferentiableDouble(a) =>
+  def ReciprocalDouble = DifferentiableFunction pure new PureForward[Double, Double] {
+    override def apply[InputData, InputDelta] = {
+      case (_, DifferentiableDouble(a)) =>
         val evalOutput = a.map(1 / _)
         ForwardPass(DifferentiableDouble(evalOutput), { outputDifference: Eval[_ <: Double] =>
           BackwardPass(NoPatch.eval, Applicative[Eval].map2(outputDifference, outputDifference) { (outputDelta: Double, aValue: Double) =>
@@ -199,9 +201,9 @@ object DeepLearning {
     }
   }
 
-  object ReciprocalArray2D extends DifferentiableFunction[Array2D, Array2D] with Pure {
-    override def forward[InputData, InputDelta] = {
-      case DifferentiableINDArray(a) =>
+  def ReciprocalArray2D = DifferentiableFunction pure new PureForward[Array2D, Array2D] {
+    override def apply[InputData, InputDelta] = {
+      case (_, DifferentiableINDArray(a)) =>
         val evalOutput = a.map(_ rdiv 1)
         ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
 
@@ -218,9 +220,9 @@ object DeepLearning {
   }
 
 
-  object Exp extends DifferentiableFunction[Array2D, Array2D] with Pure {
-    override def forward[InputData, InputDelta] = {
-      case DifferentiableINDArray(a) =>
+  def Exp = DifferentiableFunction pure new PureForward[Array2D, Array2D] {
+    override def apply[InputData, InputDelta] = {
+      case (_, DifferentiableINDArray(a)) =>
         val evalOutput = a.map(Transforms.exp)
         ForwardPass(DifferentiableINDArray(evalOutput), { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference.flatMap[Option[INDArray]] {
@@ -234,12 +236,12 @@ object DeepLearning {
     }
   }
 
-  object AddArrayDouble extends DifferentiableFunction[Array2D, Double => Array2D] with Pure {
-    override def forward[AData, ADelta] = {
-      case DifferentiableINDArray(a) =>
-        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Double, Array2D] {
-          override def forward[BData, BDelta] = {
-            case DifferentiableDouble(b) =>
+  def AddArrayDouble = DifferentiableFunction pure new PureForward[Array2D, Double => Array2D] {
+    override def apply[AData, ADelta] = {
+      case (_, DifferentiableINDArray(a)) =>
+        val partiallyAppled1 = DifferentiableFunction.Factory[Double, Array2D](a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) { factory => new factory.Forward {
+          override def apply[BData, BDelta] = {
+            case (DifferentiableFunction(a, _, _, _), DifferentiableDouble(b)) =>
               val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: Double) =>
                 aData + bData
               }.memoize
@@ -253,19 +255,19 @@ object DeepLearning {
               })
           }
         }
+        }
         ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
   }
 
-
-  object MultiplyArray2DDouble extends DifferentiableFunction[Array2D, Double => Array2D] with Pure {
-    override def forward[AData, ADelta] = {
-      case DifferentiableINDArray(a) =>
-        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Double, Array2D] {
-          override def forward[BData, BDelta] = {
-            case DifferentiableDouble(b) =>
+  def MultiplyArray2DDouble = DifferentiableFunction pure new PureForward[Array2D, Double => Array2D] {
+    override def apply[AData, ADelta] = {
+      case (_, DifferentiableINDArray(a)) =>
+        val partiallyAppled1 = DifferentiableFunction.Factory[Double, Array2D](a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) { factory => new factory.Forward {
+          override def apply[BData, BDelta] = {
+            case (DifferentiableFunction(a, _, _, _), DifferentiableDouble(b)) =>
               val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: Double) =>
                 aData * bData
               }.memoize
@@ -288,18 +290,19 @@ object DeepLearning {
               })
           }
         }
+        }
         ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
   }
 
-  object AddArrayArray extends DifferentiableFunction[Array2D, Array2D => Array2D] with Pure {
-    override def forward[AData, ADelta] = {
-      case DifferentiableINDArray(a) =>
-        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Array2D, Array2D] {
-          override def forward[BData, BDelta] = {
-            case DifferentiableINDArray(b) =>
+  def AddArrayArray = DifferentiableFunction pure new PureForward[Array2D, Array2D => Array2D] {
+    override def apply[AData, ADelta] = {
+      case (_, DifferentiableINDArray(a)) =>
+        val partiallyAppled1 = DifferentiableFunction.Factory[Array2D, Array2D](a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) { factory => new factory.Forward {
+          override def apply[BData, BDelta] = {
+            case (DifferentiableFunction(a, _, _, _), DifferentiableINDArray(b)) =>
               val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: INDArray) =>
                 aData + bData
               }.memoize
@@ -308,18 +311,19 @@ object DeepLearning {
               })
           }
         }
+        }
         ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
   }
 
-  object MultiplyArray2DArray2D extends DifferentiableFunction[Array2D, Array2D => Array2D] with Pure {
-    override def forward[AData, ADelta] = {
-      case DifferentiableINDArray(a) =>
-        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Array2D, Array2D] {
-          override def forward[BData, BDelta] = {
-            case DifferentiableINDArray(b) =>
+  def MultiplyArray2DArray2D = DifferentiableFunction pure new PureForward[Array2D, Array2D => Array2D] {
+    override def apply[AData, ADelta] = {
+      case (_, DifferentiableINDArray(a)) =>
+        val partiallyAppled1 = DifferentiableFunction.Factory[Array2D, Array2D](a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) { factory => new factory.Forward {
+          override def apply[BData, BDelta] = {
+            case (DifferentiableFunction(a, _, _, _), DifferentiableINDArray(b)) =>
               val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: INDArray) =>
                 aData * bData
               }.memoize
@@ -343,18 +347,19 @@ object DeepLearning {
               })
           }
         }
+        }
         ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
   }
 
-  object Dot extends DifferentiableFunction[Array2D, Array2D => Array2D] with Pure {
-    override def forward[AData, ADelta] = {
-      case DifferentiableINDArray(a) =>
-        val partiallyAppled1 = new AbstractDifferentiableFunction(a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) with DifferentiableFunction[Array2D, Array2D] {
-          override def forward[BData, BDelta] = {
-            case DifferentiableINDArray(b) =>
+  def Dot = DifferentiableFunction pure new PureForward[Array2D, Array2D => Array2D] {
+    override def apply[AData, ADelta] = {
+      case (_, DifferentiableINDArray(a)) =>
+        val partiallyAppled1 = DifferentiableFunction.Factory[Array2D, Array2D](a, DifferentiableINDArray.evalInstances, DifferentiableINDArray.evalInstances) { factory => new factory.Forward {
+          override def apply[BData, BDelta] = {
+            case (DifferentiableFunction(a, _, _, _), DifferentiableINDArray(b)) =>
               val output = Applicative[Eval].map2(a, b) { (aData: INDArray, bData: INDArray) =>
                 aData.dot(bData)
               }.memoize
@@ -378,8 +383,8 @@ object DeepLearning {
               })
           }
         }
+        }
         ForwardPass(partiallyAppled1, { outputDifference: Eval[_ <: Option[INDArray]] =>
-
           BackwardPass(NoPatch.eval, outputDifference)
         })
     }
