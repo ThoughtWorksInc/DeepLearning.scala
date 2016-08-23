@@ -23,10 +23,6 @@ object DeepLearning {
 
   type Array2D = Array[Array[Double]]
 
-  implicit def implicitLiftInt[F[_] : PointfreeOperators](value: Int): F[Int] = {
-    PointfreeOperators[F].liftInt(value)
-  }
-
   implicit def implicitLiftArray2D[F[_] : PointfreeOperators](value: Array2D): F[Array2D] = {
     PointfreeOperators[F].liftArray2D(value)
   }
@@ -403,94 +399,17 @@ object DeepLearning {
 
   }
 
-  object DeepLearningInstances extends PointfreeOperators[WeakOps] with DifferentiableInstances {
-    //    override def multiplyArray2DArray2D = MultiplyArray2DArray2D
-    //
-    //    override def multiplyArray2DDouble = MultiplyArray2DDouble
-    //
-    //    override def multiplyDoubleDouble: Differentiable[(Double) => (Double) => Double] = ???
-    //
-    //    override def dot = Dot
-    //
-    //    override def addArray2DArray2D = AddArrayArray
-    //
-    //    override def addArray2DDouble = AddArrayDouble //: Differentiable[(INDArray) => (Double) => INDArray] = ???
-    //
-    //    override def addDoubleDouble: Differentiable[(Double) => (Double) => Double] = ???
-    //
-    //    override def max = Max
-    //
-    //    override def exp = Exp
-    //
-    //    override def negative = Negative
-    //
-    //    override def reciprocalArray2D = ReciprocalArray2D
-    //
-    //    override def reciprocalDouble = ReciprocalDouble
-    //
-    //    override def liftDouble: Kleisli[Differentiable, Double, Double] = DifferentiableDouble.lift
-    //
-    //    override def liftArray2D = DifferentiableINDArray.liftArray2D
-    //
-    //    override def liftINDArray = DifferentiableINDArray.lift
-
-
-    override val liftDouble = Kleisli[WeakOps, Double, Double] { value: Double =>
-      StrongOps[Eval[Double], Eval[Double], DifferentiableDouble.type](Eval.now(value), DifferentiableDouble).erase[Double]
-    }
-
-    override val liftArray2D = Kleisli[WeakOps, Array2D, Array2D] { value: Array2D =>
-      StrongOps[Eval[INDArray], Eval[Option[INDArray]], DifferentiableINDArray.type](Eval.later(value.toNDArray), DifferentiableINDArray).erase[Array2D]
-    }
-
-    override def reciprocalDouble: WeakOps[(Double) => Double] = ???
-
-    override def reciprocalArray2D: WeakOps[(Array2D) => Array2D] = ???
-
-    override def negative: WeakOps[(Array2D) => Array2D] = ???
-
-    override def multiplyArray2DArray2D: WeakOps[(Array2D, Array2D) => Array2D] = ???
-
-    override def multiplyArray2DDouble: WeakOps[(Array2D, Double) => Array2D] = ???
-
-    override def multiplyDoubleDouble: WeakOps[(Double, Double) => Double] = ???
-
-    override def addArray2DArray2D: WeakOps[(Array2D, Array2D) => Array2D] = ???
-
-    override def addArray2DDouble: WeakOps[(Array2D, Double) => Array2D] = ???
-
-    override def addDoubleDouble: WeakOps[(Double, Double) => Double] = ???
-
-    override def dot: WeakOps[(Array2D, Array2D) => Array2D] = ???
-
-    override def max: WeakOps[(Array2D, Double) => Array2D] = ???
-
-    override def exp: WeakOps[(Array2D) => Array2D] = ???
-
-    override def liftInt: Kleisli[WeakOps, Int, Int] = ???
-
-    override def zeros: WeakOps[(Int, Int) => Array2D] = ???
-
-    override def randn: WeakOps[(Int, Int) => Array2D] = ???
-
-    override def sqrtDouble: WeakOps[(Double) => Double] = ???
-
-    override def sqrtArray2D: WeakOps[(Array2D) => Array2D] = ???
-  }
-
 
   @typeclass
   trait PointfreeOperators[F[_]] extends PointfreeFreezing[F] {
 
     def liftDouble: Kleisli[F, Double, Double]
 
-    def liftInt: Kleisli[F, Int, Int]
-
     def liftArray2D: Kleisli[F, Array2D, Array2D]
 
-    def zeros: F[(Int, Int) => Array2D]
+    def zeros(numberOfRows: Int, numberOfColumns: Int): F[Array2D]
 
-    def randn: F[(Int, Int) => Array2D]
+    def randn(numberOfRows: Int, numberOfColumns: Int): F[Array2D]
 
     def reciprocalDouble: F[Double => Double]
 
@@ -576,34 +495,6 @@ object DeepLearning {
       negative(constrait(value))
     }
 
-    //    def max[A](left: F[A], right: F[Double])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-    //      max.apply(constrait(left), right)
-    //    }
-    //
-    //    def dot[A](left: F[A], right: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-    //      dot.apply(constrait(left), right)
-    //    }
-    //
-    //    def exp[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-    //      exp.apply(constrait(value))
-    //    }
-
-    //    final def relu = {
-    //      flip[Array2D, Double, Array2D] ap max ap (freeze[Double] ap liftDouble(0.0))
-    //    }
-    //
-    //    final def fullyConnected(weight: F[Array2D], bias: F[Array2D]) = {
-    //      andThen[Array2D, Array2D, Array2D](flip[Array2D, Array2D, Array2D] ap dot ap weight, addArray2DArray2D ap bias)
-    //    }
-    //
-    //    final def fullyConnectedThenRelu
-    //    (inputSize: Int, outputSize: Int)
-    //    : F[Array2D => Array2D] = {
-    //      val fc: F[Array2D => Array2D] = fullyConnected(, )
-    //      andThen[Array2D, Array2D, Array2D](fc, relu)
-    //    }
-
-
   }
 
   object PointfreeOperators {
@@ -616,12 +507,6 @@ object DeepLearning {
       override def liftDouble = kleisliWithParameter(outer, outer.liftDouble)
 
       override def liftArray2D = kleisliWithParameter(outer, outer.liftArray2D)
-
-      override def liftInt = kleisliWithParameter(outer, outer.liftInt)
-
-      override def zeros = outer.zeros.withParameter
-
-      override def randn = outer.randn.withParameter
 
       override def sqrtDouble = outer.sqrtDouble.withParameter
 
@@ -650,6 +535,10 @@ object DeepLearning {
       override def exp = (outer: PointfreeOperators[F]).exp.withParameter
 
       override def dot = (outer: PointfreeOperators[F]).dot.withParameter
+
+      override def zeros(numberOfRows: Int, numberOfColumns: Int): F[(Parameter) => Array2D] = outer.zeros(numberOfRows, numberOfColumns).withParameter
+
+      override def randn(numberOfRows: Int, numberOfColumns: Int): F[(Parameter) => Array2D] = outer.randn(numberOfRows, numberOfColumns).withParameter
     }
 
     implicit def withParameterInstances[F[_], Parameter](implicit underlying: PointfreeOperators[F]) = new WithParameter[F, Parameter] {
@@ -658,9 +547,81 @@ object DeepLearning {
 
   }
 
+  implicit object DeepLearningInstances extends PointfreeOperators[WeakOps] with DifferentiableInstances {
+    //    override def multiplyArray2DArray2D = MultiplyArray2DArray2D
+    //
+    //    override def multiplyArray2DDouble = MultiplyArray2DDouble
+    //
+    //    override def multiplyDoubleDouble: Differentiable[(Double) => (Double) => Double] = ???
+    //
+    //    override def dot = Dot
+    //
+    //    override def addArray2DArray2D = AddArrayArray
+    //
+    //    override def addArray2DDouble = AddArrayDouble //: Differentiable[(INDArray) => (Double) => INDArray] = ???
+    //
+    //    override def addDoubleDouble: Differentiable[(Double) => (Double) => Double] = ???
+    //
+    //    override def max = Max
+    //
+    //    override def exp = Exp
+    //
+    //    override def negative = Negative
+    //
+    //    override def reciprocalArray2D = ReciprocalArray2D
+    //
+    //    override def reciprocalDouble = ReciprocalDouble
+    //
+    //    override def liftDouble: Kleisli[Differentiable, Double, Double] = DifferentiableDouble.lift
+    //
+    //    override def liftArray2D = DifferentiableINDArray.liftArray2D
+    //
+    //    override def liftINDArray = DifferentiableINDArray.lift
+
+    override val liftDouble = Kleisli[WeakOps, Double, Double] { value: Double =>
+      StrongOps[Eval[Double], Eval[Double], DifferentiableDouble.type](Eval.now(value), DifferentiableDouble).erase[Double]
+    }
+
+    override val liftArray2D = Kleisli[WeakOps, Array2D, Array2D] { value: Array2D =>
+      StrongOps[Eval[INDArray], Eval[Option[INDArray]], DifferentiableINDArray.type](Eval.later(value.toNDArray), DifferentiableINDArray).erase[Array2D]
+    }
+
+    override def reciprocalDouble: WeakOps[(Double) => Double] = ???
+
+    override def reciprocalArray2D: WeakOps[(Array2D) => Array2D] = ???
+
+    override def negative: WeakOps[(Array2D) => Array2D] = ???
+
+    override def multiplyArray2DArray2D: WeakOps[(Array2D, Array2D) => Array2D] = ???
+
+    override def multiplyArray2DDouble: WeakOps[(Array2D, Double) => Array2D] = ???
+
+    override def multiplyDoubleDouble: WeakOps[(Double, Double) => Double] = ???
+
+    override def addArray2DArray2D: WeakOps[(Array2D, Array2D) => Array2D] = ???
+
+    override def addArray2DDouble: WeakOps[(Array2D, Double) => Array2D] = ???
+
+    override def addDoubleDouble: WeakOps[(Double, Double) => Double] = ???
+
+    override def dot: WeakOps[(Array2D, Array2D) => Array2D] = ???
+
+    override def max: WeakOps[(Array2D, Double) => Array2D] = ???
+
+    override def exp: WeakOps[(Array2D) => Array2D] = ???
+
+    override def sqrtDouble: WeakOps[(Double) => Double] = ???
+
+    override def sqrtArray2D: WeakOps[(Array2D) => Array2D] = ???
+
+    override def zeros(numberOfRows: Int, numberOfColumns: Int): WeakOps[Array2D] = ???
+
+    override def randn(numberOfRows: Int, numberOfColumns: Int): WeakOps[Array2D] = ???
+  }
+
 }
 
-import DeepLearning._
+import DeepLearning.{DeepLearningInstances => _, _}
 
 @typeclass
 trait DeepLearning[F[_]] extends PointfreeOperators[F] {
@@ -690,4 +651,5 @@ trait DeepLearning[F[_]] extends PointfreeOperators[F] {
     val bias = zeros(1, outputSize)
     constrait(input).fullyConnected(weight, bias).relu
   }
+
 }
