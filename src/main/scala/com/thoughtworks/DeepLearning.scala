@@ -13,8 +13,11 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import shapeless._
-import simulacrum.{op, typeclass}
+import simulacrum.{noop, op, typeclass}
 import com.dongxiguo.fastring.Fastring.Implicits._
+import shapeless.PolyDefns._
+import shapeless.ops.hlist.At
+import shapeless.ops.tuple.Selector
 
 import scala.language.{existentials, higherKinds, implicitConversions}
 
@@ -162,9 +165,10 @@ object DeepLearning {
 
   }
 
-
   @typeclass
   trait PointfreeOperators[F[_]] extends PointfreeFreezing[F] {
+
+    import PointfreeOperators._
 
     def liftDouble: Kleisli[F, Double, Double]
 
@@ -315,10 +319,9 @@ object DeepLearning {
       })
     }
 
-    def unary_-[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
-      negativeArray2D(constrait(value))
+    def unary_-[A](value: F[A])(implicit case2: Case2[NegativeOverloads.type, PointfreeOperators[F], F[A]]): case2.Result = {
+      case2(this, value)
     }
-
 
     def exp[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
       exponentialArray2D(constrait(value))
@@ -332,6 +335,18 @@ object DeepLearning {
   }
 
   object PointfreeOperators {
+
+    private[PointfreeOperators] object NegativeOverloads extends Poly2 {
+      implicit def caseArray2D[F[_]] = at[PointfreeOperators[F], F[Array2D]] { (tc, fa) =>
+        import tc._
+        ap(negativeArray2D)(fa)
+      }
+
+      implicit def caseDouble[F[_]] = at[PointfreeOperators[F], F[Double]] { (tc, fa) =>
+        import tc._
+        ap(negativeDouble)(fa)
+      }
+    }
 
     import PointfreeOperators.ops._
 
@@ -495,168 +510,196 @@ object DeepLearning {
 
   val MaxINDArrayDouble = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
-        val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
-        ForwardPass(Applicative[Eval].map2(a, b)(Transforms.max).memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-          val aDelta = outputDelta.flatMap[Option[INDArray]] {
-            case None => Eval.now(None)
-            case Some(outputDeltaValue) =>
-              Applicative[Eval].map2(a, b) { (aData: INDArray, bData: Double) =>
-                Some((aData gt bData) * outputDeltaValue)
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
+          val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
+          ForwardPass(Applicative[Eval].map2(a, b)(Transforms.max).memoize, DifferentiableINDArray, {
+            outputDelta: Eval[Option[INDArray]] =>
+              val aDelta = outputDelta.flatMap[Option[INDArray]] {
+                case None => Eval.now(None)
+                case Some(outputDeltaValue) =>
+                  Applicative[Eval].map2(a, b) {
+                    (aData: INDArray, bData: Double) =>
+                      Some((aData gt bData) * outputDeltaValue)
+                  }
               }
-          }
-          val bDelta = outputDelta.flatMap[Double] {
-            case None => Eval.now(0)
-            case Some(outputDeltaValue) =>
-              Applicative[Eval].map2(a, b) { (aData: INDArray, bData: Double) =>
-                ((aData lt bData) * outputDeltaValue).sumT
+              val bDelta = outputDelta.flatMap[Double] {
+                case None => Eval.now(0)
+                case Some(outputDeltaValue) =>
+                  Applicative[Eval].map2(a, b) {
+                    (aData: INDArray, bData: Double) =>
+                      ((aData lt bData) * outputDeltaValue).sumT
+                  }
               }
-          }
-          BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-        })
+              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
+          })
       }
     )
   }
 
 
   val NegativeINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      ForwardPass(a.map(_.neg), DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-        BackwardPass(HNil: HNil, outputDelta.map(_.map(_.neg)))
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        ForwardPass(a.map(_.neg), DifferentiableINDArray, {
+          outputDelta: Eval[Option[INDArray]] =>
+            BackwardPass(HNil: HNil, outputDelta.map(_.map(_.neg)))
+        })
     })
   }
 
   val LogINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      ForwardPass(a.map(Transforms.log), DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-        BackwardPass(
-          HNil: HNil,
-          outputDelta.flatMap[Option[INDArray]] {
-            case None =>
-              Eval.now(None)
-            case Some(outputDeltaValue) => a.map { aData: INDArray =>
-              Some(outputDeltaValue / aData)
-            }
-          }
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        ForwardPass(a.map(Transforms.log), DifferentiableINDArray, {
+          outputDelta: Eval[Option[INDArray]] =>
+            BackwardPass(
+              HNil: HNil,
+              outputDelta.flatMap[Option[INDArray]] {
+                case None =>
+                  Eval.now(None)
+                case Some(outputDeltaValue) => a.map {
+                  aData: INDArray =>
+                    Some(outputDeltaValue / aData)
+                }
+              }
+            )
+        })
     })
   }
 
   val ExponentialINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      val output = a.map(Transforms.exp)
-      ForwardPass(output, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-        BackwardPass(
-          HNil: HNil,
-          outputDelta.flatMap[Option[INDArray]] {
-            case None =>
-              Eval.now(None)
-            case Some(outputDeltaValue) => output.map { outputValue: INDArray =>
-              Some(outputValue * outputDeltaValue)
-            }
-          }
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        val output = a.map(Transforms.exp)
+        ForwardPass(output, DifferentiableINDArray, {
+          outputDelta: Eval[Option[INDArray]] =>
+            BackwardPass(
+              HNil: HNil,
+              outputDelta.flatMap[Option[INDArray]] {
+                case None =>
+                  Eval.now(None)
+                case Some(outputDeltaValue) => output.map {
+                  outputValue: INDArray =>
+                    Some(outputValue * outputDeltaValue)
+                }
+              }
+            )
+        })
     })
   }
 
   val ReciprocalINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      ForwardPass(a.map(_ rdiv 1).memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-        BackwardPass(
-          HNil: HNil,
-          outputDelta.flatMap[Option[INDArray]] {
-            case None => Eval.now(None)
-            case Some(outputDeltaValue) =>
-              a.map { aValue: INDArray =>
-                Some(-outputDeltaValue / (aValue * aValue))
-              }
-          }.memoize
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        ForwardPass(a.map(_ rdiv 1).memoize, DifferentiableINDArray, {
+          outputDelta: Eval[Option[INDArray]] =>
+            BackwardPass(
+              HNil: HNil,
+              outputDelta.flatMap[Option[INDArray]] {
+                case None => Eval.now(None)
+                case Some(outputDeltaValue) =>
+                  a.map {
+                    aValue: INDArray =>
+                      Some(-outputDeltaValue / (aValue * aValue))
+                  }
+              }.memoize
+            )
+        })
     })
   }
 
   val ReciprocalDouble = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[Double], _: DifferentiableDouble.type) =>
-      ForwardPass(a.map(1.0 / _), DifferentiableDouble, { outputDelta: Eval[Double] =>
-        BackwardPass(
-          HNil: HNil,
-          Applicative[Eval].map2(outputDelta, a) { (outputDeltaValue: Double, aValue: Double) =>
-            -outputDeltaValue / (aValue * aValue)
-          }
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[Double], _: DifferentiableDouble.type) =>
+        ForwardPass(a.map(1.0 / _), DifferentiableDouble, {
+          outputDelta: Eval[Double] =>
+            BackwardPass(
+              HNil: HNil,
+              Applicative[Eval].map2(outputDelta, a) {
+                (outputDeltaValue: Double, aValue: Double) =>
+                  -outputDeltaValue / (aValue * aValue)
+              }
+            )
+        })
     })
   }
 
   val NegativeDouble = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[Double], _: DifferentiableDouble.type) =>
-      ForwardPass(a.map(-_), DifferentiableDouble, { outputDelta: Eval[Double] =>
-        BackwardPass(
-          HNil: HNil,
-          outputDelta.map(-_)
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[Double], _: DifferentiableDouble.type) =>
+        ForwardPass(a.map(-_), DifferentiableDouble, {
+          outputDelta: Eval[Double] =>
+            BackwardPass(
+              HNil: HNil,
+              outputDelta.map(-_)
+            )
+        })
     })
   }
 
   val ReduceSum = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      val aShape = a.map(_.shape)
-      ForwardPass(a.map(_.sumT), DifferentiableDouble, { outputDelta: Eval[Double] =>
-        BackwardPass(
-          HNil: HNil,
-          Applicative[Eval].map2(aShape, outputDelta) { (aShapeValue, outputDeltaValue) =>
-            if (outputDeltaValue == 0) {
-              None
-            } else {
-              Some(Nd4j.valueArrayOf(aShapeValue, outputDeltaValue))
-            }
-          }
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        val aShape = a.map(_.shape)
+        ForwardPass(a.map(_.sumT), DifferentiableDouble, {
+          outputDelta: Eval[Double] =>
+            BackwardPass(
+              HNil: HNil,
+              Applicative[Eval].map2(aShape, outputDelta) {
+                (aShapeValue, outputDeltaValue) =>
+                  if (outputDeltaValue == 0) {
+                    None
+                  } else {
+                    Some(Nd4j.valueArrayOf(aShapeValue, outputDeltaValue))
+                  }
+              }
+            )
+        })
     })
   }
 
   def sum(dimensions: Int*) = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      val aShape = a.map(_.shape)
-      ForwardPass(a.map(_.sum(dimensions: _*)), DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-        BackwardPass(
-          HNil: HNil,
-          outputDelta.flatMap[Option[INDArray]] {
-            case None => Eval.now(None)
-            case Some(outputDeltaValue) =>
-              aShape.map { aShapeValue =>
-                Some(outputDeltaValue.broadcast(aShapeValue: _*))
-              }
-          }.memoize
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        val aShape = a.map(_.shape)
+        ForwardPass(a.map(_.sum(dimensions: _*)), DifferentiableINDArray, {
+          outputDelta: Eval[Option[INDArray]] =>
+            BackwardPass(
+              HNil: HNil,
+              outputDelta.flatMap[Option[INDArray]] {
+                case None => Eval.now(None)
+                case Some(outputDeltaValue) =>
+                  aShape.map {
+                    aShapeValue =>
+                      Some(outputDeltaValue.broadcast(aShapeValue: _*))
+                  }
+              }.memoize
+            )
+        })
     })
   }
 
   def broadcast(rows: Int, columns: Int) = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-      val aShape = a.map(_.shape)
-      ForwardPass(a.map(_.broadcast(rows, columns)), DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-        BackwardPass(
-          HNil: HNil,
-          outputDelta.flatMap[Option[INDArray]] {
-            case None => Eval.now(None)
-            case Some(outputDeltaValue) =>
-              aShape.map {
-                case Array(1, 1) => Some(outputDeltaValue.sum(0, 1))
-                case Array(1, _) => Some(outputDeltaValue.sum(0))
-                case Array(_, 1) => Some(outputDeltaValue.sum(1))
-                case Array(_, _) => Some(outputDeltaValue)
-              }
-          }.memoize
-        )
-      })
+    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
+      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
+        val aShape = a.map(_.shape)
+        ForwardPass(a.map(_.broadcast(rows, columns)), DifferentiableINDArray, {
+          outputDelta: Eval[Option[INDArray]] =>
+            BackwardPass(
+              HNil: HNil,
+              outputDelta.flatMap[Option[INDArray]] {
+                case None => Eval.now(None)
+                case Some(outputDeltaValue) =>
+                  aShape.map {
+                    case Array(1, 1) => Some(outputDeltaValue.sum(0, 1))
+                    case Array(1, _) => Some(outputDeltaValue.sum(0))
+                    case Array(_, 1) => Some(outputDeltaValue.sum(1))
+                    case Array(_, _) => Some(outputDeltaValue)
+                  }
+              }.memoize
+            )
+        })
     })
   }
 
@@ -687,152 +730,175 @@ object DeepLearning {
 
   val AddINDArrayINDArray = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
-        val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
-        val aShape = a.map(_.shape).memoize
-        val bShape = b.map(_.shape).memoize
-        val newShape = Applicative[Eval].map2(aShape, bShape) {
-          case (Array(aRows, aColumns), Array(bRows, bColumns)) =>
-            Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-        }
-        ForwardPass(Applicative[Eval].map3(a, b, newShape) { (aValue, bValue, newShapeValue) =>
-          aValue.broadcast(newShapeValue: _*) + bValue.broadcast(newShapeValue: _*)
-        }.memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-          BackwardPass(
-            HNil: HNil,
-            Applicative[Eval].map2(outputDelta, aShape) { (outputDeltaOption, shape) =>
-              outputDeltaOption.map(sumAs(_, shape))
-            } :: Applicative[Eval].map2(outputDelta, bShape) { (outputDeltaOption, shape) =>
-              outputDeltaOption.map(sumAs(_, shape))
-            } :: HNil)
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
+          val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
+          val aShape = a.map(_.shape).memoize
+          val bShape = b.map(_.shape).memoize
+          val newShape = Applicative[Eval].map2(aShape, bShape) {
+            case (Array(aRows, aColumns), Array(bRows, bColumns)) =>
+              Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+          }
+          ForwardPass(Applicative[Eval].map3(a, b, newShape) {
+            (aValue, bValue, newShapeValue) =>
+              aValue.broadcast(newShapeValue: _*) + bValue.broadcast(newShapeValue: _*)
+          }.memoize, DifferentiableINDArray, {
+            outputDelta: Eval[Option[INDArray]] =>
+              BackwardPass(
+                HNil: HNil,
+                Applicative[Eval].map2(outputDelta, aShape) {
+                  (outputDeltaOption, shape) =>
+                    outputDeltaOption.map(sumAs(_, shape))
+                } :: Applicative[Eval].map2(outputDelta, bShape) {
+                  (outputDeltaOption, shape) =>
+                    outputDeltaOption.map(sumAs(_, shape))
+                } :: HNil)
+          })
       }
     )
   }
 
   val AddINDArrayDouble = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
-        val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
-        ForwardPass(Applicative[Eval].map2(a, b)(_ add _).memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-          val aDelta = outputDelta
-          val bDelta = outputDelta.map {
-            case None => 0.0
-            case Some(outputDeltaValue) => outputDeltaValue.sumT
-          }.memoize
-          BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
+          val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
+          ForwardPass(Applicative[Eval].map2(a, b)(_ add _).memoize, DifferentiableINDArray, {
+            outputDelta: Eval[Option[INDArray]] =>
+              val aDelta = outputDelta
+              val bDelta = outputDelta.map {
+                case None => 0.0
+                case Some(outputDeltaValue) => outputDeltaValue.sumT
+              }.memoize
+              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
+          })
       }
     )
   }
 
   val AddDoubleDouble = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[Double] :: Eval[Double] :: HNil, _: DifferentiableDoubleDouble) =>
-        val (a: Eval[Double]) :: (b: Eval[Double]) :: HNil = hlist
-        ForwardPass(Applicative[Eval].map2(a, b)(_ + _), DifferentiableDouble, { outputDelta: Eval[Double] =>
-          BackwardPass(HNil: HNil, outputDelta :: outputDelta :: HNil)
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[Double] :: Eval[Double] :: HNil, _: DifferentiableDoubleDouble) =>
+          val (a: Eval[Double]) :: (b: Eval[Double]) :: HNil = hlist
+          ForwardPass(Applicative[Eval].map2(a, b)(_ + _), DifferentiableDouble, {
+            outputDelta: Eval[Double] =>
+              BackwardPass(HNil: HNil, outputDelta :: outputDelta :: HNil)
+          })
       }
     )
   }
 
   val MultiplyINDArrayINDArray = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
-        val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
-        val aShape = a.map(_.shape)
-        val bShape = b.map(_.shape)
-        val newShape = Applicative[Eval].map2(aShape, bShape) {
-          case (Array(aRows, aColumns), Array(bRows, bColumns)) =>
-            Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-        }
-        ForwardPass(Applicative[Eval].map3(a, b, newShape) {
-          (aValue, bValue, newShapeValue) =>
-            aValue.broadcast(newShapeValue: _*) * bValue.broadcast(newShapeValue: _*)
-        }.memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-          BackwardPass(
-            HNil: HNil,
-            outputDelta.flatMap[Option[INDArray]] {
-              case None => Eval.now(None)
-              case Some(outputDeltaValue) =>
-                Applicative[Eval].map2(b, aShape) { (bData: INDArray, aShapeValue) =>
-                  Some(sumAs(bData.broadcast(outputDeltaValue.shape: _*) * outputDeltaValue, aShapeValue))
-                }
-            } ::
-              outputDelta.flatMap[Option[INDArray]] {
-                case None => Eval.now(None)
-                case Some(outputDeltaValue) =>
-                  Applicative[Eval].map2(a, bShape) { (aData: INDArray, bShapeValue) =>
-                    Some(sumAs(aData.broadcast(outputDeltaValue.shape: _*) * outputDeltaValue, bShapeValue))
-                  }
-              } :: HNil
-          )
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
+          val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
+          val aShape = a.map(_.shape)
+          val bShape = b.map(_.shape)
+          val newShape = Applicative[Eval].map2(aShape, bShape) {
+            case (Array(aRows, aColumns), Array(bRows, bColumns)) =>
+              Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+          }
+          ForwardPass(Applicative[Eval].map3(a, b, newShape) {
+            (aValue, bValue, newShapeValue) =>
+              aValue.broadcast(newShapeValue: _*) * bValue.broadcast(newShapeValue: _*)
+          }.memoize, DifferentiableINDArray, {
+            outputDelta: Eval[Option[INDArray]] =>
+              BackwardPass(
+                HNil: HNil,
+                outputDelta.flatMap[Option[INDArray]] {
+                  case None => Eval.now(None)
+                  case Some(outputDeltaValue) =>
+                    Applicative[Eval].map2(b, aShape) {
+                      (bData: INDArray, aShapeValue) =>
+                        Some(sumAs(bData.broadcast(outputDeltaValue.shape: _*) * outputDeltaValue, aShapeValue))
+                    }
+                } ::
+                  outputDelta.flatMap[Option[INDArray]] {
+                    case None => Eval.now(None)
+                    case Some(outputDeltaValue) =>
+                      Applicative[Eval].map2(a, bShape) {
+                        (aData: INDArray, bShapeValue) =>
+                          Some(sumAs(aData.broadcast(outputDeltaValue.shape: _*) * outputDeltaValue, bShapeValue))
+                      }
+                  } :: HNil
+              )
+          })
       }
     )
   }
 
   val MultiplyINDArrayDouble = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
-        val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
-        ForwardPass(Applicative[Eval].map2(a, b)(_ mul _).memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-          val aDelta = outputDelta.flatMap[Option[INDArray]] {
-            case None => Eval.now(None)
-            case Some(outputDeltaValue) =>
-              b.map { bData: Double =>
-                Some(outputDeltaValue * bData)
-              }
-          }.memoize
-          val bDelta = outputDelta.flatMap[Double] {
-            case None => Eval.now(0.0)
-            case Some(outputDeltaValue) =>
-              a.map { aData: INDArray =>
-                (aData * outputDeltaValue).sumT
-              }
-          }.memoize
-          BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
+          val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
+          ForwardPass(Applicative[Eval].map2(a, b)(_ mul _).memoize, DifferentiableINDArray, {
+            outputDelta: Eval[Option[INDArray]] =>
+              val aDelta = outputDelta.flatMap[Option[INDArray]] {
+                case None => Eval.now(None)
+                case Some(outputDeltaValue) =>
+                  b.map {
+                    bData: Double =>
+                      Some(outputDeltaValue * bData)
+                  }
+              }.memoize
+              val bDelta = outputDelta.flatMap[Double] {
+                case None => Eval.now(0.0)
+                case Some(outputDeltaValue) =>
+                  a.map {
+                    aData: INDArray =>
+                      (aData * outputDeltaValue).sumT
+                  }
+              }.memoize
+              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
+          })
       }
     )
   }
 
   val MultiplyDoubleDouble = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[Double] :: Eval[Double] :: HNil, _: DifferentiableDoubleDouble) =>
-        val (a: Eval[Double]) :: (b: Eval[Double]) :: HNil = hlist
-        ForwardPass(Applicative[Eval].map2(a, b)(_ * _), DifferentiableDouble, { outputDelta: Eval[Double] =>
-          val aDelta = Applicative[Eval].map2(outputDelta, b)(_ * _)
-          val bDelta = Applicative[Eval].map2(outputDelta, a)(_ * _)
-          BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[Double] :: Eval[Double] :: HNil, _: DifferentiableDoubleDouble) =>
+          val (a: Eval[Double]) :: (b: Eval[Double]) :: HNil = hlist
+          ForwardPass(Applicative[Eval].map2(a, b)(_ * _), DifferentiableDouble, {
+            outputDelta: Eval[Double] =>
+              val aDelta = Applicative[Eval].map2(outputDelta, b)(_ * _)
+              val bDelta = Applicative[Eval].map2(outputDelta, a)(_ * _)
+              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
+          })
       }
     )
   }
 
   val Dot = {
     DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, { (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
-        val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
-        ForwardPass(Applicative[Eval].map2(a, b)(_ dot _).memoize, DifferentiableINDArray, { outputDelta: Eval[Option[INDArray]] =>
-          BackwardPass(
-            HNil: HNil,
-            outputDelta.flatMap[Option[INDArray]] {
-              case None => Eval.now(None)
-              case Some(outputDeltaValue) =>
-                b.map { bData =>
-                  Some(outputDeltaValue.dot(bData.T))
-                }
-            } :: outputDelta.flatMap[Option[INDArray]] {
-              case None => Eval.now(None)
-              case Some(outputDeltaValue) =>
-                a.map { aData =>
-                  Some(aData.T.dot(outputDeltaValue))
-                }
-            } :: HNil
-          )
-        })
+      HNilMonoid, HNilPatch, HNilToFastring, {
+        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
+          val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
+          ForwardPass(Applicative[Eval].map2(a, b)(_ dot _).memoize, DifferentiableINDArray, {
+            outputDelta: Eval[Option[INDArray]] =>
+              BackwardPass(
+                HNil: HNil,
+                outputDelta.flatMap[Option[INDArray]] {
+                  case None => Eval.now(None)
+                  case Some(outputDeltaValue) =>
+                    b.map {
+                      bData =>
+                        Some(outputDeltaValue.dot(bData.T))
+                    }
+                } :: outputDelta.flatMap[Option[INDArray]] {
+                  case None => Eval.now(None)
+                  case Some(outputDeltaValue) =>
+                    a.map {
+                      aData =>
+                        Some(aData.T.dot(outputDeltaValue))
+                    }
+                } :: HNil
+              )
+          })
       }
     )
   }

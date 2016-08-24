@@ -31,7 +31,7 @@ private object DeepLearningSpec {
 
     def loss[F[_]](likelihood: F[Array2D], expectedLabels: F[Array2D])(implicit deepLearning: DeepLearning[F]): F[Double] = {
       import deepLearning._
-      reduceSum(sum(1)(-log(likelihood) * expectedLabels))
+      -reduceSum(log(likelihood) * expectedLabels)
     }
 
     def inferenceAndTrain[F[_]](inputAndLabels: F[Array2D :: Array2D :: HNil])(implicit deepLearning: DeepLearning[F]): F[Array2D :: Double :: HNil] = {
@@ -87,22 +87,63 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
       ]
     ]
 
-  def test1x1(left: Double, right: Double, operator: OperatorFunction[_, _], expected: Double) = {
-    import org.scalactic.TolerantNumerics
-    implicit val doubleEq = TolerantNumerics.tolerantDoubleEquality(epsilon)
-
-
+  def test1x1(left: Double, right: Double, expected: Double, operator: BinaryOperator) = {
     def test[Weight, DeltaWeight](network: OperatorFunction[Weight, DeltaWeight]): Unit = {
       val forwardPass = network.forward(Eval.now(Nd4j.valueArrayOf(1, 1, left)) :: Eval.now(Nd4j.valueArrayOf(1, 1, right)) :: HNil, inputTypeClass)
       forwardPass.output.value.shape should be(Array(1, 1))
-      forwardPass.output.value(0, 0) should be === (expected)
+      forwardPass.output.value(0, 0) should be(expected +- 0.01)
     }
-    test(operator)
+    test(operator.hlistFunction.asInstanceOf[OperatorFunction[_, _]])
 
   }
 
+  trait UnaryOperator {
+    def apply[F[_] : DeepLearning](input: F[Array2D]): F[Array2D]
+
+
+  }
+
+  trait BinaryOperator {
+    def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D]
+
+    def fromHlist[F[_] : DeepLearning](input: F[Array2D :: Array2D :: HNil]): F[Array2D] = {
+      apply(input.head, input.tail.head)
+    }
+
+    final def hlistFunction[F[_] : DeepLearning]: F[Array2D :: Array2D :: HNil => Array2D] = {
+      fromHlist[Lambda[X => F[Array2D :: Array2D :: HNil => X]]](DeepLearning[F].id)
+    }
+  }
+
+  "dot 1x1" in {
+    val addOperator = new BinaryOperator {
+      override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = DeepLearning[F].dot(left, right)
+    }
+    test1x1(0.5, 0.45, 0.225, addOperator)
+  }
   "+" in {
-    test1x1(0.5, 0.45, DeepLearning.AddINDArrayINDArray.pureOps[Array2D => Array2D], 0.95)
+    val addOperator = new BinaryOperator {
+      override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left + right
+    }
+    test1x1(0.5, 0.45, 0.95, addOperator)
+  }
+  "-" in {
+    val addOperator = new BinaryOperator {
+      override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left - right
+    }
+    test1x1(0.5, 0.45, 0.05, addOperator)
+  }
+  "*" in {
+    val addOperator = new BinaryOperator {
+      override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left * right
+    }
+    test1x1(0.5, 0.45, 0.225, addOperator)
+  }
+  "/" in {
+    val addOperator = new BinaryOperator {
+      override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left / right
+    }
+    test1x1(0.5, 0.45, 1.1111111111, addOperator)
   }
 
   "dot" in {
