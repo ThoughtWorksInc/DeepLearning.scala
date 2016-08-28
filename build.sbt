@@ -6,7 +6,7 @@ import org.apache.commons.lang3.SystemUtils
 
 incOptions := incOptions.value.withNameHashing(true).withRecompileOnMacroDef(false)
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0-M15" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
 
 classpathTypes += "maven-plugin"
 
