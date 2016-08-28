@@ -28,12 +28,14 @@ object DeepLearning {
 
   type Array2D = Array[Array[Double]]
 
-  implicit def implicitLiftArray2D[F[_] : PointfreeOperators](value: Array2D): F[Array2D] = {
-    PointfreeOperators[F].liftArray2D(value)
+  implicit def constantArray2D[F[_]](value: Array2D)(implicit tc: PointfreeOperators[F]): F[Array2D] = {
+    import PointfreeOperators.ops._
+    tc.ap(tc.freeze[Array2D])(tc.liftArray2D(value))
   }
 
-  implicit def implicitLiftDouble[F[_] : PointfreeOperators](value: Double): F[Double] = {
-    PointfreeOperators[F].liftDouble(value)
+  implicit def constantDouble[F[_]](value: Double)(implicit tc: PointfreeOperators[F]): F[Double] = {
+    import PointfreeOperators.ops._
+    tc.ap(tc.freeze[Double])(tc.liftDouble(value))
   }
 
   case object DifferentiableDouble extends Differentiable[Eval[Double]] {
@@ -913,7 +915,7 @@ trait DeepLearning[F[_]] extends PointfreeOperators[F] {
   def sigmoid[A](input: F[A])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
     import DeepLearning.ops._
     implicit def self = this
-    liftDouble(1.0) / (liftDouble(1.0) + exp(-constrait(input)))
+    constantDouble(1.0) / (constantDouble(1.0) + exp(-constrait(input)))
   }
 
   def relu[A](input: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
