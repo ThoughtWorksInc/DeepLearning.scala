@@ -15,6 +15,7 @@ import org.nd4s.Implicits._
 import shapeless._
 import simulacrum.{noop, op, typeclass}
 import com.dongxiguo.fastring.Fastring.Implicits._
+import com.thoughtworks.Differentiable.WeakOps.{ToStrong, ToWeak}
 import shapeless.PolyDefns._
 import shapeless.ops.hlist.At
 import shapeless.ops.tuple.Selector
@@ -38,7 +39,7 @@ object DeepLearning {
     tc.ap(tc.freeze[Double])(tc.liftDouble(value))
   }
 
-  case object DifferentiableDouble extends Differentiable[Eval[Double]] {
+  implicit case object DifferentiableDouble extends Differentiable[Eval[Double]] {
 
     object DifferentiableDoubleInstances extends EvalMonoid[Double] with ToFastring[Eval[Double]] with Patch[Eval[Double], Eval[Double]] {
 
@@ -61,9 +62,21 @@ object DeepLearning {
     override def patch = DifferentiableDoubleInstances
 
     override def toFastring = DifferentiableDoubleInstances
+
+    implicit object DoubleToStrong extends ToStrong[Double] {
+      type Data = Eval[Double]
+      type Delta = Eval[Double]
+      type TypeClass = DifferentiableDouble.type
+      type StrongOpsResult = StrongOps[Data, Delta, TypeClass]
+    }
+
+    implicit object DoubleToWeak extends ToWeak[DifferentiableDouble.type] {
+      type WeakType = Double
+    }
+    
   }
 
-  case object DifferentiableINDArray extends Differentiable[Eval[INDArray]] {
+  implicit case object DifferentiableINDArray extends Differentiable[Eval[INDArray]] {
 
     override type Delta = Eval[Option[INDArray]]
 
@@ -105,6 +118,17 @@ object DeepLearning {
       override def apply(data: Eval[INDArray]) = {
         fast"${data.value}"
       }
+    }
+
+    implicit object INDArrayToStrong extends ToStrong[Array2D] {
+      type Data = Eval[INDArray]
+      type Delta = Eval[Option[INDArray]]
+      type TypeClass = DifferentiableINDArray.type
+      type StrongOpsResult = StrongOps[Data, Delta, TypeClass]
+    }
+
+    implicit object INDArrayToWeak extends ToWeak[DifferentiableINDArray.type] {
+      type WeakType = Array2D
     }
 
   }
