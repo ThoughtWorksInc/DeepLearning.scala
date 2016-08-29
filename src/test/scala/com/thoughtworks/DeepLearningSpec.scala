@@ -60,7 +60,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
   def test1x1Binary(left: Double, right: Double, expected: Double, operator: BinaryOperator) = {
     val network = operator.hlistFunction.toStrong
     import shapeless.syntax.std.tuple._
-    val forwardPass = network forward (Eval.now(Nd4j.valueArrayOf(1, 1, left)), Eval.now(Nd4j.valueArrayOf(1, 1, right))).productElements
+    val forwardPass = network.forward((Eval.now(Nd4j.valueArrayOf(1, 1, left)), Eval.now(Nd4j.valueArrayOf(1, 1, right))).productElements)
     forwardPass.output.value.shape should be(Array(1, 1))
     forwardPass.output.value(0, 0) should be(expected +- 0.01)
   }
