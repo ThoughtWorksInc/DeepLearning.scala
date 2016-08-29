@@ -309,4 +309,51 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
     }
 
   }
+
+  "id should forward and backward" in {
+    import DeepLearning.DeepLearningInstances._
+    val weakOps = id[Double]
+    val strongOps = weakOps.toStrong
+    @volatile var inputReadCount = 0
+    val forwardPass = strongOps.forward(Eval.always {
+      inputReadCount += 1
+      4.5
+    })
+    inputReadCount should be(0)
+    forwardPass.output.value should be(4.5)
+    inputReadCount should be(1)
+    @volatile var outputDeltaReadCount = 0
+    val backwardPass = forwardPass.backward(Eval.always {
+      outputDeltaReadCount += 1
+      2.4
+    })
+    backwardPass.weightDelta should be(HNil)
+    outputDeltaReadCount should be(0)
+    backwardPass.inputDelta.value should be(2.4)
+    outputDeltaReadCount should be(1)
+  }
+
+
+  "compose(id, id) should forward and backward" in {
+    import DeepLearning.DeepLearningInstances._
+    val weakOps = compose(id[Double], id[Double])
+    val strongOps = weakOps.toStrong
+    @volatile var inputReadCount = 0
+    val forwardPass = strongOps.forward(Eval.always {
+      inputReadCount += 1
+      4.5
+    })
+    inputReadCount should be(0)
+    forwardPass.output.value should be(4.5)
+    inputReadCount should be(1)
+    @volatile var outputDeltaReadCount = 0
+    val backwardPass = forwardPass.backward(Eval.always {
+      outputDeltaReadCount += 1
+      2.4
+    })
+    outputDeltaReadCount should be(0)
+    backwardPass.inputDelta.value should be(2.4)
+    outputDeltaReadCount should be(1)
+  }
+
 }
