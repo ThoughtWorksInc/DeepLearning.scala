@@ -1,6 +1,7 @@
 package com.thoughtworks
 
 import com.thoughtworks.DeepLearning.{Array2D, DifferentiableINDArray}
+import shapeless.syntax.std.tuple._
 
 import scala.language.existentials
 import scala.language.higherKinds
@@ -15,7 +16,7 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.scalatest.{FreeSpec, Inside, Matchers}
 import org.nd4s.Implicits._
-import shapeless._
+import shapeless.{::, _}
 import DeepLearning.DifferentiableINDArray.INDArrayToStrong
 import DeepLearning.DifferentiableDouble.DoubleToStrong
 
@@ -59,7 +60,6 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
 
   def test1x1Binary(left: Double, right: Double, expected: Double, operator: BinaryOperator) = {
     val network = operator.hlistFunction.toStrong
-    import shapeless.syntax.std.tuple._
     val forwardPass = network.forward((Eval.now(Nd4j.valueArrayOf(1, 1, left)), Eval.now(Nd4j.valueArrayOf(1, 1, right))).productElements)
     forwardPass.output.value.shape should be(Array(1, 1))
     forwardPass.output.value(0, 0) should be(expected +- 0.01)
@@ -127,34 +127,45 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
   }
 
   "dot 1x1" in {
-    val addOperator = new BinaryOperator {
+    val operator = new BinaryOperator {
       override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = DeepLearning[F].dot(left, right)
     }
-    test1x1Binary(0.5, 0.45, 0.225, addOperator)
+    test1x1Binary(0.5, 0.58, 0.29, operator)
   }
   "+" in {
-    val addOperator = new BinaryOperator {
+    val operator = new BinaryOperator {
       override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left + right
     }
-    test1x1Binary(0.5, 0.45, 0.95, addOperator)
+    test1x1Binary(0.5, 0.45, 0.95, operator)
   }
   "-" in {
-    val addOperator = new BinaryOperator {
+    val operator = new BinaryOperator {
       override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left - right
     }
-    test1x1Binary(0.5, 0.45, 0.05, addOperator)
+    test1x1Binary(0.5, 0.45, 0.05, operator)
   }
   "*" in {
-    val addOperator = new BinaryOperator {
+    val operator = new BinaryOperator {
       override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left * right
     }
-    test1x1Binary(0.5, 0.45, 0.225, addOperator)
+    val forwardPass = operator.hlistFunction.toStrong.forward(Eval.now(Array(Array(0.5)).toNDArray) :: Eval.now(Array(Array(0.58)).toNDArray) :: HNil)
+    forwardPass.output.value(0, 0) should be(0.29 +- 0.01)
+    val backwardPass = forwardPass.backward(Eval.now(Some(Array(Array(2.0)).toNDArray)))
+    val leftDelta :: rightDelta :: HNil=backwardPass.inputDelta
+    inside(leftDelta.value) {
+      case Some(leftDeltaValue) =>
+        leftDeltaValue(0,0)should be((0.58 * 2.0) +- 0.01)
+    }
+    inside(rightDelta.value) {
+      case Some(rightDeltaValue) =>
+        rightDeltaValue(0,0)should be((0.5 * 2.0) +- 0.01)
+    }
   }
   "/" in {
-    val addOperator = new BinaryOperator {
+    val operator = new BinaryOperator {
       override def apply[F[_] : DeepLearning](left: F[Array2D], right: F[Array2D]): F[Array2D] = left / right
     }
-    test1x1Binary(0.5, 0.45, 1.1111111111, addOperator)
+    test1x1Binary(0.5, 0.45, 1.1111111111, operator)
   }
 
   "dot" in {
