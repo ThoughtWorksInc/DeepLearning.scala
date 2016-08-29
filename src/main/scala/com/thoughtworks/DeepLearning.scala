@@ -67,7 +67,7 @@ object DeepLearning {
       type Data = Eval[Double]
       type Delta = Eval[Double]
       type TypeClass = DifferentiableDouble.type
-      type StrongOpsResult = StrongOps[Data, Delta, TypeClass]
+      type Out = StrongOps[Data, Delta, TypeClass]
     }
 
     implicit object DoubleToWeak extends ToWeak[DifferentiableDouble.type] {
@@ -124,7 +124,7 @@ object DeepLearning {
       type Data = Eval[INDArray]
       type Delta = Eval[Option[INDArray]]
       type TypeClass = DifferentiableINDArray.type
-      type StrongOpsResult = StrongOps[Data, Delta, TypeClass]
+      type Out = StrongOps[Data, Delta, TypeClass]
     }
 
     implicit object INDArrayToWeak extends ToWeak[DifferentiableINDArray.type] {
