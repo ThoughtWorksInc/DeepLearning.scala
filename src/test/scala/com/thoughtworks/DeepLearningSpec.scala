@@ -197,10 +197,6 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
 
   "XOR" - {
 
-    val inputTypeClass = DifferentiableINDArray :: DifferentiableINDArray :: DifferentiableHNil
-
-    val inputTypeClassWiden = Widen[inputTypeClass.type]
-
     val inputAndLabel = Eval.now(
       Array(
         Array(0.0, 0.0),
