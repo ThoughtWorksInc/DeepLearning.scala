@@ -28,24 +28,30 @@ private object DeepLearningSpec {
 
     import DeepLearning.ops._
 
+    /*assumption: minibatch. could try removing it*/
     def inference[F[_]](input: F[Array2D])(implicit deepLearning: DeepLearning[F]): F[Array2D] = {
       import deepLearning._
-      val scores = input.fullyConnectedThenRelu(2, 2)
-      exp(scores) / sum(1)(exp(scores))
+      val scores =/* show[Array2D]*/(input.fullyConnectedThenRelu(2, 50).fullyConnectedThenRelu(50, 2))
+      show[Array2D](      exp(scores) / sum(1)(exp(scores)) )
     }
 
     def loss[F[_]](likelihood: F[Array2D], expectedLabels: F[Array2D])(implicit deepLearning: DeepLearning[F]): F[Double] = {
       import deepLearning._
-      -reduceSum(log(likelihood) * expectedLabels)
+      show[Double](-reduceSum(/*show[Array2D]*/(log(/*show[Array2D]*/(likelihood))) * expectedLabels))
     }
 
-    def inferenceAndTrain[F[_]](inputAndLabels: F[Array2D :: Array2D :: HNil])(implicit deepLearning: DeepLearning[F]): F[Array2D :: Double :: HNil] = {
+    type MinibatchInput = Array2D
+    type ExpectedLabel = Array2D
+    type Likelihood = Array2D
+    type Loss = Double
+
+    def inferenceAndTrain[F[_]](inputAndLabels: F[MinibatchInput :: ExpectedLabel :: HNil])(implicit deepLearning: DeepLearning[F]): F[Likelihood :: Loss :: HNil] = {
       import deepLearning._
-      val likelihood: F[Array2D] = inference(inputAndLabels.head)
+      val likelihood = inference(inputAndLabels.head)
       likelihood :: loss(likelihood, inputAndLabels.tail.head) :: hnil
     }
 
-    def train[F[_]](inputAndLabels: F[Array2D :: Array2D :: HNil])(implicit deepLearning: DeepLearning[F]): F[Double] = {
+    def train[F[_]](inputAndLabels: F[MinibatchInput :: ExpectedLabel :: HNil])(implicit deepLearning: DeepLearning[F]): F[Loss] = {
       import deepLearning._
       loss(inference(inputAndLabels.head), inputAndLabels.tail.head)
     }
@@ -222,8 +228,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
 
       def train(network: TrainFunction): TrainFunction = {
         val forwardPass = ForwardOps(network).forward(inputAndLabel)
-        val loss = forwardPass.output
-        val backwardPass = forwardPass.backward(loss)
+        val backwardPass = forwardPass.backward(Eval.now(1.0))
         val learningRate = 0.0003
         network.applyPatch(backwardPass.weightDelta /*.asInstanceOf[network.typeClassInstance.Delta]*/ , learningRate)
       }
@@ -240,70 +245,38 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
       val finalLoss = currentLoss(finalNetwork)
       initialLoss should be > finalLoss
     }
-//
-//    "predict" in {
-//      val scoresAndLossTypeClass = DifferentiableINDArray :: DifferentiableDouble :: DifferentiableHNil
-//      val scoresAndLossTypeClassWiden = Widen[scoresAndLossTypeClass.type]
-//      type InferenceAndTrainFunction[Weight, DeltaWeight] =
-//      StrongOps[
-//        Weight, DeltaWeight,
-//        DifferentiableFunction[
-//          Weight, DeltaWeight,
-//
-//          // input forward
-//          Eval[INDArray] :: Eval[INDArray] :: HNil,
-//
-//          // input backward
-//          Eval[Option[INDArray]] :: Eval[Option[INDArray]] :: HNil,
-//
-//          inputTypeClassWiden.Out,
-//
-//          // output forward
-//          Eval[INDArray] :: Eval[Double] :: HNil,
-//
-//          // output backward
-//          Eval[Option[INDArray]] :: Eval[Double] :: HNil,
-//
-//          scoresAndLossTypeClassWiden.Out
-//          ]
-//        ]
-//      val weakNetwork = Networks.inferenceAndTrain[Lambda[A => WeakOps[Array2D :: Array2D :: HNil => A]]](DeepLearning[WeakOps].id)
-//      val strongNetwork: InferenceAndTrainFunction[_, _] = weakNetwork.asInstanceOf[InferenceAndTrainFunction[_, _]]
-//
-//      def train[Weight, DeltaWeight]
-//      (network: InferenceAndTrainFunction[Weight, DeltaWeight]): InferenceAndTrainFunction[Weight, DeltaWeight] = {
-//        val forwardPass = network.forward(inputAndLabel)
-//        val predicted :: loss :: HNil = forwardPass.output
-//        //        println(inputAndLabel.tail.head.value)
-//        //        println(predicted.value)
-//        println(loss.value)
-//        println()
-//        val backwardPass = forwardPass.backward(Eval.now[Option[INDArray]](None) :: loss :: HNil)
-//        val learningRate = 0.00001
-//        new WeakOps[Array2D :: Array2D :: HNil => Double] with Differentiable.AllOps[Weight] {
-//          override val typeClassInstance = network.typeClassInstance
-//          override val self = network.applyPatch(backwardPass.weightDelta, learningRate)
-//        }
-//      }
-//      val finalNetwork = (0 until 100).foldLeft(strongNetwork) { (network, currentIteration) =>
-//        train(network)
-//      }
-//
-//      def predict[Weight, DeltaWeight](network: InferenceAndTrainFunction[Weight, DeltaWeight]) = {
-//
-//        val forwardPass = network.forward(inputAndLabel)
-//        val prediction = forwardPass.output.head.value
-//        println(prediction)
-//        prediction(0, 0) should be > 0.5
-//        prediction(0, 1) should be < 0.5
-//
-//      }
-//
-//      //      println(finalNetwork.toFastring)
-//
-//      predict(finalNetwork)
-//    }
 
+    "predict" in {
+
+      val weakNetwork = Networks.inferenceAndTrain[Lambda[A => WeakOps[Array2D :: Array2D :: HNil => A]]](DeepLearning[WeakOps].id)
+      val toStrong = ToStrong[(Array2D :: Array2D :: HNil) => (Array2D :: Double :: HNil)]
+      val network = weakNetwork.toStrong(toStrong)
+      type TrainFunction = toStrong.Out
+
+      def train(network: TrainFunction): TrainFunction = {
+        val forwardPass = ForwardOps(network).forward(inputAndLabel)
+        val predicted :: loss :: HNil = forwardPass.output
+        predicted.value
+//        println(loss.value)
+        //        println(predicted.value)
+        //        println(loss.value)
+        //        println()
+        val backwardPass = forwardPass.backward(Eval.now[Option[INDArray]](None) :: Eval.now(1.0) :: HNil)
+        val learningRate = 0.003
+        network.applyPatch(backwardPass.weightDelta /*.asInstanceOf[network.typeClassInstance.Delta]*/ , learningRate)
+      }
+      val (_ :: initialLoss :: HNil) = network.forward(inputAndLabel).output
+      val finalNetwork = (0 until 10).foldLeft[TrainFunction](network) { (network, currentIteration) =>
+        train(network)
+      }
+
+      val finalPredicted :: finalLoss :: HNil = finalNetwork.forward(inputAndLabel).output
+      println(finalPredicted.value)
+      finalPredicted.value(0, 0) should be > 0.5
+      finalPredicted.value(0, 1) should be < 0.5
+      initialLoss.value should be > finalLoss.value
+
+    }
   }
 
   "id should forward and backward" in {
@@ -352,4 +325,19 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
     outputDeltaReadCount should be(1)
   }
 
+  "update weight" in {
+
+    def loss[F[_]](likelihood: F[Double])(implicit deepLearning: DeepLearning[F]): F[Double] = {
+      import deepLearning._
+      //      val l = -reduceSum(log(likelihood) * expectedLabels)
+      val l = DeepLearning.constantDouble(3.4)(deepLearning)
+      l + l
+
+    }
+
+    val l = loss[Lambda[A => WeakOps[Double => A]]](DeepLearning[WeakOps].id)
+
+    println(l.toStrong.forward(Eval.now(2.0)).output.value)
+
+  }
 }
