@@ -28,6 +28,8 @@ def osClassifier(moduleId: ModuleID) = {
 
 libraryDependencies += osClassifier("org.nd4j" % "nd4j-native" % "0.4-rc3.9" % Test classifier "")
 
+libraryDependencies += "org.typelevel" %% "cats" % "0.7.2"
+
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.1"
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)

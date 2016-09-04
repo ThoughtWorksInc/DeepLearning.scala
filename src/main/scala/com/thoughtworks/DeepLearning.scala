@@ -1,965 +1,282 @@
 package com.thoughtworks
 
-
-import cats.data.{Cokleisli, Kleisli}
-import cats.kernel.std.DoubleGroup
-import cats.{Applicative, Eval, EvalMonoid, Monoid}
-import com.thoughtworks.DeepLearning.BinaryOperator.OperatorDispatcher
-import com.thoughtworks.Differentiable.DifferentiableFunction.{BackwardPass, ForwardPass}
-import com.thoughtworks.Differentiable._
-import com.thoughtworks.Pointfree.Ski
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
-import org.nd4s.Implicits._
+import cats.{Eval, Monoid}
 import shapeless._
-import simulacrum.{noop, op, typeclass}
-import com.dongxiguo.fastring.Fastring.Implicits._
-import com.thoughtworks.Differentiable.WeakOps.{ToStrong, ToWeak}
-import shapeless.PolyDefns._
-import shapeless.ops.hlist.At
-import shapeless.ops.tuple.Selector
+import simulacrum.typeclass
+import scala.language.implicitConversions
 
-import scala.language.{existentials, higherKinds, implicitConversions}
+/*
 
-// Disable + for concatenation
-import Predef.{any2stringadd => _, _}
+神经网络应该是 trait 还是 one case class 还是 witnesswith + case class 还是 xxxops + case class?
 
+* trait
+  * 优点
+    * 实现起来更简单
+    * 类型参数短
+  * 缺点
+    * 需要定义 self type 才能 applyPatch
+    * 类型推断可能很难(现在由于砍掉了 SKI,可能并不难)
+    * weight delta 的 monoid不好重用。
+* case class
+  * 优点
+    * 自带 self type
+    * 可以类型推断
+  * 缺点
+    * 类型参数很复杂
+
+暂定用trait,尝试一下简单的解法
+怎么表示input和output?
+要么也用 trait ,要么还是用 type class
+对于常数函数（即K/liftXxx）,需要专门实现。
+对于平常的 input ,似乎并不需要type class就能传递回去
+
+backward阶段并不需要计算 input delta
+
+
+不同类型的helper应该放在神经网络上还是全局函数上?应该放在type class里。
+
+ */
 object DeepLearning {
 
-  type Array2D = Array[Array[Double]]
-
-  implicit def constantArray2D[F[_]](value: Array2D)(implicit tc: PointfreeOperators[F]): F[Array2D] = {
-    import PointfreeOperators.ops._
-    tc.ap(tc.freeze[Array2D])(tc.liftArray2D(value))
-  }
-
-  implicit def constantDouble[F[_]](value: Double)(implicit tc: PointfreeOperators[F]): F[Double] = {
-    import PointfreeOperators.ops._
-    tc.ap(tc.freeze[Double])(tc.liftDouble(value))
-  }
-
-  implicit case object DifferentiableDouble extends Differentiable[Eval[Double]] {
-
-    object DifferentiableDoubleInstances extends EvalMonoid[Double] with ToFastring[Eval[Double]] with Patch[Eval[Double], Eval[Double]] {
-
-
-      override implicit def algebra = cats.std.double.doubleGroup
-
-      override def apply(data: Eval[Double], delta: Eval[Double], learningRate: Double): Eval[Double] = {
-        Applicative[Eval].map2(data, delta)(_ - _ * learningRate).memoize
-      }
-
-      override def apply(data: Eval[Double]) = {
-        fast"${data.value}"
-      }
-    }
-
-    override type Delta = Eval[Double]
-
-    override def monoid = DifferentiableDoubleInstances
-
-    override def patch = DifferentiableDoubleInstances
-
-    override def toFastring = DifferentiableDoubleInstances
-
-    implicit object DoubleToStrong extends ToStrong[Double] {
-      type Data = Eval[Double]
-      type Delta = Eval[Double]
-      type TypeClass = DifferentiableDouble.type
-      type Out = StrongOps[Data, Delta, TypeClass]
-    }
-
-    implicit object DoubleToWeak extends ToWeak[DifferentiableDouble.type] {
-      type WeakType = Double
-    }
-    
-  }
-
-  implicit case object DifferentiableINDArray extends Differentiable[Eval[INDArray]] {
-
-    override type Delta = Eval[Option[INDArray]]
-
-    override def monoid = DifferentiableINDArrayInstances
-
-    override def patch = DifferentiableINDArrayInstances
-
-    override def toFastring = DifferentiableINDArrayInstances
-
-    object DifferentiableINDArrayInstances extends Patch[Eval[INDArray], Eval[Option[INDArray]]] with EvalMonoid[Option[INDArray]] with ToFastring[Eval[INDArray]] {
-
-      override implicit object algebra extends Monoid[Option[INDArray]] {
-        override def combine(f1: Option[INDArray], f2: Option[INDArray]): Option[INDArray] = {
-          f1 match {
-            case None =>
-              f2 match {
-                case None => None
-                case Some(f2Delta) => Some(f2Delta)
-
-              }
-            case Some(f1Delta) =>
-              f2 match {
-                case None => Some(f1Delta)
-                case Some(f2Delta) => Some(f1Delta + f2Delta)
-              }
-          }
-        }
-
-        override def empty = None
-      }
-
-      override def apply(weight: Eval[INDArray], delta: Eval[Option[INDArray]], learningRate: Double): Eval[INDArray] = {
-        delta.flatMap {
-          case None => weight
-          case Some(deltaValue) => weight.map(_ - deltaValue * learningRate)
-        }.memoize
-      }
-
-      override def apply(data: Eval[INDArray]) = {
-        fast"${data.value}"
-      }
-    }
-
-    implicit object INDArrayToStrong extends ToStrong[Array2D] {
-      type Data = Eval[INDArray]
-      type Delta = Eval[Option[INDArray]]
-      type TypeClass = DifferentiableINDArray.type
-      type Out = StrongOps[Data, Delta, TypeClass]
-    }
-
-    implicit object INDArrayToWeak extends ToWeak[DifferentiableINDArray.type] {
-      type WeakType = Array2D
-    }
-
-  }
-
-  implicit def kleisliWithParameter[F[_], A, B, Parameter](implicit ski: Ski[F], lift: Kleisli[F, A, B]): Kleisli[Lambda[X => F[Parameter => X]], A, B] = Kleisli[Lambda[X => F[Parameter => X]], A, B] { a: A =>
-    import Ski.ops._
-    lift(a).withParameter[Parameter]
-  }
-
   @typeclass
-  trait BinaryOperator[F[_]] {
-    def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D]
+  trait Patch[Weight] {
+    type WeightDelta
 
-    def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D]
-
-    def doubleDouble(left: F[Double], right: F[Double]): F[Double]
-
-    def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D]
+    def applyPatch(delta: WeightDelta): Weight
   }
 
-  object BinaryOperator {
-
-    trait OperatorDispatcher[Left, Right] {
-      type Out
-
-      def apply[F[_] : BinaryOperator](left: F[Left], right: F[Right]): F[Out]
+  object Patch {
+    type Aux[Weight, WeightDelta0] = Patch[Weight] {
+      type WeightDelta = WeightDelta0
     }
-
-    implicit object Array2DINDArrayDispatcher extends OperatorDispatcher[Array2D, Array2D] {
-      override type Out = Array2D
-
-      override def apply[F[_] : BinaryOperator](left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-        BinaryOperator[F].arrayArray(left, right)
-      }
-    }
-
-    implicit object DoubleDoubleDispatcher extends OperatorDispatcher[Double, Double] {
-      override type Out = Double
-
-      override def apply[F[_] : BinaryOperator](left: F[Double], right: F[Double]): F[Double] = {
-        BinaryOperator[F].doubleDouble(left, right)
-      }
-    }
-
-    implicit object DoubleINDArrayDispatcher extends OperatorDispatcher[Double, Array2D] {
-      override type Out = Array2D
-
-      override def apply[F[_] : BinaryOperator](left: F[Double], right: F[Array2D]): F[Array2D] = {
-        BinaryOperator[F].doubleArray(left, right)
-      }
-    }
-
-    implicit object Array2DDoubleDispatcher extends OperatorDispatcher[Array2D, Double] {
-      override type Out = Array2D
-
-      override def apply[F[_] : BinaryOperator](left: F[Array2D], right: F[Double]): F[Array2D] = {
-        BinaryOperator[F].arrayDouble(left, right)
-      }
-    }
-
   }
 
-  @typeclass
-  trait PointfreeOperators[F[_]] extends PointfreeFreezing[F] {
+  object CachedForward {
 
-    import PointfreeOperators._
+    final class ForwardKeyValue[-K, +V]()
 
-    def liftDouble: Kleisli[F, Double, Double]
+    object ForwardKeyValue {
+      implicit def apply[Weight, WeightDelta, InputData, OutputData, OutputDelta] = {
+        new ForwardKeyValue[((HMap[ForwardKeyValue], Weight, InputData) => (HMap[ForwardKeyValue], OutputData, OutputDelta => WeightDelta), Weight, InputData), (OutputData, OutputDelta => WeightDelta)]
+      }
+    }
 
-    def liftArray2D: Kleisli[F, Array2D, Array2D]
+    type ForwardMap = HMap[ForwardKeyValue]
+  }
 
-    def zeros(numberOfRows: Int, numberOfColumns: Int): F[Array2D]
+  import CachedForward._
 
-    def zeros(numberOfColumns: Int): F[Array2D] = zeros(1, numberOfColumns)
+  final case class CachedForward[Weight, WeightDelta, InputData, OutputData, OutputDelta]
+  (
+    rawForward: (HMap[ForwardKeyValue], Weight, InputData) => (HMap[ForwardKeyValue], OutputData, OutputDelta => WeightDelta)
+  ) extends AnyVal {
+    def apply(cache: HMap[ForwardKeyValue], weight: Weight, inputData: InputData): (HMap[ForwardKeyValue], OutputData, OutputDelta => WeightDelta) = {
+      cache.get((rawForward, weight, inputData)) match {
+        case None =>
+          // Note that recursion or re-entering is not supported here
+          val (c, outputData, backward) = rawForward(cache, weight, inputData)
+          val newCache = c + ((rawForward, weight, inputData) -> (outputData, backward))
+          (newCache, outputData, backward)
+        case Some((outputData, backward: (OutputDelta => WeightDelta))) =>
+          (cache, outputData, backward)
+      }
+    }
+  }
 
-    def randn(numberOfRows: Int, numberOfColumns: Int): F[Array2D]
+  trait Differentiable[Weight] {
+    self =>
+    type WeightDelta
+    type InputData
+    type OutputData
+    type OutputDelta
 
-    protected def reciprocalDouble: F[Double => Double]
+    val weight: Weight
 
-    protected def reciprocalArray2D: F[Array2D => Array2D]
+    val monoid: Monoid[WeightDelta]
 
-    protected def negativeDouble: F[Double => Double]
+    val patch: Patch.Aux[Weight, WeightDelta]
 
-    protected def negativeArray2D: F[Array2D => Array2D]
+    val forward: CachedForward[Weight, WeightDelta, InputData, OutputData, OutputDelta]
+  }
 
-    protected def multiplyArray2DArray2D: F[(Array2D, Array2D) => Array2D]
+  object Differentiable {
+    type Aux[Weight, WeightDelta0, InputData0, OutputData0, OutputDelta0] = Differentiable[Weight] {
+      type WeightDelta = WeightDelta0
+      type InputData = InputData0
+      type OutputData = OutputData0
+      type OutputDelta = OutputDelta0
+    }
+  }
 
-    protected def multiplyArray2DDouble: F[(Array2D, Double) => Array2D]
+  final case class DifferentiableDouble[Weight, WeightDelta0, InputData0]
+  (
+    weight: Weight,
+    monoid: Monoid[WeightDelta0],
+    patch: Patch.Aux[Weight, WeightDelta0],
+    forward: CachedForward[Weight, WeightDelta0, InputData0, Eval[Double], Eval[Double]]
+  ) extends Differentiable[Weight] with Dsl.Double {
+    override type WeightDelta = WeightDelta0
+    override type InputData = InputData0
+    override type OutputData = Eval[scala.Double]
+    override type OutputDelta = Eval[scala.Double]
+    override protected type Self = DifferentiableDouble[_, _, InputData]
 
-    protected def multiplyDoubleDouble: F[(Double, Double) => Double]
+    override def unary_- = {
+      val outerForward = forward
+      DifferentiableDouble(weight, monoid, patch, CachedForward { (forwardCache: HMap[ForwardKeyValue], weight: Weight, inputData: InputData) =>
+        val (newCache, data, backward) = outerForward(forwardCache, weight, inputData)
 
-    protected def addArray2DArray2D: F[(Array2D, Array2D) => Array2D]
-
-    protected def addArray2DDouble: F[(Array2D, Double) => Array2D]
-
-    protected def addDoubleDouble: F[(Double, Double) => Double]
-
-    def dot: F[(Array2D, Array2D) => Array2D]
-
-    protected def maxArray2DDouble: F[(Array2D, Double) => Array2D]
-
-    protected def exponentialArray2D: F[Array2D => Array2D]
-
-    protected def logArray2D: F[Array2D => Array2D]
-
-    def broadcast(numberOfRows: Int, numberOfColumns: Int): F[Array2D => Array2D]
-
-    def sum(dimensions: Int*): F[Array2D => Array2D]
-
-    def reduceSum: F[Array2D => Double]
-
-    implicit private def self = this
-
-    import PointfreeOperators.ops._
-
-    def +[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
-      dispatcher(left, right)(new BinaryOperator[F] {
-        override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
-          addArray2DDouble(right, left)
+        (
+          newCache,
+          data.map(-_).memoize, { outputDelta: Eval[Double] =>
+          // TODO: backward cache
+          /*
+          要用什么数据结构呢？
+          可变数据结构还是不可变？
+          可变？
+           */
+          backward(outputDelta.map(-_).memoize)
         }
-
-        override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-          addArray2DArray2D(left, right)
-        }
-
-        override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
-          addDoubleDouble(left, right)
-        }
-
-        override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
-          addArray2DDouble(left, right)
-        }
+          )
       })
     }
 
 
-    def -[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
-      dispatcher(left, right)(new BinaryOperator[F] {
-        override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
-          addArray2DDouble(negativeArray2D(right), left)
-        }
-
-        override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-          addArray2DArray2D(left, negativeArray2D(right))
-        }
-
-        override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
-          addDoubleDouble(left, negativeDouble(right))
-        }
-
-        override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
-          addArray2DDouble(left, negativeDouble(right))
-        }
-      })
-    }
-
-    def *[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
-      dispatcher(left, right)(new BinaryOperator[F] {
-        override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
-          multiplyArray2DDouble(right, left)
-        }
-
-        override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-          multiplyArray2DArray2D(left, right)
-        }
-
-        override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
-          multiplyDoubleDouble(left, right)
-        }
-
-        override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
-          multiplyArray2DDouble(left, right)
-        }
-      })
-    }
-
-    def /[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
-      dispatcher(left, right)(new BinaryOperator[F] {
-        override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
-          multiplyArray2DDouble(reciprocalArray2D(right), left)
-        }
-
-        override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-          multiplyArray2DArray2D(left, reciprocalArray2D(right))
-        }
-
-        override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
-          multiplyDoubleDouble(left, reciprocalDouble(right))
-        }
-
-        override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
-          multiplyArray2DDouble(left, reciprocalDouble(right))
-        }
-      })
-    }
-
-    def max[A, B](left: F[A], right: F[B])(implicit dispatcher: OperatorDispatcher[A, B]): F[dispatcher.Out] = {
-      dispatcher(left, right)(new BinaryOperator[F] {
-        override def doubleArray(left: F[Double], right: F[Array2D]): F[Array2D] = {
-          maxArray2DDouble(right, left)
-        }
-
-        override def arrayArray(left: F[Array2D], right: F[Array2D]): F[Array2D] = {
-          ???
-        }
-
-        override def doubleDouble(left: F[Double], right: F[Double]): F[Double] = {
-          ???
-        }
-
-        override def arrayDouble(left: F[Array2D], right: F[Double]): F[Array2D] = {
-          maxArray2DDouble(left, right)
-        }
-      })
-    }
-
-    def unary_-[A](value: F[A])(implicit case2: Case2[NegativeOverloads.type, PointfreeOperators[F], F[A]]): case2.Result = {
-      case2(this, value)
-    }
-
-    def exp[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
-      exponentialArray2D(constrait(value))
-    }
-
-    def log[A](value: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
-      logArray2D(constrait(value))
-    }
-
-
-  }
-
-  object PointfreeOperators {
-
-    private[PointfreeOperators] object NegativeOverloads extends Poly2 {
-      implicit def caseArray2D[F[_]] = at[PointfreeOperators[F], F[Array2D]] { (tc, fa) =>
-        import tc._
-        ap(negativeArray2D)(fa)
-      }
-
-      implicit def caseDouble[F[_]] = at[PointfreeOperators[F], F[Double]] { (tc, fa) =>
-        import tc._
-        ap(negativeDouble)(fa)
-      }
-    }
-
-    import PointfreeOperators.ops._
-
-    trait WithParameter[F[_], Parameter] extends PointfreeFreezing.WithParameter[F, Parameter] with PointfreeOperators[Lambda[X => F[Parameter => X]]] {
-      implicit protected def outer: PointfreeOperators[F]
-
-      override def liftDouble = kleisliWithParameter(outer, outer.liftDouble)
-
-      override def liftArray2D = kleisliWithParameter(outer, outer.liftArray2D)
-
-      override def broadcast(numberOfRows: Int, numberOfColumns: Int) = outer.broadcast(numberOfRows, numberOfColumns).withParameter
-
-      override def reduceSum = outer.reduceSum.withParameter
-
-      override def sum(dimensions: Int*) = outer.sum(dimensions: _*).withParameter
-
-      protected override def multiplyArray2DArray2D = outer.multiplyArray2DArray2D.withParameter
-
-      protected override def multiplyArray2DDouble = outer.multiplyArray2DDouble.withParameter
-
-      protected override def multiplyDoubleDouble = outer.multiplyDoubleDouble.withParameter
-
-      protected override def addArray2DArray2D = outer.addArray2DArray2D.withParameter
-
-      protected override def addArray2DDouble = outer.addArray2DDouble.withParameter
-
-      protected override def addDoubleDouble = outer.addDoubleDouble.withParameter
-
-      protected override def negativeArray2D = outer.negativeArray2D.withParameter
-
-      protected override def negativeDouble = outer.negativeDouble.withParameter
-
-      protected override def reciprocalArray2D = outer.reciprocalArray2D.withParameter
-
-      protected override def reciprocalDouble = outer.reciprocalDouble.withParameter
-
-      protected override def maxArray2DDouble = outer.maxArray2DDouble.withParameter
-
-      protected override def exponentialArray2D = outer.exponentialArray2D.withParameter
-
-      protected override def logArray2D = outer.logArray2D.withParameter
-
-      override def dot = (outer: PointfreeOperators[F]).dot.withParameter
-
-      override def zeros(numberOfRows: Int, numberOfColumns: Int): F[Parameter => Array2D] = outer.zeros(numberOfRows, numberOfColumns).withParameter
-
-      override def randn(numberOfRows: Int, numberOfColumns: Int): F[Parameter => Array2D] = outer.randn(numberOfRows, numberOfColumns).withParameter
-    }
-
-    implicit def withParameterInstances[F[_], Parameter](implicit underlying: PointfreeOperators[F]) = new WithParameter[F, Parameter] {
-      override implicit protected def outer = underlying
-    }
-
-  }
-
-  implicit object DeepLearningInstances extends DeepLearning[WeakOps] with DifferentiableInstances {
-
-    override val liftDouble = Kleisli[WeakOps, Double, Double] { value: Double =>
-      new WeakOps[Double] with Differentiable.AllOps[Eval[Double]] {
-        override val self = Eval.now(value)
-        override val typeClassInstance = DifferentiableDouble
-      }
-    }
-
-    override val liftArray2D = Kleisli[WeakOps, Array2D, Array2D] { value: Array2D =>
-      new WeakOps[Array2D] with Differentiable.AllOps[Eval[INDArray]] {
-        override val self = Eval.later(value.toNDArray)
-        override val typeClassInstance = DifferentiableINDArray
-      }
-    }
-
-    override def sum(dimensions: Int*) = {
-      DeepLearning.sum(dimensions: _*).pureOps[Array2D => Array2D]
-    }
-
-    override def reduceSum = {
-      ReduceSum.pureOps[Array2D => Double]
-    }
-
-    override def broadcast(numberOfRows: Int, numberOfColumns: Int) = {
-      DeepLearning.broadcast(numberOfRows, numberOfColumns).pureOps[Array2D => Array2D]
-    }
-
-    protected override def reciprocalDouble = {
-      ReciprocalDouble.pureOps[Double => Double]
-    }
-
-    protected override def negativeDouble = {
-      NegativeDouble.pureOps[Double => Double]
-    }
-
-    protected override def reciprocalArray2D = {
-      ReciprocalINDArray.pureOps[Array2D => Array2D]
-
-    }
-
-    protected override def negativeArray2D = {
-      NegativeINDArray.pureOps[Array2D => Array2D]
-    }
-
-    protected override def multiplyArray2DArray2D = {
-      MultiplyINDArrayINDArray.pureOps[(Array2D, Array2D) => Array2D]
-    }
-
-    protected override def multiplyArray2DDouble = {
-      MultiplyINDArrayDouble.pureOps[(Array2D, Double) => Array2D]
-    }
-
-    protected override def multiplyDoubleDouble = {
-      MultiplyDoubleDouble.pureOps[(Double, Double) => Double]
-    }
-
-    protected override def addArray2DArray2D = {
-      AddINDArrayINDArray.pureOps[(Array2D, Array2D) => Array2D]
-    }
-
-    protected override def addArray2DDouble = {
-      AddINDArrayDouble.pureOps[(Array2D, Double) => Array2D]
-    }
-
-    protected override def addDoubleDouble = {
-      AddDoubleDouble.pureOps[(Double, Double) => Double]
-    }
-
-    override def dot = {
-      Dot.pureOps[(Array2D, Array2D) => Array2D]
-    }
-
-    override def maxArray2DDouble = {
-      MaxINDArrayDouble.pureOps[(Array2D, Double) => Array2D]
-    }
-
-    override def exponentialArray2D = {
-      ExponentialINDArray.pureOps[Array2D => Array2D]
-    }
-
-    override def logArray2D = {
-      LogINDArray.pureOps[Array2D => Array2D]
-    }
-
-    override def zeros(numberOfRows: Int, numberOfColumns: Int) = {
-      new WeakOps[Array2D] with Differentiable.AllOps[Eval[INDArray]] {
-        override val self = Eval.later(Nd4j.zeros(numberOfRows, numberOfColumns))
-        override val typeClassInstance = DifferentiableINDArray
-      }
-    }
-
-    override def randn(numberOfRows: Int, numberOfColumns: Int) = {
-      new WeakOps[Array2D] with Differentiable.AllOps[Eval[INDArray]] {
-        override val self = Eval.later(Nd4j.randn(numberOfRows, numberOfColumns))
-        override val typeClassInstance = DifferentiableINDArray
-      }
-    }
-  }
-
-  trait WithParameter[F[_], Parameter] extends PointfreeOperators.WithParameter[F, Parameter] with DeepLearning[Lambda[X => F[Parameter => X]]]
-
-  implicit def withParameterInstances[F[_], Parameter](implicit underlying: DeepLearning[F]) = new WithParameter[F, Parameter] {
-    override implicit protected def outer = underlying
-  }
-
-  val MaxINDArrayDouble = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
-          val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
-          ForwardPass(Applicative[Eval].map2(a, b)(Transforms.max).memoize, DifferentiableINDArray, {
-            outputDelta: Eval[Option[INDArray]] =>
-              val aDelta = outputDelta.flatMap[Option[INDArray]] {
-                case None => Eval.now(None)
-                case Some(outputDeltaValue) =>
-                  Applicative[Eval].map2(a, b) {
-                    (aData: INDArray, bData: Double) =>
-                      Some((aData gt bData) * outputDeltaValue)
-                  }
-              }
-              val bDelta = outputDelta.flatMap[Double] {
-                case None => Eval.now(0)
-                case Some(outputDeltaValue) =>
-                  Applicative[Eval].map2(a, b) {
-                    (aData: INDArray, bData: Double) =>
-                      ((aData lt bData) * outputDeltaValue).sumT
-                  }
-              }
-              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-          })
-      }
-    )
-  }
-
-
-  val NegativeINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        ForwardPass(a.map(_.neg), DifferentiableINDArray, {
-          outputDelta: Eval[Option[INDArray]] =>
-            BackwardPass(HNil: HNil, outputDelta.map(_.map(_.neg)))
-        })
-    })
-  }
-
-  val LogINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        ForwardPass(a.map(Transforms.log), DifferentiableINDArray, {
-          outputDelta: Eval[Option[INDArray]] =>
-            BackwardPass(
-              HNil: HNil,
-              outputDelta.flatMap[Option[INDArray]] {
-                case None =>
-                  Eval.now(None)
-                case Some(outputDeltaValue) => a.map {
-                  aData: INDArray =>
-                    Some(outputDeltaValue / aData)
-                }
-              }
-            )
-        })
-    })
-  }
-
-  val ExponentialINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        val output = a.map(Transforms.exp)
-        ForwardPass(output, DifferentiableINDArray, {
-          outputDelta: Eval[Option[INDArray]] =>
-            BackwardPass(
-              HNil: HNil,
-              outputDelta.flatMap[Option[INDArray]] {
-                case None =>
-                  Eval.now(None)
-                case Some(outputDeltaValue) => output.map {
-                  outputValue: INDArray =>
-                    Some(outputValue * outputDeltaValue)
-                }
-              }
-            )
-        })
-    })
-  }
-
-  val ReciprocalINDArray = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        ForwardPass(a.map(_ rdiv 1).memoize, DifferentiableINDArray, {
-          outputDelta: Eval[Option[INDArray]] =>
-            BackwardPass(
-              HNil: HNil,
-              outputDelta.flatMap[Option[INDArray]] {
-                case None => Eval.now(None)
-                case Some(outputDeltaValue) =>
-                  a.map {
-                    aValue: INDArray =>
-                      Some(-outputDeltaValue / (aValue * aValue))
-                  }
-              }.memoize
-            )
-        })
-    })
-  }
-
-  val ReciprocalDouble = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[Double], _: DifferentiableDouble.type) =>
-        ForwardPass(a.map(1.0 / _), DifferentiableDouble, {
-          outputDelta: Eval[Double] =>
-            BackwardPass(
-              HNil: HNil,
-              Applicative[Eval].map2(outputDelta, a) {
-                (outputDeltaValue: Double, aValue: Double) =>
-                  -outputDeltaValue / (aValue * aValue)
-              }
-            )
-        })
-    })
-  }
-
-  val NegativeDouble = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[Double], _: DifferentiableDouble.type) =>
-        ForwardPass(a.map(-_), DifferentiableDouble, {
-          outputDelta: Eval[Double] =>
-            BackwardPass(
-              HNil: HNil,
-              outputDelta.map(-_)
-            )
-        })
-    })
-  }
-
-  val ReduceSum = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        val aShape = a.map(_.shape)
-        ForwardPass(a.map(_.sumT), DifferentiableDouble, {
-          outputDelta: Eval[Double] =>
-            BackwardPass(
-              HNil: HNil,
-              Applicative[Eval].map2(aShape, outputDelta) {
-                (aShapeValue, outputDeltaValue) =>
-                  if (outputDeltaValue == 0) {
-                    None
-                  } else {
-                    Some(Nd4j.valueArrayOf(aShapeValue, outputDeltaValue))
-                  }
-              }
-            )
-        })
-    })
-  }
-
-  def sum(dimensions: Int*) = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        val aShape = a.map(_.shape)
-        ForwardPass(a.map(_.sum(dimensions: _*)), DifferentiableINDArray, {
-          outputDelta: Eval[Option[INDArray]] =>
-            BackwardPass(
-              HNil: HNil,
-              outputDelta.flatMap[Option[INDArray]] {
-                case None => Eval.now(None)
-                case Some(outputDeltaValue) =>
-                  aShape.map {
-                    aShapeValue =>
-                      Some(outputDeltaValue.broadcast(aShapeValue: _*))
-                  }
-              }.memoize
-            )
-        })
-    })
-  }
-
-  def broadcast(rows: Int, columns: Int) = {
-    DifferentiableFunction(HNilMonoid, HNilPatch, HNilToFastring, {
-      (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], a: Eval[INDArray], _: DifferentiableINDArray.type) =>
-        val aShape = a.map(_.shape)
-        ForwardPass(a.map(_.broadcast(rows, columns)), DifferentiableINDArray, {
-          outputDelta: Eval[Option[INDArray]] =>
-            BackwardPass(
-              HNil: HNil,
-              outputDelta.flatMap[Option[INDArray]] {
-                case None => Eval.now(None)
-                case Some(outputDeltaValue) =>
-                  aShape.map {
-                    case Array(1, 1) => Some(outputDeltaValue.sum(0, 1))
-                    case Array(1, _) => Some(outputDeltaValue.sum(0))
-                    case Array(_, 1) => Some(outputDeltaValue.sum(1))
-                    case Array(_, _) => Some(outputDeltaValue)
-                  }
-              }.memoize
-            )
-        })
-    })
-  }
-
-  private type DifferentiableINDArrayINDArray = DifferentiableHCons[
-    Eval[INDArray], Eval[Option[INDArray]], DifferentiableINDArray.type,
-    Eval[INDArray] :: HNil, Eval[Option[INDArray]] :: HNil, DifferentiableHCons[
-    Eval[INDArray], Eval[Option[INDArray]], DifferentiableINDArray.type,
-    HNil, HNil, DifferentiableHNil.type]]
-
-  private type DifferentiableINDArrayDouble = DifferentiableHCons[
-    Eval[INDArray], Eval[Option[INDArray]], DifferentiableINDArray.type,
-    Eval[Double] :: HNil, Eval[Double] :: HNil, DifferentiableHCons[
-    Eval[Double], Eval[Double], DifferentiableDouble.type,
-    HNil, HNil, DifferentiableHNil.type]]
-
-  private type DifferentiableDoubleDouble = DifferentiableHCons[
-    Eval[Double], Eval[Double], DifferentiableDouble.type,
-    Eval[Double] :: HNil, Eval[Double] :: HNil, DifferentiableHCons[
-    Eval[Double], Eval[Double], DifferentiableDouble.type,
-    HNil, HNil, DifferentiableHNil.type]]
-
-  def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = shape match {
-    case Array(1, 1) => outputDeltaValue.sum(0, 1)
-    case Array(_, 1) => outputDeltaValue.sum(1)
-    case Array(1, _) => outputDeltaValue.sum(0)
-    case Array(_, _) => outputDeltaValue
-  }
-
-  val AddINDArrayINDArray = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
-          val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
-          val aShape = a.map(_.shape).memoize
-          val bShape = b.map(_.shape).memoize
-          val newShape = Applicative[Eval].map2(aShape, bShape) {
-            case (Array(aRows, aColumns), Array(bRows, bColumns)) =>
-              Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-          }
-          ForwardPass(Applicative[Eval].map3(a, b, newShape) {
-            (aValue, bValue, newShapeValue) =>
-              aValue.broadcast(newShapeValue: _*) + bValue.broadcast(newShapeValue: _*)
-          }.memoize, DifferentiableINDArray, {
-            outputDelta: Eval[Option[INDArray]] =>
-              BackwardPass(
-                HNil: HNil,
-                Applicative[Eval].map2(outputDelta, aShape) {
-                  (outputDeltaOption, shape) =>
-                    outputDeltaOption.map(sumAs(_, shape))
-                } :: Applicative[Eval].map2(outputDelta, bShape) {
-                  (outputDeltaOption, shape) =>
-                    outputDeltaOption.map(sumAs(_, shape))
-                } :: HNil)
-          })
-      }
-    )
-  }
-
-  val AddINDArrayDouble = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
-          val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
-          ForwardPass(Applicative[Eval].map2(a, b)(_ add _).memoize, DifferentiableINDArray, {
-            outputDelta: Eval[Option[INDArray]] =>
-              val aDelta = outputDelta
-              val bDelta = outputDelta.map {
-                case None => 0.0
-                case Some(outputDeltaValue) => outputDeltaValue.sumT
-              }.memoize
-              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-          })
-      }
-    )
-  }
-
-  val AddDoubleDouble = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[Double] :: Eval[Double] :: HNil, _: DifferentiableDoubleDouble) =>
-          val (a: Eval[Double]) :: (b: Eval[Double]) :: HNil = hlist
-          ForwardPass(Applicative[Eval].map2(a, b)(_ + _), DifferentiableDouble, {
-            outputDelta: Eval[Double] =>
-              BackwardPass(HNil: HNil, outputDelta :: outputDelta :: HNil)
-          })
-      }
-    )
-  }
-
-  val MultiplyINDArrayINDArray = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
-          val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
-          val aShape = a.map(_.shape)
-          val bShape = b.map(_.shape)
-          val newShape = Applicative[Eval].map2(aShape, bShape) {
-            case (Array(aRows, aColumns), Array(bRows, bColumns)) =>
-              Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-          }
-          ForwardPass(Applicative[Eval].map3(a, b, newShape) {
-            (aValue, bValue, newShapeValue) =>
-              aValue.broadcast(newShapeValue: _*) * bValue.broadcast(newShapeValue: _*)
-          }.memoize, DifferentiableINDArray, {
-            outputDelta: Eval[Option[INDArray]] =>
-              BackwardPass(
-                HNil: HNil,
-                outputDelta.flatMap[Option[INDArray]] {
-                  case None => Eval.now(None)
-                  case Some(outputDeltaValue) =>
-                    Applicative[Eval].map2(b, aShape) {
-                      (bData: INDArray, aShapeValue) =>
-                        Some(sumAs(bData.broadcast(outputDeltaValue.shape: _*) * outputDeltaValue, aShapeValue))
-                    }
-                } ::
-                  outputDelta.flatMap[Option[INDArray]] {
-                    case None => Eval.now(None)
-                    case Some(outputDeltaValue) =>
-                      Applicative[Eval].map2(a, bShape) {
-                        (aData: INDArray, bShapeValue) =>
-                          Some(sumAs(aData.broadcast(outputDeltaValue.shape: _*) * outputDeltaValue, bShapeValue))
-                      }
-                  } :: HNil
-              )
-          })
-      }
-    )
-  }
-
-  val MultiplyINDArrayDouble = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[Double] :: HNil, _: DifferentiableINDArrayDouble) =>
-          val (a: Eval[INDArray]) :: (b: Eval[Double]) :: HNil = hlist
-          ForwardPass(Applicative[Eval].map2(a, b)(_ mul _).memoize, DifferentiableINDArray, {
-            outputDelta: Eval[Option[INDArray]] =>
-              val aDelta = outputDelta.flatMap[Option[INDArray]] {
-                case None => Eval.now(None)
-                case Some(outputDeltaValue) =>
-                  b.map {
-                    bData: Double =>
-                      Some(outputDeltaValue * bData)
-                  }
-              }.memoize
-              val bDelta = outputDelta.flatMap[Double] {
-                case None => Eval.now(0.0)
-                case Some(outputDeltaValue) =>
-                  a.map {
-                    aData: INDArray =>
-                      (aData * outputDeltaValue).sumT
-                  }
-              }.memoize
-              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-          })
-      }
-    )
-  }
-
-  val MultiplyDoubleDouble = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[Double] :: Eval[Double] :: HNil, _: DifferentiableDoubleDouble) =>
-          val (a: Eval[Double]) :: (b: Eval[Double]) :: HNil = hlist
-          ForwardPass(Applicative[Eval].map2(a, b)(_ * _), DifferentiableDouble, {
-            outputDelta: Eval[Double] =>
-              val aDelta = Applicative[Eval].map2(outputDelta, b)(_ * _)
-              val bDelta = Applicative[Eval].map2(outputDelta, a)(_ * _)
-              BackwardPass(HNil: HNil, aDelta :: bDelta :: HNil)
-          })
-      }
-    )
-  }
-
-  val Dot = {
-    DifferentiableFunction(
-      HNilMonoid, HNilPatch, HNilToFastring, {
-        (weight: HNil, monoid: Monoid[HNil], patch: Patch[HNil, HNil], toFastring: ToFastring[HNil], hlist: Eval[INDArray] :: Eval[INDArray] :: HNil, _: DifferentiableINDArrayINDArray) =>
-          val (a: Eval[INDArray]) :: (b: Eval[INDArray]) :: HNil = hlist
-          ForwardPass(Applicative[Eval].map2(a, b)(_ dot _).memoize, DifferentiableINDArray, {
-            outputDelta: Eval[Option[INDArray]] =>
-              BackwardPass(
-                HNil: HNil,
-                outputDelta.flatMap[Option[INDArray]] {
-                  case None => Eval.now(None)
-                  case Some(outputDeltaValue) =>
-                    b.map {
-                      bData =>
-                        Some(outputDeltaValue.dot(bData.T))
-                    }
-                } :: outputDelta.flatMap[Option[INDArray]] {
-                  case None => Eval.now(None)
-                  case Some(outputDeltaValue) =>
-                    a.map {
-                      aData =>
-                        Some(aData.T.dot(outputDeltaValue))
-                    }
-                } :: HNil
-              )
-          })
-      }
-    )
   }
 
 }
 
-import DeepLearning.{DeepLearningInstances => _, _}
+object Dsl {
 
-@typeclass
-trait DeepLearning[F[_]] extends PointfreeOperators[F] {
+  trait Double {
+    protected type Self >: this.type <: Double
 
-  def sigmoid[A](input: F[A])(implicit constrait: F[A] <:< F[Array2D]): F[Array2D] = {
-    import DeepLearning.ops._
-    implicit def self = this
-    constantDouble(1.0) / (constantDouble(1.0) + exp(-constrait(input)))
+    def unary_- : Self
   }
 
-  def relu[A](input: F[A])(implicit constrait: F[A] <:< F[Array2D]) = {
-    import DeepLearning.ops._
-    implicit def self = this
-    max(constrait(input), 0.0)
-  }
-
-  def fullyConnected[A](input: F[A], weight: F[Array2D], bias: F[Array2D])(implicit constrait: F[A] <:< F[Array2D]) = {
-    import DeepLearning.ops._
-    implicit def self = this
-    dot(constrait(input), weight) + bias // 此处会自动 broardcast bias
-  }
-
-  def fullyConnectedThenRelu[A](input: F[A], inputSize: Int, outputSize: Int)(implicit constrait: F[A] <:< F[Array2D]) = {
-    import DeepLearning.ops._
-    implicit def self = this
-    val weight = randn(inputSize, outputSize) / math.sqrt(inputSize.toDouble / 2.0)
-    val bias = zeros(outputSize)
-    constrait(input).fullyConnected(weight, bias).relu
+  object Double {
+    type Aux[Self0] = Double {
+      type Self = Self0
+    }
   }
 
 }
+
+trait Dsl {
+
+  import Dsl._
+
+  type Any
+
+  type Double <: Dsl.Double.Aux[Double] with Any
+}
+
+trait DeepLearning extends Dsl {
+  self =>
+
+  import DeepLearning._
+
+  type InputData
+
+  type Any = Differentiable.Aux[_, _, InputData, _, _]
+
+  type Double = DifferentiableDouble[_, _, InputData]
+
+}
+
+//
+//import shapeless.{HMap, ~?>}
+//
+//import scala.language.{existentials, higherKinds, implicitConversions}
+//
+//object DeepLearning {
+//
+//  type ForwardCache = HMap[ForwardCache.CacheRelation]
+//
+//  object ForwardCache {
+//
+//    final class CacheRelation[K, V] private[CacheRelation]()
+//
+//    object CacheRelation {
+//      implicit def relation[A <: Any] = new CacheRelation[A, ForwardPass[A#Data, A#Delta]]
+//    }
+//
+//  }
+//
+//  final case class ForwardPass[+Data, -Delta]
+//  (outputData: Data, cache: ForwardCache)
+//
+//  trait Function1[-A0 <: Any, +R <: Any] extends Any {
+//
+//    type Data <: A0 => R
+//
+//    def forwardApply(input: A0, cache: ForwardCache) = {
+//      // TODO: update cache
+//      val dataForward = forward(cache)
+//
+//      dataForward.outputData(input).forward(dataForward.cache)
+//    }
+//  }
+//
+//  object Function1 {
+//    override def apply[A0 <: Any, R <: Any](raw: (A0) => R): Function1[A0, R] = {
+//      new Function1[A0, R] {
+//        override def forward(cache: ForwardCache): ForwardPass[Data, Delta] = ???
+//      }
+//    }
+//  }
+//
+//  trait Any {
+//    type Data
+//    type Delta
+//
+//    def forward(cache: ForwardCache): ForwardPass[Data, Delta]
+//  }
+//
+//  object Double {
+//    def apply(raw: scala.Double): Double = new Double {
+//      override def forward(cache: ForwardCache) = ???
+//    }
+//  }
+//
+//  trait Double extends Any {
+//    outer =>
+//    type Data = cats.Eval[scala.Double]
+//    type Delta = cats.Eval[scala.Double]
+//
+//    def +(other: Double): Double = ???
+//
+//    def /(other: Double): Double = ???
+//
+//    def *(other: Double): Double = ???
+//
+//    def -(other: Double): Double = ???
+//
+//    def unary_- : Double = new Double {
+//
+//      override def forward(cache: ForwardCache) = {
+//        outer.forward(cache)
+//        ???
+//      }
+//    }
+//  }
+//
+//
+//  override def exp(value: Double): Double = ???
+//
+//  override def log(value: Double): Double = ???
+//
+//  override def max(left: Double, right: Double): Double = ???
+//
+//
+//  sealed trait HList extends Any {
+//    override def ::[Head <: Any](head: Head): ::[Head, this.type] = ???
+//  }
+//
+//  type HNil = HList
+//
+//  object HNil extends HList {
+//    override def forward(cache: ForwardCache) = ???
+//  }
+//
+//}
