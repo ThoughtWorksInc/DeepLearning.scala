@@ -1,157 +1,21 @@
 package com.thoughtworks
 
-import cats.{Eval, Monoid}
-import shapeless._
-import simulacrum.typeclass
+
+import cats.Monoid
+import com.thoughtworks.DeepLearning.Differentiable._
+
+import scala.language.existentials
+import com.thoughtworks.Dsl.{BooleanOps, DoubleOps}
+
 import scala.language.implicitConversions
-
-/*
-
-神经网络应该是 trait 还是 one case class 还是 witnesswith + case class 还是 xxxops + case class?
-
-* trait
-  * 优点
-    * 实现起来更简单
-    * 类型参数短
-  * 缺点
-    * 需要定义 self type 才能 applyPatch
-    * 类型推断可能很难(现在由于砍掉了 SKI,可能并不难)
-    * weight delta 的 monoid不好重用。
-* case class
-  * 优点
-    * 自带 self type
-    * 可以类型推断
-  * 缺点
-    * 类型参数很复杂
-
-暂定用trait,尝试一下简单的解法
-怎么表示input和output?
-要么也用 trait ,要么还是用 type class
-对于常数函数（即K/liftXxx）,需要专门实现。
-对于平常的 input ,似乎并不需要type class就能传递回去
-
-backward阶段并不需要计算 input delta
-
-
-不同类型的helper应该放在神经网络上还是全局函数上?应该放在type class里。
-
- */
-object DeepLearning {
-
-  @typeclass
-  trait Patch[Weight] {
-    type WeightDelta
-
-    def applyPatch(delta: WeightDelta): Weight
-  }
-
-  object Patch {
-    type Aux[Weight, WeightDelta0] = Patch[Weight] {
-      type WeightDelta = WeightDelta0
-    }
-  }
-
-  object CachedForward {
-
-    final class ForwardKeyValue[-K, +V]()
-
-    object ForwardKeyValue {
-      implicit def apply[Weight, WeightDelta, InputData, OutputData, OutputDelta] = {
-        new ForwardKeyValue[((HMap[ForwardKeyValue], Weight, InputData) => (HMap[ForwardKeyValue], OutputData, OutputDelta => WeightDelta), Weight, InputData), (OutputData, OutputDelta => WeightDelta)]
-      }
-    }
-
-    type ForwardMap = HMap[ForwardKeyValue]
-  }
-
-  import CachedForward._
-
-  final case class CachedForward[Weight, WeightDelta, InputData, OutputData, OutputDelta]
-  (
-    rawForward: (HMap[ForwardKeyValue], Weight, InputData) => (HMap[ForwardKeyValue], OutputData, OutputDelta => WeightDelta)
-  ) extends AnyVal {
-    def apply(cache: HMap[ForwardKeyValue], weight: Weight, inputData: InputData): (HMap[ForwardKeyValue], OutputData, OutputDelta => WeightDelta) = {
-      cache.get((rawForward, weight, inputData)) match {
-        case None =>
-          // Note that recursion or re-entering is not supported here
-          val (c, outputData, backward) = rawForward(cache, weight, inputData)
-          val newCache = c + ((rawForward, weight, inputData) -> (outputData, backward))
-          (newCache, outputData, backward)
-        case Some((outputData, backward: (OutputDelta => WeightDelta))) =>
-          (cache, outputData, backward)
-      }
-    }
-  }
-
-  trait Differentiable[Weight] {
-    self =>
-    type WeightDelta
-    type InputData
-    type OutputData
-    type OutputDelta
-
-    val weight: Weight
-
-    val monoid: Monoid[WeightDelta]
-
-    val patch: Patch.Aux[Weight, WeightDelta]
-
-    val forward: CachedForward[Weight, WeightDelta, InputData, OutputData, OutputDelta]
-  }
-
-  object Differentiable {
-    type Aux[Weight, WeightDelta0, InputData0, OutputData0, OutputDelta0] = Differentiable[Weight] {
-      type WeightDelta = WeightDelta0
-      type InputData = InputData0
-      type OutputData = OutputData0
-      type OutputDelta = OutputDelta0
-    }
-  }
-
-  final case class DifferentiableDouble[Weight, WeightDelta0, InputData0]
-  (
-    weight: Weight,
-    monoid: Monoid[WeightDelta0],
-    patch: Patch.Aux[Weight, WeightDelta0],
-    forward: CachedForward[Weight, WeightDelta0, InputData0, Eval[Double], Eval[Double]]
-  ) extends Differentiable[Weight] with Dsl.Double {
-    override type WeightDelta = WeightDelta0
-    override type InputData = InputData0
-    override type OutputData = Eval[scala.Double]
-    override type OutputDelta = Eval[scala.Double]
-    override protected type Self = DifferentiableDouble[_, _, InputData]
-
-    override def unary_- = {
-      val outerForward = forward
-      DifferentiableDouble(weight, monoid, patch, CachedForward { (forwardCache: HMap[ForwardKeyValue], weight: Weight, inputData: InputData) =>
-        val (newCache, data, backward) = outerForward(forwardCache, weight, inputData)
-
-        (
-          newCache,
-          data.map(-_).memoize, { outputDelta: Eval[Double] =>
-          // TODO: backward cache
-          /*
-          要用什么数据结构呢？
-          可变数据结构还是不可变？
-          可变？
-           */
-          backward(outputDelta.map(-_).memoize)
-        }
-          )
-      })
-    }
-
-
-  }
-
-}
+import cats.implicits._
 
 object Dsl {
 
-  trait Double {
-    protected type Self >: this.type <: Double
+  trait DoubleOps[Double] {
+    def unary_- : Double
 
-    def unary_- : Self
+    def -(rightHandSide: Double): Double
   }
 
   object Double {
@@ -160,123 +24,292 @@ object Dsl {
     }
   }
 
+  trait BooleanOps[Any <: {type Self <: Any}, Boolean <: Any] {
+    def `if`[A <: Any](`then`: A)(`else`: A): A#Self
+  }
+
 }
 
 trait Dsl {
 
-  import Dsl._
+  type Any <: {
+    type Self <: Any
+  }
 
-  type Any
+  type Boolean <: Any {
+    type Self <: Boolean
+  }
 
-  type Double <: Dsl.Double.Aux[Double] with Any
+  implicit def booleanOps(underlying: Boolean): BooleanOps[Any, Boolean]
+
+  type Double <: Any {
+    type Self <: Double
+  }
+
+  val Double: scala.Double => Double
+
+  implicit def doubleOps(underlying: Double): DoubleOps[Double]
 }
 
-trait DeepLearning extends Dsl {
-  self =>
 
-  import DeepLearning._
+object DeepLearning extends Dsl {
 
-  type InputData
+  object Differentiable {
 
-  type Any = Differentiable.Aux[_, _, InputData, _, _]
+    trait MiniBatch
 
-  type Double = DifferentiableDouble[_, _, InputData]
+    final case class CacheState[Data, Delta](data: Data, delta: Delta, count: Int)
+
+    trait Cached extends Differentiable {
+
+      def cache = new collection.mutable.HashMap[MiniBatch, CacheState[Data, Delta]]
+
+      def forward(miniBatch: MiniBatch): Data
+
+      final def predict(miniBatch: MiniBatch): Data = {
+        synchronized {
+          cache.get(miniBatch)
+        } match {
+          case None =>
+            val newData = forward(miniBatch)
+            synchronized {
+              cache.put(miniBatch, CacheState(newData, monoid.empty, 1))
+            }
+            newData
+          case Some(CacheState(data, delta, count)) =>
+            synchronized {
+              cache.put(miniBatch, CacheState(data, delta, count + 1))
+            }
+            data
+        }
+      }
+
+      def backward(miniBatch: MiniBatch, data: Data, delta: Delta): Unit
+
+      final def train(miniBatch: MiniBatch, delta: Delta): Unit = {
+        synchronized {
+          cache(miniBatch)
+        } match {
+          case CacheState(data, originalDelta, count) =>
+            val newDelta = delta |+| originalDelta
+            if (count == 1) {
+              synchronized {
+                cache.remove(miniBatch)
+              }
+              backward(miniBatch, data, newDelta)
+            } else {
+              synchronized {
+                cache.put(miniBatch, CacheState(data, newDelta, count - 1))
+              }
+            }
+        }
+      }
+    }
+
+    type Aux[Data0, Delta0] = Differentiable {
+      type Data = Data0
+      type Delta = Delta0
+    }
+
+  }
+
+  trait Differentiable {
+    outer =>
+
+    type Self = Differentiable.Aux[Data, Delta]
+
+    type Data
+    type Delta
+
+    import Differentiable._
+
+    def predict(miniBatch: MiniBatch): Data
+
+    def train(miniBatch: MiniBatch, delta: Delta): Unit
+
+    final def self: Self = this
+
+    implicit def monoid: Monoid[Delta]
+
+  }
+
+  trait DifferentiableDouble extends Differentiable {
+
+    override type Data = scala.Double
+    override type Delta = scala.Double
+
+    override final def monoid = cats.instances.double.catsKernelStdGroupForDouble
+
+  }
+
+  trait DifferentiableBoolean extends Differentiable {
+
+    override type Data = scala.Boolean
+
+    override type Delta = scala.Boolean
+
+    override final def monoid = new Monoid[scala.Boolean] {
+      override def empty = false
+
+      override def combine(delta0: scala.Boolean, delta1: scala.Boolean) = delta0 ^ delta1
+    }
+  }
+
+  override type Any = Differentiable.Aux[_, _]
+
+  override type Double = Differentiable.Aux[scala.Double, scala.Double]
+
+  override object Double extends (scala.Double => Double) {
+    def apply(initialData: scala.Double) = new DifferentiableDouble {
+      @volatile var data = initialData
+      def predict(miniBatch: MiniBatch) = data
+      def train(miniBatch: MiniBatch, delta: scala.Double): Unit = {
+        synchronized {
+          data += delta
+        }
+      }
+    }
+  }
+
+  override type Boolean = Differentiable.Aux[scala.Boolean, scala.Boolean]
+
+  final case class Input[Data0, Delta0](implicit val monoid: Monoid[Delta0]) extends Differentiable {
+    type Data = Data0
+    type Delta = Delta0
+
+    val data = collection.mutable.HashMap.empty[MiniBatch, Data]
+
+    override def predict(miniBatch: MiniBatch): Data = {
+      data(miniBatch)
+    }
+
+    override def train(miniBatch: MiniBatch, delta: Delta): Unit = {
+      // Do nothing
+    }
+
+  }
+
+
+  object If {
+
+    sealed trait IfState[Data, Delta] {
+      val data: Data
+      val delta: Delta
+      val count: Int
+    }
+
+    final case class Then[Data, Delta](data: Data, delta: Delta, count: Int) extends IfState[Data, Delta]
+
+    final case class Else[Data, Delta](data: Data, delta: Delta, count: Int) extends IfState[Data, Delta]
+
+  }
+
+  import If._
+
+  final case class If[Data0, Delta0](condition: Boolean, `then`: Differentiable.Aux[Data0, Delta0], `else`: Differentiable.Aux[Data0, Delta0]) extends Differentiable {
+
+    override type Data = Data0
+    override type Delta = Delta0
+
+    private val cache = collection.mutable.HashMap.empty[MiniBatch, IfState[Data, Delta]]
+
+    implicit override def monoid = `then`.monoid
+
+    override def predict(miniBatch: MiniBatch): Data0 = {
+      synchronized {
+        cache.get(miniBatch)
+      } match {
+        case None =>
+          if (condition.predict(miniBatch)) {
+            val newData = `then`.predict(miniBatch)
+            synchronized {
+              cache.put(miniBatch, Then(newData, monoid.empty, 1))
+            }
+            newData
+          } else {
+            val newData = `else`.predict(miniBatch)
+            synchronized {
+              cache.put(miniBatch, Else(newData, monoid.empty, 1))
+            }
+            newData
+          }
+        case Some(Else(data, delta, count)) =>
+          synchronized {
+            cache.put(miniBatch, Else(data, delta, count + 1))
+          }
+          data
+        case Some(Then(data, delta, count)) =>
+          synchronized {
+            cache.put(miniBatch, Then(data, delta, count + 1))
+          }
+          data
+      }
+    }
+
+    override def train(miniBatch: MiniBatch, delta: Delta0): Unit = {
+
+      synchronized {
+        cache(miniBatch)
+      } match {
+        case Then(data, originalDelta, count) =>
+          val newDelta = delta |+| originalDelta
+          if (count == 1) {
+            synchronized {
+              cache.remove(miniBatch)
+            }
+            `then`.train(miniBatch, newDelta)
+            condition.train(miniBatch, condition.monoid.empty)
+          } else {
+            synchronized {
+              cache.put(miniBatch, Then(data, newDelta, count - 1))
+            }
+          }
+        case Else(data, originalDelta, count) =>
+          val newDelta = delta |+| originalDelta
+          if (count == 1) {
+            synchronized {
+              cache.remove(miniBatch)
+            }
+            `else`.train(miniBatch, newDelta)
+            condition.train(miniBatch, condition.monoid.empty)
+          } else {
+            synchronized {
+              cache.put(miniBatch, Else(data, newDelta, count - 1))
+            }
+          }
+      }
+    }
+  }
+
+  def booleanOps(underlying: Boolean) = new BooleanOps[Any, Boolean] {
+    override def `if`[A <: Any](`then`: A)(`else`: A) = {
+      If(underlying, `then`, `else`)
+    }
+  }
+
+  def doubleOps(underlying: Double) = new DoubleOps[Double] {
+    override def unary_- = new Cached with DifferentiableDouble {
+
+      override final def forward(miniBatch: MiniBatch): Data = {
+        -underlying.predict(miniBatch)
+      }
+
+      override final def backward(miniBatch: MiniBatch, data: Data, delta: Delta): Unit = {
+        underlying.train(miniBatch, -delta)
+      }
+    }.self
+
+    override def -(rightHandSide: Double) = new Cached with DifferentiableDouble {
+      override def forward(miniBatch: MiniBatch): scala.Double = {
+        underlying.predict(miniBatch) - rightHandSide.predict(miniBatch)
+      }
+
+      override def backward(miniBatch: MiniBatch, data: scala.Double, delta: scala.Double): Unit = {
+        underlying.train(miniBatch, delta)
+        rightHandSide.train(miniBatch, -delta)
+      }
+    }.self
+
+  }
 
 }
-
-//
-//import shapeless.{HMap, ~?>}
-//
-//import scala.language.{existentials, higherKinds, implicitConversions}
-//
-//object DeepLearning {
-//
-//  type ForwardCache = HMap[ForwardCache.CacheRelation]
-//
-//  object ForwardCache {
-//
-//    final class CacheRelation[K, V] private[CacheRelation]()
-//
-//    object CacheRelation {
-//      implicit def relation[A <: Any] = new CacheRelation[A, ForwardPass[A#Data, A#Delta]]
-//    }
-//
-//  }
-//
-//  final case class ForwardPass[+Data, -Delta]
-//  (outputData: Data, cache: ForwardCache)
-//
-//  trait Function1[-A0 <: Any, +R <: Any] extends Any {
-//
-//    type Data <: A0 => R
-//
-//    def forwardApply(input: A0, cache: ForwardCache) = {
-//      // TODO: update cache
-//      val dataForward = forward(cache)
-//
-//      dataForward.outputData(input).forward(dataForward.cache)
-//    }
-//  }
-//
-//  object Function1 {
-//    override def apply[A0 <: Any, R <: Any](raw: (A0) => R): Function1[A0, R] = {
-//      new Function1[A0, R] {
-//        override def forward(cache: ForwardCache): ForwardPass[Data, Delta] = ???
-//      }
-//    }
-//  }
-//
-//  trait Any {
-//    type Data
-//    type Delta
-//
-//    def forward(cache: ForwardCache): ForwardPass[Data, Delta]
-//  }
-//
-//  object Double {
-//    def apply(raw: scala.Double): Double = new Double {
-//      override def forward(cache: ForwardCache) = ???
-//    }
-//  }
-//
-//  trait Double extends Any {
-//    outer =>
-//    type Data = cats.Eval[scala.Double]
-//    type Delta = cats.Eval[scala.Double]
-//
-//    def +(other: Double): Double = ???
-//
-//    def /(other: Double): Double = ???
-//
-//    def *(other: Double): Double = ???
-//
-//    def -(other: Double): Double = ???
-//
-//    def unary_- : Double = new Double {
-//
-//      override def forward(cache: ForwardCache) = {
-//        outer.forward(cache)
-//        ???
-//      }
-//    }
-//  }
-//
-//
-//  override def exp(value: Double): Double = ???
-//
-//  override def log(value: Double): Double = ???
-//
-//  override def max(left: Double, right: Double): Double = ???
-//
-//
-//  sealed trait HList extends Any {
-//    override def ::[Head <: Any](head: Head): ::[Head, this.type] = ???
-//  }
-//
-//  type HNil = HList
-//
-//  object HNil extends HList {
-//    override def forward(cache: ForwardCache) = ???
-//  }
-//
-//}
