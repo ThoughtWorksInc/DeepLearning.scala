@@ -16,6 +16,11 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
     //    val input = Input[scala.Double, scala.Double]
     //    val output = input - Double(3.0)
     //
+
+    implicit def learningRate = new DeepLearning.LearningRate {
+      def apply() = 0.0003
+    }
+
     def f(dsl: Dsl)(input: dsl.Double): dsl.Double = {
       import dsl._
 

@@ -150,6 +150,8 @@ object DeepLearning {
       }
     }
 
+//    def mock[Input0 <: Cache](f: Input0 => Output): Differentiable.Aux[Input0, Output]
+
   }
 
   //
@@ -433,16 +435,16 @@ object DeepLearning {
   //  }
   //
   //
-//     abstract class Weight[@specialized Data0, Delta0](@volatile protected var data: Data0)(implicit val monoid: Monoid[Delta0]) extends Differentiable {
-//
-//       override type Input = Differentiable
-//
-// //      override type Data = Data0
-// //      override type Delta = Delta0
-//
-// //      final def predict(input: Input) = data
-//
-//     }
+  //     abstract class Weight[@specialized Data0, Delta0](@volatile protected var data: Data0)(implicit val monoid: Monoid[Delta0]) extends Differentiable {
+  //
+  //       override type Input = Differentiable
+  //
+  // //      override type Data = Data0
+  // //      override type Delta = Delta0
+  //
+  // //      final def predict(input: Input) = data
+  //
+  //     }
 
   trait Cached extends Differentiable {
 
@@ -490,24 +492,34 @@ object DeepLearning {
     }
   }
 
+  trait LearningRate {
+    def apply(): scala.Double
+  }
+
 }
 
 import DeepLearning._
 
-final class DeepLearning[Input0 <: Cache] extends Dsl {
+final class DeepLearning[Input0 <: Cache](implicit learningRate: LearningRate) extends Dsl {
 
   override type Any = Differentiable.Aux[Input0, Cache.Aux[_, _]]
 
   override type Double = Differentiable.Aux[Input0, Cache.Aux[scala.Double, scala.Double]]
 
   override object Double extends (scala.Double => Double) {
-    override def apply(initialData: scala.Double) = ???
+    override def apply(initialData: scala.Double) = new Differentiable {
+      var data = initialData
+      type Input = Input0
+      type Output = Cache.Aux[scala.Double, scala.Double]
 
-    //    def apply(initialData: scala.Double) = new Weight[scala.Double, scala.Double](initialData) {
-    //      def train(input: Input, delta: Delta): Unit = synchronized {
-    //        data += delta
-    //      }
-    //    }
+      override def forward(any: Input) = new DoubleCache {
+        def value = data
+
+        override def backward(delta: scala.Double) = {
+          data -= delta * learningRate()
+        }
+      }
+    }
   }
 
   override type Boolean = Differentiable.Aux[Input0, Cache.Aux[scala.Boolean, scala.Boolean]]
