@@ -56,17 +56,30 @@ trait Dsl {
 
 object DeepLearning {
 
-  object Cache {
-    type Aux[+Data0, -Delta0] = Cache {
+  object Differentiable {
+    type Aux[+Data0, -Delta0] = Differentiable {
       type Data <: Data0
       type Delta >: Delta0
     }
+
+
+    trait DifferentiableDouble extends Differentiable {
+
+      override type Self >: this.type <: DifferentiableDouble
+
+      override type Data = scala.Double
+
+      override type Delta = scala.Double
+
+      final def monoid: Monoid[Delta] = implicitly
+
+    }
   }
 
-  trait Cache {
+  trait Differentiable {
     type Data
     type Delta
-    type Self >: this.type <: Cache.Aux[Data, Delta]
+    type Self >: this.type <: Differentiable.Aux[Data, Delta]
 
     def backward(delta: Delta): Unit
 
@@ -75,71 +88,120 @@ object DeepLearning {
     def self: Self = this
   }
 
-
-  trait DoubleCache extends Cache {
-
-    override type Self >: this.type <: DoubleCache
-
-    override type Data = scala.Double
-
-    override type Delta = scala.Double
-
-    final def monoid: Monoid[Delta] = implicitly
-
-  }
-
-  object Differentiable {
-    type Aux[-Input0 <: Cache, +Output0 <: Cache.Aux[_, _]] = Differentiable {
+  object DifferentiableFunction {
+    type Aux[-Input0 <: Differentiable, +Output0 <: Differentiable.Aux[_, _]] = DifferentiableFunction {
       type Input >: Input0
       type Output <: Output0
     }
 
-    def compose[Input0 <: Cache, Input1 >: Cache.Aux[_, _] <: Cache, OutputData1, OutputDelta1]
-    (
-      f: Differentiable.Aux[Input1, Cache.Aux[OutputData1, OutputDelta1]],
-      g: Differentiable.Aux[Input0, Cache.Aux[_, _]]
-    ) = {
-      new Differentiable {
-        override type Output = Cache.Aux[OutputData1, OutputDelta1]
-        override type Input = Input0
+    final case class Literal[Data0](value: Data0) extends DifferentiableFunction with Differentiable {
+      override type Data = Data0
+      override type Delta = Any
+      override type Input = Differentiable
+      override type Output = Literal[Data0]
+      override type Self = Literal[Data0]
 
-        override def forward(input: Input): Output = {
-          val c = f.forward(g.forward(input))
+      override def self: Self = this
 
-          abstract class CacheImpl[C <: Cache](val c: C) extends Cache {
-            override type Data = c.Data
-            override type Delta = c.Delta
-            override type Self = Cache.Aux[c.Data, c.Delta]
+      override def forward(any: Input) = this
 
-            override def value = c.value
+      override def backward(delta: Delta): Unit = {}
+
+    }
+
+    final case class DoubleWeight(var value: scala.Double)(implicit learningRate: LearningRate) extends DifferentiableFunction with Differentiable {
+      override type Data = scala.Double
+      override type Delta = scala.Double
+      override type Input = Differentiable
+      override type Output = DoubleWeight
+      override type Self = DoubleWeight
+
+      override def self: Self = this
+
+      override def forward(any: Input) = this
+
+      override def backward(delta: Delta): Unit = {
+        value -= delta * learningRate()
+      }
+
+    }
+
+    final class Id[Data0, Delta0] extends DifferentiableFunction {
+      outer =>
+      type Input = Differentiable.Aux[Data0, Delta0]
+      type Output = Differentiable.Aux[Data0, Delta0]
+
+      override def forward(input: Input): Output = {
+        input
+      }
+    }
+
+
+    trait CachedFunction extends DifferentiableFunction {
+
+      private val cache = new java.util.concurrent.ConcurrentHashMap[Input, Output with ReferenceCount](1)
+
+      trait ReferenceCount extends Differentiable {
+        private[CachedFunction] var count: Int = 1
+
+        implicit def monoid: Monoid[Delta]
+
+        private var currentDelta: Delta = monoid.empty
+
+        def input: Input
+
+        protected def cachedBackward(input: Input, delta: Delta): Unit
+
+        override def backward(delta: Delta): Unit = {
+          val (newDelta, newCount) = synchronized {
+            count -= 1
+            currentDelta = currentDelta |+| delta
+            (currentDelta, count)
           }
 
-          new CacheImpl[c.type](c) {
-            override def backward(delta: Delta): Unit = {
-              c.backward(delta)
+          if (newCount == 0) {
+            cache.remove(input)
+            cachedBackward(input, newDelta)
+          }
+        }
+
+      }
+
+      type Output <: ReferenceCount
+
+      protected def cachedForward(input: Input): Output
+
+      override def forward(input: Input) = {
+        cache.get(input) match {
+          case null =>
+            val output = cachedForward(input)
+            cache.put(input, output)
+          case output =>
+            output.synchronized {
+              output.count += 1
             }
-          }
+            output
         }
       }
     }
 
   }
 
-  trait Differentiable {
+  trait DifferentiableFunction {
     outer =>
 
-    type Input <: Cache
+    type Input <: Differentiable
 
-    type Output <: Cache.Aux[_, _]
+    type Output <: Differentiable.Aux[_, _]
 
-    type Self >: this.type <: Differentiable.Aux[Input, Output]
+    type Self >: this.type <: DifferentiableFunction.Aux[Input, Output]
 
     def self: Self = this
 
     def forward(input: Input): Output
 
-    final def compose[Input0 <: Cache](f: Differentiable.Aux[Input0, Input]) = {
-      new Differentiable {
+    final def compose[Input0 <: Differentiable](f: DifferentiableFunction.Aux[Input0, Input]) = {
+      new DifferentiableFunction {
         override type Input = Input0
         override type Output = outer.Output
 
@@ -150,29 +212,6 @@ object DeepLearning {
     }
 
   }
-
-  final class Id[Data0, Delta0] extends Differentiable {
-    outer =>
-    type Input = Cache.Aux[Data0, Delta0]
-    type Output = Cache.Aux[Data0, Delta0]
-
-    override def forward(input: Input): Output = {
-      input
-    }
-  }
-
-  //
-  //  def doubleId = new Id[DoubleCache.Aux[DoubleCache]]
-  //
-  //  def xxx = {
-  //    doubleId.forward(new DoubleCache {
-  //      override def value = 1.0
-  //      override def backward(input: Input, delta: Double): Unit = {}
-  //
-  //      override type Input = Cache
-  //    })
-  //  }
-
 
   //  object If {
   //
@@ -190,10 +229,10 @@ object DeepLearning {
   //
   //  import If._
   //
-  //  final case class If[Input0 <: Differentiable, Data0, Delta0](condition: Differentiable.Aux[_ >: Input0, scala.Boolean, scala.Boolean],
-  //                                                               `then`: Differentiable.Aux[_ >: Input0, Data0, Delta0],
-  //                                                               `else`: Differentiable.Aux[_ >: Input0, Data0, Delta0])
-  //    extends Differentiable {
+  //  final case class If[Input0 <: DifferentiableFunction, Data0, Delta0](condition: DifferentiableFunction.Aux[_ >: Input0, scala.Boolean, scala.Boolean],
+  //                                                               `then`: DifferentiableFunction.Aux[_ >: Input0, Data0, Delta0],
+  //                                                               `else`: DifferentiableFunction.Aux[_ >: Input0, Data0, Delta0])
+  //    extends DifferentiableFunction {
   //
   //    override type Data = Data0
   //    override type Delta = Delta0
@@ -269,110 +308,8 @@ object DeepLearning {
   //    }
   //  }
   //
-  //  final case class Constant[@specialized Data0, Delta0](data: Data0)(implicit val monoid: Monoid[Delta0]) extends Differentiable {
-  //    override type Input = Differentiable
-  //    override type Data = Data0
-  //    override type Delta = Delta0
-  //
-  //    def train(input: Input, delta: Delta): Unit = {}
-  //
-  //    def predict(input: Input) = data
-  //  }
-  //
-  //
-  //     abstract class Weight[@specialized Data0, Delta0](@volatile protected var data: Data0)(implicit val monoid: Monoid[Delta0]) extends Differentiable {
-  //
-  //       override type Input = Differentiable
-  //
-  // //      override type Data = Data0
-  // //      override type Delta = Delta0
-  //
-  // //      final def predict(input: Input) = data
-  //
-  //     }
-
-  trait Cached extends Differentiable {
-
-    private val cache = new java.util.concurrent.ConcurrentHashMap[Input, Output with ReferenceCount](1)
-
-    trait ReferenceCount extends Cache {
-      private[Cached] var count: Int = 1
-
-      implicit def monoid: Monoid[Delta]
-
-      private var currentDelta: Delta = monoid.empty
-
-      def input: Input
-
-      protected def cachedBackward(input: Input, delta: Delta): Unit
-
-      override def backward(delta: Delta): Unit = {
-        val (newDelta, newCount) = synchronized {
-          count -= 1
-          currentDelta = currentDelta |+| delta
-          (currentDelta, count)
-        }
-
-        if (newCount == 0) {
-          cache.remove(input)
-          cachedBackward(input, newDelta)
-        }
-      }
-
-    }
-
-    type Output <: ReferenceCount
-
-    protected def cachedForward(input: Input): Output
-
-    override def forward(input: Input) = {
-      cache.get(input) match {
-        case null =>
-          val output = cachedForward(input)
-          cache.put(input, output)
-        case output =>
-          output.synchronized {
-            output.count += 1
-          }
-          output
-      }
-    }
-  }
-
   trait LearningRate {
     def apply(): scala.Double
-  }
-
-  final case class Literal[Data0](value: Data0) extends Differentiable with Cache {
-    override type Data = Data0
-    override type Delta = Any
-    override type Input = Cache
-    override type Output = Literal[Data0]
-    override type Self = Literal[Data0]
-
-    override def self: Self = this
-
-    override def forward(any: Input) = this
-
-    override def backward(delta: Delta): Unit = {}
-
-  }
-
-  final case class DoubleWeight(var value: scala.Double)(implicit learningRate: LearningRate) extends Differentiable with Cache {
-    override type Data = scala.Double
-    override type Delta = scala.Double
-    override type Input = Cache
-    override type Output = DoubleWeight
-    override type Self = DoubleWeight
-
-    override def self: Self = this
-
-    override def forward(any: Input) = this
-
-    override def backward(delta: Delta): Unit = {
-      value -= delta * learningRate()
-    }
-
   }
 
 }
@@ -380,11 +317,14 @@ object DeepLearning {
 
 import DeepLearning._
 
-final class DeepLearning[Input0 <: Cache](implicit learningRate: LearningRate) extends Dsl {
+final class DeepLearning[Input0 <: Differentiable](implicit learningRate: LearningRate) extends Dsl {
 
-  override type Any = Differentiable.Aux[Input0, Cache.Aux[_, _]]
+  import DifferentiableFunction._
+  import Differentiable._
 
-  override type Double = Differentiable.Aux[Input0, Cache.Aux[scala.Double, scala.Double]]
+  override type Any = DifferentiableFunction.Aux[Input0, Differentiable.Aux[_, _]]
+
+  override type Double = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
 
   override object Double extends Dsl.DoubleExtractor[Double] {
     override def apply(initialData: scala.Double) = Literal(initialData)
@@ -392,13 +332,13 @@ final class DeepLearning[Input0 <: Cache](implicit learningRate: LearningRate) e
     override def weight(initialData: scala.Double) = DoubleWeight(initialData)
   }
 
-  override type Boolean = Differentiable.Aux[Input0, Cache.Aux[scala.Boolean, scala.Boolean]]
+  override type Boolean = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]]
 
   override def doubleOps(underlying: Double) = new Dsl.DoubleOps[Double] {
     override def unary_- = {
-      new Cached {
+      new CachedFunction {
 
-        final class Output(val input: Input0, upstream: Cache.Aux[scala.Double, scala.Double]) extends ReferenceCount with DoubleCache {
+        final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
           type Input >: Input0
           val value = -upstream.value
 
@@ -418,9 +358,9 @@ final class DeepLearning[Input0 <: Cache](implicit learningRate: LearningRate) e
     }
 
     override def -(rightHandSide: Double) = {
-      new Cached {
+      new CachedFunction {
 
-        final class Output(val input: Input0, upstream1: Cache.Aux[scala.Double, scala.Double], upstream2: Cache.Aux[scala.Double, scala.Double]) extends ReferenceCount with DoubleCache {
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
           type Input >: Input0
           val value = upstream1.value - upstream2.value
 

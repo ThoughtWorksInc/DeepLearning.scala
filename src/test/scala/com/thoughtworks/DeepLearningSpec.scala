@@ -2,7 +2,7 @@ package com.thoughtworks
 
 import org.scalatest._
 import cats.implicits._
-import com.thoughtworks.DeepLearning.{Cache, Differentiable, Id}
+import com.thoughtworks.DeepLearning.DifferentiableFunction.Id
 import shapeless.DepFn1
 
 /**
