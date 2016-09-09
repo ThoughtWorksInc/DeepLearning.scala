@@ -1,9 +1,7 @@
 package com.thoughtworks
 
 import org.scalatest._
-import cats.implicits._
-import com.thoughtworks.DeepLearning.DifferentiableFunction.Id
-import shapeless.DepFn1
+import com.thoughtworks.DeepLearning.DifferentiableFunction.{Compose, Id}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -28,7 +26,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
     val dsl = new DeepLearning[id.Input]
     val f1 = f(dsl)(id)
     val g1 = g(dsl)(id)
-    val nn = f1.compose(g1)
+    val nn = Compose(f1, g1)
     def train(input: scala.Double): scala.Double = {
       val output = nn.forward(dsl.Double(10.11))
       output.backward(output.value)

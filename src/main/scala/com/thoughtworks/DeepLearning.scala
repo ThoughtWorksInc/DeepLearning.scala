@@ -4,6 +4,7 @@ import cats.Monoid
 
 import scala.language.existentials
 import scala.language.implicitConversions
+import scala.language.higherKinds
 import cats.implicits._
 
 object Dsl {
@@ -20,8 +21,9 @@ object Dsl {
     }
   }
 
-  trait BooleanOps[Any <: {type Self <: Any}, Boolean <: Any] {
-    def `if`[A <: Any](`then`: A)(`else`: A): A#Self
+
+  trait BooleanOps[Any, Boolean <: Any, TypeClass[_ <: Any]] {
+    def `if`[A <: Any : TypeClass](`then`: A)(`else`: A): A
   }
 
   trait DoubleExtractor[Double] extends (scala.Double => Double) {
@@ -34,21 +36,21 @@ trait Dsl {
 
   import Dsl._
 
-  type Any <: {
-    type Self <: Any
-  }
 
-  type Boolean <: Any {
-    type Self <: Boolean
-  }
+  type Any
+  type Companion[_ <: Any]
+  implicit val Any: Companion[Any]
 
-  implicit def booleanOps(underlying: Boolean): BooleanOps[Any, Boolean]
+  type Boolean <: Any
+  implicit val Boolean: Companion[Boolean]
+
+  implicit def booleanOps(underlying: Boolean): BooleanOps[Any, Boolean, Companion]
 
   type Double <: Any {
     type Self <: Double
   }
 
-  val Double: DoubleExtractor[Double]
+  implicit val Double: Companion[Double] with DoubleExtractor[Double]
 
   implicit def doubleOps(underlying: Double): DoubleOps[Double]
 
@@ -127,7 +129,7 @@ object DeepLearning {
 
     }
 
-    final class Id[Data0, Delta0] extends DifferentiableFunction {
+    final case class Id[Data0, Delta0]() extends DifferentiableFunction {
       outer =>
       type Input = Differentiable.Aux[Data0, Delta0]
       type Output = Differentiable.Aux[Data0, Delta0]
@@ -137,10 +139,9 @@ object DeepLearning {
       }
     }
 
-
     trait CachedFunction extends DifferentiableFunction {
 
-      private val cache = new java.util.concurrent.ConcurrentHashMap[Input, Output with ReferenceCount](1)
+      private val cache = java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, Output with ReferenceCount](1))
 
       trait ReferenceCount extends Differentiable {
         private[CachedFunction] var count: Int = 1
@@ -189,7 +190,7 @@ object DeepLearning {
 
     import Differentiable._
 
-    final class NegativeFunction[Input0 <: Differentiable](from: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction {
+    final case class Negative[Input0 <: Differentiable](from: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction {
 
       final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
         type Input >: Input0
@@ -209,7 +210,7 @@ object DeepLearning {
       }
     }
 
-    final class SubstractFunction[Input0 <: Differentiable]
+    final case class Substract[Input0 <: Differentiable]
     (
       leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
       rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
@@ -233,6 +234,36 @@ object DeepLearning {
 
     }
 
+    final case class Compose[A <: Differentiable, B <: Differentiable, C <: Differentiable](f: DifferentiableFunction.Aux[B, C], g: DifferentiableFunction.Aux[A, B]) extends DifferentiableFunction {
+      override type Input = A
+      override type Output = C
+
+      override def forward(input: A): C = {
+        f.forward(g.forward(input))
+      }
+
+    }
+
+    final case class If[Input0 <: Differentiable, Output0 <: Differentiable](condition: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]],
+                                                                             `then`: DifferentiableFunction.Aux[Input0, Output0],
+                                                                             `else`: DifferentiableFunction.Aux[Input0, Output0])
+      extends DifferentiableFunction {
+      override type Self = If[Input0, Output0]
+      override type Input = Input0
+      override type Output = Output0
+
+      override def forward(input: Input0): Output0 = {
+        val conditionForwardPass = condition.forward(input)
+        val output = if (conditionForwardPass.value) {
+          `then`.forward(input)
+        } else {
+          `else`.forward(input)
+        }
+        conditionForwardPass.backward(false)
+        output
+      }
+    }
+
   }
 
   trait DifferentiableFunction {
@@ -248,117 +279,12 @@ object DeepLearning {
 
     def forward(input: Input): Output
 
-    final def compose[Input0 <: Differentiable](f: DifferentiableFunction.Aux[Input0, Input]) = {
-      new DifferentiableFunction {
-        override type Input = Input0
-        override type Output = outer.Output
-
-        override def forward(input: Input0): Output = {
-          outer.forward(f.forward(input))
-        }
-      }
-    }
-
   }
 
-  //  object If {
-  //
-  //    sealed trait IfState[Data, Delta] {
-  //      val data: Data
-  //      val delta: Delta
-  //      val count: Int
-  //    }
-  //
-  //    final case class Then[Data, Delta](data: Data, delta: Delta, count: Int) extends IfState[Data, Delta]
-  //
-  //    final case class Else[Data, Delta](data: Data, delta: Delta, count: Int) extends IfState[Data, Delta]
-  //
-  //  }
-  //
-  //  import If._
-  //
-  //  final case class If[Input0 <: DifferentiableFunction, Data0, Delta0](condition: DifferentiableFunction.Aux[_ >: Input0, scala.Boolean, scala.Boolean],
-  //                                                               `then`: DifferentiableFunction.Aux[_ >: Input0, Data0, Delta0],
-  //                                                               `else`: DifferentiableFunction.Aux[_ >: Input0, Data0, Delta0])
-  //    extends DifferentiableFunction {
-  //
-  //    override type Data = Data0
-  //    override type Delta = Delta0
-  //    override type Input = Input0
-  //
-  //    private val cache = collection.mutable.HashMap.empty[Input, IfState[Data, Delta]]
-  //
-  //    implicit override def monoid = `then`.monoid
-  //
-  //    override def predict(input: Input): Data0 = {
-  //      synchronized {
-  //        cache.get(input)
-  //      } match {
-  //        case None =>
-  //          if (condition.predict(input)) {
-  //            val newData = `then`.predict(input)
-  //            synchronized {
-  //              cache.put(input, Then(newData, monoid.empty, 1))
-  //            }
-  //            newData
-  //          } else {
-  //            val newData = `else`.predict(input)
-  //            synchronized {
-  //              cache.put(input, Else(newData, monoid.empty, 1))
-  //            }
-  //            newData
-  //          }
-  //        case Some(Else(data, delta, count)) =>
-  //          synchronized {
-  //            cache.put(input, Else(data, delta, count + 1))
-  //          }
-  //          data
-  //        case Some(Then(data, delta, count)) =>
-  //          synchronized {
-  //            cache.put(input, Then(data, delta, count + 1))
-  //          }
-  //          data
-  //      }
-  //    }
-  //
-  //    override def train(input: Input, delta: Delta0): Unit = {
-  //
-  //      synchronized {
-  //        cache(input)
-  //      } match {
-  //        case Then(data, originalDelta, count) =>
-  //          val newDelta = delta |+| originalDelta
-  //          if (count == 1) {
-  //            synchronized {
-  //              cache.remove(input)
-  //            }
-  //            `then`.train(input, newDelta)
-  //            condition.train(input, condition.monoid.empty)
-  //          } else {
-  //            synchronized {
-  //              cache.put(input, Then(data, newDelta, count - 1))
-  //            }
-  //          }
-  //        case Else(data, originalDelta, count) =>
-  //          val newDelta = delta |+| originalDelta
-  //          if (count == 1) {
-  //            synchronized {
-  //              cache.remove(input)
-  //            }
-  //            `else`.train(input, newDelta)
-  //            condition.train(input, condition.monoid.empty)
-  //          } else {
-  //            synchronized {
-  //              cache.put(input, Else(data, newDelta, count - 1))
-  //            }
-  //          }
-  //      }
-  //    }
-  //  }
-  //
   trait LearningRate {
     def apply(): scala.Double
   }
+
 
 }
 
@@ -372,30 +298,59 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Any = DifferentiableFunction.Aux[Input0, Differentiable.Aux[_, _]]
 
+  trait Companion[Target <: Any] {
+    type Output <: Differentiable
+
+    def from(target: Target): DifferentiableFunction.Aux[Input0, Output]
+
+    def to(generic: DifferentiableFunction.Aux[Input0, Output]): Target
+  }
+
   override type Double = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
 
-  override object Double extends Dsl.DoubleExtractor[Double] {
+  override object Double extends Dsl.DoubleExtractor[Double] with Companion[Double] {
     override def apply(value: scala.Double) = Literal(value)
 
     override def weight(initialValue: scala.Double) = DoubleWeight(initialValue)
+
+    override type Output = Differentiable.Aux[scala.Double, scala.Double]
+
+    override def to(generic: Double): Double = generic
+
+    override def from(generic: Double): Double = generic
+
   }
 
   override type Boolean = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]]
 
   override def doubleOps(underlying: Double) = new Dsl.DoubleOps[Double] {
-    override def unary_- = new NegativeFunction(underlying)
+    override def unary_- = new Negative(underlying)
 
-    override def -(rightHandSide: Double) = new SubstractFunction(underlying, rightHandSide)
+    override def -(rightHandSide: Double) = new Substract(underlying, rightHandSide)
 
   }
 
-  override def booleanOps(underlying: Boolean) = ???
+  override def booleanOps(underlying: Boolean) = new Dsl.BooleanOps[Any, Boolean, Companion] {
+    override def `if`[A <: Any  ](`then`: A)(`else`: A)(implicit companion: Companion[A]) = {
+      companion.to(If[Input0, companion.Output](underlying, companion.from(`then`),companion.from( `else`)))
+    }
+  }
 
-  //
-  //  def booleanOps(underlying: Boolean) = new BooleanOps[Any, Boolean] {
-  //    override def `if`[A <: Any](`then`: A)(`else`: A) = {
-  //      If[Input0, A#Data, A#Delta](underlying, `then`, `else`).self
-  //    }
-  //  }
+  object Any extends Companion[Any] {
+    override type Output = Differentiable.Aux[_, _]
 
+    override def from(generic: Any): Any = generic
+
+    override def to(generic: Any): Any = generic
+  }
+
+
+  object Boolean extends Companion[Boolean] {
+    override type Output = Differentiable.Aux[scala.Boolean, scala.Boolean]
+
+    override def from(generic: Boolean): Boolean = generic
+
+    override def to(generic: Boolean): Boolean = generic
+  }
+  
 }
