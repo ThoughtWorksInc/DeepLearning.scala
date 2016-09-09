@@ -25,7 +25,7 @@ object Dsl {
   }
 
   trait DoubleExtractor[Double] extends (scala.Double => Double) {
-    def weight(value: scala.Double): Double
+    def weight(initialValue: scala.Double): Double
   }
 
 }
@@ -375,9 +375,9 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
   override type Double = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
 
   override object Double extends Dsl.DoubleExtractor[Double] {
-    override def apply(initialData: scala.Double) = Literal(initialData)
+    override def apply(value: scala.Double) = Literal(value)
 
-    override def weight(initialData: scala.Double) = DoubleWeight(initialData)
+    override def weight(initialValue: scala.Double) = DoubleWeight(initialValue)
   }
 
   override type Boolean = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]]
