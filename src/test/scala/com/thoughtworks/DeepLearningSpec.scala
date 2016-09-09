@@ -23,13 +23,15 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
 
     def f(dsl: Dsl)(input: dsl.Double): dsl.Double = {
       import dsl._
-      -input - Double(3.0)
+      -input - Double.weight(3.0)
     }
 
     val id = new Id[scala.Double, scala.Double]
     val dsl = new DeepLearning[id.Input]
     val f1 = f(dsl)(id)
     val nn = f1.compose(f1)
+
+    f1.forward(dsl.Double(4.5))
 
 
     //    def xxx[Input0 >: DeepLearning.Cache.Aux[Input0, scala.Double, scala.Double]] = {

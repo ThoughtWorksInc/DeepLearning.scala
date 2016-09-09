@@ -74,6 +74,7 @@ object DeepLearning {
       final def monoid: Monoid[Delta] = implicitly
 
     }
+
   }
 
   trait Differentiable {
@@ -176,6 +177,7 @@ object DeepLearning {
           case null =>
             val output = cachedForward(input)
             cache.put(input, output)
+            output
           case output =>
             output.synchronized {
               output.count += 1
@@ -183,6 +185,52 @@ object DeepLearning {
             output
         }
       }
+    }
+
+    import Differentiable._
+
+    final class NegativeFunction[Input0 <: Differentiable](from: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction {
+
+      final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
+        type Input >: Input0
+        val value = -upstream.value
+
+
+        override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
+          upstream.backward(-delta)
+        }
+      }
+
+      type Input = Input0
+
+      override protected def cachedForward(input: Input): Output = {
+        val upstream = from.forward(input)
+        new Output(input, upstream)
+      }
+    }
+
+    final class SubstractFunction[Input0 <: Differentiable]
+    (
+      leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
+      rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
+    ) extends CachedFunction {
+
+      final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
+        type Input >: Input0
+        val value = upstream1.value - upstream2.value
+
+        override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
+          upstream1.backward(delta)
+          upstream2.backward(-delta)
+        }
+      }
+
+      type Input = Input0
+
+      override protected def cachedForward(input: Input): Output = {
+        new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+      }
+
     }
 
   }
@@ -335,51 +383,9 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
   override type Boolean = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]]
 
   override def doubleOps(underlying: Double) = new Dsl.DoubleOps[Double] {
-    override def unary_- = {
-      new CachedFunction {
+    override def unary_- = new NegativeFunction(underlying)
 
-        final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
-          type Input >: Input0
-          val value = -upstream.value
-
-
-          override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
-            upstream.backward(-delta)
-          }
-        }
-
-        type Input = Input0
-
-        override protected def cachedForward(input: Input): Output = {
-          val upstream = underlying.forward(input)
-          new Output(input, upstream)
-        }
-      }
-    }
-
-    override def -(rightHandSide: Double) = {
-      new CachedFunction {
-
-        final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
-          type Input >: Input0
-          val value = upstream1.value - upstream2.value
-
-          override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
-            upstream1.backward(delta)
-            upstream2.backward(-delta)
-          }
-        }
-
-        type Input = Input0
-
-        override protected def cachedForward(input: Input): Output = {
-          val upstream = underlying.forward(input)
-          new Output(input, underlying.forward(input), rightHandSide.forward(input))
-        }
-
-      }
-
-    }
+    override def -(rightHandSide: Double) = new SubstractFunction(underlying, rightHandSide)
 
   }
 
