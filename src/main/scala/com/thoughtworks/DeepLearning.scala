@@ -1,11 +1,15 @@
 package com.thoughtworks
 
-import cats.Monoid
+import cats.{Applicative, Eval, Monoid}
 
 import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
+import com.thoughtworks.DeepLearning.DifferentiableFunction.Aux
+import com.thoughtworks.DeepLearning.DifferentiableFunction.DoubleFunction.Aux
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4s.Implicits._
 
 object Dsl {
 
@@ -28,6 +32,11 @@ object Dsl {
     }
   }
 
+  trait BooleanApi {
+    type Companion[_]
+
+    def `if`[A: Companion](`then`: A)(`else`: A): A
+  }
 
   object BooleanApi {
     type Aux[Companion0[_]] = BooleanApi {
@@ -36,14 +45,32 @@ object Dsl {
   }
 
 
-  trait BooleanApi {
-    type Companion[_]
-
-    def `if`[A: Companion](`then`: A)(`else`: A): A
+  trait Array2DApi {
+    type Double
+    type Array2D
   }
 
-  trait DoubleExtractor[Double] extends (scala.Double => Double) {
-    def weight(initialValue: scala.Double): Double
+  object Array2DApi {
+    type Aux[Array2D0, Double0] = Array2DApi {
+      type Array2D = Array2D0
+      type Double = Double0
+    }
+  }
+
+  object Lifter {
+    type Aux[LiftFrom0, LiftTo0] = Lifter {
+      type LiftFrom = LiftFrom0
+      type LiftTo = LiftTo0
+    }
+  }
+
+  trait Lifter {
+    type LiftFrom
+    type LiftTo
+
+    def weight(initialValue: LiftFrom): LiftTo
+
+    def apply(value: LiftFrom): LiftTo
   }
 
 }
@@ -61,8 +88,10 @@ trait Dsl {
   implicit val Boolean: Companion[Boolean]
 
   type Double <: Any with DoubleApi.Aux[Double, Boolean]
+  implicit val Double: Companion[Double] with Lifter.Aux[scala.Double, Double]
 
-  implicit val Double: Companion[Double] with DoubleExtractor[Double]
+  type Array2D <: Any with Array2DApi.Aux[Array2D, Double]
+  implicit val Array2D: Companion[Array2D] with Lifter.Aux[Array[Array[scala.Double]], Array2D]
 
   def max(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)
@@ -107,6 +136,26 @@ object DeepLearning {
 
     }
 
+    trait DifferentiableArray2D extends Differentiable {
+
+      override type Data = Eval[INDArray]
+
+      override type Delta = Eval[Option[INDArray]]
+
+      final def monoid = new Monoid[Delta] {
+        override def empty: Eval[Option[INDArray]] = Eval.now(None)
+
+        override def combine(x: Delta, y: Delta): Delta = Applicative[Eval].map2(x, y) {
+          case (None, None) => None
+          case (xDelta@Some(_), None) => xDelta
+          case (None, yDelta@Some(_)) => yDelta
+          case (Some(xDeltaValue), Some(yDeltaValue)) => Some(xDeltaValue add yDeltaValue)
+        }
+      }
+
+    }
+
+
   }
 
   trait Differentiable {
@@ -126,28 +175,6 @@ object DeepLearning {
     }
 
     import Differentiable._
-
-    final case class DoubleLiteral[Input0 <: Differentiable](value: scala.Double) extends DoubleFunction with DifferentiableDouble {
-      override type Input = Input0
-      override type Output = DoubleLiteral[Input0]
-
-      override def forward(any: Input) = this
-
-      override def backward(delta: Delta): Unit = {}
-
-    }
-
-    final case class DoubleWeight[Input0 <: Differentiable](var value: scala.Double)(implicit learningRate: LearningRate) extends DoubleFunction with DifferentiableDouble {
-      override type Input = Input0
-      override type Output = DoubleWeight[Input0]
-
-      override def forward(any: Input) = this
-
-      override def backward(delta: Delta): Unit = {
-        value -= delta * learningRate()
-      }
-
-    }
 
     final case class Id[Data0, Delta0]() extends DifferentiableFunction {
       outer =>
@@ -311,6 +338,28 @@ object DeepLearning {
         }
       }
 
+      final case class DoubleLiteral[Input0 <: Differentiable](value: scala.Double) extends DoubleFunction with DifferentiableDouble {
+        override type Input = Input0
+        override type Output = DoubleLiteral[Input0]
+
+        override def forward(any: Input) = this
+
+        override def backward(delta: Delta): Unit = {}
+
+      }
+
+      final case class DoubleWeight[Input0 <: Differentiable](var value: scala.Double)(implicit learningRate: LearningRate) extends DoubleFunction with DifferentiableDouble {
+        override type Input = Input0
+        override type Output = DoubleWeight[Input0]
+
+        override def forward(any: Input) = this
+
+        override def backward(delta: Delta): Unit = {
+          value -= delta * learningRate()
+        }
+
+      }
+
       final case class DoubleOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends DoubleFunction {
         type Output = generic.Output
         type Input = Input0
@@ -335,6 +384,70 @@ object DeepLearning {
       override def -(rightHandSide: Double): Double = new Substract(this, rightHandSide)
 
       override def <(rightHandSide: Double): Boolean = new LessThan(this, rightHandSide)
+    }
+
+    object Array2DFunction {
+      type Aux[Input0] = Array2DFunction {
+        type Input = Input0
+      }
+
+      final case class Array2DLiteral[Input0 <: Differentiable](rawValue: INDArray) extends Array2DFunction with DifferentiableArray2D {
+        override type Input = Input0
+        override type Output = Array2DLiteral[Input0]
+
+        override def value = Eval.now(rawValue)
+
+        override def forward(any: Input) = this
+
+        override def backward(delta: Delta): Unit = {}
+      }
+
+      object Array2DLiteral {
+        def apply[Input <: Differentiable](nativeArray: Array[Array[scala.Double]]): Array2DLiteral[Input] = {
+          new Array2DLiteral[Input](nativeArray.toNDArray)
+        }
+      }
+
+      final case class Array2DWeight[Input0 <: Differentiable](var rawValue: INDArray)(implicit learningRate: LearningRate) extends Array2DFunction with DifferentiableArray2D {
+        override type Input = Input0
+        override type Output = Array2DWeight[Input0]
+
+        override def value = Eval.now(rawValue)
+
+        override def forward(any: Input) = this
+
+        override def backward(delta: Delta): Unit = {
+          delta.value match {
+            case Some(deltaValue) =>
+              rawValue -= deltaValue * learningRate()
+            case None =>
+          }
+        }
+      }
+
+      object Array2DWeight {
+        def apply[Input <: Differentiable](nativeArray: Array[Array[scala.Double]])(implicit learningRate: LearningRate): Array2DWeight[Input] = {
+          new Array2DWeight[Input](nativeArray.toNDArray)
+        }
+      }
+
+      final case class Array2DOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Array2DFunction {
+        type Output = generic.Output
+        type Input = Input0
+
+        override def forward(input: Input0): generic.Output = {
+          generic.forward(input)
+        }
+      }
+
+    }
+
+    trait Array2DFunction extends DifferentiableFunction with Dsl.Array2DApi {
+
+      override type Double = DoubleFunction.Aux[Input]
+      override type Array2D = Array2DFunction.Aux[Input]
+      override type Output <: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]
+
     }
 
     object BooleanFunction {
@@ -438,10 +551,12 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Double = DoubleFunction.Aux[Input0]
 
-  override object Double extends Dsl.DoubleExtractor[Double] with DifferentiableFunctionCompanion {
+  override object Double extends Dsl.Lifter with DifferentiableFunctionCompanion {
 
     import DoubleFunction._
 
+    override type LiftFrom = scala.Double
+    override type LiftTo = Double
     override type SpecialFunction = Double
     override type Input = Input0
     override type Output = Differentiable.Aux[scala.Double, scala.Double]
@@ -456,9 +571,32 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   }
 
+  override type Array2D = Array2DFunction.Aux[Input0]
+
+  override object Array2D extends Dsl.Lifter with DifferentiableFunctionCompanion {
+
+    import Array2DFunction._
+
+    override type LiftFrom = Array[Array[scala.Double]]
+    override type LiftTo = Array2D
+    override type SpecialFunction = Array2D
+    override type Input = Input0
+    override type Output = Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]
+
+    override def apply(value: Array[Array[scala.Double]]) = Array2DFunction.Array2DLiteral[Input0](value)
+
+    override def weight(initialValue: Array[Array[scala.Double]]) = Array2DWeight[Input0](initialValue)
+
+    override def generalize(specialFunction: Array2D) = specialFunction
+
+    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = Array2DOps(generic)
+
+  }
+
   override type Boolean = BooleanFunction.Aux[Input0]
 
   object Boolean extends DifferentiableFunctionCompanion {
+
     import BooleanFunction._
 
     override type SpecialFunction = Boolean
@@ -468,7 +606,6 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
     override def generalize(generic: Boolean): Boolean = generic
 
     override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = BooleanOps(generic)
-
 
   }
 
