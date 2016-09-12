@@ -9,22 +9,23 @@ import cats.implicits._
 
 object Dsl {
 
-  trait DoubleOps[Double] {
+  trait DoubleApi {
+    type Double
+
     def unary_- : Double
 
     def -(rightHandSide: Double): Double
   }
 
-  object Double {
-    type Aux[Self0] = Double {
-      type Self = Self0
+  object DoubleApi {
+    type Aux[Double0] = DoubleApi {
+      type Double = Double0
     }
   }
 
 
   object BooleanApi {
-    type Aux[Any0, Companion0[_]] = BooleanApi {
-      type Any = Any0
+    type Aux[Companion0[_]] = BooleanApi {
       type Companion[A] = Companion0[A]
     }
   }
@@ -46,24 +47,17 @@ trait Dsl {
 
   import Dsl._
 
+  type Companion[_]
 
   type Any
-  type Companion[_]
   implicit val Any: Companion[Any]
 
-  type Boolean <: Any with BooleanApi {
-    type Companion[A] = Dsl.this.Companion[A]
-  }
-
+  type Boolean <: Any with BooleanApi.Aux[Companion]
   implicit val Boolean: Companion[Boolean]
 
-  type Double <: Any {
-    type Self <: Double
-  }
+  type Double <: Any with DoubleApi.Aux[Double]
 
   implicit val Double: Companion[Double] with DoubleExtractor[Double]
-
-  implicit def doubleOps(underlying: Double): DoubleOps[Double]
 
 }
 
@@ -108,12 +102,13 @@ object DeepLearning {
       type Output <: Output0
     }
 
-    final case class Literal[Data0](value: Data0) extends DifferentiableFunction with Differentiable {
-      override type Data = Data0
-      override type Delta = Any
-      override type Input = Differentiable
-      override type Output = Literal[Data0]
-      override type Self = Literal[Data0]
+
+    final case class DoubleLiteral[Input0 <: Differentiable](value: scala.Double) extends DoubleFunction with Differentiable {
+      override type Data = scala.Double
+      override type Delta = scala.Double
+      override type Input = Input0
+      override type Output = DoubleLiteral[Input0]
+      override type Self = DoubleLiteral[Input0]
 
       override def self: Self = this
 
@@ -123,12 +118,12 @@ object DeepLearning {
 
     }
 
-    final case class DoubleWeight(var value: scala.Double)(implicit learningRate: LearningRate) extends DifferentiableFunction with Differentiable {
+    final case class DoubleWeight[Input0 <: Differentiable](var value: scala.Double)(implicit learningRate: LearningRate) extends DoubleFunction with Differentiable {
       override type Data = scala.Double
       override type Delta = scala.Double
-      override type Input = Differentiable
-      override type Output = DoubleWeight
-      override type Self = DoubleWeight
+      override type Input = Input0
+      override type Output = DoubleWeight[Input0]
+      override type Self = DoubleWeight[Input0]
 
       override def self: Self = this
 
@@ -201,7 +196,7 @@ object DeepLearning {
 
     import Differentiable._
 
-    final case class Negative[Input0 <: Differentiable](from: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction {
+    final case class Negative[Input0 <: Differentiable](from: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction with DoubleFunction {
 
       final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
         type Input >: Input0
@@ -225,7 +220,7 @@ object DeepLearning {
     (
       leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
       rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
-    ) extends CachedFunction {
+    ) extends CachedFunction with DoubleFunction {
 
       final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
         type Input >: Input0
@@ -273,6 +268,21 @@ object DeepLearning {
         conditionForwardPass.backward(false)
         output
       }
+    }
+
+    object DoubleFunction {
+      type Aux[Input0] = DoubleFunction {
+        type Input = Input0
+      }
+    }
+
+    trait DoubleFunction extends DifferentiableFunction with Dsl.DoubleApi {
+      override type Double = DoubleFunction.Aux[Input]
+      override type Output <: Differentiable.Aux[scala.Double, scala.Double]
+
+      override def unary_- : Double = new Negative(this)
+
+      override def -(rightHandSide: Double): Double = new Substract(this, rightHandSide)
     }
 
     object BooleanFunction {
@@ -346,31 +356,34 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
     type Input = Input0
   }
 
-  override type Double = DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
+  override type Double = DoubleFunction.Aux[Input0]
 
   override object Double extends Dsl.DoubleExtractor[Double] with DifferentiableFunctionCompanion {
     override type Target = Double
     override type Input = Input0
     override type Output = Differentiable.Aux[scala.Double, scala.Double]
 
-    override def apply(value: scala.Double) = Literal(value)
+    override def apply(value: scala.Double) = DoubleLiteral[Input0](value)
 
-    override def weight(initialValue: scala.Double) = DoubleWeight(initialValue)
+    override def weight(initialValue: scala.Double) = DoubleWeight[Input0](initialValue)
 
-    override def to(generic: Double): Double = generic
+    override def to(generic: DifferentiableFunction.Aux[Input0, Output]): Double = {
+      new DoubleFunction {
+        type Output = generic.Output
+        type Input = Input0
+
+        override def forward(input: Input0): generic.Output = {
+          generic.forward(input)
+        }
+      }
+    }
+
 
     override def from(generic: Double): Double = generic
 
   }
 
   override type Boolean = BooleanFunction.Aux[Input0]
-
-  override def doubleOps(underlying: Double) = new Dsl.DoubleOps[Double] {
-    override def unary_- = new Negative(underlying)
-
-    override def -(rightHandSide: Double) = new Substract(underlying, rightHandSide)
-
-  }
 
   object Any extends DifferentiableFunctionCompanion {
     override type Target = Any
