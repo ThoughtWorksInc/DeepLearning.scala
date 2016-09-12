@@ -10,16 +10,21 @@ import cats.implicits._
 object Dsl {
 
   trait DoubleApi {
-    type Double
+    type Double <: DoubleApi
+    type Boolean <: BooleanApi
 
     def unary_- : Double
 
     def -(rightHandSide: Double): Double
+
+    def <(rightHandSide: Double): Boolean
+
   }
 
   object DoubleApi {
-    type Aux[Double0] = DoubleApi {
+    type Aux[Double0, Boolean0] = DoubleApi {
       type Double = Double0
+      type Boolean = Boolean0
     }
   }
 
@@ -55,10 +60,17 @@ trait Dsl {
   type Boolean <: Any with BooleanApi.Aux[Companion]
   implicit val Boolean: Companion[Boolean]
 
-  type Double <: Any with DoubleApi.Aux[Double]
+  type Double <: Any with DoubleApi.Aux[Double, Boolean]
 
   implicit val Double: Companion[Double] with DoubleExtractor[Double]
 
+  def max(leftHandSide: Double, rightHandSide: Double): Double = {
+    (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)
+  }
+
+  def min(leftHandSide: Double, rightHandSide: Double): Double = {
+    (leftHandSide < rightHandSide).`if`(leftHandSide)(rightHandSide)
+  }
 }
 
 object DeepLearning {
@@ -77,6 +89,21 @@ object DeepLearning {
       override type Delta = scala.Double
 
       final def monoid: Monoid[Delta] = implicitly
+
+    }
+
+
+    trait DifferentiableBoolean extends Differentiable {
+
+      override type Data = scala.Boolean
+
+      override type Delta = scala.Boolean
+
+      final def monoid = new Monoid[Delta] {
+        override def empty: Boolean = false
+
+        override def combine(x: Boolean, y: Boolean): Boolean = x ^ y
+      }
 
     }
 
@@ -203,6 +230,29 @@ object DeepLearning {
       }
     }
 
+    final case class LessThan[Input0 <: Differentiable]
+    (
+      leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
+      rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
+    ) extends CachedFunction with BooleanFunction {
+
+      final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableBoolean {
+        type Input >: Input0
+        val value = upstream1.value < upstream2.value
+
+        override protected def cachedBackward(input: Input0, delta: scala.Boolean): Unit = {
+          upstream1.backward(0.0)
+          upstream2.backward(0.0)
+        }
+      }
+
+      type Input = Input0
+
+      override protected def cachedForward(input: Input): Output = {
+        new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+      }
+    }
+
     final case class Substract[Input0 <: Differentiable]
     (
       leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
@@ -262,13 +312,26 @@ object DeepLearning {
       }
     }
 
+    final case class DoubleOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends DoubleFunction {
+      type Output = generic.Output
+      type Input = Input0
+
+      override def forward(input: Input0): generic.Output = {
+        generic.forward(input)
+      }
+    }
+
+
     trait DoubleFunction extends DifferentiableFunction with Dsl.DoubleApi {
       override type Double = DoubleFunction.Aux[Input]
+      override type Boolean = BooleanFunction.Aux[Input]
       override type Output <: Differentiable.Aux[scala.Double, scala.Double]
 
       override def unary_- : Double = new Negative(this)
 
       override def -(rightHandSide: Double): Double = new Substract(this, rightHandSide)
+
+      override def <(rightHandSide: Double): Boolean = new LessThan(this, rightHandSide)
     }
 
     object BooleanFunction {
@@ -297,7 +360,9 @@ object DeepLearning {
       type Input <: Differentiable
       type Output <: Differentiable
       type Target
+
       def toGeneric(target: Target): DifferentiableFunction.Aux[Input, Output]
+
       def fromGeneric(generic: DifferentiableFunction.Aux[Input, Output]): Target
     }
 
@@ -353,15 +418,8 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
     override def weight(initialValue: scala.Double) = DoubleWeight[Input0](initialValue)
 
-    override def fromGeneric(generic: DifferentiableFunction.Aux[Input0, Output]): Double = {
-      new DoubleFunction {
-        type Output = generic.Output
-        type Input = Input0
-
-        override def forward(input: Input0): generic.Output = {
-          generic.forward(input)
-        }
-      }
+    override def fromGeneric(generic: DifferentiableFunction.Aux[Input0, Output]) = {
+      DoubleOps(generic)
     }
 
 
