@@ -361,8 +361,8 @@ object DeepLearning {
       }
 
       final case class DoubleOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends DoubleFunction {
-        type Output = generic.Output
-        type Input = Input0
+        override type Output = generic.Output
+        override type Input = Input0
 
         override def forward(input: Input0): generic.Output = {
           generic.forward(input)
@@ -432,8 +432,8 @@ object DeepLearning {
       }
 
       final case class Array2DOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Array2DFunction {
-        type Output = generic.Output
-        type Input = Input0
+        override type Output = generic.Output
+        override type Input = Input0
 
         override def forward(input: Input0): generic.Output = {
           generic.forward(input)
@@ -456,8 +456,8 @@ object DeepLearning {
       }
 
       final case class BooleanOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]]) extends BooleanFunction {
-        type Output = generic.Output
-        type Input = Input0
+        override type Output = generic.Output
+        override type Input = Input0
 
         override def forward(input: Input0): generic.Output = {
           generic.forward(input)
@@ -532,14 +532,14 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   import DifferentiableFunction._
 
-  type Companion[SpecialFunction0] = DifferentiableFunctionCompanion {
+  override type Companion[SpecialFunction0] = DifferentiableFunctionCompanion {
     type SpecialFunction = SpecialFunction0
     type Input = Input0
   }
 
   override type Any = DifferentiableFunction.Aux[Input0, Differentiable.Aux[_, _]]
 
-  object Any extends DifferentiableFunctionCompanion {
+  override object Any extends DifferentiableFunctionCompanion {
     override type SpecialFunction = Any
     override type Input = Input0
     override type Output = Differentiable.Aux[_, _]
@@ -595,7 +595,7 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Boolean = BooleanFunction.Aux[Input0]
 
-  object Boolean extends DifferentiableFunctionCompanion {
+  override object Boolean extends DifferentiableFunctionCompanion {
 
     import BooleanFunction._
 
