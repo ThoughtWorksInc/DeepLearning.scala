@@ -31,10 +31,9 @@ object Dsl {
 
 
   trait BooleanApi {
-    type Any
     type Companion[_]
 
-    def `if`[A <: Any : Companion](`then`: A)(`else`: A): A
+    def `if`[A: Companion](`then`: A)(`else`: A): A
   }
 
   trait DoubleExtractor[Double] extends (scala.Double => Double) {
@@ -53,7 +52,6 @@ trait Dsl {
   implicit val Any: Companion[Any]
 
   type Boolean <: Any with BooleanApi {
-    type Any = Dsl.this.Any
     type Companion[A] = Dsl.this.Companion[A]
   }
 
@@ -284,14 +282,9 @@ object DeepLearning {
     }
 
     trait BooleanFunction extends DifferentiableFunction with Dsl.BooleanApi {
-      override type Any = DifferentiableFunction.Aux[Input, Differentiable.Aux[_, _]]
-      override type Companion[Target0] = DifferentiableFunctionCompanion {
-        type Target = Target0
-        type Input = BooleanFunction.this.Input
-      }
       type Output <: Differentiable.Aux[scala.Boolean, scala.Boolean]
 
-      override def `if`[A <: Any](`then`: A)(`else`: A)(implicit companion: Companion[A]): A = {
+      override def `if`[A](`then`: A)(`else`: A)(implicit companion: Companion[A]): A = {
         companion.to(If[Input, companion.Output](this, companion.from(`then`), companion.from(`else`)))
       }
     }
@@ -311,6 +304,13 @@ object DeepLearning {
 
   trait DifferentiableFunction {
     outer =>
+
+    import DifferentiableFunction._
+
+    type Companion[Target0] = DifferentiableFunctionCompanion {
+      type Target = Target0
+      type Input = DifferentiableFunction.this.Input
+    }
 
     type Input <: Differentiable
 
@@ -394,6 +394,7 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
       new BooleanFunction {
         type Output = generic.Output
         type Input = Input0
+
         override def forward(input: Input0): generic.Output = {
           generic.forward(input)
         }
