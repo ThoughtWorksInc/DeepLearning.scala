@@ -344,26 +344,32 @@ object DeepLearning {
       type Output <: Differentiable.Aux[scala.Boolean, scala.Boolean]
 
       override def `if`[A](`then`: A)(`else`: A)(implicit companion: Companion[A]): A = {
-        companion.fromGeneric(If[Input, companion.Output](this, companion.toGeneric(`then`), companion.toGeneric(`else`)))
+        companion.specialize(If[Input, companion.Output](this, companion.generalize(`then`), companion.generalize(`else`)))
       }
     }
 
     object DifferentiableFunctionCompanion {
-      type Aux[Input0, Output0, Target0] = DifferentiableFunctionCompanion {
+      type Aux[Input0, Output0, SpecialFunction0] = DifferentiableFunctionCompanion {
         type Input = Input0
         type Output = Output0
-        type Target = Target0
+        type SpecialFunction = SpecialFunction0
       }
     }
 
     trait DifferentiableFunctionCompanion {
       type Input <: Differentiable
       type Output <: Differentiable
-      type Target
+      type SpecialFunction
 
-      def toGeneric(target: Target): DifferentiableFunction.Aux[Input, Output]
+      /**
+        * Returns the base [[DeepLearning.DifferentiableFunction]] type of a [[SpecialFunction]].
+        */
+      def generalize(specialFunction: SpecialFunction): DifferentiableFunction.Aux[Input, Output]
 
-      def fromGeneric(generic: DifferentiableFunction.Aux[Input, Output]): Target
+      /**
+        * Returns a special subclass of a [[DeepLearning.DifferentiableFunction]].
+        */
+      def specialize(generic: DifferentiableFunction.Aux[Input, Output]): SpecialFunction
     }
 
   }
@@ -373,8 +379,8 @@ object DeepLearning {
 
     import DifferentiableFunction._
 
-    type Companion[Target0] = DifferentiableFunctionCompanion {
-      type Target = Target0
+    type Companion[SpecialFunction0] = DifferentiableFunctionCompanion {
+      type SpecialFunction = SpecialFunction0
       type Input = DifferentiableFunction.this.Input
     }
 
@@ -402,15 +408,15 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Any = DifferentiableFunction.Aux[Input0, Differentiable.Aux[_, _]]
 
-  type Companion[Target0] = DifferentiableFunctionCompanion {
-    type Target = Target0
+  type Companion[SpecialFunction0] = DifferentiableFunctionCompanion {
+    type SpecialFunction = SpecialFunction0
     type Input = Input0
   }
 
   override type Double = DoubleFunction.Aux[Input0]
 
   override object Double extends Dsl.DoubleExtractor[Double] with DifferentiableFunctionCompanion {
-    override type Target = Double
+    override type SpecialFunction = Double
     override type Input = Input0
     override type Output = Differentiable.Aux[scala.Double, scala.Double]
 
@@ -418,36 +424,36 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
     override def weight(initialValue: scala.Double) = DoubleWeight[Input0](initialValue)
 
-    override def fromGeneric(generic: DifferentiableFunction.Aux[Input0, Output]) = {
+    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = {
       DoubleOps(generic)
     }
 
 
-    override def toGeneric(generic: Double): Double = generic
+    override def generalize(generic: Double): Double = generic
 
   }
 
   override type Boolean = BooleanFunction.Aux[Input0]
 
   object Any extends DifferentiableFunctionCompanion {
-    override type Target = Any
+    override type SpecialFunction = Any
     override type Input = Input0
     override type Output = Differentiable.Aux[_, _]
 
-    override def toGeneric(generic: Any): Any = generic
+    override def generalize(generic: Any): Any = generic
 
-    override def fromGeneric(generic: Any): Any = generic
+    override def specialize(generic: Any): Any = generic
   }
 
 
   object Boolean extends DifferentiableFunctionCompanion {
-    override type Target = Boolean
+    override type SpecialFunction = Boolean
     override type Input = Input0
     override type Output = Differentiable.Aux[scala.Boolean, scala.Boolean]
 
-    override def toGeneric(generic: Boolean): Boolean = generic
+    override def generalize(generic: Boolean): Boolean = generic
 
-    override def fromGeneric(generic: DifferentiableFunction.Aux[Input0, Output]) = {
+    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = {
       new BooleanFunction {
         type Output = generic.Output
         type Input = Input0
