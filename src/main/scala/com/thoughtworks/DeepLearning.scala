@@ -72,8 +72,6 @@ object DeepLearning {
 
     trait DifferentiableDouble extends Differentiable {
 
-      override type Self >: this.type <: DifferentiableDouble
-
       override type Data = scala.Double
 
       override type Delta = scala.Double
@@ -87,13 +85,11 @@ object DeepLearning {
   trait Differentiable {
     type Data
     type Delta
-    type Self >: this.type <: Differentiable.Aux[Data, Delta]
 
     def backward(delta: Delta): Unit
 
     def value: Data
 
-    def self: Self = this
   }
 
   object DifferentiableFunction {
@@ -108,9 +104,6 @@ object DeepLearning {
       override type Delta = scala.Double
       override type Input = Input0
       override type Output = DoubleLiteral[Input0]
-      override type Self = DoubleLiteral[Input0]
-
-      override def self: Self = this
 
       override def forward(any: Input) = this
 
@@ -123,9 +116,6 @@ object DeepLearning {
       override type Delta = scala.Double
       override type Input = Input0
       override type Output = DoubleWeight[Input0]
-      override type Self = DoubleWeight[Input0]
-
-      override def self: Self = this
 
       override def forward(any: Input) = this
 
@@ -254,7 +244,6 @@ object DeepLearning {
                                                                              `then`: DifferentiableFunction.Aux[Input0, Output0],
                                                                              `else`: DifferentiableFunction.Aux[Input0, Output0])
       extends DifferentiableFunction {
-      override type Self = If[Input0, Output0]
       override type Input = Input0
       override type Output = Output0
 
@@ -325,10 +314,6 @@ object DeepLearning {
     type Input <: Differentiable
 
     type Output <: Differentiable.Aux[_, _]
-
-    type Self >: this.type <: DifferentiableFunction.Aux[Input, Output]
-
-    def self: Self = this
 
     def forward(input: Input): Output
 
