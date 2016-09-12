@@ -210,73 +210,6 @@ object DeepLearning {
 
     import Differentiable._
 
-    final case class Negative[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction with DoubleFunction {
-
-      final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
-        type Input >: Input0
-        val value = -upstream.value
-
-
-        override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
-          upstream.backward(-delta)
-        }
-      }
-
-      type Input = Input0
-
-      override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
-        new Output(input, upstream)
-      }
-    }
-
-    final case class LessThan[Input0 <: Differentiable]
-    (
-      leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
-      rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
-    ) extends CachedFunction with BooleanFunction {
-
-      final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableBoolean {
-        type Input >: Input0
-        val value = upstream1.value < upstream2.value
-
-        override protected def cachedBackward(input: Input0, delta: scala.Boolean): Unit = {
-          upstream1.backward(0.0)
-          upstream2.backward(0.0)
-        }
-      }
-
-      type Input = Input0
-
-      override protected def cachedForward(input: Input): Output = {
-        new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
-      }
-    }
-
-    final case class Substract[Input0 <: Differentiable]
-    (
-      leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
-      rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
-    ) extends CachedFunction with DoubleFunction {
-
-      final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
-        type Input >: Input0
-        val value = upstream1.value - upstream2.value
-
-        override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
-          upstream1.backward(delta)
-          upstream2.backward(-delta)
-        }
-      }
-
-      type Input = Input0
-
-      override protected def cachedForward(input: Input): Output = {
-        new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
-      }
-
-    }
-
     final case class Compose[A <: Differentiable, B <: Differentiable, C <: Differentiable](f: DifferentiableFunction.Aux[B, C], g: DifferentiableFunction.Aux[A, B]) extends DifferentiableFunction {
       override type Input = A
       override type Output = C
@@ -310,19 +243,89 @@ object DeepLearning {
       type Aux[Input0] = DoubleFunction {
         type Input = Input0
       }
-    }
 
-    final case class DoubleOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends DoubleFunction {
-      type Output = generic.Output
-      type Input = Input0
+      final case class LessThan[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
+      ) extends CachedFunction with BooleanFunction {
 
-      override def forward(input: Input0): generic.Output = {
-        generic.forward(input)
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableBoolean {
+          type Input >: Input0
+          val value = upstream1.value < upstream2.value
+
+          override protected def cachedBackward(input: Input0, delta: scala.Boolean): Unit = {
+            upstream1.backward(0.0)
+            upstream2.backward(0.0)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
       }
-    }
 
+      final case class Substract[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
+      ) extends CachedFunction with DoubleFunction {
+
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[scala.Double, scala.Double], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
+          type Input >: Input0
+          val value = upstream1.value - upstream2.value
+
+          override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
+            upstream1.backward(delta)
+            upstream2.backward(-delta)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
+
+      }
+
+      final case class Negative[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends CachedFunction with DoubleFunction {
+
+        final class Output(val input: Input0, upstream: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableDouble {
+          type Input >: Input0
+          val value = -upstream.value
+
+
+          override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
+            upstream.backward(-delta)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          val upstream = toGeneric.forward(input)
+          new Output(input, upstream)
+        }
+      }
+
+      final case class DoubleOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]) extends DoubleFunction {
+        type Output = generic.Output
+        type Input = Input0
+
+        override def forward(input: Input0): generic.Output = {
+          generic.forward(input)
+        }
+      }
+
+    }
 
     trait DoubleFunction extends DifferentiableFunction with Dsl.DoubleApi {
+
+      import DoubleFunction._
+
       override type Double = DoubleFunction.Aux[Input]
       override type Boolean = BooleanFunction.Aux[Input]
       override type Output <: Differentiable.Aux[scala.Double, scala.Double]
@@ -338,6 +341,16 @@ object DeepLearning {
       type Aux[Input0] = BooleanFunction {
         type Input = Input0
       }
+
+      final case class BooleanOps[Input0 <: Differentiable](generic: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Boolean, scala.Boolean]]) extends BooleanFunction {
+        type Output = generic.Output
+        type Input = Input0
+
+        override def forward(input: Input0): generic.Output = {
+          generic.forward(input)
+        }
+      }
+
     }
 
     trait BooleanFunction extends DifferentiableFunction with Dsl.BooleanApi {
@@ -406,34 +419,12 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   import DifferentiableFunction._
 
-  override type Any = DifferentiableFunction.Aux[Input0, Differentiable.Aux[_, _]]
-
   type Companion[SpecialFunction0] = DifferentiableFunctionCompanion {
     type SpecialFunction = SpecialFunction0
     type Input = Input0
   }
 
-  override type Double = DoubleFunction.Aux[Input0]
-
-  override object Double extends Dsl.DoubleExtractor[Double] with DifferentiableFunctionCompanion {
-    override type SpecialFunction = Double
-    override type Input = Input0
-    override type Output = Differentiable.Aux[scala.Double, scala.Double]
-
-    override def apply(value: scala.Double) = DoubleLiteral[Input0](value)
-
-    override def weight(initialValue: scala.Double) = DoubleWeight[Input0](initialValue)
-
-    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = {
-      DoubleOps(generic)
-    }
-
-
-    override def generalize(generic: Double): Double = generic
-
-  }
-
-  override type Boolean = BooleanFunction.Aux[Input0]
+  override type Any = DifferentiableFunction.Aux[Input0, Differentiable.Aux[_, _]]
 
   object Any extends DifferentiableFunctionCompanion {
     override type SpecialFunction = Any
@@ -445,24 +436,39 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
     override def specialize(generic: Any): Any = generic
   }
 
+  override type Double = DoubleFunction.Aux[Input0]
+
+  override object Double extends Dsl.DoubleExtractor[Double] with DifferentiableFunctionCompanion {
+
+    import DoubleFunction._
+
+    override type SpecialFunction = Double
+    override type Input = Input0
+    override type Output = Differentiable.Aux[scala.Double, scala.Double]
+
+    override def apply(value: scala.Double) = DoubleLiteral[Input0](value)
+
+    override def weight(initialValue: scala.Double) = DoubleWeight[Input0](initialValue)
+
+    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = DoubleOps(generic)
+
+    override def generalize(generic: Double): Double = generic
+
+  }
+
+  override type Boolean = BooleanFunction.Aux[Input0]
 
   object Boolean extends DifferentiableFunctionCompanion {
+    import BooleanFunction._
+
     override type SpecialFunction = Boolean
     override type Input = Input0
     override type Output = Differentiable.Aux[scala.Boolean, scala.Boolean]
 
     override def generalize(generic: Boolean): Boolean = generic
 
-    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = {
-      new BooleanFunction {
-        type Output = generic.Output
-        type Input = Input0
+    override def specialize(generic: DifferentiableFunction.Aux[Input0, Output]) = BooleanOps(generic)
 
-        override def forward(input: Input0): generic.Output = {
-          generic.forward(input)
-        }
-      }
-    }
 
   }
 
