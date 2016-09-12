@@ -24,8 +24,8 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
 
     val id = new Id[scala.Double, scala.Double]
     val dsl = new DeepLearning[id.Input]
-    val f1 = f(dsl)(id)
-    val g1 = g(dsl)(id)
+    val f1 = f(dsl)(dsl.Double.fromGeneric(id))
+    val g1 = g(dsl)(dsl.Double.fromGeneric(id))
     val nn = Compose(f1, g1)
     def train(input: scala.Double): scala.Double = {
       val output = nn.forward(dsl.Double(10.11))
