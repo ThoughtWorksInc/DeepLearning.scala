@@ -391,7 +391,6 @@ object DeepLearning {
           type Input >: Input0
           val value = upstream.value.map(-_)
 
-
           override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
             upstream.backward(delta.map(-_))
           }
@@ -527,18 +526,20 @@ object DeepLearning {
           val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
 
           override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            val b = upstream2.value
             upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
               case None => Eval.now(None)
               case Some(outputDeltaValue) =>
-                upstream2.value.map {
+                b.map {
                   bData =>
                     Some(outputDeltaValue.dot(bData.T))
                 }
             }.memoize)
+            val a =upstream1.value
             upstream2.backward(outputDelta.flatMap[Option[INDArray]] {
               case None => Eval.now(None)
               case Some(outputDeltaValue) =>
-                upstream1.value.map {
+                a.map {
                   aData =>
                     Some(aData.T.dot(outputDeltaValue))
                 }
@@ -564,18 +565,20 @@ object DeepLearning {
           val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
 
           override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            val b= upstream2.value
             upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
               case None => Eval.now(None)
               case Some(outputDeltaValue) =>
-                upstream2.value.map {
+                b.map {
                   bData =>
                     Some(bData * outputDeltaValue)
                 }
             }.memoize)
+            val a = upstream1.value
             upstream2.backward(outputDelta.flatMap[Option[INDArray]] {
               case None => Eval.now(None)
               case Some(outputDeltaValue) =>
-                upstream1.value.map {
+                a.map {
                   aData =>
                     Some(aData * outputDeltaValue)
                 }
@@ -614,6 +617,49 @@ object DeepLearning {
       }
 
 
+      final case class MultiplyDouble[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[scala.Double], Eval[scala.Double]]]
+      ) extends Array2DFunction with CachedFunction {
+
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[scala.Double], Eval[scala.Double]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+
+            val a = upstream1.value
+            val b = upstream2.value
+
+            val aDelta = outputDelta.flatMap[Option[INDArray]] {
+              case None => Eval.now(None)
+              case Some(outputDeltaValue) =>
+                b.map {
+                  bData: scala.Double =>
+                    Some(outputDeltaValue * bData)
+                }
+            }.memoize
+            upstream1.backward(aDelta)
+            val bDelta = outputDelta.flatMap[scala.Double] {
+              case None => Eval.now(0.0)
+              case Some(outputDeltaValue) =>
+                a.map {
+                  aData: INDArray =>
+                    (aData * outputDeltaValue).sumT
+                }
+            }.memoize
+            upstream2.backward(bDelta)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
+      }
+
       final case class AddDouble[Input0 <: Differentiable]
       (
         leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
@@ -648,10 +694,11 @@ object DeepLearning {
 
 
           override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            val upstreamValue = upstream.value
             upstream.backward(outputDelta.flatMap[Option[INDArray]] {
               case None => Eval.now(None)
               case Some(outputDeltaValue) =>
-                upstream.value.map {
+                upstreamValue.map {
                   aValue: INDArray =>
                     Some(-outputDeltaValue / (aValue * aValue))
                 }
