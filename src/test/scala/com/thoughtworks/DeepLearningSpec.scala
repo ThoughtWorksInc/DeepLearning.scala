@@ -83,15 +83,15 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
       import dsl._
       max(input - Double.weight(0.0), Double(2.0))
     }
-    val id = new Id[scala.Double, scala.Double]
-    val dsl = new DeepLearning[Differentiable.Aux[scala.Double, scala.Double]]
+    val id = new Id[Eval[scala.Double], Eval[scala.Double]]
+    val dsl = new DeepLearning[Differentiable.Aux[Eval[scala.Double], Eval[scala.Double]]]
     val f1 = f(dsl)(dsl.Double.specialize(id))
 
     def train(inputValue: scala.Double): scala.Double = {
-      val minibatchInput: Differentiable.Aux[scala.Double, scala.Double] = DoubleLiteral(inputValue)
+      val minibatchInput: Differentiable.Aux[Eval[scala.Double], Eval[scala.Double]] = DoubleLiteral(inputValue)
       val minibatchOutput = f1.forward(minibatchInput)
       minibatchOutput.backward(minibatchOutput.value)
-      minibatchOutput.value
+      minibatchOutput.value.value
     }
     val initialLoss = train(10.11)
     math.abs(initialLoss) should be(10.11)
@@ -115,7 +115,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
       input - Double.weight(1.2)
     }
 
-    val id = new Id[scala.Double, scala.Double]
+    val id = new Id[Eval[scala.Double], Eval[scala.Double]]
     val dsl = new DeepLearning[id.Input]
     val f1 = f(dsl)(dsl.Double.specialize(id))
 
@@ -125,7 +125,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
     def train(input: scala.Double): scala.Double = {
       val output = nn.forward(DoubleLiteral(input))
       output.backward(output.value)
-      output.value
+      output.value.value
     }
     val initialLoss = train(10.11)
     for (_ <- 0 until 100) {
