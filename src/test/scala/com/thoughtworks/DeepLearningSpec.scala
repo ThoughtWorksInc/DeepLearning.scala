@@ -19,6 +19,40 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
     def apply() = 0.03
   }
 
+  "+ Double" in {
+    def f(dsl: Dsl)(inputNeuronNetwork: dsl.Array2D): dsl.Array2D = {
+      import dsl._
+      inputNeuronNetwork + Double(2.0)
+    }
+    val id = new Id[Eval[INDArray], Eval[Option[INDArray]]]
+    val dsl = new DeepLearning[Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+    val f1 = f(dsl)(dsl.Array2D.specialize(id))
+
+    def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
+      val minibatchInput: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
+      val minibatchOutput = f1.forward(minibatchInput)
+      val outputValue: Eval[INDArray] = minibatchOutput.value
+      minibatchOutput.backward(outputValue.map[Option[INDArray]](Some(_)))
+      outputValue
+    }
+
+    val output0 = train(Array(Array(1.0), Array(1.0))).value
+
+    output0.shape should be(Array(2, 2))
+
+    val initialLoss = output0.sumT
+
+    for (_ <- 0 until 100) {
+      train(Array(Array(1.0), Array(1.0)))
+    }
+
+
+    math.abs(train(Array(Array(1.0), Array(1.0))).value.sumT) should be < initialLoss
+    math.abs(train(Array(Array(1.0), Array(1.0))).value.sumT) should be >= 2.0
+
+
+  }
+
   "dot" in {
     def f(dsl: Dsl)(inputNeuronNetwork: dsl.Array2D): dsl.Array2D = {
       import dsl._
