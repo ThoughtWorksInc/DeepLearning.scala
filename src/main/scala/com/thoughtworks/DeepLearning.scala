@@ -212,7 +212,7 @@ object DeepLearning {
       final def monoid = new Monoid[Delta] {
         override def empty: Eval[Option[INDArray]] = Eval.now(None)
 
-        override def combine(x: Delta, y: Delta): Delta = Applicative[Eval].map2(x, y) {
+        override def combine(x: Delta, y: Delta): Delta = x.map2(y) {
           case (None, None) => None
           case (xDelta@Some(_), None) => xDelta
           case (None, yDelta@Some(_)) => yDelta
@@ -521,7 +521,7 @@ object DeepLearning {
 
         final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
           type Input >: Input0
-          val value = Applicative[Eval].map2(upstream1.value, upstream2.value)(_ dot _).memoize
+          val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
 
           override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
             upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
@@ -558,7 +558,7 @@ object DeepLearning {
 
         final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
           type Input >: Input0
-          val value = Applicative[Eval].map2(upstream1.value, upstream2.value)(_ * _).memoize
+          val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
 
           override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
             upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
@@ -595,7 +595,7 @@ object DeepLearning {
 
         final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
           type Input >: Input0
-          val value = Applicative[Eval].map2(upstream1.value, upstream2.value)(_ + _).memoize
+          val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
 
           override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
             upstream1.backward(outputDelta)
