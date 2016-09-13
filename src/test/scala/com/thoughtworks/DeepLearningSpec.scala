@@ -22,7 +22,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
   "+ Double" in {
     def f(dsl: Dsl)(inputNeuronNetwork: dsl.Array2D): dsl.Array2D = {
       import dsl._
-      inputNeuronNetwork + Double(2.0)
+      inputNeuronNetwork + Double.weight(2.0)
     }
     val id = new Id[Eval[INDArray], Eval[Option[INDArray]]]
     val dsl = new DeepLearning[Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
@@ -38,7 +38,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
 
     val output0 = train(Array(Array(1.0), Array(1.0))).value
 
-    output0.shape should be(Array(2, 2))
+    output0.shape should be(Array(2, 1))
 
     val initialLoss = output0.sumT
 
@@ -46,11 +46,8 @@ final class DeepLearningSpec extends FreeSpec with Matchers with Inside {
       train(Array(Array(1.0), Array(1.0)))
     }
 
-
     math.abs(train(Array(Array(1.0), Array(1.0))).value.sumT) should be < initialLoss
-    math.abs(train(Array(Array(1.0), Array(1.0))).value.sumT) should be >= 2.0
-
-
+    math.abs(train(Array(Array(1.0), Array(1.0))).value.sumT) should be < 0.05
   }
 
   "dot" in {

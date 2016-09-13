@@ -610,6 +610,33 @@ object DeepLearning {
         }
       }
 
+
+      final case class AddDouble[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[scala.Double, scala.Double]]
+      ) extends Array2DFunction with CachedFunction {
+
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[scala.Double, scala.Double]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = upstream1.value.map(_ + upstream2.value).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            upstream1.backward(outputDelta)
+            upstream2.backward(outputDelta.value match {
+              case None => 0.0
+              case Some(deltaValue) => deltaValue.sumT
+            })
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
+      }
+
       final case class Reciprocal[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends CachedFunction with Array2DFunction {
 
         final class Output(val input: Input0, upstream: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
@@ -673,7 +700,9 @@ object DeepLearning {
         Array2DFunction.AddArray2D[Input](this, rightHandSide)
       }
 
-      override def +(rightHandSide: Double): Array2D = ???
+      override def +(rightHandSide: Double): Array2D = {
+        Array2DFunction.AddDouble[Input](this, rightHandSide)
+      }
 
       override def /(rightHandSide: Array2D): Array2D = {
         Array2DFunction.MultiplyArray2D[Input](this, Array2DFunction.Reciprocal[Input](rightHandSide))
