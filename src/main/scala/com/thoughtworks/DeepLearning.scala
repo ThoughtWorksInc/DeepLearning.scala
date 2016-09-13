@@ -6,7 +6,7 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.DeepLearning.DifferentiableFunction.Aux
+import com.thoughtworks.DeepLearning.DifferentiableFunction.Array2DFunction.Aux
 import com.thoughtworks.DeepLearning.DifferentiableFunction.DoubleFunction.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
@@ -14,19 +14,49 @@ import org.nd4s.Implicits._
 object Dsl {
 
   trait DoubleApi {
-    type Double <: DoubleApi
-    type Boolean <: BooleanApi
+    type Companion[_]
+    type Array2D <: Array2DApi.Aux[Companion, Array2D, Double, Boolean]
+    type Double >: this.type <: DoubleApi.Aux[Companion, Array2D, Double, Boolean]
+    type Boolean <: BooleanApi.Aux[Companion, Boolean]
 
     def unary_- : Double
 
-    def -(rightHandSide: Double): Double
+    def -(rightHandSide: Double): Double = {
+      this + -rightHandSide
+    }
+
+    def -(rightHandSide: Array2D): Array2D = {
+      this + -rightHandSide
+    }
+
+    def +(rightHandSide: Double): Double
+
+    def +(rightHandSide: Array2D): Array2D = {
+      rightHandSide + (this: Double)
+    }
+
+    def /(rightHandSide: Double): Double
+
+    def /(rightHandSide: Array2D): Array2D
+
+    def *(rightHandSide: Double): Double
+
+    def *(rightHandSide: Array2D): Array2D = {
+      rightHandSide * (this: Double)
+    }
 
     def <(rightHandSide: Double): Boolean
+
+    def >=(rightHandSide: Double): Boolean = {
+      !(rightHandSide < (this: Double))
+    }
 
   }
 
   object DoubleApi {
-    type Aux[Double0, Boolean0] = DoubleApi {
+    type Aux[Companion0[_], Array2D0, Double0, Boolean0] = DoubleApi {
+      type Companion[A] = Companion0[A]
+      type Array2D = Array2D0
       type Double = Double0
       type Boolean = Boolean0
     }
@@ -34,26 +64,59 @@ object Dsl {
 
   trait BooleanApi {
     type Companion[_]
+    type Boolean >: this.type <: BooleanApi.Aux[Companion, Boolean]
+
+
+    def unary_! : Boolean
 
     def `if`[A: Companion](`then`: A)(`else`: A): A
   }
 
   object BooleanApi {
-    type Aux[Companion0[_]] = BooleanApi {
+    type Aux[Companion0[_], Boolean0] = BooleanApi {
       type Companion[A] = Companion0[A]
+      type Boolean = Boolean0
     }
   }
 
-
   trait Array2DApi {
-    type Double
-    type Array2D
+    type Double <: DoubleApi.Aux[Companion, Array2D, Double, Boolean]
+    type Array2D <: Array2DApi.Aux[Companion, Array2D, Double, Boolean]
+    type Boolean <: BooleanApi
+    type Companion[_]
+
+    def dot(rightHandSide: Array2D): Array2D
+
+    def +(rightHandSide: Array2D): Array2D
+
+    def +(rightHandSide: Double): Array2D
+
+    def /(rightHandSide: Array2D): Array2D
+
+    def /(rightHandSide: Double): Array2D
+
+    def *(rightHandSide: Array2D): Array2D
+
+    def *(rightHandSide: Double): Array2D
+
+    def -(rightHandSide: Array2D): Array2D = {
+      this + -rightHandSide
+    }
+
+    def -(rightHandSide: Double): Array2D = {
+      this + -rightHandSide
+    }
+
+    def unary_- : Array2D
+
   }
 
   object Array2DApi {
-    type Aux[Array2D0, Double0] = Array2DApi {
+    type Aux[Companion0[_], Array2D0, Double0, Boolean0] = Array2DApi {
+      type Companion[A] = Companion0[A]
       type Array2D = Array2D0
       type Double = Double0
+      type Boolean = Boolean0
     }
   }
 
@@ -84,13 +147,13 @@ trait Dsl {
   type Any
   implicit val Any: Companion[Any]
 
-  type Boolean <: Any with BooleanApi.Aux[Companion]
+  type Boolean <: Any with BooleanApi.Aux[Companion, Boolean]
   implicit val Boolean: Companion[Boolean]
 
-  type Double <: Any with DoubleApi.Aux[Double, Boolean]
+  type Double <: Any with DoubleApi.Aux[Companion, Array2D, Double, Boolean]
   implicit val Double: Companion[Double] with Lifter.Aux[scala.Double, Double]
 
-  type Array2D <: Any with Array2DApi.Aux[Array2D, Double]
+  type Array2D <: Any with Array2DApi.Aux[Companion, Array2D, Double, Boolean]
   implicit val Array2D: Companion[Array2D] with Lifter.Aux[Array[Array[scala.Double]], Array2D]
 
   def max(leftHandSide: Double, rightHandSide: Double): Double = {
@@ -100,6 +163,10 @@ trait Dsl {
   def min(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(leftHandSide)(rightHandSide)
   }
+
+  def exp(array: Array2D): Array2D
+
+  def log(array: Array2D): Array2D
 }
 
 object DeepLearning {
@@ -199,7 +266,7 @@ object DeepLearning {
 
         def input: Input
 
-        protected def cachedBackward(input: Input, delta: Delta): Unit
+        protected def cachedBackward(delta: Delta): Unit
 
         override def backward(delta: Delta): Unit = {
           val (newDelta, newCount) = synchronized {
@@ -210,7 +277,7 @@ object DeepLearning {
 
           if (newCount == 0) {
             cache.remove(input)
-            cachedBackward(input, newDelta)
+            cachedBackward(newDelta)
           }
         }
 
@@ -281,7 +348,7 @@ object DeepLearning {
           type Input >: Input0
           val value = upstream1.value < upstream2.value
 
-          override protected def cachedBackward(input: Input0, delta: scala.Boolean): Unit = {
+          override protected def cachedBackward(delta: scala.Boolean): Unit = {
             upstream1.backward(0.0)
             upstream2.backward(0.0)
           }
@@ -304,7 +371,7 @@ object DeepLearning {
           type Input >: Input0
           val value = upstream1.value - upstream2.value
 
-          override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
+          override protected def cachedBackward(delta: scala.Double): Unit = {
             upstream1.backward(delta)
             upstream2.backward(-delta)
           }
@@ -325,7 +392,7 @@ object DeepLearning {
           val value = -upstream.value
 
 
-          override protected def cachedBackward(input: Input0, delta: scala.Double): Unit = {
+          override protected def cachedBackward(delta: scala.Double): Unit = {
             upstream.backward(-delta)
           }
         }
@@ -375,8 +442,6 @@ object DeepLearning {
 
       import DoubleFunction._
 
-      override type Double = DoubleFunction.Aux[Input]
-      override type Boolean = BooleanFunction.Aux[Input]
       override type Output <: Differentiable.Aux[scala.Double, scala.Double]
 
       override def unary_- : Double = new Negative(this)
@@ -384,6 +449,14 @@ object DeepLearning {
       override def -(rightHandSide: Double): Double = new Substract(this, rightHandSide)
 
       override def <(rightHandSide: Double): Boolean = new LessThan(this, rightHandSide)
+
+      override def +(rightHandSide: Double): Double = ???
+
+      override def /(rightHandSide: Double): Double = ???
+
+      override def /(rightHandSide: Array2D): Array2D = ???
+
+      override def *(rightHandSide: Double): Double = ???
     }
 
     object Array2DFunction {
@@ -440,14 +513,183 @@ object DeepLearning {
         }
       }
 
+      final case class Dot[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+      ) extends Array2DFunction with CachedFunction {
+
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = Applicative[Eval].map2(upstream1.value, upstream2.value)(_ dot _).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
+              case None => Eval.now(None)
+              case Some(outputDeltaValue) =>
+                upstream2.value.map {
+                  bData =>
+                    Some(outputDeltaValue.dot(bData.T))
+                }
+            }.memoize)
+            upstream2.backward(outputDelta.flatMap[Option[INDArray]] {
+              case None => Eval.now(None)
+              case Some(outputDeltaValue) =>
+                upstream1.value.map {
+                  aData =>
+                    Some(aData.T.dot(outputDeltaValue))
+                }
+            }.memoize)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
+      }
+
+      final case class MultiplyArray2D[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+      ) extends Array2DFunction with CachedFunction {
+
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = Applicative[Eval].map2(upstream1.value, upstream2.value)(_ * _).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
+              case None => Eval.now(None)
+              case Some(outputDeltaValue) =>
+                upstream2.value.map {
+                  bData =>
+                    Some(bData * outputDeltaValue)
+                }
+            }.memoize)
+            upstream2.backward(outputDelta.flatMap[Option[INDArray]] {
+              case None => Eval.now(None)
+              case Some(outputDeltaValue) =>
+                upstream1.value.map {
+                  aData =>
+                    Some(aData * outputDeltaValue)
+                }
+            }.memoize)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
+      }
+
+      final case class AddArray2D[Input0 <: Differentiable]
+      (
+        leftHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
+        rightHandSide: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+      ) extends Array2DFunction with CachedFunction {
+
+        final class Output(val input: Input0, upstream1: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = Applicative[Eval].map2(upstream1.value, upstream2.value)(_ + _).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            upstream1.backward(outputDelta)
+            upstream2.backward(outputDelta)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+        }
+      }
+
+      final case class Reciprocal[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends CachedFunction with Array2DFunction {
+
+        final class Output(val input: Input0, upstream: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = upstream.value.map(_ rdiv 1.0).memoize
+
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            upstream.backward(outputDelta.flatMap[Option[INDArray]] {
+              case None => Eval.now(None)
+              case Some(outputDeltaValue) =>
+                upstream.value.map {
+                  aValue: INDArray =>
+                    Some(-outputDeltaValue / (aValue * aValue))
+                }
+            }.memoize)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          val upstream = toGeneric.forward(input)
+          new Output(input, upstream)
+        }
+      }
+
+      final case class Negative[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends CachedFunction with Array2DFunction {
+
+        final class Output(val input: Input0, upstream: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = upstream.value.map(-_).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            upstream.backward(outputDelta.map {
+              case None => None
+              case Some(outputDeltaValue) => Some(-outputDeltaValue)
+            }.memoize)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          val upstream = toGeneric.forward(input)
+          new Output(input, upstream)
+        }
+      }
+
     }
 
     trait Array2DFunction extends DifferentiableFunction with Dsl.Array2DApi {
 
-      override type Double = DoubleFunction.Aux[Input]
-      override type Array2D = Array2DFunction.Aux[Input]
       override type Output <: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]
 
+      override def dot(rightHandSide: Array2D) = {
+        Array2DFunction.Dot[Input](this, rightHandSide)
+      }
+
+      override def +(rightHandSide: Array2D) = {
+        Array2DFunction.AddArray2D[Input](this, rightHandSide)
+      }
+
+      override def +(rightHandSide: Double): Array2D = ???
+
+      override def /(rightHandSide: Array2D): Array2D = {
+        Array2DFunction.MultiplyArray2D[Input](this, Array2DFunction.Reciprocal[Input](rightHandSide))
+      }
+
+      override def /(rightHandSide: Double): Array2D = ???
+
+      override def *(rightHandSide: Array2D) = {
+        Array2DFunction.MultiplyArray2D[Input](this, rightHandSide)
+      }
+
+      override def *(rightHandSide: Double): Array2D = ???
+
+      override def unary_- = {
+        Array2DFunction.Negative[Input](this)
+      }
     }
 
     object BooleanFunction {
@@ -472,6 +714,8 @@ object DeepLearning {
       override def `if`[A](`then`: A)(`else`: A)(implicit companion: Companion[A]): A = {
         companion.specialize(If[Input, companion.Output](this, companion.generalize(`then`), companion.generalize(`else`)))
       }
+
+      override def unary_! : Boolean = ???
     }
 
     object DifferentiableFunctionCompanion {
@@ -509,6 +753,9 @@ object DeepLearning {
       type SpecialFunction = SpecialFunction0
       type Input = DifferentiableFunction.this.Input
     }
+    type Array2D = Array2DFunction.Aux[Input]
+    type Double = DoubleFunction.Aux[Input]
+    type Boolean = BooleanFunction.Aux[Input]
 
     type Input <: Differentiable
 
@@ -551,7 +798,7 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Double = DoubleFunction.Aux[Input0]
 
-  override object Double extends Dsl.Lifter with DifferentiableFunctionCompanion {
+  implicit override object Double extends Dsl.Lifter with DifferentiableFunctionCompanion {
 
     import DoubleFunction._
 
@@ -573,7 +820,7 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Array2D = Array2DFunction.Aux[Input0]
 
-  override object Array2D extends Dsl.Lifter with DifferentiableFunctionCompanion {
+  implicit override object Array2D extends Dsl.Lifter with DifferentiableFunctionCompanion {
 
     import Array2DFunction._
 
@@ -595,7 +842,7 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   override type Boolean = BooleanFunction.Aux[Input0]
 
-  override object Boolean extends DifferentiableFunctionCompanion {
+  implicit override object Boolean extends DifferentiableFunctionCompanion {
 
     import BooleanFunction._
 
@@ -609,4 +856,7 @@ final class DeepLearning[Input0 <: Differentiable](implicit learningRate: Learni
 
   }
 
+  override def exp(array: Array2D): Array2D = ???
+
+  override def log(array: Array2D): Array2D = ???
 }
