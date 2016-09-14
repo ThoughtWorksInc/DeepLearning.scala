@@ -256,7 +256,7 @@ object Differentiable {
 
     }
 
-    final case class Reciprocal[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) extends Cached with DifferentiableDouble {
+    final case class Reciprocal[Input0 <: Batch](differentiableDouble: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) extends Cached with DifferentiableDouble {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]]) extends ReferenceCount with DoubleBatch {
         type Input >: Input0
@@ -274,12 +274,12 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableDouble.forward(input)
         new Output(input, upstream)
       }
     }
 
-    final case class Negative[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) extends Cached with DifferentiableDouble {
+    final case class Negative[Input0 <: Batch](differentiableDouble: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) extends Cached with DifferentiableDouble {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]]) extends ReferenceCount with DoubleBatch {
         type Input >: Input0
@@ -293,7 +293,7 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableDouble.forward(input)
         new Output(input, upstream)
       }
     }
@@ -596,7 +596,7 @@ object Differentiable {
       }
     }
 
-    final case class Reciprocal[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
+    final case class Reciprocal[Input0 <: Batch](differentiableArray2D: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
         type Input >: Input0
@@ -619,13 +619,13 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableArray2D.forward(input)
         new Output(input, upstream)
       }
     }
 
 
-    final case class ReduceSum[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableDouble {
+    final case class ReduceSum[Input0 <: Batch](differentiableArray2D: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableDouble {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DoubleBatch {
         type Input >: Input0
@@ -645,12 +645,12 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableArray2D.forward(input)
         new Output(input, upstream)
       }
     }
 
-    final case class Sum[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]], dimensions: Seq[Int]) extends Cached with DifferentiableArray2D {
+    final case class Sum[Input0 <: Batch](differentiableArray2D: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]], dimensions: Seq[Int]) extends Cached with DifferentiableArray2D {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
         type Input >: Input0
@@ -673,12 +673,12 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableArray2D.forward(input)
         new Output(input, upstream)
       }
     }
 
-    final case class Negative[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
+    final case class Negative[Input0 <: Batch](differentiableArray2D: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
         type Input >: Input0
@@ -695,12 +695,12 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableArray2D.forward(input)
         new Output(input, upstream)
       }
     }
 
-    final case class Log[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
+    final case class Log[Input0 <: Batch](differentiableArray2D: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
         type Input >: Input0
@@ -721,12 +721,12 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableArray2D.forward(input)
         new Output(input, upstream)
       }
     }
 
-    final case class Exp[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
+    final case class Exp[Input0 <: Batch](differentiableArray2D: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Cached with DifferentiableArray2D {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
         type Input >: Input0
@@ -746,7 +746,7 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableArray2D.forward(input)
         new Output(input, upstream)
       }
     }
@@ -832,7 +832,7 @@ object Differentiable {
     }
 
 
-    final case class Not[Input0 <: Batch](toGeneric: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) extends Cached with DifferentiableBoolean {
+    final case class Not[Input0 <: Batch](differentiableBoolean: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) extends Cached with DifferentiableBoolean {
 
       final class Output(val input: Input0, upstream: Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]) extends ReferenceCount with BooleanBatch {
         type Input >: Input0
@@ -846,7 +846,7 @@ object Differentiable {
       type Input = Input0
 
       override protected def cachedForward(input: Input): Output = {
-        val upstream = toGeneric.forward(input)
+        val upstream = differentiableBoolean.forward(input)
         new Output(input, upstream)
       }
     }
@@ -866,27 +866,27 @@ object Differentiable {
   }
 
   object Specialize {
-    type Aux[Input0, Output0, SpecialFunction0] = Specialize {
+    type Aux[Input0, Output0, SpecialDifferentiable0] = Specialize {
       type Input = Input0
       type Output = Output0
-      type SpecialFunction = SpecialFunction0
+      type SpecialDifferentiable = SpecialDifferentiable0
     }
   }
 
   trait Specialize {
     type Input <: Batch
     type Output <: Batch
-    type SpecialFunction
+    type SpecialDifferentiable
 
     /**
-      * Returns the base [[Differentiable]] type of a [[SpecialFunction]].
+      * Returns the base [[Differentiable]] type of a [[SpecialDifferentiable]].
       */
-    def generalize(specialFunction: SpecialFunction): Differentiable.Aux[Input, Output]
+    def generalize(specialFunction: SpecialDifferentiable): Differentiable.Aux[Input, Output]
 
     /**
       * Returns a special subclass of a [[Differentiable]].
       */
-    def specialize(generic: Differentiable.Aux[Input, Output]): SpecialFunction
+    def specialize(generic: Differentiable.Aux[Input, Output]): SpecialDifferentiable
   }
 
   trait LearningRate {
@@ -910,15 +910,15 @@ object Differentiable {
 
     implicit def learningRate: LearningRate
 
-    override type Companion[SpecialFunction0] = Specialize {
-      type SpecialFunction = SpecialFunction0
+    override type Companion[SpecialDifferentiable0] = Specialize {
+      type SpecialDifferentiable = SpecialDifferentiable0
       type Input = SymbolicDsl.this.Input
     }
 
     override type Any = Differentiable.Aux[Input, Batch.Aux[_, _]]
 
     override object Any extends Specialize {
-      override type SpecialFunction = Any
+      override type SpecialDifferentiable = Any
       override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[_, _]
 
@@ -935,7 +935,7 @@ object Differentiable {
 
       override type LiftFrom = scala.Double
       override type LiftTo = Double
-      override type SpecialFunction = Double
+      override type SpecialDifferentiable = Double
       override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[Eval[scala.Double], Eval[scala.Double]]
 
@@ -957,7 +957,7 @@ object Differentiable {
 
       override type LiftFrom = Array[Array[scala.Double]]
       override type LiftTo = Array2D
-      override type SpecialFunction = Array2D
+      override type SpecialDifferentiable = Array2D
       override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]
 
@@ -977,7 +977,7 @@ object Differentiable {
 
       import DifferentiableBoolean._
 
-      override type SpecialFunction = Boolean
+      override type SpecialDifferentiable = Boolean
       override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]
 
@@ -1003,8 +1003,8 @@ trait Differentiable {
 
   import Differentiable._
 
-  type Companion[SpecialFunction0] = Specialize {
-    type SpecialFunction = SpecialFunction0
+  type Companion[SpecialDifferentiable0] = Specialize {
+    type SpecialDifferentiable = SpecialDifferentiable0
     type Input = Differentiable.this.Input
   }
   type Array2D = DifferentiableArray2D.Aux[Input]
