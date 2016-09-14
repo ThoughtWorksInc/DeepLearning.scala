@@ -9,6 +9,7 @@ import cats.implicits._
 import com.thoughtworks.DeepLearning.DifferentiableFunction.Array2DFunction.Aux
 import com.thoughtworks.DeepLearning.DifferentiableFunction.DoubleFunction.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 
@@ -109,6 +110,8 @@ object Dsl {
     }
 
     def unary_- : Array2D
+
+    def reduceSum: Double
 
   }
 
@@ -784,6 +787,32 @@ object DeepLearning {
         }
       }
 
+
+      final case class ReduceSum[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends CachedFunction with DoubleFunction {
+
+        final class Output(val input: Input0, upstream: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableDouble {
+          type Input >: Input0
+          val value = upstream.value.map(_.sumT).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[scala.Double]): Unit = {
+            upstream.backward(outputDelta.map2(upstream.value) { (outputDeltaValue:scala.Double, aValue:INDArray) =>
+              if (outputDeltaValue == 0) {
+                None
+              } else {
+                Some(Nd4j.valueArrayOf(aValue.shape(), outputDeltaValue))
+              }
+            }.memoize)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          val upstream = toGeneric.forward(input)
+          new Output(input, upstream)
+        }
+      }
+
       final case class Negative[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends CachedFunction with Array2DFunction {
 
         final class Output(val input: Input0, upstream: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
@@ -893,6 +922,10 @@ object DeepLearning {
 
       override def unary_- = {
         Array2DFunction.Negative[Input](this)
+      }
+
+      override def reduceSum = {
+        Array2DFunction.ReduceSum[Input](this)
       }
     }
 
