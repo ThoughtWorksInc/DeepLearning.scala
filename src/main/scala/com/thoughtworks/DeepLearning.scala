@@ -113,6 +113,8 @@ object Dsl {
 
     def reduceSum: Double
 
+    def sum(dimensions: Int*): Array2D
+
   }
 
   object Array2DApi {
@@ -795,13 +797,41 @@ object DeepLearning {
           val value = upstream.value.map(_.sumT).memoize
 
           override protected def cachedBackward(outputDelta: Eval[scala.Double]): Unit = {
-            upstream.backward(outputDelta.map2(upstream.value) { (outputDeltaValue:scala.Double, aValue:INDArray) =>
+            upstream.backward(outputDelta.map2(upstream.value) { (outputDeltaValue, aValue) =>
               if (outputDeltaValue == 0) {
                 None
               } else {
                 Some(Nd4j.valueArrayOf(aValue.shape(), outputDeltaValue))
               }
             }.memoize)
+          }
+        }
+
+        type Input = Input0
+
+        override protected def cachedForward(input: Input): Output = {
+          val upstream = toGeneric.forward(input)
+          new Output(input, upstream)
+        }
+      }
+
+      final case class Sum[Input0 <: Differentiable](toGeneric: DifferentiableFunction.Aux[Input0, Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]], dimensions: Seq[Int]) extends CachedFunction with Array2DFunction {
+
+        final class Output(val input: Input0, upstream: Differentiable.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with DifferentiableArray2D {
+          type Input >: Input0
+          val value = upstream.value.map(_.sum(dimensions: _*)).memoize
+
+          override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+            val a = upstream.value
+            upstream.backward(
+              outputDelta.flatMap[Option[INDArray]] {
+                case None => Eval.now(None)
+                case Some(outputDeltaValue) =>
+                  a.map {
+                    aValue =>
+                      Some(outputDeltaValue.broadcast(aValue.shape(): _*))
+                  }
+              }.memoize)
           }
         }
 
@@ -926,6 +956,10 @@ object DeepLearning {
 
       override def reduceSum = {
         Array2DFunction.ReduceSum[Input](this)
+      }
+
+      override def sum(dimensions: Int*) = {
+        Array2DFunction.Sum[Input](this, dimensions)
       }
     }
 
