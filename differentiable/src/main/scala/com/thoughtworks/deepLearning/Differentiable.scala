@@ -893,18 +893,33 @@ object Differentiable {
     def apply(): scala.Double
   }
 
-  final class SymbolicDsl[Input0 <: Batch](implicit learningRate: LearningRate) extends Dsl {
-
-    override type Companion[SpecialFunction0] = Specialize {
-      type SpecialFunction = SpecialFunction0
+  object SymbolicDsl {
+    type Aux[Input0 <: Batch] = SymbolicDsl {
       type Input = Input0
     }
 
-    override type Any = Differentiable.Aux[Input0, Batch.Aux[_, _]]
+    def apply[Input0 <: Batch](implicit learningRate0: LearningRate) = new SymbolicDsl {
+      override implicit def learningRate = learningRate0
+      override type Input = Input0
+    }
+  }
+
+  trait SymbolicDsl extends Dsl {
+
+    type Input <: Batch
+
+    implicit def learningRate: LearningRate
+
+    override type Companion[SpecialFunction0] = Specialize {
+      type SpecialFunction = SpecialFunction0
+      type Input = SymbolicDsl.this.Input
+    }
+
+    override type Any = Differentiable.Aux[Input, Batch.Aux[_, _]]
 
     override object Any extends Specialize {
       override type SpecialFunction = Any
-      override type Input = Input0
+      override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[_, _]
 
       override def generalize(generic: Any): Any = generic
@@ -912,7 +927,7 @@ object Differentiable {
       override def specialize(generic: Any): Any = generic
     }
 
-    override type Double = DifferentiableDouble.Aux[Input0]
+    override type Double = DifferentiableDouble.Aux[Input]
 
     implicit override object Double extends Dsl.Lifter with Specialize {
 
@@ -921,20 +936,20 @@ object Differentiable {
       override type LiftFrom = scala.Double
       override type LiftTo = Double
       override type SpecialFunction = Double
-      override type Input = Input0
+      override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[Eval[scala.Double], Eval[scala.Double]]
 
-      override def apply(value: scala.Double) = DoubleLiteral[Input0](value)
+      override def apply(value: scala.Double) = DoubleLiteral[Input](value)
 
-      override def weight(initialValue: scala.Double) = DoubleWeight[Input0](initialValue)
+      override def weight(initialValue: scala.Double) = DoubleWeight[Input](initialValue)
 
-      override def specialize(generic: Differentiable.Aux[Input0, Output]) = DoubleOps(generic)
+      override def specialize(generic: Differentiable.Aux[Input, Output]) = DoubleOps(generic)
 
       override def generalize(generic: Double): Double = generic
 
     }
 
-    override type Array2D = DifferentiableArray2D.Aux[Input0]
+    override type Array2D = DifferentiableArray2D.Aux[Input]
 
     implicit override object Array2D extends Dsl.Lifter with Specialize {
 
@@ -943,41 +958,41 @@ object Differentiable {
       override type LiftFrom = Array[Array[scala.Double]]
       override type LiftTo = Array2D
       override type SpecialFunction = Array2D
-      override type Input = Input0
+      override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]
 
-      override def apply(value: Array[Array[scala.Double]]) = DifferentiableArray2D.Array2DLiteral[Input0](value)
+      override def apply(value: Array[Array[scala.Double]]) = DifferentiableArray2D.Array2DLiteral[Input](value)
 
-      override def weight(initialValue: Array[Array[scala.Double]]) = Array2DWeight[Input0](initialValue)
+      override def weight(initialValue: Array[Array[scala.Double]]) = Array2DWeight[Input](initialValue)
 
       override def generalize(specialFunction: Array2D) = specialFunction
 
-      override def specialize(generic: Differentiable.Aux[Input0, Output]) = Array2DOps(generic)
+      override def specialize(generic: Differentiable.Aux[Input, Output]) = Array2DOps(generic)
 
     }
 
-    override type Boolean = DifferentiableBoolean.Aux[Input0]
+    override type Boolean = DifferentiableBoolean.Aux[Input]
 
     implicit override object Boolean extends Specialize {
 
       import DifferentiableBoolean._
 
       override type SpecialFunction = Boolean
-      override type Input = Input0
+      override type Input = SymbolicDsl.this.Input
       override type Output = Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]
 
       override def generalize(generic: Boolean): Boolean = generic
 
-      override def specialize(generic: Differentiable.Aux[Input0, Output]) = BooleanOps(generic)
+      override def specialize(generic: Differentiable.Aux[Input, Output]) = BooleanOps(generic)
 
     }
 
     override def exp(array: Array2D): Array2D = {
-      DifferentiableArray2D.Exp[Input0](array)
+      DifferentiableArray2D.Exp[Input](array)
     }
 
     override def log(array: Array2D): Array2D = {
-      DifferentiableArray2D.Log[Input0](array)
+      DifferentiableArray2D.Log[Input](array)
     }
   }
 
@@ -985,6 +1000,7 @@ object Differentiable {
 }
 
 trait Differentiable {
+
   import Differentiable._
 
   type Companion[SpecialFunction0] = Specialize {

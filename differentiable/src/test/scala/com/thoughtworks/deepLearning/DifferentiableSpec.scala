@@ -24,7 +24,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     }
 
     val id = new Id[Eval[INDArray], Eval[Option[INDArray]]]
-    val dsl = new SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+    val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
     val f1 = f(dsl)(dsl.Array2D.specialize(id))
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
@@ -57,7 +57,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     }
 
     val id = new Id[Eval[INDArray], Eval[Option[INDArray]]]
-    val dsl = new SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+    val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
     val f1 = f(dsl)(dsl.Array2D.specialize(id))
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
@@ -83,7 +83,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
       max(input - Double.weight(0.0), Double(2.0))
     }
     val id = new Id[Eval[scala.Double], Eval[scala.Double]]
-    val dsl = new SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+    val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
     val f1 = f(dsl)(dsl.Double.specialize(id))
 
     def train(inputValue: scala.Double): scala.Double = {
@@ -115,7 +115,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     }
 
     val id = new Id[Eval[scala.Double], Eval[scala.Double]]
-    val dsl = new SymbolicDsl[id.Input]
+    val dsl = SymbolicDsl[id.Input]
     val f1 = f(dsl)(dsl.Double.specialize(id))
 
 
