@@ -134,6 +134,25 @@ object Dsl {
     def apply(value: LiftFrom): LiftTo
   }
 
+  object Array2DCompanion {
+    type Aux[Array2D0 <: Array2DApi] = Array2DCompanion {
+      type LiftTo = Array2D0
+    }
+  }
+
+  trait Array2DCompanion extends Lifter {
+    private type Array2D = LiftTo
+    type LiftFrom = Array[Array[scala.Double]]
+
+    def randn(numberOfRows: Int, numberOfColumns: Int): Array2D
+
+    def randn(numberOfColumns: Int): Array2D = randn(1, numberOfColumns)
+
+    def zeros(numberOfRows: Int, numberOfColumns: Int): Array2D
+
+    def zeros(numberOfColumns: Int): Array2D = zeros(1, numberOfColumns)
+  }
+
 }
 
 trait Dsl {
@@ -152,7 +171,7 @@ trait Dsl {
   implicit val Double: Companion[Double] with Lifter.Aux[scala.Double, Double]
 
   type Array2D <: Any with Array2DApi.Aux[Companion, Array2D, Double, Boolean]
-  implicit val Array2D: Companion[Array2D] with Lifter.Aux[Array[Array[scala.Double]], Array2D]
+  implicit val Array2D: Companion[Array2D] with Array2DCompanion.Aux[Array2D]
 
   def max(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)

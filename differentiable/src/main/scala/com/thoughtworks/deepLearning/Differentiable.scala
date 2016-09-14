@@ -410,9 +410,18 @@ object Differentiable {
     }
 
     object Array2DWeight {
+      def randn[Input <: Batch](numberOfRows: Int, numberOfColumns: Int)(implicit learningRate: LearningRate): Array2DWeight[Input] = {
+        new Array2DWeight[Input](Nd4j.randn(numberOfRows, numberOfColumns))
+      }
+
+      def zeros[Input <: Batch](numberOfRows: Int, numberOfColumns: Int)(implicit learningRate: LearningRate): Array2DWeight[Input] = {
+        new Array2DWeight[Input](Nd4j.zeros(numberOfRows, numberOfColumns))
+      }
+
       def apply[Input <: Batch](nativeArray: Array[Array[scala.Double]])(implicit learningRate: LearningRate): Array2DWeight[Input] = {
         new Array2DWeight[Input](nativeArray.toNDArray)
       }
+
     }
 
     final case class Array2DOps[Input0 <: Batch](generic: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends DifferentiableArray2D {
@@ -997,11 +1006,8 @@ object Differentiable {
 
     override type Array2D = DifferentiableArray2D.Aux[Input]
 
-    implicit override object Array2D extends Dsl.Lifter with Specialize {
+    implicit override object Array2D extends Specialize with Dsl.Array2DCompanion {
 
-      import DifferentiableArray2D._
-
-      override type LiftFrom = Array[Array[scala.Double]]
       override type LiftTo = Array2D
       override type SpecialDifferentiable = Array2D
       override type Input = SymbolicDsl.this.Input
@@ -1009,12 +1015,15 @@ object Differentiable {
 
       override def apply(value: Array[Array[scala.Double]]) = DifferentiableArray2D.Array2DLiteral[Input](value)
 
-      override def weight(initialValue: Array[Array[scala.Double]]) = Array2DWeight[Input](initialValue)
+      override def weight(initialValue: Array[Array[scala.Double]]) = DifferentiableArray2D.Array2DWeight[Input](initialValue)
 
       override def generalize(specialFunction: Array2D) = specialFunction
 
-      override def specialize(generic: Differentiable.Aux[Input, Output]) = Array2DOps(generic)
+      override def specialize(generic: Differentiable.Aux[Input, Output]) = DifferentiableArray2D.Array2DOps(generic)
 
+      override def randn(numberOfRows: Int, numberOfColumns: Int): Array2D = DifferentiableArray2D.Array2DWeight.randn(numberOfRows, numberOfColumns)
+
+      override def zeros(numberOfRows: Int, numberOfColumns: Int): Array2D = DifferentiableArray2D.Array2DWeight.zeros(numberOfRows, numberOfColumns)
     }
 
     override type Boolean = DifferentiableBoolean.Aux[Input]
