@@ -80,7 +80,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   "max" in {
     def f(dsl: Dsl)(input: dsl.Double): dsl.Double = {
       import dsl._
-      max(input - Double.weight(0.0), Double(2.0))
+      max(input - Double.weight(0.0), 2.0)
     }
     val id = new Id[Eval[scala.Double], Eval[scala.Double]]
     val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]

@@ -984,7 +984,7 @@ object Differentiable {
 
     override type Double = DifferentiableDouble.Aux[Input]
 
-    implicit override object Double extends Dsl.Lifter with Specialize {
+    implicit override object Double extends Dsl.Lifter with Specialize with (scala.Double => Double) {
 
       import DifferentiableDouble._
 
@@ -1006,7 +1006,7 @@ object Differentiable {
 
     override type Array2D = DifferentiableArray2D.Aux[Input]
 
-    implicit override object Array2D extends Specialize with Dsl.Array2DCompanion {
+    implicit override object Array2D extends Specialize with Dsl.Array2DCompanion  with (Array[Array[scala.Double]] => Array2D){
 
       override type LiftTo = Array2D
       override type SpecialDifferentiable = Array2D

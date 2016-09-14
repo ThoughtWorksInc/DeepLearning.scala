@@ -119,13 +119,14 @@ object Dsl {
   }
 
   object Lifter {
-    type Aux[LiftFrom0, LiftTo0] = Lifter {
+    type Aux[LiftFrom0, LiftTo0] = (LiftFrom0 => LiftTo0) with Lifter {
       type LiftFrom = LiftFrom0
       type LiftTo = LiftTo0
     }
   }
 
   trait Lifter {
+    _: (_ => _) =>
     type LiftFrom
     type LiftTo
 
@@ -135,12 +136,11 @@ object Dsl {
   }
 
   object Array2DCompanion {
-    type Aux[Array2D0 <: Array2DApi] = Array2DCompanion {
-      type LiftTo = Array2D0
-    }
+    type Aux[LiftTo <: Array2DApi] = Lifter.Aux[Array[Array[scala.Double]], LiftTo] with Array2DCompanion
   }
 
   trait Array2DCompanion extends Lifter {
+    _: (_ => _) =>
     private type Array2D = LiftTo
     type LiftFrom = Array[Array[scala.Double]]
 

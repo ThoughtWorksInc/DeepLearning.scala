@@ -13,7 +13,7 @@ trait DeepLearning {
   import dsl._
 
   def sigmoid(input: Array2D) = {
-    Double(1.0) / (Double(1.0) + exp(-input))
+    Double(1.0) / (exp(-input) + 1.0)
   }
 
   def relu(input: Array2D) = {
@@ -25,7 +25,7 @@ trait DeepLearning {
   }
 
   def fullyConnectedThenRelu(input: Array2D, inputSize: Int, outputSize: Int) = {
-    val weight = Array2D.randn(inputSize, outputSize) / Double(math.sqrt(inputSize.toDouble / 2.0))
+    val weight = Array2D.randn(inputSize, outputSize) / math.sqrt(inputSize.toDouble / 2.0)
     val bias = Array2D.zeros(outputSize)
     relu(fullyConnected(input, weight, bias))
   }
