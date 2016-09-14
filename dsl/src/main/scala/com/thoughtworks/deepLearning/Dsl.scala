@@ -158,6 +158,12 @@ trait Dsl {
     (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)
   }
 
+  def max(leftHandSide: Array2D, rightHandSide: Double): Array2D
+
+  def max(leftHandSide: Double, rightHandSide: Array2D): Array2D = {
+    max(rightHandSide, leftHandSide)
+  }
+
   def min(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(leftHandSide)(rightHandSide)
   }

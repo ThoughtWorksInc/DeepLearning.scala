@@ -6,6 +6,8 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
+import com.thoughtworks.deepLearning.Differentiable.DifferentiableArray2D.Aux
+import com.thoughtworks.deepLearning.Differentiable.DifferentiableDouble.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -64,7 +66,6 @@ object Differentiable {
       }
 
     }
-
 
   }
 
@@ -532,7 +533,6 @@ object Differentiable {
       }
     }
 
-
     final case class MultiplyDouble[Input0 <: Batch]
     (
       leftHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
@@ -566,6 +566,45 @@ object Differentiable {
               }
           }.memoize
           upstream2.backward(bDelta)
+        }
+      }
+
+      type Input = Input0
+
+      override protected def cachedForward(input: Input): Output = {
+        new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+      }
+    }
+
+    final case class MaxDouble[Input0 <: Batch]
+    (
+      leftHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
+      rightHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+    ) extends DifferentiableArray2D with Cached {
+
+      final class Output(val input: Input0, upstream1: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]]) extends ReferenceCount with Array2DBatch {
+        type Input >: Input0
+        val value = upstream1.value.map2(upstream2.value)(Transforms.max).memoize
+
+        override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+          val a = upstream1.value
+          val b = upstream2.value
+          upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
+            case None => Eval.now(None)
+            case Some(outputDeltaValue) =>
+              Applicative[Eval].map2(a, b) {
+                (aData: INDArray, bData: scala.Double) =>
+                  Some((aData gt bData) * outputDeltaValue)
+              }
+          })
+          upstream2.backward(outputDelta.flatMap[scala.Double] {
+            case None => Eval.now(0)
+            case Some(outputDeltaValue) =>
+              Applicative[Eval].map2(a, b) {
+                (aData: INDArray, bData: scala.Double) =>
+                  ((aData lt bData) * outputDeltaValue).sumT
+              }
+          })
         }
       }
 
@@ -906,6 +945,7 @@ object Differentiable {
 
     def apply[Input0 <: Batch](implicit learningRate0: LearningRate) = new SymbolicDsl {
       override implicit def learningRate = learningRate0
+
       override type Input = Input0
     }
   }
@@ -1000,6 +1040,11 @@ object Differentiable {
     override def log(array: Array2D): Array2D = {
       DifferentiableArray2D.Log[Input](array)
     }
+
+    override def max(leftHandSide: Array2D, rightHandSide: Double) = {
+      DifferentiableArray2D.MaxDouble(leftHandSide, rightHandSide)
+    }
+
   }
 
 
