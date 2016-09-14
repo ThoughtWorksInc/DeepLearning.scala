@@ -1,4 +1,4 @@
-name := "deep-learning"
+name := "differentiable"
 
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
