@@ -462,7 +462,13 @@ object Differentiable {
       }
     }
 
-    // TOOD: auto broadcast
+    private def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = shape match {
+      case Array(1, 1) => outputDeltaValue.sum(0, 1)
+      case Array(_, 1) => outputDeltaValue.sum(1)
+      case Array(1, _) => outputDeltaValue.sum(0)
+      case Array(_, _) => outputDeltaValue
+    }
+
     final case class MultiplyArray2D[Input0 <: Batch]
     (
       leftHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
@@ -474,22 +480,20 @@ object Differentiable {
         val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
 
         override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
+          val a = upstream1.value
           val b = upstream2.value
           upstream1.backward(outputDelta.flatMap[Option[INDArray]] {
             case None => Eval.now(None)
             case Some(outputDeltaValue) =>
-              b.map {
-                bData =>
-                  Some(bData * outputDeltaValue)
+              a.map2(b) { (aData, bData) =>
+                Some(sumAs(bData.broadcast(outputDeltaValue.shape(): _*) * outputDeltaValue, aData.shape()))
               }
           }.memoize)
-          val a = upstream1.value
           upstream2.backward(outputDelta.flatMap[Option[INDArray]] {
             case None => Eval.now(None)
             case Some(outputDeltaValue) =>
-              a.map {
-                aData =>
-                  Some(aData * outputDeltaValue)
+              a.map2(b) { (aData, bData) =>
+                Some(sumAs(aData.broadcast(outputDeltaValue.shape(): _*) * outputDeltaValue, bData.shape()))
               }
           }.memoize)
         }
@@ -502,7 +506,6 @@ object Differentiable {
       }
     }
 
-    // TOOD: auto broadcast
     final case class AddArray2D[Input0 <: Batch]
     (
       leftHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]],
@@ -514,8 +517,11 @@ object Differentiable {
         val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
 
         override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
-          upstream1.backward(outputDelta)
-          upstream2.backward(outputDelta)
+          val sumAsOriginalShape = { (outputDeltaOption: Option[INDArray], aValue: INDArray) =>
+            outputDeltaOption.map(sumAs(_, aValue.shape()))
+          }
+          upstream1.backward(outputDelta.map2(upstream1.value)(sumAsOriginalShape))
+          upstream2.backward(outputDelta.map2(upstream2.value)(sumAsOriginalShape))
         }
       }
 
