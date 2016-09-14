@@ -16,12 +16,16 @@ libraryDependencies += "org.nd4j" %% "nd4s" % "0.4-rc3.8"
 libraryDependencies += "org.nd4j" % "nd4j-api" % "0.4-rc3.9"
 
 def osClassifier(moduleId: ModuleID) = {
+  val arch = SystemUtils.OS_ARCH match {
+    case "amd64" => "x86_64"
+    case other => other
+  }
   if (SystemUtils.IS_OS_MAC_OSX) {
-    moduleId classifier s"macosx-${SystemUtils.OS_ARCH}"
+    moduleId classifier s"macosx-${arch}"
   } else if (SystemUtils.IS_OS_LINUX) {
-    moduleId classifier s"linux-${SystemUtils.OS_ARCH}"
+    moduleId classifier s"linux-${arch}"
   } else if (SystemUtils.IS_OS_WINDOWS) {
-    moduleId classifier s"windows-${SystemUtils.OS_ARCH}"
+    moduleId classifier s"windows-${arch}"
   } else {
     moduleId
   }
