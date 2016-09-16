@@ -4,6 +4,7 @@ import cats.Eval
 import com.thoughtworks.deepLearning.Differentiable.DifferentiableArray2D.Array2DLiteral
 import com.thoughtworks.deepLearning.Differentiable.DifferentiableDouble.DoubleLiteral
 import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.Dsl.DslFactory
 import org.scalatest._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
@@ -18,14 +19,17 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "+ Double" in {
-    def f(dsl: Dsl)(inputNeuronNetwork: dsl.Array2D): dsl.Array2D = {
-      import dsl._
-      inputNeuronNetwork + Double.weight(2.0)
+    final case class AddDouble[D <: Dsl](dsl: D) extends DslFactory {
+      type Out = dsl.Array2D
+      type In = dsl.Array2D
+
+      override def apply(inputNeuronNetwork: In): Out = {
+        import dsl._
+        inputNeuronNetwork + Double.weight(2.0)
+      }
     }
 
-    val id = new Id[Eval[INDArray], Eval[Option[INDArray]]]
-    val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
-    val f1 = f(dsl)(dsl.Array2D.specialize(id))
+    val f1 = Differentiable.fromDsl[AddDouble]
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
       val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)

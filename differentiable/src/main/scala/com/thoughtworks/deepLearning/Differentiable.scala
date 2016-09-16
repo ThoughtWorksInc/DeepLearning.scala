@@ -6,15 +6,45 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable.DifferentiableArray2D.Aux
-import com.thoughtworks.deepLearning.Differentiable.DifferentiableDouble.Aux
+import com.thoughtworks.deepLearning.Dsl.DslFactory
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
+import shapeless.{::, DepFn0, Generic, HNil}
 
 
 object Differentiable {
+
+  trait FromDsl[F[_ <: Dsl] <: DslFactory] extends DepFn0
+
+  object FromDsl {
+
+    type Aux[F[_ <: Dsl] <: DslFactory, Out0] = FromDsl[F] {
+      type Out = Out0
+    }
+
+    implicit def array2DFromDslFactory[F[_ <: Dsl] <: DslFactory]
+    (implicit
+     constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]] <:< DslFactory.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]#Array2D, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out],
+     learningRate: LearningRate,
+     g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]], SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]] :: HNil])
+    : FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out] = {
+      new FromDsl[F] {
+        type Out = F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out
+
+        override def apply() = {
+          val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+          g.from(dsl :: HNil)(dsl.Array2D.specialize(Id[Eval[INDArray], Eval[Option[INDArray]]]))
+        }
+      }
+    }
+
+  }
+
+  def fromDsl[F[_ <: Dsl] <: DslFactory](implicit fromDsl: FromDsl[F]): fromDsl.Out = {
+    fromDsl()
+  }
 
   object Batch {
     type Aux[+Data0, -Delta0] = Batch {
@@ -1006,7 +1036,7 @@ object Differentiable {
 
     override type Array2D = DifferentiableArray2D.Aux[Input]
 
-    implicit override object Array2D extends Specialize with Dsl.Array2DCompanion  with (Array[Array[scala.Double]] => Array2D){
+    implicit override object Array2D extends Specialize with Dsl.Array2DCompanion with (Array[Array[scala.Double]] => Array2D) {
 
       override type LiftTo = Array2D
       override type SpecialDifferentiable = Array2D

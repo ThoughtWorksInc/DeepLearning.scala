@@ -153,6 +153,21 @@ object Dsl {
     def zeros(numberOfColumns: Int): Array2D = zeros(1, numberOfColumns)
   }
 
+
+  object DslFactory {
+    type Aux[In0, Out0] = DslFactory {
+      type In = In0
+      type Out = Out0
+    }
+  }
+
+  trait DslFactory {
+    type In
+    type Out
+
+    def apply(in: In): Out
+  }
+
 }
 
 trait Dsl {
