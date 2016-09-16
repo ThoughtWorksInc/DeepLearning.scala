@@ -12,10 +12,12 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import shapeless.{::, DepFn0, Generic, HNil}
+import simulacrum.typeclass
 
 
 object Differentiable {
 
+  @typeclass
   trait FromDsl[F[_ <: Dsl] <: DslFactory] extends DepFn0
 
   object FromDsl {
@@ -24,12 +26,28 @@ object Differentiable {
       type Out = Out0
     }
 
+    implicit def doubleFromDslFactory[F[_ <: Dsl] <: DslFactory]
+    (
+      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]] <:< DslFactory.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]#Double, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out],
+      learningRate: LearningRate,
+      g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]], SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] :: HNil]
+    ): FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out] = {
+      new FromDsl[F] {
+        type Out = F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out
+
+        override def apply() = {
+          val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+          g.from(dsl :: HNil)(dsl.Double.specialize(Id[Eval[scala.Double], Eval[scala.Double]]))
+        }
+      }
+    }
+
     implicit def array2DFromDslFactory[F[_ <: Dsl] <: DslFactory]
-    (implicit
-     constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]] <:< DslFactory.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]#Array2D, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out],
-     learningRate: LearningRate,
-     g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]], SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]] :: HNil])
-    : FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out] = {
+    (
+      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]] <:< DslFactory.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]#Array2D, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out],
+      learningRate: LearningRate,
+      g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]], SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]] :: HNil]
+    ): FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out] = {
       new FromDsl[F] {
         type Out = F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out
 
@@ -42,8 +60,8 @@ object Differentiable {
 
   }
 
-  def fromDsl[F[_ <: Dsl] <: DslFactory](implicit fromDsl: FromDsl[F]): fromDsl.Out = {
-    fromDsl()
+  def fromDsl[F[_ <: Dsl] <: DslFactory](implicit fromDsl0: FromDsl[F]): fromDsl0.Out = {
+    fromDsl0()
   }
 
   object Batch {
@@ -237,7 +255,7 @@ object Differentiable {
 
     }
 
-    final case class Substract[Input0 <: Batch]
+    final case class Subtract[Input0 <: Batch]
     (
       leftHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
       rightHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
@@ -376,7 +394,7 @@ object Differentiable {
     }
 
     override def -(rightHandSide: Double) = {
-      Substract[Input](this, rightHandSide)
+      Subtract[Input](this, rightHandSide)
     }
 
     override def <(rightHandSide: Double) = {

@@ -18,13 +18,16 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     def apply() = 0.03
   }
 
-  "+ Double" in {
+  "+ Array2D" in {
+
     final case class AddDouble[D <: Dsl](dsl: D) extends DslFactory {
-      type Out = dsl.Array2D
-      type In = dsl.Array2D
+
+      import dsl._
+
+      type Out = Array2D
+      type In = Array2D
 
       override def apply(inputNeuronNetwork: In): Out = {
-        import dsl._
         inputNeuronNetwork + Double.weight(2.0)
       }
     }
@@ -54,15 +57,20 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "dot" in {
-    def f(dsl: Dsl)(inputNeuronNetwork: dsl.Array2D): dsl.Array2D = {
+    final case class DotArray2D[D <: Dsl](dsl: D) extends DslFactory {
+
       import dsl._
-      val weight = Array2D.weight(Array(Array(1.0, 1.0)))
-      inputNeuronNetwork dot weight
+
+      type Out = Array2D
+      type In = Array2D
+
+      override def apply(inputNeuronNetwork: In): Out = {
+        val weight = Array2D.weight(Array(Array(1.0, 1.0)))
+        inputNeuronNetwork dot weight
+      }
     }
 
-    val id = new Id[Eval[INDArray], Eval[Option[INDArray]]]
-    val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
-    val f1 = f(dsl)(dsl.Array2D.specialize(id))
+    val f1 = Differentiable.fromDsl[DotArray2D]
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
       val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
@@ -82,14 +90,19 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "max" in {
-    def f(dsl: Dsl)(input: dsl.Double): dsl.Double = {
-      import dsl._
-      max(input - Double.weight(0.0), 2.0)
-    }
-    val id = new Id[Eval[scala.Double], Eval[scala.Double]]
-    val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-    val f1 = f(dsl)(dsl.Double.specialize(id))
+    final case class MaxDouble[D <: Dsl](dsl: D) extends DslFactory {
 
+      import dsl._
+
+      type Out = Double
+      type In = Double
+
+      override def apply(input: In): Out = {
+        max(input - Double.weight(0.0), 2.0)
+      }
+    }
+
+    val f1 = Differentiable.fromDsl[MaxDouble]
     def train(inputValue: scala.Double): scala.Double = {
       val minibatchInput: Batch.Aux[Eval[scala.Double], Eval[scala.Double]] = DoubleLiteral(inputValue)
       val minibatchOutput = f1.forward(minibatchInput)
@@ -108,22 +121,33 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "-" in {
-    def f(dsl: Dsl)(input: dsl.Double): dsl.Double = {
+    final case class SubtractDouble0[D <: Dsl](dsl: D) extends DslFactory {
+
       import dsl._
-      val negtiveInput: dsl.Double = -input
-      negtiveInput - Double.weight(3.0)
+
+      type Out = Double
+      type In = Double
+
+      override def apply(input: In): Out = {
+        import dsl._
+        val negtiveInput: dsl.Double = -input
+        negtiveInput - Double.weight(3.0)
+      }
     }
-    def g(dsl: Dsl)(input: dsl.Double): dsl.Double = {
+
+    final case class SubtractDouble1[D <: Dsl](dsl: D) extends DslFactory {
+
       import dsl._
-      input - Double.weight(1.2)
+
+      type Out = Double
+      type In = Double
+
+      override def apply(input: In): Out = {
+        input - Double.weight(1.2)
+      }
     }
-
-    val id = new Id[Eval[scala.Double], Eval[scala.Double]]
-    val dsl = SymbolicDsl[id.Input]
-    val f1 = f(dsl)(dsl.Double.specialize(id))
-
-
-    val g1 = g(dsl)(dsl.Double.specialize(id))
+    val f1 = Differentiable.fromDsl[SubtractDouble0]
+    val g1 = Differentiable.fromDsl[SubtractDouble1]
     val nn = Compose(f1, g1)
     def train(input: scala.Double): scala.Double = {
       val output = nn.forward(DoubleLiteral(input))
