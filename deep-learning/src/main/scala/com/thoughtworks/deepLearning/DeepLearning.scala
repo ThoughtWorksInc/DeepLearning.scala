@@ -1,8 +1,5 @@
 package com.thoughtworks.deepLearning
 
-object DeepLearning {
-
-}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
