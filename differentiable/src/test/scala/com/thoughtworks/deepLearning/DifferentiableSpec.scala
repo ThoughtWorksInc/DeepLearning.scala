@@ -4,7 +4,7 @@ import cats.Eval
 import com.thoughtworks.deepLearning.Differentiable.DifferentiableArray2D.Array2DLiteral
 import com.thoughtworks.deepLearning.Differentiable.DifferentiableDouble.DoubleLiteral
 import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.Dsl.DslFactory
+import com.thoughtworks.deepLearning.Dsl.DslFunction
 import org.scalatest._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
@@ -20,7 +20,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
   "+ Array2D" in {
 
-    final case class AddDouble[D <: Dsl](dsl: D) extends DslFactory {
+    final case class AddDouble[D <: Dsl](dsl: D) extends DslFunction {
 
       import dsl._
 
@@ -57,7 +57,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "dot" in {
-    final case class DotArray2D[D <: Dsl](dsl: D) extends DslFactory {
+    final case class DotArray2D[D <: Dsl](dsl: D) extends DslFunction {
 
       import dsl._
 
@@ -90,7 +90,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "max" in {
-    final case class MaxDouble[D <: Dsl](dsl: D) extends DslFactory {
+    final case class MaxDouble[D <: Dsl](dsl: D) extends DslFunction {
 
       import dsl._
 
@@ -121,7 +121,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "-" in {
-    final case class SubtractDouble0[D <: Dsl](dsl: D) extends DslFactory {
+    final case class SubtractDouble0[D <: Dsl](dsl: D) extends DslFunction {
 
       import dsl._
 
@@ -135,7 +135,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
       }
     }
 
-    final case class SubtractDouble1[D <: Dsl](dsl: D) extends DslFactory {
+    final case class SubtractDouble1[D <: Dsl](dsl: D) extends DslFunction {
 
       import dsl._
 

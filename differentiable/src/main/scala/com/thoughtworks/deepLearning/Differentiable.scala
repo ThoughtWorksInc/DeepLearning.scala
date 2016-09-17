@@ -6,7 +6,7 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Dsl.DslFactory
+import com.thoughtworks.deepLearning.Dsl.DslFunction
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -18,17 +18,17 @@ import simulacrum.typeclass
 object Differentiable {
 
   @typeclass
-  trait FromDsl[F[_ <: Dsl] <: DslFactory] extends DepFn0
+  trait FromDsl[F[_ <: Dsl] <: DslFunction] extends DepFn0
 
   object FromDsl {
 
-    type Aux[F[_ <: Dsl] <: DslFactory, Out0] = FromDsl[F] {
+    type Aux[F[_ <: Dsl] <: DslFunction, Out0] = FromDsl[F] {
       type Out = Out0
     }
 
-    implicit def doubleFromDslFactory[F[_ <: Dsl] <: DslFactory]
+    implicit def doubleFromDslFactory[F[_ <: Dsl] <: DslFunction]
     (
-      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]] <:< DslFactory.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]#Double, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out],
+      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]] <:< DslFunction.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]#Double, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out],
       learningRate: LearningRate,
       g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]], SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] :: HNil]
     ): FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out] = {
@@ -42,9 +42,9 @@ object Differentiable {
       }
     }
 
-    implicit def array2DFromDslFactory[F[_ <: Dsl] <: DslFactory]
+    implicit def array2DFromDslFactory[F[_ <: Dsl] <: DslFunction]
     (
-      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]] <:< DslFactory.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]#Array2D, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out],
+      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]] <:< DslFunction.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]#Array2D, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out],
       learningRate: LearningRate,
       g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]], SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]] :: HNil]
     ): FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out] = {
@@ -60,7 +60,7 @@ object Differentiable {
 
   }
 
-  def fromDsl[F[_ <: Dsl] <: DslFactory](implicit fromDsl0: FromDsl[F]): fromDsl0.Out = {
+  def fromDsl[F[_ <: Dsl] <: DslFunction](implicit fromDsl0: FromDsl[F]): fromDsl0.Out = {
     fromDsl0()
   }
 

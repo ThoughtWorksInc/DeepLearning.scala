@@ -154,14 +154,14 @@ object Dsl {
   }
 
 
-  object DslFactory {
-    type Aux[In0, Out0] = DslFactory {
+  object DslFunction {
+    type Aux[In0, Out0] = DslFunction {
       type In = In0
       type Out = Out0
     }
   }
 
-  trait DslFactory {
+  trait DslFunction {
     type In
     type Out
 
