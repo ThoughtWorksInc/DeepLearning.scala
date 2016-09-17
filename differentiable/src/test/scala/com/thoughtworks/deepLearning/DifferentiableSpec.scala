@@ -24,8 +24,8 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
       import dsl._
 
-      type Out = Array2D
-      type In = Array2D
+      override type Out = Array2D
+      override type In = Array2D
 
       override def apply(inputNeuronNetwork: In): Out = {
         inputNeuronNetwork + Double.weight(2.0)
@@ -61,8 +61,8 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
       import dsl._
 
-      type Out = Array2D
-      type In = Array2D
+      override type Out = Array2D
+      override type In = Array2D
 
       override def apply(inputNeuronNetwork: In): Out = {
         val weight = Array2D.weight(Array(Array(1.0, 1.0)))
@@ -94,8 +94,8 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
       import dsl._
 
-      type Out = Double
-      type In = Double
+      override type Out = Double
+      override type In = Double
 
       override def apply(input: In): Out = {
         max(input - Double.weight(0.0), 2.0)
@@ -125,8 +125,8 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
       import dsl._
 
-      type Out = Double
-      type In = Double
+      override type Out = Double
+      override type In = Double
 
       override def apply(input: In): Out = {
         import dsl._
@@ -139,8 +139,8 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
       import dsl._
 
-      type Out = Double
-      type In = Double
+      override type Out = Double
+      override type In = Double
 
       override def apply(input: In): Out = {
         input - Double.weight(1.2)
