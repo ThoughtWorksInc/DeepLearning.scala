@@ -204,7 +204,7 @@ object Differentiable {
   }
 
   object DifferentiableDouble {
-    type Aux[Input0] = DifferentiableDouble {
+    type Aux[Input0 <: Batch] = DifferentiableDouble {
       type Input = Input0
     }
 
@@ -419,7 +419,7 @@ object Differentiable {
   }
 
   object DifferentiableArray2D {
-    type Aux[Input0] = DifferentiableArray2D {
+    type Aux[Input0 <: Batch] = DifferentiableArray2D {
       type Input = Input0
     }
 
@@ -901,7 +901,7 @@ object Differentiable {
   }
 
   object DifferentiableBoolean {
-    type Aux[Input0] = DifferentiableBoolean {
+    type Aux[Input0 <: Batch] = DifferentiableBoolean {
       type Input = Input0
     }
 
@@ -966,6 +966,40 @@ object Differentiable {
       DifferentiableBoolean.Not[Input](this)
     }
   }
+
+  object DifferentiableHList {
+    type Aux[Input0 <: Batch] = DifferentiableHList {
+      type Input = Input0
+    }
+  }
+
+  trait DifferentiableHList extends Differentiable with Dsl.HListApi {
+    override def ::[Head <: Any : Companion](head: Head): Head :: this.type = ???
+  }
+
+  object DifferentiableHCons {
+
+    type Aux[Input0 <: Batch, +Head0, +Tail0] = DifferentiableHCons {
+      type Input = Input0
+      type Head <: Head0
+      type Tail <: Tail0
+    }
+  }
+
+  trait DifferentiableHCons extends DifferentiableHList with Dsl.HConsApi {
+    type Head <: Differentiable.Aux[Input, Batch.Aux[_, _]]
+    type Tail <: DifferentiableHList.Aux[Input]
+  }
+
+  object DifferentiableHNil {
+
+    type Aux[Input0 <: Batch] = DifferentiableHNil {
+      type Input = Input0
+    }
+  }
+
+  trait DifferentiableHNil extends DifferentiableHList
+
 
   object Specialize {
     type Aux[Input0, Output0, SpecialDifferentiable0] = Specialize {
@@ -1102,6 +1136,34 @@ object Differentiable {
       DifferentiableArray2D.MaxDouble(leftHandSide, rightHandSide)
     }
 
+    override type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, Tail]
+
+    override implicit def ::[Head <: Any : Companion, Tail <: HList : Companion] = new Specialize {
+      type SpecialDifferentiable = Head :: Tail
+      type Input = SymbolicDsl.this.Input
+
+      override def generalize(specialFunction: Head :: Tail): Differentiable.Aux[Input, Output] = ??? //specialFunction
+
+      override def specialize(generic: Differentiable.Aux[Input, Output]): Head :: Tail = ???
+    }
+
+    type HList = DifferentiableHList.Aux[Input]
+
+    type HNil = DifferentiableHNil.Aux[Input]
+
+    override implicit object HNil extends Specialize with DifferentiableHNil {
+      type SpecialDifferentiable = HNil
+      type Input = SymbolicDsl.this.Input
+
+      override def generalize(specialFunction: HNil) = ???
+
+      //specialFunction
+      override def specialize(generic: Differentiable.Aux[Input, Output]) = ???
+
+      //this
+      override def forward(input: Input): Output = ???
+    }
+
   }
 
 
@@ -1115,10 +1177,12 @@ trait Differentiable {
     type SpecialDifferentiable = SpecialDifferentiable0
     type Input = Differentiable.this.Input
   }
+  type Any = Differentiable.Aux[Input, Batch.Aux[_, _]]
   type Array2D = DifferentiableArray2D.Aux[Input]
   type Double = DifferentiableDouble.Aux[Input]
   type Boolean = DifferentiableBoolean.Aux[Input]
-
+  type HList = DifferentiableHList.Aux[Input]
+  type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, Tail]
   type Input <: Batch
 
   type Output <: Batch.Aux[_, _]

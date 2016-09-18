@@ -118,6 +118,46 @@ object Dsl {
     }
   }
 
+  object HConsApi {
+    type Aux[Companion0[_], +Head0, +Tail0] = HListApi {
+      type Companion[A] = Companion0[A]
+      type Head <: Head0
+      type Tail <: Tail0
+    }
+  }
+
+  trait HConsApi extends HListApi {
+
+    type Head
+
+    type Tail
+
+    type Companion[_]
+
+    def head(implicit headCompanion: Companion[Head]): Head
+
+    def tail(implicit tailCompanion: Companion[Tail]): Tail
+
+  }
+
+  object HListApi {
+    type Aux[Companion0[_], Any0, HList0 <: Any0, HCons[_, _]] = HListApi {
+      type Companion[A] = Companion0[A]
+      type Any = Any0
+      type HList = HList0
+      type ::[+Head, +Tail] = HCons[Head, Tail]
+    }
+  }
+
+  trait HListApi {
+    type Companion[_]
+    type Any
+    type HList >: this.type
+    type ::[+Head <: Any, +Tail <: HList]
+
+    def ::[Head <: Any : Companion](head: Head): Head :: this.type
+  }
+
   object Lifter {
     type Aux[LiftFrom0, LiftTo0] = (LiftFrom0 => LiftTo0) with Lifter {
       type LiftFrom = LiftFrom0
@@ -187,6 +227,15 @@ trait Dsl {
 
   type Array2D <: Any with Array2DApi.Aux[Companion, Array2D, Double, Boolean]
   implicit val Array2D: Companion[Array2D] with Array2DCompanion.Aux[Array2D]
+
+  type ::[+Head, +Tail] <: Any with HConsApi.Aux[Companion, Head, Tail]
+
+  implicit def ::[Head <: Any : Companion, Tail <: HList : Companion]: Companion[Head :: Tail]
+
+  type HList <: Any with HListApi.Aux[Companion, Any, HList, ::]
+
+  type HNil <: HList
+  implicit val HNil: HNil with Companion[HNil]
 
   def max(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)
