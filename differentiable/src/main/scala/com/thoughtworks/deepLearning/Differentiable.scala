@@ -70,6 +70,15 @@ object Differentiable {
       type Delta >: Delta0
     }
 
+    case object HNilBatch extends Batch {
+      override type Data = shapeless.HNil
+      override type Delta = shapeless.HNil
+
+      override def backward(delta: Delta): Unit = ???
+
+      override def value: Data = shapeless.HNil
+    }
+
     trait HConsBatch extends Batch {
 
       type HeadData
@@ -143,7 +152,7 @@ object Differentiable {
 
   }
 
-  type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[_, _]] = Differentiable {
+  type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[scala.Any, scala.Nothing]] = Differentiable {
     type Input >: Input0
     type Output <: Output0
   }
@@ -995,16 +1004,52 @@ object Differentiable {
 
   object DifferentiableHCons {
 
-    type Aux[Input0 <: Batch, +Head0, +Tail0] = DifferentiableHCons {
+    type Aux[Input0 <: Batch, +Head0, +HeadData0, -HeadDelta0, +Tail0, +TailData0, -TailDelta0] = DifferentiableHCons {
       type Input = Input0
       type Head <: Head0
       type Tail <: Tail0
+      type HeadData <: HeadData0
+      type HeadDelta >: HeadDelta0
+      type TailData <: TailData0
+      type TailDelta >: TailDelta0
     }
+
+    final case class HConsOps[Input0 <: Batch, HeadData0, HeadDelta0, TailData0, TailDelta0]
+    (generic: Differentiable.Aux[Input0, Batch.Aux[
+      shapeless.::[HeadData0, shapeless.::[TailData0, shapeless.HNil]],
+      shapeless.::[HeadDelta0, shapeless.::[TailDelta0, shapeless.HNil]]
+      ]]) extends DifferentiableHCons {
+      override type Head = Nothing
+      override type HeadData = HeadData0
+      override type HeadDelta = HeadDelta0
+      override type Tail = Nothing
+      override type TailData = TailData0
+      override type TailDelta = TailDelta0
+      override type Output = generic.Output
+      override type Input = Input0
+
+      override def forward(input: Input0): generic.Output = {
+        generic.forward(input)
+      }
+    }
+
   }
 
   trait DifferentiableHCons extends DifferentiableHList with Dsl.HConsApi {
-    type Head <: Differentiable.Aux[Input, Batch.Aux[_, _]]
-    type Tail <: DifferentiableHList.Aux[Input]
+    override type Head <: Differentiable.Aux[Input, Batch.Aux[HeadData, HeadDelta]]
+    override type Tail <: Differentiable.Aux[Input, Batch.Aux[TailData, TailDelta]]
+    type HeadData
+    type HeadDelta
+    type TailData
+    type TailDelta
+    override type Output <: Batch.Aux[
+      shapeless.::[HeadData, shapeless.::[TailData, shapeless.HNil]],
+      shapeless.::[HeadDelta, shapeless.::[TailDelta, shapeless.HNil]]
+      ]
+
+    override def head(implicit headCompanion: Companion[Head]): Head = ???
+
+    override def tail(implicit tailCompanion: Companion[Tail]): Tail = ???
   }
 
   object DifferentiableHNil {
@@ -1014,7 +1059,9 @@ object Differentiable {
     }
   }
 
-  trait DifferentiableHNil extends DifferentiableHList
+  trait DifferentiableHNil extends DifferentiableHList {
+    override type Output = Batch.Aux[shapeless.HNil, shapeless.HNil]
+  }
 
 
   object Specialize {
@@ -1032,10 +1079,7 @@ object Differentiable {
     type Output = Batch.Aux[OutputData, OutputDelta]
     type SpecialDifferentiable
 
-    /**
-      * Returns the base [[Differentiable]] type of a [[SpecialDifferentiable]].
-      */
-    def generalize(specialFunction: SpecialDifferentiable): Differentiable.Aux[Input, Output]
+    def generalize: SpecialDifferentiable <:< Differentiable.Aux[Input, Output]
 
     /**
       * Returns a special subclass of a [[Differentiable]].
@@ -1078,9 +1122,12 @@ object Differentiable {
       override type OutputData = scala.Any
       override type OutputDelta = scala.Nothing
 
-      override def generalize(generic: Any): Any = generic
-
       override def specialize(generic: Any): Any = generic
+
+      /**
+        * Returns the base [[Differentiable]] type of a [[SpecialDifferentiable]].
+        */
+      override def generalize = implicitly
     }
 
     override type Double = DifferentiableDouble.Aux[Input]
@@ -1102,7 +1149,7 @@ object Differentiable {
 
       override def specialize(generic: Differentiable.Aux[Input, Output]) = DoubleOps(generic)
 
-      override def generalize(generic: Double): Double = generic
+      override def generalize = implicitly
 
     }
 
@@ -1120,7 +1167,7 @@ object Differentiable {
 
       override def weight(initialValue: Array[Array[scala.Double]]) = DifferentiableArray2D.Array2DWeight[Input](initialValue)
 
-      override def generalize(specialFunction: Array2D) = specialFunction
+      override def generalize = implicitly
 
       override def specialize(generic: Differentiable.Aux[Input, Output]) = DifferentiableArray2D.Array2DOps(generic)
 
@@ -1140,7 +1187,7 @@ object Differentiable {
       override type OutputData = Eval[scala.Boolean]
       override type OutputDelta = Eval[scala.Boolean]
 
-      override def generalize(generic: Boolean): Boolean = generic
+      override def generalize = implicitly
 
       override def specialize(generic: Differentiable.Aux[Input, Output]) = BooleanOps(generic)
 
@@ -1158,17 +1205,49 @@ object Differentiable {
       DifferentiableArray2D.MaxDouble(leftHandSide, rightHandSide)
     }
 
-    override type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, Tail]
+    override type ::[+Head, +Tail] = DifferentiableHCons.Aux[
+      Input,
+      Head, _, _,
+      Tail, _, _
+      ]
 
-    override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: Companion[Tail]) = new Specialize {
-      override type SpecialDifferentiable = Head :: Tail
-      override type Input = SymbolicDsl.this.Input
-      override type OutputData = shapeless.::[headCompanion.OutputData, shapeless.::[tailCompanion.OutputData, shapeless.HNil]]
-      override type OutputDelta = shapeless.::[headCompanion.OutputDelta, shapeless.::[tailCompanion.OutputDelta, shapeless.HNil]]
+    override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: Companion[Tail]): Companion[Head :: Tail] = {
+      val hconCompanion: Companion[DifferentiableHCons.Aux[
+        Input,
+        headCompanion.SpecialDifferentiable, headCompanion.OutputData, headCompanion.OutputDelta,
+        tailCompanion.SpecialDifferentiable, tailCompanion.OutputData, tailCompanion.OutputDelta
+        ]]
+      = new Specialize {
+        override type Input = SymbolicDsl.this.Input
+        override type OutputData = shapeless.::[headCompanion.OutputData, shapeless.::[tailCompanion.OutputData, shapeless.HNil]]
+        override type OutputDelta = shapeless.::[headCompanion.OutputDelta, shapeless.::[tailCompanion.OutputDelta, shapeless.HNil]]
+        override type SpecialDifferentiable =
+        DifferentiableHCons.Aux[
+          Input,
+          headCompanion.SpecialDifferentiable, headCompanion.OutputData, headCompanion.OutputDelta,
+          tailCompanion.SpecialDifferentiable, tailCompanion.OutputData, tailCompanion.OutputDelta
+          ]
 
-      override def generalize(specialFunction: Head :: Tail): Differentiable.Aux[Input, Output] = ???
+        override def generalize = implicitly
 
-      override def specialize(generic: Differentiable.Aux[Input, Output]): Head :: Tail = ???
+        /**
+          * Returns a special subclass of a [[Differentiable]].
+          */
+        override def specialize(generic: Differentiable.Aux[Input, Output]) = {
+          DifferentiableHCons.HConsOps[Input, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.OutputData, tailCompanion.OutputDelta](generic)
+        }
+      }
+
+      // FIXME: I don't know how to prove:
+      //
+      // (DifferentiableHCons.Aux[Input, headCompanion.SpecialDifferentiable, _, _, tailCompanion.SpecialDifferentiable, _, _])
+      // =:=
+      // (DifferentiableHCons.Aux[Input, headCompanion.SpecialDifferentiable, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.SpecialDifferentiable, tailCompanion.OutputData, tailCompanion.OutputDelta])
+      hconCompanion.asInstanceOf[Companion[DifferentiableHCons.Aux[
+        Input,
+        headCompanion.SpecialDifferentiable, _, _,
+        tailCompanion.SpecialDifferentiable, _, _
+        ]]]
     }
 
     type HList = DifferentiableHList.Aux[Input]
@@ -1178,14 +1257,15 @@ object Differentiable {
     override implicit object HNil extends Specialize with DifferentiableHNil {
       type SpecialDifferentiable = HNil
       type Input = SymbolicDsl.this.Input
+      override type OutputData = shapeless.HNil
+      override type OutputDelta = shapeless.HNil
+      override type Output = Batch.Aux[shapeless.HNil, shapeless.HNil]
 
-      override def generalize(specialFunction: HNil) = ???
+      override def specialize(generic: Differentiable.Aux[Input, Output]) = this
 
-      //specialFunction
-      override def specialize(generic: Differentiable.Aux[Input, Output]) = ???
+      override def forward(input: Input): Output = HNilBatch
 
-      //this
-      override def forward(input: Input): Output = ???
+      override def generalize = implicitly
     }
 
   }
@@ -1206,7 +1286,7 @@ trait Differentiable {
   type Double = DifferentiableDouble.Aux[Input]
   type Boolean = DifferentiableBoolean.Aux[Input]
   type HList = DifferentiableHList.Aux[Input]
-  type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, Tail]
+  type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, _, _, Tail, _, _]
   type Input <: Batch
 
   type Output <: Batch.Aux[scala.Any, scala.Nothing]

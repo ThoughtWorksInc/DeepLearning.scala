@@ -145,7 +145,7 @@ object Dsl {
       type Companion[A] = Companion0[A]
       type Any = Any0
       type HList = HList0
-      type ::[+Head, +Tail] = HCons[Head, Tail]
+      type ::[Head, Tail] = HCons[Head, Tail]
     }
   }
 
@@ -153,7 +153,7 @@ object Dsl {
     type Companion[_]
     type Any
     type HList >: this.type
-    type ::[+Head <: Any, +Tail <: HList]
+    type ::[Head <: Any, Tail <: HList]
 
     def ::[Head <: Any : Companion](head: Head): Head :: this.type
   }
@@ -228,11 +228,16 @@ trait Dsl {
   type Array2D <: Any with Array2DApi.Aux[Companion, Array2D, Double, Boolean]
   implicit val Array2D: Companion[Array2D] with Array2DCompanion.Aux[Array2D]
 
-  type ::[+Head, +Tail] <: Any with HConsApi.Aux[Companion, Head, Tail]
+  type ::[Head, Tail] <: Any with HConsApi.Aux[Companion, Head, Tail]
 
   implicit def ::[Head <: Any : Companion, Tail <: HList : Companion]: Companion[Head :: Tail]
 
-  type HList <: Any with HListApi.Aux[Companion, Any, HList, ::]
+  type HList <: Any with HListApi {
+    type Companion[X] = Dsl.this.Companion[X]
+    type Any = Dsl.this.Any
+    type HList = Dsl.this.HList
+    type ::[Head, Tail] = Dsl.this.::[Head, Tail]
+  } //.Aux[Companion, Any, HList, ::]
 
   type HNil <: HList
   implicit val HNil: HNil with Companion[HNil]
