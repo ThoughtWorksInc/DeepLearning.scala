@@ -70,6 +70,22 @@ object Differentiable {
       type Delta >: Delta0
     }
 
+    trait HConsBatch extends Batch {
+
+      type HeadData
+      type TailData <: shapeless.HList
+      type HeadDelta
+      type TailDelta <: shapeless.HList
+
+      type Head = Batch.Aux[HeadData, HeadDelta]
+      type Tail = Batch.Aux[TailData, TailDelta]
+
+      override type Data = HeadData :: TailDelta
+      override type Delta = HeadDelta :: TailDelta
+
+      final def monoid: Monoid[Delta] = ???
+
+    }
 
     trait DoubleBatch extends Batch {
 
