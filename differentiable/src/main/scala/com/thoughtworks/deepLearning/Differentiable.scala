@@ -1027,7 +1027,9 @@ object Differentiable {
 
   trait Specialize {
     type Input <: Batch
-    type Output <: Batch
+    type OutputData
+    type OutputDelta
+    type Output = Batch.Aux[OutputData, OutputDelta]
     type SpecialDifferentiable
 
     /**
@@ -1068,12 +1070,13 @@ object Differentiable {
       type Input = SymbolicDsl.this.Input
     }
 
-    override type Any = Differentiable.Aux[Input, Batch.Aux[_, _]]
+    override type Any = Differentiable.Aux[Input, Batch.Aux[scala.Any, scala.Nothing]]
 
     override object Any extends Specialize {
       override type SpecialDifferentiable = Any
       override type Input = SymbolicDsl.this.Input
-      override type Output = Batch.Aux[_, _]
+      override type OutputData = scala.Any
+      override type OutputDelta = scala.Nothing
 
       override def generalize(generic: Any): Any = generic
 
@@ -1090,7 +1093,8 @@ object Differentiable {
       override type LiftTo = Double
       override type SpecialDifferentiable = Double
       override type Input = SymbolicDsl.this.Input
-      override type Output = Batch.Aux[Eval[scala.Double], Eval[scala.Double]]
+      override type OutputData = Eval[scala.Double]
+      override type OutputDelta = Eval[scala.Double]
 
       override def apply(value: scala.Double) = DoubleLiteral[Input](value)
 
@@ -1109,7 +1113,8 @@ object Differentiable {
       override type LiftTo = Array2D
       override type SpecialDifferentiable = Array2D
       override type Input = SymbolicDsl.this.Input
-      override type Output = Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]
+      override type OutputData = Eval[INDArray]
+      override type OutputDelta = Eval[Option[INDArray]]
 
       override def apply(value: Array[Array[scala.Double]]) = DifferentiableArray2D.Array2DLiteral[Input](value)
 
@@ -1132,7 +1137,8 @@ object Differentiable {
 
       override type SpecialDifferentiable = Boolean
       override type Input = SymbolicDsl.this.Input
-      override type Output = Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]
+      override type OutputData = Eval[scala.Boolean]
+      override type OutputDelta = Eval[scala.Boolean]
 
       override def generalize(generic: Boolean): Boolean = generic
 
@@ -1154,11 +1160,13 @@ object Differentiable {
 
     override type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, Tail]
 
-    override implicit def ::[Head <: Any : Companion, Tail <: HList : Companion] = new Specialize {
-      type SpecialDifferentiable = Head :: Tail
-      type Input = SymbolicDsl.this.Input
+    override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: Companion[Tail]) = new Specialize {
+      override type SpecialDifferentiable = Head :: Tail
+      override type Input = SymbolicDsl.this.Input
+      override type OutputData = shapeless.::[headCompanion.OutputData, shapeless.::[tailCompanion.OutputData, shapeless.HNil]]
+      override type OutputDelta = shapeless.::[headCompanion.OutputDelta, shapeless.::[tailCompanion.OutputDelta, shapeless.HNil]]
 
-      override def generalize(specialFunction: Head :: Tail): Differentiable.Aux[Input, Output] = ??? //specialFunction
+      override def generalize(specialFunction: Head :: Tail): Differentiable.Aux[Input, Output] = ???
 
       override def specialize(generic: Differentiable.Aux[Input, Output]): Head :: Tail = ???
     }
@@ -1193,7 +1201,7 @@ trait Differentiable {
     type SpecialDifferentiable = SpecialDifferentiable0
     type Input = Differentiable.this.Input
   }
-  type Any = Differentiable.Aux[Input, Batch.Aux[_, _]]
+  type Any = Differentiable.Aux[Input, Batch.Aux[scala.Any, scala.Nothing]]
   type Array2D = DifferentiableArray2D.Aux[Input]
   type Double = DifferentiableDouble.Aux[Input]
   type Boolean = DifferentiableBoolean.Aux[Input]
@@ -1201,7 +1209,7 @@ trait Differentiable {
   type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, Tail]
   type Input <: Batch
 
-  type Output <: Batch.Aux[_, _]
+  type Output <: Batch.Aux[scala.Any, scala.Nothing]
 
   def forward(input: Input): Output
 
