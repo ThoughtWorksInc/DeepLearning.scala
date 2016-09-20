@@ -1201,13 +1201,15 @@ object Differentiable {
       override def fromAst(ast: HNil) = ast.underlying
     }
 
-    trait ::[Head <: Any, Tail <: HList] extends HList with HConsApi[Head, Tail] {
+    sealed trait ::[Head <: Any, Tail <: HList] extends HList with HConsApi[Head, Tail] {
 
-//      implicit val headCompanion: Companion[Head]
-//      implicit val tailCompanion: HListCompanion[Tail]
+      type HeadData
+      type HeadDelta
+      type TailData <: shapeless.HList
+      type TailDelta <: shapeless.HList
 
-      override type OutputData = shapeless.::[Companion[Head]#OutputData, Companion[Head]#OutputData]
-      override type OutputDelta = shapeless.::[HListCompanion[Tail]OutputDelta, HListCompanion[Tail]OutputDelta]
+      override type OutputData = shapeless.::[HeadData, TailData]
+      override type OutputDelta = shapeless.::[HeadDelta, TailDelta]
 
       def head: Head = ???
 
@@ -1225,12 +1227,21 @@ object Differentiable {
         override type OutputDelta = shapeless.::[headCompanion0.OutputDelta, tailCompanion0.OutputDelta]
 
         override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = new (Head :: Tail) {
-          override val headCompanion: headCompanion0.type = headCompanion0
-          override val tailCompanion: tailCompanion0.type = tailCompanion0
+          override type HeadData = headCompanion0.OutputData
+          override type HeadDelta = headCompanion0.OutputDelta
+          override type TailData = tailCompanion0.OutputData
+          override type TailDelta = tailCompanion0.OutputDelta
           override val underlying = generic
         }
 
-        override def fromAst(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = ast.underlying
+        override def fromAst(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+          ast.asInstanceOf[(Head :: Tail) {
+            type HeadData = headCompanion0.OutputData
+            type HeadDelta = headCompanion0.OutputDelta
+            type TailData = tailCompanion0.OutputData
+            type TailDelta = tailCompanion0.OutputDelta
+          }].underlying
+        }
       }
     }
 
