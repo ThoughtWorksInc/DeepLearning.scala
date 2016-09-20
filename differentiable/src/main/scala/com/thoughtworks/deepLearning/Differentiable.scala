@@ -76,7 +76,8 @@ object Differentiable {
       override type Data = shapeless.HNil
       override type Delta = shapeless.HNil
 
-      override def backward(delta: Delta): Unit = ???
+      override def backward(delta: Delta): Unit = {
+      }
 
       override def value: Data = shapeless.HNil
     }
@@ -230,6 +231,58 @@ object Differentiable {
 
   }
 
+  object DifferentiableHCons {
+
+    final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    (
+      differentiableHCons: Differentiable.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]]
+    )(implicit tailMonoid: Monoid[TailDelta]) extends Differentiable {
+      override type Input = Input0
+
+      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]) extends Batch {
+        override def backward(delta: Delta): Unit = {
+          upstream.backward(delta :: tailMonoid.empty)
+        }
+
+        override def value: Data = {
+          upstream.value.head
+        }
+
+        override type Data = HeadData
+        override type Delta = HeadDelta
+      }
+
+      override def forward(input: Input) = {
+        new Output(differentiableHCons.forward(input))
+      }
+    }
+
+    final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    (
+      differentiableHCons: Differentiable.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]]
+    )(implicit headMonoid: Monoid[HeadDelta]) extends Differentiable {
+      override type Input = Input0
+
+      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]) extends Batch {
+        override def backward(delta: Delta): Unit = {
+          upstream.backward(headMonoid.empty :: delta)
+        }
+
+        override def value: Data = {
+          upstream.value.tail
+        }
+
+        override type Data = TailData
+        override type Delta = TailDelta
+      }
+
+      override def forward(input: Input) = {
+        new Output(differentiableHCons.forward(input))
+      }
+    }
+
+  }
+
   final case class DifferentiableHCons[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
   (
     head: Differentiable.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
@@ -237,7 +290,7 @@ object Differentiable {
   ) extends Differentiable {
     override type Input = Input0
 
-    final case class Output(headBatch: Batch.Aux[HeadData, HeadDelta], tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
+    final class Output(headBatch: Batch.Aux[HeadData, HeadDelta], tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
       override def backward(delta: Delta): Unit = {
         headBatch.backward(delta.head)
         tailBatch.backward(delta.tail)
@@ -252,7 +305,7 @@ object Differentiable {
     }
 
     override def forward(input: Input) = {
-      Output(head.forward(input), tail.forward(input))
+      new Output(head.forward(input), tail.forward(input))
     }
 
   }
@@ -1128,26 +1181,14 @@ object Differentiable {
       val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
     }
 
-    object Any extends Companion[Any] {
-      override type OutputData = scala.Any
-      override type OutputDelta = scala.Nothing
-
-      override def fromAst(ast: Any): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = ast.underlying
-
-      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = new Any {
-
-        override type OutputData = scala.Any
-        override type OutputDelta = scala.Nothing
-        override val underlying = generic
-      }
-    }
-
     type Input <: Batch
 
     trait Companion[Ast <: Any] {
 
       type OutputData
       type OutputDelta
+
+      def monoid: Monoid[OutputDelta]
 
       def fromAst(ast: Ast): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
 
@@ -1169,20 +1210,6 @@ object Differentiable {
       }
     }
 
-    object HList extends HListCompanion[HList] {
-
-      override type OutputData = shapeless.HList
-      override type OutputDelta = scala.Nothing
-
-      override def fromAst(ast: HList) = ast.underlying
-
-      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, scala.Nothing]]): HList = new HList {
-        override type OutputData = shapeless.HList
-        override type OutputDelta = scala.Nothing
-        override val underlying = generic
-      }
-    }
-
     trait HNil extends HList {
       override type OutputData = shapeless.HNil
       override type OutputDelta = shapeless.HNil
@@ -1194,47 +1221,53 @@ object Differentiable {
       override val underlying = DifferentiableHNil[Input]()
 
       override def fromAst(ast: HNil) = ast.underlying
+
+      override def monoid = new Monoid[OutputDelta] {
+        override def empty = shapeless.HNil
+
+        override def combine(x: OutputDelta, y: OutputDelta) = shapeless.HNil
+      }
     }
 
-    sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail] {
+    sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail]
 
-      type HeadData
-      type HeadDelta
-      type TailData <: shapeless.HList
-      type TailDelta <: shapeless.HList
-
-      override type OutputData = shapeless.::[HeadData, TailData]
-      override type OutputDelta = shapeless.::[HeadDelta, TailDelta]
-
-      def head: Head = ???
-
-      def tail: Tail = ???
-
-      val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
-
-    }
-
-
-    override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion0: Companion[Head], tailCompanion0: HListCompanion[Tail]) = {
+    override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]) = {
       new HListCompanion[Head :: Tail] {
+        companion =>
 
-        override type OutputData = shapeless.::[headCompanion0.OutputData, tailCompanion0.OutputData]
-        override type OutputDelta = shapeless.::[headCompanion0.OutputDelta, tailCompanion0.OutputDelta]
+        override type OutputData = shapeless.::[headCompanion.OutputData, tailCompanion.OutputData]
+        override type OutputDelta = shapeless.::[headCompanion.OutputDelta, tailCompanion.OutputDelta]
+
+        override def monoid = new Monoid[OutputDelta] {
+          override def empty: OutputDelta = headCompanion.monoid.empty :: tailCompanion.monoid.empty
+
+          override def combine(x: OutputDelta, y: OutputDelta) = {
+            implicit val headMonoid = headCompanion.monoid
+            implicit val tailMonoid = tailCompanion.monoid
+            (x.head |+| y.head) :: (x.tail |+| y.tail)
+          }
+        }
 
         override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = new (Head :: Tail) {
-          override type HeadData = headCompanion0.OutputData
-          override type HeadDelta = headCompanion0.OutputDelta
-          override type TailData = tailCompanion0.OutputData
-          override type TailDelta = tailCompanion0.OutputDelta
+
+          override type OutputData = companion.OutputData
+          override type OutputDelta = companion.OutputDelta
+
           override val underlying = generic
+
+          def head: Head = {
+            headCompanion.toAst(DifferentiableHCons.Head[Input, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.OutputData, tailCompanion.OutputDelta](underlying)(tailCompanion.monoid))
+          }
+
+          def tail: Tail = {
+            tailCompanion.toAst(DifferentiableHCons.Tail[Input, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.OutputData, tailCompanion.OutputDelta](underlying)(headCompanion.monoid))
+          }
         }
 
         override def fromAst(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
           ast.asInstanceOf[(Head :: Tail) {
-            type HeadData = headCompanion0.OutputData
-            type HeadDelta = headCompanion0.OutputDelta
-            type TailData = tailCompanion0.OutputData
-            type TailDelta = tailCompanion0.OutputDelta
+            type OutputData = companion.OutputData
+            type OutputDelta = companion.OutputDelta
           }].underlying
         }
       }

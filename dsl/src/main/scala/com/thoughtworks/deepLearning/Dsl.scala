@@ -140,7 +140,6 @@ trait Dsl {
   type HListCompanion[Ast <: HList] <: Companion[Ast]
 
   type Any
-  implicit val Any: Companion[Any]
 
   type Boolean <: BooleanApi with Any
   implicit val Boolean: Companion[Boolean]
@@ -170,7 +169,6 @@ trait Dsl {
   implicit def ::[Head <: Any : Companion, Tail <: HList : HListCompanion]: HListCompanion[Head :: Tail]
 
   type HList <: HListApi with Any
-  implicit val HList: HListCompanion[HList]
 
   type HNil <: HList
   val HNil: HNil with HListCompanion[HNil]
