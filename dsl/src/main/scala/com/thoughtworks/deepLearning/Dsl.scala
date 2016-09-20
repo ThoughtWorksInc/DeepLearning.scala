@@ -45,19 +45,17 @@ trait Dsl {
 
   import Dsl._
 
-
   trait HListApi {
     _: HList =>
-    def ::[Head <: Any : Companion](head: Head): Head :: this.type
+    def ::[Head <: Any : Companion, Tail >: this.type <: HList : HListCompanion](head: Head): Head :: Tail
   }
 
   trait HConsApi[Head <: Any, Tail <: HList] extends HListApi {
     _: Head :: Tail =>
 
+    def head: Head
 
-    def head(implicit headCompanion: Companion[Head]): Head
-
-    def tail(implicit tailCompanion: Companion[Tail]): Tail
+    def tail: Tail
 
   }
 
@@ -140,6 +138,7 @@ trait Dsl {
   }
 
   type Companion[_ <: Any]
+  type HListCompanion[Ast <: HList] <: Companion[Ast]
 
   type Any
   implicit val Any: Companion[Any]
@@ -169,13 +168,13 @@ trait Dsl {
 
   type ::[Head <: Any, Tail <: HList] <: HConsApi[Head, Tail] with HList
 
-  implicit def ::[Head <: Any, Tail <: HList]: Companion[Head :: Tail]
+  implicit def ::[Head <: Any : Companion, Tail <: HList : HListCompanion]: HListCompanion[Head :: Tail]
 
   type HList <: HListApi with Any
-  implicit val HList: Companion[HList]
+  implicit val HList: HListCompanion[HList]
 
   type HNil <: HList
-  val HNil: HNil with Companion[HNil]
+  val HNil: HNil with HListCompanion[HNil]
 
   def max(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)
