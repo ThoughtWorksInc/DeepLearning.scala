@@ -1165,12 +1165,7 @@ object Differentiable {
       override type OutputDelta <: shapeless.HList
 
       override def ::[Head <: Any, Tail >: this.type <: HList](head: Head)(implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): Head :: Tail = {
-        val tail: Tail = this
-        val d = DifferentiableHCons.apply[Input, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.OutputData, tailCompanion.OutputDelta](
-          headCompanion.fromAst(head),
-          tailCompanion.fromAst(tail)
-        )
-        SymbolicDsl.this.::[Head, Tail].toAst(d)
+        SymbolicDsl.this.::[Head, Tail].toAst(DifferentiableHCons(headCompanion.fromAst(head), tailCompanion.fromAst(this)))
       }
     }
 
@@ -1244,7 +1239,6 @@ object Differentiable {
         }
       }
     }
-
 
     //    override type HList = this.type
 
