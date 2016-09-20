@@ -1196,7 +1196,7 @@ object Differentiable {
       override def fromAst(ast: HNil) = ast.underlying
     }
 
-    sealed trait ::[Head <: Any, Tail <: HList] extends HList with HConsApi[Head, Tail] {
+    sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail] {
 
       type HeadData
       type HeadDelta

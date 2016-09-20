@@ -50,7 +50,7 @@ trait Dsl {
     def ::[Head <: Any : Companion, Tail >: this.type <: HList : HListCompanion](head: Head): Head :: Tail
   }
 
-  trait HConsApi[Head <: Any, Tail <: HList] extends HListApi {
+  trait HConsApi[+Head <: Any, +Tail <: HList] extends HListApi {
     _: Head :: Tail =>
 
     def head: Head
@@ -98,7 +98,6 @@ trait Dsl {
 
     def `if`[A <: Any : Companion](`then`: A)(`else`: A): A
   }
-
 
   trait DoubleApi {
     _: Double =>
@@ -166,7 +165,7 @@ trait Dsl {
   type Array2D <: Array2DApi with Any
   implicit val Array2D: Companion[Array2D] with Array2DCompanionApi
 
-  type ::[Head <: Any, Tail <: HList] <: HConsApi[Head, Tail] with HList
+  type ::[+Head <: Any, +Tail <: HList] <: HConsApi[Head, Tail] with HList
 
   implicit def ::[Head <: Any : Companion, Tail <: HList : HListCompanion]: HListCompanion[Head :: Tail]
 
