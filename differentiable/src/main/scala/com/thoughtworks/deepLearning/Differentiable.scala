@@ -1083,77 +1083,6 @@ object Differentiable {
   //    }
   //  }
   //
-  //  object DifferentiableHList {
-  //    type Aux[Input0 <: Batch] = DifferentiableHList {
-  //      type Input = Input0
-  //    }
-  //  }
-  //
-  //  trait DifferentiableHList extends Differentiable {
-  //    override def ::[Head <: Any : Companion](head: Head): Head :: this.type = ???
-  //  }
-  //
-  //  object DifferentiableHCons {
-  //
-  //    type Aux[Input0 <: Batch, +Head0, +HeadData0, -HeadDelta0, +Tail0, +TailData0, -TailDelta0] = DifferentiableHCons {
-  //      type Input = Input0
-  //      type Head <: Head0
-  //      type Tail <: Tail0
-  //      type HeadData <: HeadData0
-  //      type HeadDelta >: HeadDelta0
-  //      type TailData <: TailData0
-  //      type TailDelta >: TailDelta0
-  //    }
-  //
-  //    final case class HConsOps[Input0 <: Batch, HeadData0, HeadDelta0, TailData0, TailDelta0]
-  //    (generic: Differentiable.Aux[Input0, Batch.Aux[
-  //      shapeless.::[HeadData0, shapeless.::[TailData0, shapeless.HNil]],
-  //      shapeless.::[HeadDelta0, shapeless.::[TailDelta0, shapeless.HNil]]
-  //      ]]) extends DifferentiableHCons {
-  //      override type Head = Nothing
-  //      override type HeadData = HeadData0
-  //      override type HeadDelta = HeadDelta0
-  //      override type Tail = Nothing
-  //      override type TailData = TailData0
-  //      override type TailDelta = TailDelta0
-  //      override type Output = generic.Output
-  //      override type Input = Input0
-  //
-  //      override def forward(input: Input0): generic.Output = {
-  //        generic.forward(input)
-  //      }
-  //    }
-  //
-  //  }
-  //
-  //  trait DifferentiableHCons extends DifferentiableHList {
-  //    override type Head <: Differentiable.Aux[Input, Batch.Aux[HeadData, HeadDelta]]
-  //    override type Tail <: Differentiable.Aux[Input, Batch.Aux[TailData, TailDelta]]
-  //    type HeadData
-  //    type HeadDelta
-  //    type TailData
-  //    type TailDelta
-  //    override type Output <: Batch.Aux[
-  //      shapeless.::[HeadData, shapeless.::[TailData, shapeless.HNil]],
-  //      shapeless.::[HeadDelta, shapeless.::[TailDelta, shapeless.HNil]]
-  //      ]
-  //
-  //    override def head(implicit headCompanion: Companion[Head]): Head = ???
-  //
-  //    override def tail(implicit tailCompanion: Companion[Tail]): Tail = ???
-  //  }
-  //
-  //  object DifferentiableHNil {
-  //
-  //    type Aux[Input0 <: Batch] = DifferentiableHNil {
-  //      type Input = Input0
-  //    }
-  //  }
-  //
-  //  trait DifferentiableHNil extends DifferentiableHList {
-  //    override type Output = Batch.Aux[shapeless.HNil, shapeless.HNil]
-  //  }
-  //
 
 
   trait LearningRate {
@@ -1165,15 +1094,16 @@ object Differentiable {
       type Input = Input0
     }
 
-    //
-    //    def apply[Input0 <: Batch](implicit learningRate0: LearningRate) = new SymbolicDsl {
-    //      override implicit def learningRate = learningRate0
-    //
-    //      override type Input = Input0
-    //    }
+
+    def apply[Input0 <: Batch](implicit learningRate0: LearningRate) = new SymbolicDsl {
+      override def learningRate = learningRate0
+
+      override type Input = Input0
+    }
   }
 
   trait SymbolicDsl extends Dsl {
+    implicit def learningRate: LearningRate
 
     trait Any {
       type OutputData <: scala.Any
@@ -1183,8 +1113,16 @@ object Differentiable {
 
     type Input <: Batch
 
-    trait Companion[Ast <: Any] {
+    object Companion {
+      type Aux[Ast <: Any, Data, Delta] = Companion[Ast] {
+        type OutputData = Data
+        type OutputDelta = Delta
+      }
+    }
 
+    trait Companion[Ast <: Any] extends Dsl.Lifter {
+      _: (_ => Ast) =>
+      type LiftTo = Ast
       type OutputData
       type OutputDelta
 
@@ -1195,9 +1133,19 @@ object Differentiable {
       def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Ast
     }
 
+    object HListCompanion {
+      type Aux[Ast <: HList, Data, Delta] = HListCompanion[Ast] {
+        type OutputData = Data
+        type OutputDelta = Delta
+      }
+    }
+
     trait HListCompanion[Ast <: HList] extends Companion[Ast] {
+      _: (_ => Ast) =>
+
       override type OutputData <: shapeless.HList
       override type OutputDelta <: shapeless.HList
+      override type LiftFrom <: shapeless.HList
     }
 
     trait HList extends HListApi with Any {
@@ -1215,7 +1163,7 @@ object Differentiable {
       override type OutputDelta = shapeless.HNil
     }
 
-    object HNil extends HNil with HListCompanion[HNil] {
+    case object HNil extends HNil with HListCompanion[HNil] with (shapeless.HNil => HNil) {
       override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = this
 
       override val underlying = DifferentiableHNil[Input]()
@@ -1227,16 +1175,55 @@ object Differentiable {
 
         override def combine(x: OutputDelta, y: OutputDelta) = shapeless.HNil
       }
+
+      override type LiftFrom = shapeless.HNil
+
+      override def apply(value: shapeless.HNil) = this
+
+      override def weight(initialValue: shapeless.HNil) = this
+
+    }
+
+    final case class HCons[+Head <: Any, +Tail <: HList, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    (underlying: Differentiable.Aux[Input, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]])
+    (
+      implicit headCompanion: Companion.Aux[Head, HeadData, HeadDelta],
+      tailCompanion: HListCompanion.Aux[Tail, TailData, TailDelta]
+    )
+      extends (Head :: Tail) {
+
+      override type OutputData = shapeless.::[HeadData, TailData]
+      override type OutputDelta = shapeless.::[HeadDelta, TailDelta]
+
+      def head: Head = {
+        headCompanion.toAst(DifferentiableHCons.Head[Input, HeadData, HeadDelta, TailData, TailDelta](underlying)(tailCompanion.monoid))
+      }
+
+      def tail: Tail = {
+        tailCompanion.toAst(DifferentiableHCons.Tail[Input, HeadData, HeadDelta, TailData, TailDelta](underlying)(headCompanion.monoid))
+      }
+
     }
 
     sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail]
 
     override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]) = {
-      new HListCompanion[Head :: Tail] {
+      new HListCompanion[Head :: Tail] with (shapeless.::[headCompanion.LiftFrom, tailCompanion.LiftFrom] => (Head :: Tail)) {
         companion =>
 
         override type OutputData = shapeless.::[headCompanion.OutputData, tailCompanion.OutputData]
         override type OutputDelta = shapeless.::[headCompanion.OutputDelta, tailCompanion.OutputDelta]
+
+        override type LiftFrom = shapeless.::[headCompanion.LiftFrom, tailCompanion.LiftFrom]
+
+        override def apply(value: LiftFrom): Head :: Tail = {
+          headCompanion(value.head) :: tailCompanion(value.tail)
+        }
+
+        override def weight(initialValue: LiftFrom): Head :: Tail = {
+          headCompanion.weight(initialValue.head) :: tailCompanion.weight(initialValue.tail)
+        }
+
 
         override def monoid = new Monoid[OutputDelta] {
           override def empty: OutputDelta = headCompanion.monoid.empty :: tailCompanion.monoid.empty
@@ -1248,20 +1235,8 @@ object Differentiable {
           }
         }
 
-        override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = new (Head :: Tail) {
-
-          override type OutputData = companion.OutputData
-          override type OutputDelta = companion.OutputDelta
-
-          override val underlying = generic
-
-          def head: Head = {
-            headCompanion.toAst(DifferentiableHCons.Head[Input, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.OutputData, tailCompanion.OutputDelta](underlying)(tailCompanion.monoid))
-          }
-
-          def tail: Tail = {
-            tailCompanion.toAst(DifferentiableHCons.Tail[Input, headCompanion.OutputData, headCompanion.OutputDelta, tailCompanion.OutputData, tailCompanion.OutputDelta](underlying)(headCompanion.monoid))
-          }
+        override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = {
+          new HCons(generic)(headCompanion, tailCompanion)
         }
 
         override def fromAst(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
@@ -1273,24 +1248,129 @@ object Differentiable {
       }
     }
 
-    //    override type HList = this.type
+    object Boolean extends Companion[Boolean] with (scala.Boolean => Boolean) {
 
-    //
-    //    override type Any = Differentiable.Aux[Input, Batch.Aux[scala.Any, scala.Nothing]]
-    //
-    //    override object Any extends Specialize {
-    //      override type SpecialDifferentiable = Any
-    //      override type Input = SymbolicDsl.this.Input
-    //      override type OutputData = scala.Any
-    //      override type OutputDelta = scala.Nothing
-    //
-    //      override def specialize(generic: Any): Any = generic
-    //
-    //      /**
-    //        * Returns the base [[Differentiable]] type of a [[SpecialDifferentiable]].
-    //        */
-    //      override def generalize = implicitly
-    //    }
+      type LiftFrom = scala.Boolean
+
+      def weight(initialValue: LiftFrom): LiftTo = ???
+
+      def apply(value: LiftFrom): LiftTo = ???
+
+      override type OutputData = Eval[scala.Boolean]
+      override type OutputDelta = Eval[scala.Boolean]
+
+      override def monoid = new Monoid[Eval[scala.Boolean]] {
+        override def empty = Eval.now(false)
+
+        override def combine(x: Eval[scala.Boolean], y: Eval[scala.Boolean]) = x.map2(y)(_ ^ _)
+      }
+
+      override def fromAst(ast: Boolean) = ???
+
+      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Boolean = ???
+    }
+
+    final case class Boolean(underlying: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) extends BooleanApi with Any {
+      override type OutputData = Eval[scala.Boolean]
+      override type OutputDelta = Eval[scala.Boolean]
+
+      override def unary_! : Boolean = ???
+
+      override def `if`[A <: Any : Companion](`then`: A)(`else`: A): A = ???
+    }
+
+    object Double extends Companion[Double] with (scala.Double => Double) {
+
+      type LiftFrom = scala.Double
+
+      def weight(initialValue: LiftFrom): LiftTo = ???
+
+      def apply(value: LiftFrom): LiftTo = ???
+
+      override type OutputData = Eval[scala.Double]
+      override type OutputDelta = Eval[scala.Double]
+
+      override def monoid = implicitly
+
+      override def fromAst(ast: Double) = ???
+
+      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Double = ???
+    }
+
+    final case class Double(underlying: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) extends DoubleApi with Any {
+      override type OutputData = Eval[scala.Double]
+      override type OutputDelta = Eval[scala.Double]
+
+      override def unary_- : Double = ???
+
+      override def +(rightHandSide: Double): Double = ???
+
+      override def /(rightHandSide: Double): Double = ???
+
+      override def /(rightHandSide: Array2D): Array2D = ???
+
+      override def *(rightHandSide: Double): Double = ???
+
+      override def <(rightHandSide: Double): Boolean = ???
+
+    }
+
+    object Array2D extends Companion[Array2D] with Array2DCompanionApi {
+
+      def weight(initialValue: LiftFrom): LiftTo = ???
+
+      def apply(value: LiftFrom): LiftTo = ???
+
+      override type OutputData = Eval[INDArray]
+      override type OutputDelta = Eval[Option[INDArray]]
+
+      override def monoid = new Monoid[OutputDelta] {
+        override def empty = Eval.now(None)
+
+        override def combine(x: OutputDelta, y: OutputDelta): OutputDelta = x.map2(y) {
+          case (None, None) => None
+          case (xDelta@Some(_), None) => xDelta
+          case (None, yDelta@Some(_)) => yDelta
+          case (Some(xDeltaValue), Some(yDeltaValue)) => Some(xDeltaValue add yDeltaValue)
+        }
+
+      }
+
+      override def fromAst(ast: Array2D) = ???
+
+      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Array2D = ???
+
+      override def randn(numberOfRows: Int, numberOfColumns: Int): Array2D = ???
+
+      override def zeros(numberOfRows: Int, numberOfColumns: Int): Array2D = ???
+    }
+
+    final case class Array2D(underlying: Differentiable.Aux[Input, Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]) extends Array2DApi with Any {
+      override type OutputData = Eval[INDArray]
+      override type OutputDelta = Eval[Option[INDArray]]
+
+      override def dot(rightHandSide: Array2D): Array2D = ???
+
+      override def +(rightHandSide: Array2D): Array2D = ???
+
+      override def +(rightHandSide: Double): Array2D = ???
+
+      override def /(rightHandSide: Array2D): Array2D = ???
+
+      override def /(rightHandSide: Double): Array2D = ???
+
+      override def *(rightHandSide: Array2D): Array2D = ???
+
+      override def *(rightHandSide: Double): Array2D = ???
+
+      override def unary_- : Array2D = ???
+
+      override def reduceSum: Double = ???
+
+      override def sum(dimensions: Int*): Array2D = ???
+    }
+
+
     //
     //    override type Double = DifferentiableDouble.Aux[Input]
     //
@@ -1354,17 +1434,6 @@ object Differentiable {
     //
     //    }
     //
-    //    override def exp(array: Array2D): Array2D = {
-    //      DifferentiableArray2D.Exp[Input](array)
-    //    }
-    //
-    //    override def log(array: Array2D): Array2D = {
-    //      DifferentiableArray2D.Log[Input](array)
-    //    }
-    //
-    //    override def max(leftHandSide: Array2D, rightHandSide: Double) = {
-    //      DifferentiableArray2D.MaxDouble(leftHandSide, rightHandSide)
-    //    }
     //
     //    override type ::[+Head, +Tail] = DifferentiableHCons.Aux[
     //      Input,
@@ -1429,6 +1498,22 @@ object Differentiable {
     //      override def generalize = implicitly
     //    }
     //
+    //    override def exp(array: Array2D): Array2D = {
+    //      DifferentiableArray2D.Exp[Input](array)
+    //    }
+    //
+    //    override def log(array: Array2D): Array2D = {
+    //      DifferentiableArray2D.Log[Input](array)
+    //    }
+    //
+    //    override def max(leftHandSide: Array2D, rightHandSide: Double) = {
+    //      DifferentiableArray2D.MaxDouble(leftHandSide, rightHandSide)
+    //    }
+    override def max(leftHandSide: Array2D, rightHandSide: Double): Array2D = ???
+
+    override def exp(array: Array2D): Array2D = ???
+
+    override def log(array: Array2D): Array2D = ???
   }
 
 
@@ -1438,16 +1523,6 @@ trait Differentiable {
 
   import Differentiable._
 
-  //  type Companion[SpecialDifferentiable0] = Specialize {
-  //    type SpecialDifferentiable = SpecialDifferentiable0
-  //    type Input = Differentiable.this.Input
-  //  }
-  //  type Any = Differentiable.Aux[Input, Batch.Aux[scala.Any, scala.Nothing]]
-  //  type Array2D = DifferentiableArray2D.Aux[Input]
-  //  type Double = DifferentiableDouble.Aux[Input]
-  //  type Boolean = DifferentiableBoolean.Aux[Input]
-  //  type HList = DifferentiableHList.Aux[Input]
-  //  type ::[+Head, +Tail] = DifferentiableHCons.Aux[Input, Head, _, _, Tail, _, _]
   type Input <: Batch
 
   type Output <: Batch.Aux[scala.Any, scala.Nothing]

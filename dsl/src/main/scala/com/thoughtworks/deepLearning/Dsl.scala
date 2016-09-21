@@ -136,13 +136,15 @@ trait Dsl {
 
   }
 
-  type Companion[_ <: Any]
+  type Companion[Ast <: Any] <: Lifter {
+    type LiftTo = Ast
+  }
   type HListCompanion[Ast <: HList] <: Companion[Ast]
 
   type Any
 
   type Boolean <: BooleanApi with Any
-  implicit val Boolean: Companion[Boolean]
+  implicit val Boolean: Companion[Boolean] with Lifter.Aux[scala.Boolean, Boolean]
 
   type Double <: DoubleApi with Any
   implicit val Double: Companion[Double] with Lifter.Aux[scala.Double, Double]
