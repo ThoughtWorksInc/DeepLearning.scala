@@ -6,7 +6,6 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable.Batch.Aux
 import com.thoughtworks.deepLearning.Dsl.DslFunction
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -1096,14 +1095,14 @@ object Differentiable {
 
 
     def apply[Input0 <: Batch](implicit learningRate0: LearningRate) = new SymbolicDsl {
-      override def learningRate = learningRate0
+      override protected def learningRate = learningRate0
 
-      override type Input = Input0
+      override protected type Input = Input0
     }
   }
 
   trait SymbolicDsl extends Dsl {
-    implicit def learningRate: LearningRate
+    implicit protected def learningRate: LearningRate
 
     trait Any {
       type OutputData <: scala.Any
@@ -1111,9 +1110,9 @@ object Differentiable {
       val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
     }
 
-    type Input <: Batch
+    protected type Input <: Batch
 
-    object Companion {
+    private[SymbolicDsl] object Companion {
       type Aux[Ast <: Any, Data, Delta] = Companion[Ast] {
         type OutputData = Data
         type OutputDelta = Delta
@@ -1133,7 +1132,7 @@ object Differentiable {
       def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Ast
     }
 
-    object HListCompanion {
+    protected object HListCompanion {
       type Aux[Ast <: HList, Data, Delta] = HListCompanion[Ast] {
         type OutputData = Data
         type OutputDelta = Delta
@@ -1158,7 +1157,7 @@ object Differentiable {
       }
     }
 
-    trait HNil extends HList {
+    sealed trait HNil extends HList {
       override type OutputData = shapeless.HNil
       override type OutputDelta = shapeless.HNil
     }
@@ -1184,7 +1183,7 @@ object Differentiable {
 
     }
 
-    final case class HCons[+Head <: Any, +Tail <: HList, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    protected final case class HCons[+Head <: Any, +Tail <: HList, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
     (underlying: Differentiable.Aux[Input, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]])
     (
       implicit headCompanion: Companion.Aux[Head, HeadData, HeadDelta],
@@ -1207,7 +1206,7 @@ object Differentiable {
 
     sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail]
 
-    override implicit def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]) = {
+    override final def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]) = {
       new HListCompanion[Head :: Tail] with (shapeless.::[headCompanion.LiftFrom, tailCompanion.LiftFrom] => (Head :: Tail)) {
         companion =>
 

@@ -45,12 +45,12 @@ trait Dsl {
 
   import Dsl._
 
-  trait HListApi {
+  protected trait HListApi {
     _: HList =>
     def ::[Head <: Any : Companion, Tail >: this.type <: HList : HListCompanion](head: Head): Head :: Tail
   }
 
-  trait HConsApi[+Head <: Any, +Tail <: HList] extends HListApi {
+  protected trait HConsApi[+Head <: Any, +Tail <: HList] extends HListApi {
     _: Head :: Tail =>
 
     def head: Head
@@ -59,7 +59,7 @@ trait Dsl {
 
   }
 
-  trait Array2DApi {
+  protected trait Array2DApi {
     _: Array2D =>
 
     def dot(rightHandSide: Array2D): Array2D
@@ -92,14 +92,14 @@ trait Dsl {
 
   }
 
-  trait BooleanApi {
+  protected trait BooleanApi {
     _: Boolean =>
     def unary_! : Boolean
 
     def `if`[A <: Any : Companion](`then`: A)(`else`: A): A
   }
 
-  trait DoubleApi {
+  protected trait DoubleApi {
     _: Double =>
 
     def unary_- : Double
@@ -150,7 +150,7 @@ trait Dsl {
   implicit val Double: Companion[Double] with Lifter.Aux[scala.Double, Double]
 
 
-  trait Array2DCompanionApi extends Lifter with (scala.Array[scala.Array[scala.Double]] => Array2D) {
+  protected trait Array2DCompanionApi extends Lifter with (scala.Array[scala.Array[scala.Double]] => Array2D) {
     override type LiftTo = Array2D
     override type LiftFrom = scala.Array[scala.Array[scala.Double]]
 
