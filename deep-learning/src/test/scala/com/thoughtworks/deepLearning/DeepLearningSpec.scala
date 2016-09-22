@@ -13,7 +13,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
   }
 
   "XOR" in {
-    def predictXor(dsl: Dsl)(input: dsl.Array2D) = {
+    def predictXor(dsl: Dsl)(input: dsl.Array2D):dsl.Array2D = {
       import dsl._
       val deepLearning = DeepLearning(dsl)
       import deepLearning._
