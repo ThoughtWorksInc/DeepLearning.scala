@@ -1,10 +1,9 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.Differentiable.DifferentiableArray2D.Array2DLiteral
-import com.thoughtworks.deepLearning.Differentiable.DifferentiableDouble.DoubleLiteral
+import com.thoughtworks.deepLearning.Differentiable.Array2DLiteral
+import com.thoughtworks.deepLearning.Differentiable.DoubleLiteral
 import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.Dsl.DslFunction
 import org.scalatest._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
@@ -20,19 +19,11 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
   "+ Array2D" in {
 
-    final case class AddDouble[D <: Dsl](dsl: D) extends DslFunction {
-
-      import dsl._
-
-      override type Out = Array2D
-      override type In = Array2D
-
-      override def apply(inputNeuronNetwork: In): Out = {
-        inputNeuronNetwork + Double.weight(2.0)
-      }
+    def addArray(implicit symbolicInput: SymbolicInput {val inputSymbol: dsl.Array2D}) = {
+      import symbolicInput.dsl._
+      symbolicInput.inputSymbol + Double.weight(2.0)
     }
-
-    val f1 = Differentiable.fromDsl[AddDouble]
+    val f1 = addArray.underlying
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
       val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
@@ -57,20 +48,14 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "dot" in {
-    final case class DotArray2D[D <: Dsl](dsl: D) extends DslFunction {
-
+    def dotArray2D(dsl: Dsl)(inputNeuronNetwork: dsl.Array2D): dsl.Array2D = {
       import dsl._
-
-      override type Out = Array2D
-      override type In = Array2D
-
-      override def apply(inputNeuronNetwork: In): Out = {
-        val weight = Array2D.weight(Array(Array(1.0, 1.0)))
-        inputNeuronNetwork dot weight
-      }
+      val weight = Array2D.weight(Array(Array(1.0, 1.0)))
+      inputNeuronNetwork dot weight
     }
 
-    val f1 = Differentiable.fromDsl[DotArray2D]
+    val symbolicInput = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Array2D}]
+    val f1 = dotArray2D(symbolicInput.dsl)(symbolicInput.inputSymbol).underlying
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
       val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
@@ -90,19 +75,15 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "max" in {
-    final case class MaxDouble[D <: Dsl](dsl: D) extends DslFunction {
 
+    def maxDouble(dsl: Dsl)(inputSymbol: dsl.Double) = {
       import dsl._
-
-      override type Out = Double
-      override type In = Double
-
-      override def apply(input: In): Out = {
-        max(input - Double.weight(0.0), 2.0)
-      }
+      max(inputSymbol - Double.weight(0.0), 2.0)
     }
 
-    val f1 = Differentiable.fromDsl[MaxDouble]
+    val symbolicInput = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Double}]
+    val f1 = maxDouble(symbolicInput.dsl)(symbolicInput.inputSymbol).underlying
+
     def train(inputValue: scala.Double): scala.Double = {
       val minibatchInput: Batch.Aux[Eval[scala.Double], Eval[scala.Double]] = DoubleLiteral(inputValue)
       val minibatchOutput = f1.forward(minibatchInput)
@@ -121,33 +102,21 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
   }
 
   "-" in {
-    final case class SubtractDouble0[D <: Dsl](dsl: D) extends DslFunction {
-
+    def subtractDouble0(dsl: Dsl)(input: dsl.Double) = {
       import dsl._
-
-      override type Out = Double
-      override type In = Double
-
-      override def apply(input: In): Out = {
-        import dsl._
-        val negtiveInput: dsl.Double = -input
-        negtiveInput - Double.weight(3.0)
-      }
+      val negtiveInput: dsl.Double = -input
+      negtiveInput - Double.weight(3.0)
     }
 
-    final case class SubtractDouble1[D <: Dsl](dsl: D) extends DslFunction {
-
+    def subtractDouble1(dsl: Dsl)(input: dsl.Double) = {
       import dsl._
-
-      override type Out = Double
-      override type In = Double
-
-      override def apply(input: In): Out = {
-        input - Double.weight(1.2)
-      }
+      input - Double.weight(1.2)
     }
-    val f1 = Differentiable.fromDsl[SubtractDouble0]
-    val g1 = Differentiable.fromDsl[SubtractDouble1]
+
+    val symbolicInput0 = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Double}]
+    val f1 = subtractDouble0(symbolicInput0.dsl)(symbolicInput0.inputSymbol).underlying
+    val symbolicInput1 = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Double}]
+    val g1 = subtractDouble1(symbolicInput1.dsl)(symbolicInput1.inputSymbol).underlying
     val nn = Compose(f1, g1)
     def train(input: scala.Double): scala.Double = {
       val output = nn.forward(DoubleLiteral(input))

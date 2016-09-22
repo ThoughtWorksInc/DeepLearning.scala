@@ -6,7 +6,6 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Dsl.DslFunction
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -16,54 +15,6 @@ import simulacrum.typeclass
 
 
 object Differentiable {
-
-
-  @typeclass
-  trait FromDsl[F[_ <: Dsl] <: DslFunction] extends DepFn0
-
-  object FromDsl {
-
-    type Aux[F[_ <: Dsl] <: DslFunction, Out0] = FromDsl[F] {
-      type Out = Out0
-    }
-
-    implicit def doubleFromDslFactory[F[_ <: Dsl] <: DslFunction]
-    (
-      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]] <:< DslFunction.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]#Double, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out],
-      learningRate: LearningRate,
-      g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]], SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] :: HNil]
-    ): FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out] = {
-      new FromDsl[F] {
-        type Out = F[SymbolicDsl.Aux[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]#Out
-
-        override def apply() = {
-          val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-          g.from(dsl :: HNil)(dsl.Double(Id[Eval[scala.Double], Eval[scala.Double]]))
-        }
-      }
-    }
-
-    implicit def array2DFromDslFactory[F[_ <: Dsl] <: DslFunction]
-    (
-      implicit constraint: F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]] <:< DslFunction.Aux[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]#Array2D, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out],
-      learningRate: LearningRate,
-      g: Generic.Aux[F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]], SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]] :: HNil]
-    ): FromDsl.Aux[F, F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out] = {
-      new FromDsl[F] {
-        type Out = F[SymbolicDsl.Aux[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]]#Out
-
-        override def apply() = {
-          val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
-          g.from(dsl :: HNil)(dsl.Array2D(Id[Eval[INDArray], Eval[Option[INDArray]]]))
-        }
-      }
-    }
-
-  }
-
-  def fromDsl[F[_ <: Dsl] <: DslFunction](implicit fromDsl0: FromDsl[F]): fromDsl0.Out = {
-    fromDsl0()
-  }
 
   object Batch {
     type Aux[+Data0, -Delta0] = Batch {
@@ -316,12 +267,6 @@ object Differentiable {
     override def forward(input: Input): Output = HNilBatch
   }
 
-  //
-  //  object DifferentiableDouble {
-  //    type Aux[Input0 <: Batch] = DifferentiableDouble {
-  //      type Input = Input0
-  //    }
-  //
   final case class DoubleLessThanDouble[Input0 <: Batch]
   (
     leftHandSide: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
@@ -982,22 +927,6 @@ object Differentiable {
     }
   }
 
-  //}
-  //
-  //  trait DifferentiableBoolean extends Differentiable {
-  //    type Output <: Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]
-  //
-  //    override def `if`[A](`then`: A)(`else`: A)(implicit companion: Companion[A]): A = {
-  //      companion.specialize(DifferentiableBoolean.If[Input, companion.Output](this, companion.generalize(`then`), companion.generalize(`else`)))
-  //    }
-  //
-  //    override def unary_! : Boolean = {
-  //      DifferentiableBoolean.Not[Input](this)
-  //    }
-  //  }
-  //
-
-
   trait LearningRate {
     def apply(): scala.Double
   }
@@ -1013,6 +942,7 @@ object Differentiable {
 
       override protected type Input = Input0
     }
+
   }
 
   trait SymbolicDsl extends Dsl {
@@ -1041,7 +971,7 @@ object Differentiable {
 
       def monoid: Monoid[OutputDelta]
 
-      def fromAst(ast: Ast): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+      def toDifferentiable(ast: Ast): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
 
       def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Ast
     }
@@ -1067,7 +997,7 @@ object Differentiable {
       override type OutputDelta <: shapeless.HList
 
       override def ::[Head <: Any, Tail >: this.type <: HList](head: Head)(implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): Head :: Tail = {
-        SymbolicDsl.this.::[Head, Tail].toAst(DifferentiableHCons(headCompanion.fromAst(head), tailCompanion.fromAst(this)))
+        SymbolicDsl.this.::[Head, Tail].toAst(DifferentiableHCons(headCompanion.toDifferentiable(head), tailCompanion.toDifferentiable(this)))
       }
     }
 
@@ -1081,7 +1011,7 @@ object Differentiable {
 
       override val underlying = DifferentiableHNil[Input]()
 
-      override def fromAst(ast: HNil) = ast.underlying
+      override def toDifferentiable(ast: HNil) = ast.underlying
 
       override def monoid = new Monoid[OutputDelta] {
         override def empty = shapeless.HNil
@@ -1152,7 +1082,7 @@ object Differentiable {
           new HCons(generic)(headCompanion, tailCompanion)
         }
 
-        override def fromAst(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+        override def toDifferentiable(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
           ast.asInstanceOf[(Head :: Tail) {
             type OutputData = companion.OutputData
             type OutputDelta = companion.OutputDelta
@@ -1182,7 +1112,7 @@ object Differentiable {
         override def combine(x: Eval[scala.Boolean], y: Eval[scala.Boolean]) = x.map2(y)(_ ^ _)
       }
 
-      override def fromAst(ast: Boolean) = {
+      override def toDifferentiable(ast: Boolean) = {
         ast.underlying
       }
 
@@ -1198,7 +1128,7 @@ object Differentiable {
       }
 
       override def `if`[Ast <: Any](`then`: Ast)(`else`: Ast)(implicit companion: Companion[Ast]): Ast = {
-        companion.toAst(If(underlying, companion.fromAst(`then`), companion.fromAst(`else`)))
+        companion.toAst(If(underlying, companion.toDifferentiable(`then`), companion.toDifferentiable(`else`)))
       }
 
     }
@@ -1216,7 +1146,7 @@ object Differentiable {
 
       override def monoid = implicitly
 
-      override def fromAst(ast: Double) = ast.underlying
+      override def toDifferentiable(ast: Double) = ast.underlying
 
       override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = Double(generic)
     }
@@ -1272,7 +1202,7 @@ object Differentiable {
 
       }
 
-      override def fromAst(ast: Array2D) = ast.underlying
+      override def toDifferentiable(ast: Array2D) = ast.underlying
 
       override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = Array2D(generic)
 
@@ -1344,6 +1274,28 @@ object Differentiable {
     }
   }
 
+
+  trait SymbolicInput {
+    val dsl: Dsl
+    type InputSymbol[_ <: Dsl]
+    val inputSymbol: InputSymbol[dsl.type]
+  }
+
+  object SymbolicInput {
+
+    implicit def doubleInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+      override type InputSymbol[D <: Dsl] = D#Double
+      override val inputSymbol = dsl.Double(Id[Eval[scala.Double], Eval[scala.Double]]())
+    }
+
+    implicit def array2DInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
+      override type InputSymbol[D <: Dsl] = D#Array2D
+      val inputSymbol = dsl.Array2D(Id[Eval[INDArray], Eval[Option[INDArray]]]())
+    }
+
+  }
 
 }
 

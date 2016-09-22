@@ -7,7 +7,6 @@ import scala.language.higherKinds
 
 object Dsl {
 
-
   object Lifter {
     type Aux[LiftFrom0, LiftTo0] = (LiftFrom0 => LiftTo0) with Lifter {
       type LiftFrom = LiftFrom0
@@ -23,20 +22,6 @@ object Dsl {
     def weight(initialValue: LiftFrom): LiftTo
 
     def apply(value: LiftFrom): LiftTo
-  }
-
-  object DslFunction {
-    type Aux[In0, Out0] = DslFunction {
-      type In = In0
-      type Out = Out0
-    }
-  }
-
-  trait DslFunction {
-    type In
-    type Out
-
-    def apply(in: In): Out
   }
 
 }

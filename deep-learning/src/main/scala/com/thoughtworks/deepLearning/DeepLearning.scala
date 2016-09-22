@@ -28,3 +28,11 @@ trait DeepLearning {
   }
 
 }
+
+object DeepLearning {
+
+  def apply(dsl0: Dsl) = new DeepLearning {
+    val dsl: dsl0.type = dsl0
+  }
+
+}
