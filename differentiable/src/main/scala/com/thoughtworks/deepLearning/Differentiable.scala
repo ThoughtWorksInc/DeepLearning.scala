@@ -1050,45 +1050,49 @@ object Differentiable {
 
     sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail]
 
-    override final def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]) = {
-      new HListCompanion[Head :: Tail] with (shapeless.::[headCompanion.LiftFrom, tailCompanion.LiftFrom] => (Head :: Tail)) {
-        companion =>
+    abstract class HConsCompanion[Head <: Any, Tail <: HList, HeadCompanion <: Companion[Head], TailCompanion <: HListCompanion[Tail]]
+    ()
+    (implicit val headCompanion: HeadCompanion, val tailCompanion: TailCompanion)
+      extends HListCompanion[Head :: Tail] with (shapeless.::[HeadCompanion#LiftFrom, TailCompanion#LiftFrom] => (Head :: Tail)) {
 
-        override type OutputData = shapeless.::[headCompanion.OutputData, tailCompanion.OutputData]
-        override type OutputDelta = shapeless.::[headCompanion.OutputDelta, tailCompanion.OutputDelta]
+      override type OutputData = shapeless.::[headCompanion.OutputData, tailCompanion.OutputData]
+      override type OutputDelta = shapeless.::[headCompanion.OutputDelta, tailCompanion.OutputDelta]
 
-        override type LiftFrom = shapeless.::[headCompanion.LiftFrom, tailCompanion.LiftFrom]
+      override type LiftFrom = shapeless.::[headCompanion.LiftFrom, tailCompanion.LiftFrom]
 
-        override def apply(value: LiftFrom): Head :: Tail = {
-          headCompanion(value.head) :: tailCompanion(value.tail)
-        }
+      override def apply(value: LiftFrom): Head :: Tail = {
+        headCompanion(value.head) :: tailCompanion(value.tail)
+      }
 
-        override def weight(initialValue: LiftFrom): Head :: Tail = {
-          headCompanion.weight(initialValue.head) :: tailCompanion.weight(initialValue.tail)
-        }
+      override def weight(initialValue: LiftFrom): Head :: Tail = {
+        headCompanion.weight(initialValue.head) :: tailCompanion.weight(initialValue.tail)
+      }
 
 
-        override def monoid = new Monoid[OutputDelta] {
-          override def empty: OutputDelta = headCompanion.monoid.empty :: tailCompanion.monoid.empty
+      override def monoid = new Monoid[OutputDelta] {
+        override def empty: OutputDelta = headCompanion.monoid.empty :: tailCompanion.monoid.empty
 
-          override def combine(x: OutputDelta, y: OutputDelta) = {
-            implicit val headMonoid = headCompanion.monoid
-            implicit val tailMonoid = tailCompanion.monoid
-            (x.head |+| y.head) :: (x.tail |+| y.tail)
-          }
-        }
-
-        override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = {
-          new HCons(generic)(headCompanion, tailCompanion)
-        }
-
-        override def toDifferentiable(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-          ast.asInstanceOf[(Head :: Tail) {
-            type OutputData = companion.OutputData
-            type OutputDelta = companion.OutputDelta
-          }].underlying
+        override def combine(x: OutputDelta, y: OutputDelta) = {
+          implicit val headMonoid = headCompanion.monoid
+          implicit val tailMonoid = tailCompanion.monoid
+          (x.head |+| y.head) :: (x.tail |+| y.tail)
         }
       }
+
+      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = {
+        new HCons(generic)(headCompanion, tailCompanion)
+      }
+
+      override def toDifferentiable(ast: Head :: Tail): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+        ast.asInstanceOf[(Head :: Tail) {
+          type OutputData = HConsCompanion.this.OutputData
+          type OutputDelta = HConsCompanion.this.OutputDelta
+        }].underlying
+      }
+    }
+
+    override final def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = {
+      new HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type]()(headCompanion, tailCompanion) {}
     }
 
     object Boolean extends Companion[Boolean] with (scala.Boolean => Boolean) {
@@ -1276,23 +1280,109 @@ object Differentiable {
 
 
   trait SymbolicInput {
-    val dsl: Dsl
-    type InputSymbol[_ <: Dsl]
-    val inputSymbol: InputSymbol[dsl.type]
+    type Ast[D <: SymbolicDsl] <: D#Any
+    type OutputData
+    type OutputDelta
+
+    val dsl: SymbolicDsl.Aux[Batch.Aux[OutputData, OutputDelta]]
+
+    val ast: Ast[dsl.type]
+
+    def inputCompanion(anotherDsl: SymbolicDsl): anotherDsl.Companion[Ast[anotherDsl.type]] {
+      type OutputData = SymbolicInput.this.OutputData
+      type OutputDelta = SymbolicInput.this.OutputDelta
+    }
   }
 
   object SymbolicInput {
 
-    implicit def doubleInput(implicit learningRate: LearningRate) = new SymbolicInput {
-      override val dsl = SymbolicDsl[Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-      override type InputSymbol[D <: Dsl] = D#Double
-      override val inputSymbol = dsl.Double(Id[Eval[scala.Double], Eval[scala.Double]]())
+    implicit def array2DInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override type OutputData = Eval[INDArray]
+      override type OutputDelta = Eval[Option[INDArray]]
+      override type Ast[D <: SymbolicDsl] = D#Array2D
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def inputCompanion(anotherDsl: SymbolicDsl) = anotherDsl.Array2D
+
+      override val ast = dsl.Array2D(Id[OutputData, OutputDelta]())
     }
 
-    implicit def array2DInput(implicit learningRate: LearningRate) = new SymbolicInput {
-      val dsl = SymbolicDsl[Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]]
-      override type InputSymbol[D <: Dsl] = D#Array2D
-      val inputSymbol = dsl.Array2D(Id[Eval[INDArray], Eval[Option[INDArray]]]())
+    implicit def doubleInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override type OutputData = Eval[scala.Double]
+      override type OutputDelta = Eval[scala.Double]
+      override type Ast[D <: SymbolicDsl] = D#Double
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def inputCompanion(anotherDsl: SymbolicDsl) = anotherDsl.Double
+
+      override val ast = dsl.Double(Id[OutputData, OutputDelta]())
+    }
+
+    implicit def booleanInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override type OutputData = Eval[scala.Boolean]
+      override type OutputDelta = Eval[scala.Boolean]
+      override type Ast[D <: SymbolicDsl] = D#Boolean
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def inputCompanion(anotherDsl: SymbolicDsl) = anotherDsl.Boolean
+
+      override val ast = dsl.Boolean(Id[OutputData, OutputDelta]())
+    }
+
+    implicit def hnilInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override type OutputData = shapeless.HNil
+      override type OutputDelta = shapeless.HNil
+      override type Ast[D <: SymbolicDsl] = D#HNil
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def inputCompanion(anotherDsl: SymbolicDsl) = anotherDsl.HNil
+
+      override val ast = dsl.HNil
+    }
+
+    implicit def hconsInput[HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    (implicit
+     learningRate: LearningRate,
+     headInput: SymbolicInput {
+       type OutputData = HeadData
+       type OutputDelta = HeadDelta
+     },
+     tailInput: SymbolicInput {
+       type OutputData = TailData
+       type OutputDelta = TailDelta
+
+       type Ast[D <: SymbolicDsl] <: D#HList
+
+       def inputCompanion(anotherDsl: SymbolicDsl): anotherDsl.HListCompanion[Ast[anotherDsl.type]] {
+         type OutputData = TailData
+         type OutputDelta = TailDelta
+       }
+
+     }
+    ) = new SymbolicInput {
+      override type OutputData = shapeless.::[HeadData, TailData]
+      override type OutputDelta = shapeless.::[HeadDelta, TailDelta]
+      override type Ast[D <: SymbolicDsl] = D# ::[headInput.Ast[D], tailInput.Ast[D]]
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def inputCompanion(anotherDsl: SymbolicDsl) = {
+        anotherDsl.::[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type]](headInput.inputCompanion(anotherDsl), tailInput.inputCompanion(anotherDsl))
+      }
+
+      override val ast: Ast[dsl.type] = {
+        val id: Differentiable.Aux[Batch.Aux[OutputData, OutputDelta], Batch.Aux[OutputData, OutputDelta]] = Id[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]()
+        val headCompanion = headInput.inputCompanion(dsl)
+        val tailCompanion = tailInput.inputCompanion(dsl)
+        type Head = headInput.Ast[dsl.type]
+        type Tail = tailInput.Ast[dsl.type]
+        val companion: dsl.HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = dsl.::[Head, Tail](headCompanion, tailCompanion)
+        companion.toAst(id)
+      }
     }
 
   }

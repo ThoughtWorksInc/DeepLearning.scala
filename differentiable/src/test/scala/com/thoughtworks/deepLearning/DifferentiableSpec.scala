@@ -19,9 +19,9 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
   "+ Array2D" in {
 
-    def addArray(implicit symbolicInput: SymbolicInput {val inputSymbol: dsl.Array2D}) = {
+    def addArray(implicit symbolicInput: SymbolicInput {val ast: dsl.Array2D}) = {
       import symbolicInput.dsl._
-      symbolicInput.inputSymbol + Double.weight(2.0)
+      symbolicInput.ast + Double.weight(2.0)
     }
     val f1 = addArray.underlying
 
@@ -54,8 +54,8 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
       inputNeuronNetwork dot weight
     }
 
-    val symbolicInput = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Array2D}]
-    val f1 = dotArray2D(symbolicInput.dsl)(symbolicInput.inputSymbol).underlying
+    val symbolicInput = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Array2D}]
+    val f1 = dotArray2D(symbolicInput.dsl)(symbolicInput.ast).underlying
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
       val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
@@ -76,13 +76,13 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
   "max" in {
 
-    def maxDouble(dsl: Dsl)(inputSymbol: dsl.Double) = {
+    def maxDouble(dsl: Dsl)(ast: dsl.Double) = {
       import dsl._
-      max(inputSymbol - Double.weight(0.0), 2.0)
+      max(ast - Double.weight(0.0), 2.0)
     }
 
-    val symbolicInput = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Double}]
-    val f1 = maxDouble(symbolicInput.dsl)(symbolicInput.inputSymbol).underlying
+    val symbolicInput = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Double}]
+    val f1 = maxDouble(symbolicInput.dsl)(symbolicInput.ast).underlying
 
     def train(inputValue: scala.Double): scala.Double = {
       val minibatchInput: Batch.Aux[Eval[scala.Double], Eval[scala.Double]] = DoubleLiteral(inputValue)
@@ -113,10 +113,10 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
       input - Double.weight(1.2)
     }
 
-    val symbolicInput0 = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Double}]
-    val f1 = subtractDouble0(symbolicInput0.dsl)(symbolicInput0.inputSymbol).underlying
-    val symbolicInput1 = shapeless.the[SymbolicInput {type InputSymbol[D <: Dsl] = D#Double}]
-    val g1 = subtractDouble1(symbolicInput1.dsl)(symbolicInput1.inputSymbol).underlying
+    val symbolicInput0 = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Double}]
+    val f1 = subtractDouble0(symbolicInput0.dsl)(symbolicInput0.ast).underlying
+    val symbolicInput1 = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Double}]
+    val g1 = subtractDouble1(symbolicInput1.dsl)(symbolicInput1.ast).underlying
     val nn = Compose(f1, g1)
     def train(input: scala.Double): scala.Double = {
       val output = nn.forward(DoubleLiteral(input))
