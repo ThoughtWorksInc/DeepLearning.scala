@@ -158,7 +158,7 @@ trait Dsl {
   type HList <: HListApi with Any
 
   type HNil <: HList
-  val HNil: HNil with HListCompanion[HNil]
+  implicit val HNil: HNil with HListCompanion[HNil]
 
   def max(leftHandSide: Double, rightHandSide: Double): Double = {
     (leftHandSide < rightHandSide).`if`(rightHandSide)(leftHandSide)

@@ -1018,7 +1018,7 @@ object Differentiable {
       override type OutputDelta = shapeless.HNil
     }
 
-    case object HNil extends HNil with HListCompanion[HNil] with (shapeless.HNil => HNil) {
+    implicit case object HNil extends HNil with HListCompanion[HNil] with (shapeless.HNil => HNil) {
       override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = this
 
       override val underlying = DifferentiableHNil[Input]()
