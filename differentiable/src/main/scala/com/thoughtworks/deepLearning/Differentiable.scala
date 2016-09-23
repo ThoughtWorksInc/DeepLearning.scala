@@ -1351,7 +1351,7 @@ object Differentiable {
 
       override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
 
-      override def companion(anotherDsl: SymbolicDsl) = anotherDsl.HNil
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.HNil.type = anotherDsl.HNil
 
       override val ast = dsl.HNil
     }
