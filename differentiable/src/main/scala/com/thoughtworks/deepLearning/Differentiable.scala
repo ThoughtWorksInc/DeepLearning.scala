@@ -1062,11 +1062,11 @@ object Differentiable {
 
     sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail]
 
-    abstract class HConsCompanion[Head <: Any, Tail <: HList, HeadCompanion <: Companion[Head], TailCompanion <: HListCompanion[Tail]]
-    ()
-    (implicit val headCompanion: HeadCompanion, val tailCompanion: TailCompanion)
-      extends HListCompanion[Head :: Tail] with (shapeless.::[HeadCompanion#LiftFrom, TailCompanion#LiftFrom] => (Head :: Tail)) {
-
+    trait HConsCompanion[Head <: Any, Tail <: HList, HeadCompanion <: Companion[Head], TailCompanion <: HListCompanion[Tail]]
+      extends HListCompanion[Head :: Tail] {
+      _: (shapeless.::[HeadCompanion#LiftFrom, TailCompanion#LiftFrom] => (Head :: Tail)) =>
+      implicit protected val headCompanion: HeadCompanion
+      implicit protected val tailCompanion: TailCompanion
       override type OutputData = shapeless.::[headCompanion.OutputData, tailCompanion.OutputData]
       override type OutputDelta = shapeless.::[headCompanion.OutputDelta, tailCompanion.OutputDelta]
 
@@ -1103,8 +1103,11 @@ object Differentiable {
       }
     }
 
-    implicit override final def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = {
-      new HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type]()(headCompanion, tailCompanion) {}
+    implicit override final def ::[Head <: Any, Tail <: HList](implicit headCompanion0: Companion[Head], tailCompanion0: HListCompanion[Tail]): HConsCompanion[Head, Tail, headCompanion0.type, tailCompanion0.type] = {
+      new HConsCompanion[Head, Tail, headCompanion0.type, tailCompanion0.type] with (shapeless.::[headCompanion0.LiftFrom, tailCompanion0.LiftFrom] => (Head :: Tail)) {
+        override protected val headCompanion: headCompanion0.type = headCompanion0
+        override protected val tailCompanion: tailCompanion0.type = tailCompanion0
+      }
     }
 
     implicit object Boolean extends Companion[Boolean] with (scala.Boolean => Boolean) {
