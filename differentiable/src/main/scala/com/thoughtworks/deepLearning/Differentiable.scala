@@ -1315,7 +1315,7 @@ object Differentiable {
 
       override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
 
-      override def companion(anotherDsl: SymbolicDsl) = anotherDsl.Array2D
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.Array2D.type = anotherDsl.Array2D
 
       override val ast = dsl.Array2D(Id[OutputData, OutputDelta]())
     }
@@ -1327,7 +1327,7 @@ object Differentiable {
 
       override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
 
-      override def companion(anotherDsl: SymbolicDsl) = anotherDsl.Double
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.Double.type = anotherDsl.Double
 
       override val ast = dsl.Double(Id[OutputData, OutputDelta]())
     }
@@ -1339,7 +1339,7 @@ object Differentiable {
 
       override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
 
-      override def companion(anotherDsl: SymbolicDsl) = anotherDsl.Boolean
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.Boolean.type = anotherDsl.Boolean
 
       override val ast = dsl.Boolean(Id[OutputData, OutputDelta]())
     }
@@ -1351,19 +1351,15 @@ object Differentiable {
 
       override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
 
-      override def companion(anotherDsl: SymbolicDsl) = anotherDsl.HNil
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.HNil.type = anotherDsl.HNil
 
       override val ast = dsl.HNil
     }
 
-    implicit def hconsInput[HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
-    (implicit
-     learningRate: LearningRate,
-     headInput: SymbolicInput {
+    final class HConsInput[HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList, HeadInput <: SymbolicInput {
        type OutputData = HeadData
        type OutputDelta = HeadDelta
-     },
-     tailInput: SymbolicInput {
+    }, TailInput <: SymbolicInput {
        type OutputData = TailData
        type OutputDelta = TailDelta
 
