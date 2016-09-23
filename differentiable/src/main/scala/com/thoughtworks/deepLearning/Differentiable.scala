@@ -1080,7 +1080,6 @@ object Differentiable {
         headCompanion.weight(initialValue.head) :: tailCompanion.weight(initialValue.tail)
       }
 
-
       override def monoid = new Monoid[OutputDelta] {
         override def empty: OutputDelta = headCompanion.monoid.empty :: tailCompanion.monoid.empty
 
@@ -1369,14 +1368,11 @@ object Differentiable {
      tailInput: SymbolicInput {
        type OutputData = TailData
        type OutputDelta = TailDelta
-
        type Ast[D <: SymbolicDsl] <: D#HList
-
        def companion(anotherDsl: SymbolicDsl): anotherDsl.HListCompanion[Ast[anotherDsl.type]] {
          type OutputData = TailData
          type OutputDelta = TailDelta
        }
-
      }
     ) = new SymbolicInput {
       override type OutputData = shapeless.::[HeadData, TailData]
