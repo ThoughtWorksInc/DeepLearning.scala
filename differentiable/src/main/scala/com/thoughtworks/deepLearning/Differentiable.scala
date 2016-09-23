@@ -946,6 +946,18 @@ object Differentiable {
   }
 
   trait SymbolicDsl extends Dsl {
+
+    implicit final class RichDifferentiable[UpstreamAst <: Any, UpstreamData, UpstreamDelta, OutputAst <: Any, OutputData, OutputDelta]
+    (differentiable: Differentiable.Aux[Batch.Aux[UpstreamData, UpstreamDelta], Batch.Aux[OutputData, OutputDelta]])
+    (
+      implicit upstreamCompanion: Companion.Aux[UpstreamAst, UpstreamData, UpstreamDelta],
+      outputCompanion: Companion.Aux[OutputAst, OutputData, OutputDelta]
+    ) extends (UpstreamAst => OutputAst) {
+      override def apply(upstream: UpstreamAst): OutputAst = {
+        outputCompanion.toAst(Compose(differentiable, upstreamCompanion.toDifferentiable(upstream)))
+      }
+    }
+
     implicit protected def learningRate: LearningRate
 
     trait Any {
@@ -1091,11 +1103,11 @@ object Differentiable {
       }
     }
 
-    override final def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = {
+    implicit override final def ::[Head <: Any, Tail <: HList](implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = {
       new HConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type]()(headCompanion, tailCompanion) {}
     }
 
-    object Boolean extends Companion[Boolean] with (scala.Boolean => Boolean) {
+    implicit object Boolean extends Companion[Boolean] with (scala.Boolean => Boolean) {
 
       type LiftFrom = scala.Boolean
 
@@ -1137,7 +1149,7 @@ object Differentiable {
 
     }
 
-    object Double extends Companion[Double] with (scala.Double => Double) {
+    implicit object Double extends Companion[Double] with (scala.Double => Double) {
 
       type LiftFrom = scala.Double
 
@@ -1185,7 +1197,7 @@ object Differentiable {
 
     }
 
-    object Array2D extends Companion[Array2D] with Array2DCompanionApi {
+    implicit object Array2D extends Companion[Array2D] with Array2DCompanionApi {
 
       def weight(initialValue: LiftFrom): LiftTo = toAst(Array2DWeight(initialValue))
 
