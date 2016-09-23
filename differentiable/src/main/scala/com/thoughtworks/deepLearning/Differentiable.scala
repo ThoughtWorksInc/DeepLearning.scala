@@ -1382,8 +1382,17 @@ object Differentiable {
 
       override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
 
-      override def companion(anotherDsl: SymbolicDsl) = {
-        anotherDsl.::[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type]](headInput.companion(anotherDsl), tailInput.companion(anotherDsl))
+      override def companion(anotherDsl: SymbolicDsl)
+      : anotherDsl.HConsCompanion[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type], _ <: anotherDsl.Companion[headInput.Ast[anotherDsl.type]] {
+        type OutputData = HeadData
+        type OutputDelta = HeadDelta
+      }, _ <: anotherDsl.HListCompanion[tailInput.Ast[anotherDsl.type]] {
+        type OutputData = TailData
+        type OutputDelta = TailDelta
+      }] = {
+        val headCompanion = headInput.companion(anotherDsl)
+        val tailCompanion = tailInput.companion(anotherDsl)
+        anotherDsl.::[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type]](headCompanion, tailCompanion)
       }
 
       override val ast: Ast[dsl.type] = {
