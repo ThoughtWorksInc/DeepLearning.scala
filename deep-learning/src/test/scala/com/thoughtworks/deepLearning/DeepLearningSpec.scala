@@ -6,13 +6,15 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import org.scalatest.{FreeSpec, Matchers}
 
+import scala.util.Random
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class DeepLearningSpec extends FreeSpec with Matchers {
 
   implicit def learningRate = new Differentiable.LearningRate {
-    def apply() = 0.03
+    def apply() = 0.005
   }
 
   type Array2DPair[D <: Dsl] = D# ::[(D#Array2D), (D# ::)[(D#Array2D), (D#HNil)]]
@@ -26,13 +28,15 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
       import dsl._
       val deepLearning = DeepLearning(dsl)
       import deepLearning._
-      sigmoid(fullyConnectedThenRelu(
-        (0 until 10).foldLeft(fullyConnectedThenRelu(input, 2, 50)) { (hiddenLayer, _) =>
+      val scores = fullyConnectedThenRelu(
+        (0 until 5).foldLeft(fullyConnectedThenRelu(input, 2, 50)) { (hiddenLayer, _) =>
           fullyConnectedThenRelu(hiddenLayer, 50, 50)
         },
         50,
         2
-      ))
+      )
+
+      exp(scores) / exp(scores).sum(1)
     }
 
     val predictInputSymbol = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Array2D}]
@@ -61,6 +65,18 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
     val trainingNetwork = trainingDsl(trainingInputSymbol.dsl)(trainingInputSymbol.ast).underlying
 
 
+    //
+    //    val labelData = Eval.now(
+    //      Array(
+    //        Array(1.0, 0.0),
+    //        Array(0.0, 1.0),
+    //        Array(0.0, 1.0),
+    //        Array(1.0, 0.0)
+    //      ).toNDArray
+    //    )
+    //
+    //    val inputAndLabelData = inputData :: labelData :: shapeless.HNil
+
     val inputData = Eval.now(
       Array(
         Array(0.0, 0.0),
@@ -69,21 +85,45 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
         Array(1.0, 1.0)
       ).toNDArray
     )
+    for (_ <- 0 until 100) {
+      val predictedLabel = predictNetwork.forward(Literal(inputData))
+      predictedLabel.backward(Eval.now[Option[INDArray]](None))
+      val predictedLabelValue = predictedLabel.value.value
+      println(predictedLabelValue)
+      println()
+      for (_ <- 0 until 10) {
+        val BatchSize = 5
+        def inputAndLabelData = {
+          val inputData = (for {
+            _ <- 0 until BatchSize
+          } yield {
+            Array(Random.nextInt(2), Random.nextInt(2))
+          }) (collection.breakOut(Array.canBuildFrom))
+          val labelData = for {
+            Array(left, right) <- inputData
+          } yield {
+            val result = (left == 1) ^ (right == 1)
+            Array(if (result) 0 else 1,if (result) 1 else 0)
+          }
+          Literal(Eval.now(inputData.toNDArray) :: Eval.now(labelData.toNDArray) :: shapeless.HNil)
+        }
+        val loss = trainingNetwork.forward(inputAndLabelData)
+        loss.backward(loss.value)
+      }
+    }
 
-    val labelData = Eval.now(
-      Array(
-        Array(1.0, 0.0),
-        Array(0.0, 1.0),
-        Array(0.0, 1.0),
-        Array(1.0, 0.0)
-      ).toNDArray
-    )
-
-    val inputAndLabel = inputData :: labelData :: shapeless.HNil
-
-    val loss = trainingNetwork.forward(Literal(inputAndLabel))
-    loss.backward(loss.value)
-
+    val predictedLabel = predictNetwork.forward(Literal(inputData))
+    predictedLabel.backward(Eval.now[Option[INDArray]](None))
+    val predictedLabelValue = predictedLabel.value.value
+    println(predictedLabelValue)
+    predictedLabelValue(0, 0) should be > 0.5
+    predictedLabelValue(0, 1) should be < 0.5
+    predictedLabelValue(1, 0) should be < 0.5
+    predictedLabelValue(1, 1) should be > 0.5
+    predictedLabelValue(2, 0) should be < 0.5
+    predictedLabelValue(2, 1) should be > 0.5
+    predictedLabelValue(3, 0) should be > 0.5
+    predictedLabelValue(3, 1) should be < 0.5
 
   }
 
