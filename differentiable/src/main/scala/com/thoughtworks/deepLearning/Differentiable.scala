@@ -508,7 +508,14 @@ object Differentiable {
 
     final class Output(val input: Input0, upstream1: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
       type Input >: Input0
-      val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
+      val value = {
+        upstream1.value.map2(upstream2.value) { (aValue, bValue) =>
+          val Array(aRows, aColumns) = aValue.shape()
+          val Array(bRows, bColumns) = bValue.shape()
+          val newShape = Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+          aValue.broadcast(newShape: _*) * bValue.broadcast(newShape: _*)
+        }.memoize
+      }
 
       override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
         val a = upstream1.value
@@ -545,7 +552,14 @@ object Differentiable {
 
     final class Output(val input: Input0, upstream1: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]], upstream2: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]]) extends ReferenceCount with Array2DBatch {
       type Input >: Input0
-      val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
+      val value = {
+        Applicative[Eval].map2(upstream1.value, upstream2.value) { (aValue, bValue) =>
+          val Array(aRows, aColumns) = aValue.shape()
+          val Array(bRows, bColumns) = bValue.shape()
+          val newShape = Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+          aValue.broadcast(newShape: _*) + bValue.broadcast(newShape: _*)
+        }.memoize
+      }
 
       override protected def cachedBackward(outputDelta: Eval[Option[INDArray]]): Unit = {
         val sumAsOriginalShape = { (outputDeltaOption: Option[INDArray], aValue: INDArray) =>
