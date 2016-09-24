@@ -22,31 +22,6 @@ object Differentiable {
       type Delta >: Delta0
     }
 
-    case object HNilBatch extends Batch {
-      override type Data = shapeless.HNil
-      override type Delta = shapeless.HNil
-
-      override def backward(delta: Delta): Unit = {
-      }
-
-      override def value: Data = shapeless.HNil
-    }
-
-    trait HConsBatch extends Batch {
-
-      type HeadData
-      type TailData <: shapeless.HList
-      type HeadDelta
-      type TailDelta <: shapeless.HList
-
-      type Head = Batch.Aux[HeadData, HeadDelta]
-      type Tail = Batch.Aux[TailData, TailDelta]
-
-      override type Data = HeadData :: TailDelta
-      override type Delta = HeadDelta :: TailDelta
-
-    }
-
     trait DoubleBatch extends Batch {
 
       override type Data = Eval[scala.Double]
@@ -57,7 +32,6 @@ object Differentiable {
       final def monoid: Monoid[Delta] = implicitly
 
     }
-
 
     trait BooleanBatch extends Batch {
 
@@ -101,7 +75,6 @@ object Differentiable {
     def backward(delta: Delta): Unit
 
     def value: Data
-
   }
 
   type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[scala.Any, scala.Nothing]] = Differentiable {
@@ -259,12 +232,17 @@ object Differentiable {
 
   }
 
+  final case class Literal[Data0](value0: Data0) extends Differentiable with Batch {
+    override type Data = Data0
+    override type Delta = Any
+    override type Input = Batch
+    override type Output = this.type
 
-  final case class DifferentiableHNil[Input0 <: Batch]() extends Differentiable {
-    override type Input = Input0
-    override type Output = Batch.Aux[HNil, HNil]
+    override def value: Data = value0
 
-    override def forward(input: Input): Output = HNilBatch
+    override def forward(input: Input): Output = this
+
+    override def backward(delta: Delta): Unit = {}
   }
 
   final case class DoubleLessThanDouble[Input0 <: Batch]
@@ -406,20 +384,9 @@ object Differentiable {
     }
   }
 
-  final case class DoubleLiteral[Input0 <: Batch](rawValue: scala.Double) extends Differentiable with DoubleBatch {
-    override type Input = Input0
-    override type Output = DoubleLiteral[Input0]
-
-    override def forward(any: Input) = this
-
-    override def backward(delta: Delta): Unit = {}
-
-    override def value = Eval.now(rawValue)
-  }
-
   final case class DoubleWeight[Input0 <: Batch](var rawValue: scala.Double)(implicit learningRate: LearningRate) extends Differentiable with DoubleBatch {
     override type Input = Input0
-    override type Output = DoubleWeight[Input0]
+    override type Output = this.type
 
     override def forward(any: Input) = this
 
@@ -429,17 +396,6 @@ object Differentiable {
 
     override def value = Eval.now(rawValue)
 
-  }
-
-  final case class BooleanLiteral[Input0 <: Batch](rawValue: scala.Boolean) extends Differentiable with BooleanBatch {
-    override type Input = Input0
-    override type Output = BooleanLiteral[Input0]
-
-    override def forward(any: Input) = this
-
-    override def backward(delta: Delta): Unit = {}
-
-    override def value = Eval.now(rawValue)
   }
 
   final case class BooleanWeight[Input0 <: Batch](var rawValue: scala.Boolean) extends Differentiable with BooleanBatch {
@@ -454,23 +410,6 @@ object Differentiable {
 
     override def value = Eval.now(rawValue)
 
-  }
-
-  final case class Array2DLiteral[Input0 <: Batch](rawValue: INDArray) extends Differentiable with Array2DBatch {
-    override type Input = Input0
-    override type Output = Array2DLiteral[Input0]
-
-    override def value = Eval.now(rawValue)
-
-    override def forward(any: Input) = this
-
-    override def backward(delta: Delta): Unit = {}
-  }
-
-  object Array2DLiteral {
-    def apply[Input <: Batch](nativeArray: Array[Array[scala.Double]]): Array2DLiteral[Input] = {
-      new Array2DLiteral[Input](nativeArray.toNDArray)
-    }
   }
 
   final case class Array2DWeight[Input0 <: Batch](var rawValue: INDArray)(implicit learningRate: LearningRate) extends Differentiable with Array2DBatch {
@@ -489,7 +428,6 @@ object Differentiable {
       }
     }
   }
-
 
   object Array2DWeight {
     def randn[Input <: Batch](numberOfRows: Int, numberOfColumns: Int)(implicit learningRate: LearningRate): Array2DWeight[Input] = {
@@ -1021,7 +959,7 @@ object Differentiable {
     implicit case object HNil extends HNil with HListCompanion[HNil] with (shapeless.HNil => HNil) {
       override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = this
 
-      override val underlying = DifferentiableHNil[Input]()
+      override val underlying = Literal(shapeless.HNil)
 
       override def toDifferentiable(ast: HNil) = ast.underlying
 
@@ -1118,7 +1056,7 @@ object Differentiable {
       }
 
       def apply(value: LiftFrom): LiftTo = {
-        toAst(BooleanLiteral(value))
+        toAst(Literal(Eval.now(value)))
       }
 
       override type OutputData = Eval[scala.Boolean]
@@ -1157,7 +1095,7 @@ object Differentiable {
 
       def weight(initialValue: LiftFrom): LiftTo = toAst(DoubleWeight(initialValue))
 
-      def apply(value: LiftFrom): LiftTo = toAst(DoubleLiteral(value))
+      def apply(value: LiftFrom): LiftTo = toAst(Literal(Eval.now(value)))
 
       override type OutputData = Eval[scala.Double]
       override type OutputDelta = Eval[scala.Double]
@@ -1203,7 +1141,7 @@ object Differentiable {
 
       def weight(initialValue: LiftFrom): LiftTo = toAst(Array2DWeight(initialValue))
 
-      def apply(value: LiftFrom): LiftTo = toAst(Array2DLiteral(value))
+      def apply(value: LiftFrom): LiftTo = toAst(Literal(Eval.now(value.toNDArray)))
 
       override type OutputData = Eval[INDArray]
       override type OutputDelta = Eval[Option[INDArray]]

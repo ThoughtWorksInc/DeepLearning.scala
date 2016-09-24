@@ -1,8 +1,6 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.Differentiable.Array2DLiteral
-import com.thoughtworks.deepLearning.Differentiable.DoubleLiteral
 import com.thoughtworks.deepLearning.Differentiable._
 import org.scalatest._
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -26,7 +24,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     val f1 = addArray.underlying
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
-      val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
+      val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Literal(Eval.now(inputValue.toNDArray))
       val minibatchOutput = f1.forward(minibatchInput)
       val outputValue: Eval[INDArray] = minibatchOutput.value
       minibatchOutput.backward(outputValue.map[Option[INDArray]](Some(_)))
@@ -58,7 +56,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     val f1 = dotArray2D(symbolicInput.dsl)(symbolicInput.ast).underlying
 
     def train(inputValue: Array[Array[scala.Double]]): Eval[INDArray] = {
-      val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Array2DLiteral(inputValue)
+      val minibatchInput: Batch.Aux[Eval[INDArray], Eval[Option[INDArray]]] = Literal(Eval.now(inputValue.toNDArray))
       val minibatchOutput = f1.forward(minibatchInput)
       val outputValue: Eval[INDArray] = minibatchOutput.value
       minibatchOutput.backward(outputValue.map[Option[INDArray]](Some(_)))
@@ -85,7 +83,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     val f1 = maxDouble(symbolicInput.dsl)(symbolicInput.ast).underlying
 
     def train(inputValue: scala.Double): scala.Double = {
-      val minibatchInput: Batch.Aux[Eval[scala.Double], Eval[scala.Double]] = DoubleLiteral(inputValue)
+      val minibatchInput: Batch.Aux[Eval[scala.Double], Eval[scala.Double]] = Literal(Eval.now(inputValue))
       val minibatchOutput = f1.forward(minibatchInput)
       minibatchOutput.backward(minibatchOutput.value)
       minibatchOutput.value.value
@@ -119,7 +117,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     val g1 = subtractDouble1(symbolicInput1.dsl)(symbolicInput1.ast).underlying
     val nn = Compose(f1, g1)
     def train(input: scala.Double): scala.Double = {
-      val output = nn.forward(DoubleLiteral(input))
+      val output = nn.forward(Literal(Eval.now(input)))
       output.backward(output.value)
       output.value.value
     }
