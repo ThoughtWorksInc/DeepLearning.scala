@@ -27,6 +27,12 @@ trait DeepLearning {
     relu(fullyConnected(input, weight, bias))
   }
 
+  def fullyConnectedThenSigmoid(input: Array2D, inputSize: Int, outputSize: Int) = {
+    val weight = Array2D.randn(inputSize, outputSize) / math.sqrt(inputSize.toDouble)
+    val bias = Array2D.zeros(outputSize)
+    sigmoid(fullyConnected(input, weight, bias))
+  }
+
 }
 
 object DeepLearning {
