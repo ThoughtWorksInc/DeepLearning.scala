@@ -14,7 +14,7 @@ import scala.util.Random
 final class DeepLearningSpec extends FreeSpec with Matchers {
 
   implicit def learningRate = new Differentiable.LearningRate {
-    def apply() = 0.005
+    def apply() = 0.003
   }
 
   type Array2DPair[D <: Dsl] = D# ::[(D#Array2D), (D# ::)[(D#Array2D), (D#HNil)]]
@@ -28,21 +28,30 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
       import dsl._
       val deepLearning = DeepLearning(dsl)
       import deepLearning._
-      val scores = fullyConnectedThenRelu(
-        (0 until 5).foldLeft(fullyConnectedThenRelu(input, 2, 50)) { (hiddenLayer, _) =>
-          fullyConnectedThenRelu(hiddenLayer, 50, 50)
-        },
-        50,
-        2
-      )
+      val inputLayerOutput = fullyConnectedThenRelu(input, 2, 100)
+      val hiddenLayerOutput = (0 until 3).foldLeft(inputLayerOutput) { (hiddenLayer, _) =>
+        fullyConnectedThenRelu(hiddenLayer, 100, 100)
+      }
+      val scores = fullyConnectedThenRelu(hiddenLayerOutput, 100, 2)
 
+      // softmax
       exp(scores) / exp(scores).sum(1)
     }
 
     val predictInputSymbol = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Array2D}]
-    val predictNetwork = predictDsl(predictInputSymbol.dsl)(predictInputSymbol.ast).underlying
+    val predictNetwork:
+    Differentiable.Aux[
+      Batch.Aux[
+        Eval[INDArray],
+        Eval[Option[INDArray]]
+      ],
+      Batch.Aux[
+        Eval[INDArray],
+        Eval[Option[INDArray]]
+      ]
+    ] = predictDsl(predictInputSymbol.dsl)(predictInputSymbol.ast).underlying
 
-    def lossDsl(dsl: SymbolicDsl)(scoresAndLabels: Array2DPair[dsl.type]) = {
+    def lossDsl(dsl: SymbolicDsl)(scoresAndLabels: Array2DPair[dsl.type]): dsl.Double = {
       import dsl._
       val likelihood = scoresAndLabels.head
       val expectedLabels = scoresAndLabels.tail.head
@@ -57,8 +66,14 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
 
       val input = inputAndLabels.head
       val expectedLabels = inputAndLabels.tail.head
-      val likelihood = RichDifferentiable(predictNetwork).apply(input)
-      RichDifferentiable(lossNetwork)(::(Array2D, ::(Array2D, HNil)), Double)((likelihood :: (expectedLabels :: (HNil: HNil)) (Array2D, HNil)) (dsl.Array2D, ::(Array2D, HNil)))
+      // val likelihood = predictNetwork(input)
+      // lossNetwork(likelihood :: expectedLabels :: HNil)
+
+      val richPredictNetwork = RichDifferentiable(predictNetwork)
+      val richLossNetwork = RichDifferentiable(lossNetwork)(::(Array2D, ::(Array2D, HNil)), Double)
+
+      val likelihood = richPredictNetwork(input)
+      richLossNetwork((likelihood :: (expectedLabels :: (HNil: HNil)) (Array2D, HNil)) (dsl.Array2D, ::(Array2D, HNil)))
     }
 
     val trainingInputSymbol = array2DPairInput
@@ -94,16 +109,18 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
       for (_ <- 0 until 10) {
         val BatchSize = 5
         def inputAndLabelData = {
+
           val inputData = (for {
             _ <- 0 until BatchSize
           } yield {
             Array(Random.nextInt(2), Random.nextInt(2))
           }) (collection.breakOut(Array.canBuildFrom))
+
           val labelData = for {
             Array(left, right) <- inputData
           } yield {
             val result = (left == 1) ^ (right == 1)
-            Array(if (result) 0 else 1,if (result) 1 else 0)
+            Array(if (result) 0 else 1, if (result) 1 else 0)
           }
           Literal(Eval.now(inputData.toNDArray) :: Eval.now(labelData.toNDArray) :: shapeless.HNil)
         }
