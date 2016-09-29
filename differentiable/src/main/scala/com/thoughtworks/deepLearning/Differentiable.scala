@@ -6,15 +6,21 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
+import com.thoughtworks.deepLearning.Differentiable.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
-import shapeless.{::, DepFn0, Generic, HNil}
+import shapeless.{:+:, ::, DepFn0, Generic, HNil}
 import simulacrum.typeclass
 
 
 object Differentiable {
+
+  type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[scala.Any, scala.Nothing]] = Differentiable {
+    type Input >: Input0
+    type Output <: Output0
+  }
 
   object Batch {
     type Aux[+Data0, -Delta0] = Batch {
@@ -22,7 +28,7 @@ object Differentiable {
       type Delta >: Delta0
     }
 
-    trait DoubleBatch extends Batch {
+    private[Differentiable] sealed trait DoubleBatch extends Batch {
 
       override type Data = Eval[scala.Double]
 
@@ -33,7 +39,7 @@ object Differentiable {
 
     }
 
-    trait BooleanBatch extends Batch {
+    private[Differentiable] sealed trait BooleanBatch extends Batch {
 
       override type Data = Eval[scala.Boolean]
 
@@ -47,7 +53,7 @@ object Differentiable {
 
     }
 
-    trait Array2DBatch extends Batch {
+    private[Differentiable] sealed trait Array2DBatch extends Batch {
 
       override type Data = Eval[INDArray]
 
@@ -77,11 +83,6 @@ object Differentiable {
     def value: Data
   }
 
-  type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[scala.Any, scala.Nothing]] = Differentiable {
-    type Input >: Input0
-    type Output <: Output0
-  }
-
   final case class Id[Data0, Delta0]() extends Differentiable {
     outer =>
     type Input = Batch.Aux[Data0, Delta0]
@@ -92,11 +93,11 @@ object Differentiable {
     }
   }
 
-  trait Cached extends Differentiable {
+  private[Differentiable] sealed trait Cached extends Differentiable {
 
     private val cache = java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, Output with ReferenceCount](1))
 
-    trait ReferenceCount extends Batch {
+    private[Differentiable] sealed trait ReferenceCount extends Batch {
       private[Cached] var count: Int = 1
 
       implicit def monoid: Monoid[Delta]
@@ -150,7 +151,6 @@ object Differentiable {
     override def forward(input: A): C = {
       f.forward(g.forward(input))
     }
-
   }
 
   object DifferentiableHCons {
@@ -912,7 +912,7 @@ object Differentiable {
 
     implicit protected def learningRate: LearningRate
 
-    trait Any {
+    sealed trait Any {
       type OutputData <: scala.Any
       type OutputDelta >: scala.Nothing
       val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
@@ -927,7 +927,7 @@ object Differentiable {
       }
     }
 
-    trait Companion[Ast <: Any] extends Dsl.Lifter {
+    sealed trait Companion[Ast <: Any] extends Dsl.Lifter {
       _: (_ => Ast) =>
       type LiftTo = Ast
       type OutputData
@@ -940,6 +940,175 @@ object Differentiable {
       def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): Ast
     }
 
+    sealed trait CoproductCompanion[Ast <: Coproduct] extends Companion[Ast] {
+      _: (_ => Ast) =>
+
+      override type LiftFrom <: shapeless.Coproduct
+      override type OutputData <: shapeless.Coproduct
+      override type OutputDelta <: shapeless.Coproduct
+    }
+
+    private[SymbolicDsl] object CConsCompanion {
+      type Aux[Ast <: Coproduct, Data, Delta] = CoproductCompanion[Ast] {
+        type OutputData = Data
+        type OutputDelta = Delta
+      }
+    }
+
+    sealed trait Coproduct extends Any
+
+    sealed trait CNil extends Coproduct
+
+    //    protected final case class CConsN[Head <: Any, Tail <: Coproduct, HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
+    //    (underlying: Differentiable.Aux[Input, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]])
+    //    (
+    //      implicit headCompanion: Companion.Aux[Head, HeadData, HeadDelta],
+    //      tailCompanion: CoproductCompanion.Aux[Tail, TailData, TailDelta]
+    //    ) extends (Head :+: Tail) {
+    //
+    //      override def choice[R](caseHead: (Head) => R, caseTail: (Tail) => R): R = ???
+    //
+    //      override type OutputData = shapeless.:+:[HeadData, TailData]
+    //      override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
+    //    }
+    //
+    //    protected final case class CConsOne[Head <: Any, HeadData, HeadDelta]
+    //    (underlying: Differentiable.Aux[Input, Batch.Aux[shapeless.:+:[HeadData, shapeless.CNil], shapeless.:+:[HeadDelta, shapeless.CNil]]])
+    //    (
+    //      implicit headCompanion: Companion.Aux[Head, HeadData, HeadDelta]
+    //    ) extends (Head :+: CNil) {
+    //
+    //      override def choice[R](caseHead: Head => R, caseTail: CNil => R): R = ???
+    //
+    //      override type OutputData = shapeless.:+:[HeadData, shapeless.CNil]
+    //      override type OutputDelta = shapeless.:+:[HeadDelta, shapeless.CNil]
+    //    }
+    //
+    //    protected trait CConsOneCompanion[Head <: Any, HeadCompanion <: Companion[Head]] extends CoproductCompanion[Head :+: CNil] {
+    //      _: (shapeless.:+:[HeadCompanion#LiftFrom, shapeless.CNil] => (Head :+: CNil)) =>
+    //      implicit protected val headCompanion: HeadCompanion
+    //      override type OutputData = shapeless.:+:[headCompanion.OutputData, shapeless.CNil]
+    //      override type OutputDelta = shapeless.:+:[headCompanion.OutputDelta, shapeless.CNil]
+    //
+    //      override type LiftFrom = shapeless.:+:[headCompanion.LiftFrom, shapeless.CNil]
+    //
+    //      override def apply(value: LiftFrom): LiftTo = ???
+    //
+    //      override def weight(initialValue: LiftFrom): LiftTo = ???
+    //
+    //      override def monoid: Monoid[OutputDelta] = ???
+    //
+    //      override def toDifferentiable(ast: LiftTo): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = ???
+    //
+    //      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): LiftTo = {
+    //        ???
+    //      }
+    //
+    //    }
+    //
+    //    override implicit def cconsOne[Head <: Any](implicit headCompanion0: Companion[Head]) = {
+    //      new CConsOneCompanion[Head, headCompanion0.type] with (shapeless.:+:[headCompanion0.LiftFrom, shapeless.CNil] => (Head :+: CNil)) {
+    //        override implicit protected val headCompanion: headCompanion0.type = headCompanion0
+    //      }
+    //    }
+
+    //    protected trait CConsNCompanion[Head <: Any, Tail <: Coproduct, HeadCompanion <: Companion[Head], TailCompanion <: CoproductCompanion[Tail]] extends CoproductCompanion[Head :+: Tail] {
+    //      _: (shapeless.:+:[HeadCompanion#LiftFrom, TailCompanion#LiftFrom] => (Head :+: Tail)) =>
+    //      implicit protected val headCompanion: HeadCompanion
+    //      implicit protected val tailCompanion: TailCompanion
+    //
+    //      override type OutputData = shapeless.:+:[headCompanion.OutputData, tailCompanion.OutputData]
+    //      override type OutputDelta = shapeless.:+:[headCompanion.OutputDelta, tailCompanion.OutputDelta]
+    //
+    //      override type LiftFrom = shapeless.:+:[headCompanion.LiftFrom, tailCompanion.LiftFrom]
+    //
+    //      override def apply(value: LiftFrom): LiftTo = ???
+    //
+    //      override def weight(initialValue: LiftFrom): LiftTo = ???
+    //
+    //      override def monoid: Monoid[OutputDelta] = ???
+    //
+    //      override def toDifferentiable(ast: LiftTo): Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = ???
+    //
+    //      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]): LiftTo = ???
+    //
+    //    }
+    //
+    //    override implicit def cconsN[Head <: Any, Tail <: Coproduct](implicit headCompanion0: Companion[Head], tailCompanion0: CoproductCompanion[Tail]) = {
+    //      new CConsNCompanion[Head, Tail, headCompanion0.type, tailCompanion0.type] with (shapeless.:+:[headCompanion0.LiftFrom, tailCompanion0.LiftFrom] => (Head :+: Tail)) {
+    //        override implicit protected val headCompanion: headCompanion0.type = headCompanion0
+    //        override implicit protected val tailCompanion: tailCompanion0.type = tailCompanion0
+    //      }
+    //    }
+
+    override implicit def :+:[Head <: Any : Companion, Tail <: Coproduct : CoproductCompanion]: CoproductCompanion[CCons[Head, Tail, _, _, _, _]] = ???
+
+    override implicit object CNil extends CoproductCompanion[CNil] with CNil with (shapeless.CNil => CNil) {
+
+
+      override type LiftFrom = shapeless.CNil
+      override type OutputData = shapeless.CNil
+      override type OutputDelta = shapeless.CNil
+
+      override def monoid = new Monoid[OutputDelta] {
+        override def empty: OutputDelta = null
+
+        override def combine(x: OutputDelta, y: OutputDelta) = null
+      }
+
+      override val underlying = Literal(null)
+
+      override def toDifferentiable(ast: LiftTo) = underlying
+
+      override def toAst(generic: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = this
+
+      override def weight(initialValue: LiftFrom): LiftTo = this
+
+      override def apply(value: LiftFrom): LiftTo = this
+    }
+
+    type :+:[+Head <: Any, +Tail <: Coproduct] = CCons[Head, Tail, _, _, _, _]
+
+    sealed trait CCons[+Head <: Any, +Tail <: Coproduct, HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct] extends Coproduct with CConsApi[Head, Tail] {
+      override type OutputData = shapeless.:+:[HeadData, TailData]
+      override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
+    }
+
+    override object Inl extends InlCompanionApi {
+      override def apply[Head <: Any, Tail <: Coproduct](head: Head)(implicit headCompanion: Companion[Head]): Head :+: Nothing = {
+//        :+:(headCompanion, CNil).toAst(Differentiable.Inl(headCompanion.toDifferentiable(head)))
+        ???
+      }
+    }
+
+    //
+    //    private[SymbolicDsl] final case class Inl[Head <: Any, HeadData, HeadDelta]
+    //    (underlying: Differentiable.Aux[Input, Batch.Aux[HeadData], shapeless.:+:[HeadDelta, shapeless.Coproduct]]])
+    //    (implicit headCompanion: Companion.Aux[Head, HeadData, HeadDelta]) extends CCons[Head, Nothing, HeadData, HeadDelta, Nothing, shapeless.Coproduct] {
+    //
+    //      override def choice[R](caseHead: (Head) => R, caseTail: (Nothing) => R): R = {
+    //        //        caseHead(headCompanion.toAst(ForceGetHead(underlying)))
+    //        ???
+    //      }
+    //    }
+
+    override object Inr extends InrCompanionApi {
+      override def apply[Head <: Any, Tail <: Coproduct](tail: Tail)(implicit tailCompanion: CoproductCompanion[Tail]): Nothing :+: Tail = {
+        //        new Inr[Tail, tailCompanion.OutputData, tailCompanion.OutputDelta](tailCompanion.toDifferentiable(tail))(tailCompanion)
+        ???
+      }
+    }
+
+    //
+    //    private[SymbolicDsl] final case class Inr[Tail <: Coproduct, TailData, TailDelta]
+    //    (underlying: Differentiable.Aux[Input, Batch.Aux[shapeless.Inr[Nothing, TailData], shapeless.:+:[scala.Any, TailDelta]]])
+    //    (implicit tailCompanion: Companion.Aux[Tail, TailData, TailDelta]) extends (Nothing :+: Tail) {
+    //      override def choice[R](caseHead: (Nothing) => R, caseTail: (Tail) => R): R = {
+    ////        caseTail(tailCompanion.toAst(ForceGetTail(underlying)))
+    //        ???
+    //      }
+    //    }
+
     protected object HListCompanion {
       type Aux[Ast <: HList, Data, Delta] = HListCompanion[Ast] {
         type OutputData = Data
@@ -947,7 +1116,7 @@ object Differentiable {
       }
     }
 
-    trait HListCompanion[Ast <: HList] extends Companion[Ast] {
+    sealed trait HListCompanion[Ast <: HList] extends Companion[Ast] {
       _: (_ => Ast) =>
 
       override type OutputData <: shapeless.HList
@@ -955,7 +1124,7 @@ object Differentiable {
       override type LiftFrom <: shapeless.HList
     }
 
-    trait HList extends HListApi with Any {
+    sealed trait HList extends HListApi with Any {
 
       override type OutputData <: shapeless.HList
       override type OutputDelta <: shapeless.HList
@@ -1014,7 +1183,7 @@ object Differentiable {
 
     sealed trait ::[+Head <: Any, +Tail <: HList] extends HList with HConsApi[Head, Tail]
 
-    trait HConsCompanion[Head <: Any, Tail <: HList, HeadCompanion <: Companion[Head], TailCompanion <: HListCompanion[Tail]]
+    private[Differentiable] trait HConsCompanion[Head <: Any, Tail <: HList, HeadCompanion <: Companion[Head], TailCompanion <: HListCompanion[Tail]]
       extends HListCompanion[Head :: Tail] {
       _: (shapeless.::[HeadCompanion#LiftFrom, TailCompanion#LiftFrom] => (Head :: Tail)) =>
       implicit protected val headCompanion: HeadCompanion
@@ -1245,7 +1414,7 @@ object Differentiable {
   }
 
 
-  trait SymbolicInput {
+  sealed trait SymbolicInput {
     type Ast[D <: SymbolicDsl] <: D#Any
     type OutputData
     type OutputDelta
@@ -1367,7 +1536,7 @@ trait Differentiable {
 
   type Input <: Batch
 
-  type Output <: Batch.Aux[scala.Any, scala.Nothing]
+  type Output <: Batch
 
   def forward(input: Input): Output
 

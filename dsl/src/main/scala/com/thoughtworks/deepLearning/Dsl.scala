@@ -44,6 +44,10 @@ trait Dsl {
 
   }
 
+  protected trait CConsApi[+Head <: Any, +Tail <: Coproduct] {
+    def choice[R](caseHead: Head => R, caseTail: Tail => R): R
+  }
+
   protected trait Array2DApi {
     _: Array2D =>
 
@@ -121,10 +125,11 @@ trait Dsl {
 
   }
 
-  type Companion[Ast <: Any] <: Lifter {
+  type Companion[Ast <: Any] <: {
     type LiftTo = Ast
   }
   type HListCompanion[Ast <: HList] <: Companion[Ast]
+  type CoproductCompanion[Ast <: Coproduct] <: Companion[Ast]
 
   type Any
 
@@ -154,6 +159,28 @@ trait Dsl {
   type ::[+Head <: Any, +Tail <: HList] <: HConsApi[Head, Tail] with HList
 
   implicit def ::[Head <: Any : Companion, Tail <: HList : HListCompanion]: HListCompanion[Head :: Tail]
+
+  type Coproduct <: Any
+
+  type :+:[+Head <: Any, +Tail <: Coproduct] <: Coproduct with CConsApi[Head, Tail]
+
+  implicit def :+:[Head <: Any : Companion, Tail <: Coproduct : CoproductCompanion]: CoproductCompanion[Head :+: Tail]
+
+  protected trait InlCompanionApi {
+    def apply[Head <: Any : Companion, Tail <: Coproduct](head: Head): Head :+: Tail
+  }
+
+  val Inl: InlCompanionApi
+
+  protected trait InrCompanionApi {
+    def apply[Head <: Any, Tail <: Coproduct : CoproductCompanion](tail: Tail): Head :+: Tail
+  }
+
+  val Inr: InrCompanionApi
+
+  type CNil <: Coproduct
+
+  implicit val CNil : CoproductCompanion[CNil]
 
   type HList <: HListApi with Any
 
