@@ -130,4 +130,25 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     math.abs(train(10.11)) should be < 0.5
   }
 
+  "construct a coproduct" in {
+    def getWeight(dsl: Dsl)(isLeft: dsl.Boolean) = {
+      import dsl._
+      val left: Double = Double.weight(100.0)
+      val right: Double = Double.weight(1.0)
+      isLeft.`if`[Double :+: Double :+: CNil] {
+        Inl[Double, Double :+: CNil](left)
+      } {
+        Inr[Double, Double :+: CNil](Inl[Double, CNil](right))
+      }(:+:(Double, :+:(Double, CNil)))
+    }
+    val symbolicIsLeft = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Boolean}]
+    val nn = getWeight(symbolicIsLeft.dsl)(symbolicIsLeft.ast).underlying
+//
+//    val trainLeft = nn.forward(Literal(Eval.now(true)))
+//    trainLeft.value should be (100.0)
+//    trainLeft.backward(trainLeft.value)
+
+    println(nn)
+
+  }
 }
