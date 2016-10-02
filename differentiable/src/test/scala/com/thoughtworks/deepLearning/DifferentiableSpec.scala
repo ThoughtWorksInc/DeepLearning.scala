@@ -145,9 +145,39 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     import symbolicIsLeft.dsl._
     val nn = getWeight(symbolicIsLeft.dsl)(symbolicIsLeft.ast).toDifferentiable(:+:(Double, :+:(Double, CNil)))
 
-    val trainLeft = nn.forward(Literal(Eval.now(true)))
-    trainLeft.value should be (shapeless.Inl(100.0))
-    trainLeft.backward(trainLeft.value)
+    val trainLeft0 = nn.forward(Literal(Eval.now(true)))
+    inside(trainLeft0.value) {
+      case shapeless.Inl(v) =>
+        v.value should be(100.0)
+    }
+    trainLeft0.backward(trainLeft0.value)
+
+
+    val trainLeft1 = nn.forward(Literal(Eval.now(true)))
+
+    inside(trainLeft1.value) {
+      case shapeless.Inl(v) =>
+        v.value should be < 100.0
+    }
+    trainLeft1.backward(trainLeft1.value)
+
+
+    val trainLeft2 = nn.forward(Literal(Eval.now(false)))
+    inside(trainLeft2.value) {
+      case shapeless.Inr(shapeless.Inl(v)) =>
+        v.value should be(1.0)
+    }
+    trainLeft2.backward(trainLeft2.value)
+
+
+    val trainLeft3 = nn.forward(Literal(Eval.now(false)))
+
+    inside(trainLeft3.value) {
+      case shapeless.Inr(shapeless.Inl(v)) =>
+        v.value should be < 1.0
+    }
+    trainLeft3.backward(trainLeft3.value)
+
 
   }
 }
