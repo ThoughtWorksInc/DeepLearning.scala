@@ -1047,7 +1047,8 @@ object Differentiable {
     sealed trait Any {
       type OutputData <: scala.Any
       type OutputDelta >: scala.Nothing
-      val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+      private[deepLearning] val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+      def toDifferentiable[Self >: this.type <: Any](implicit companion: Companion[Self]) = companion.toDifferentiable(this)
     }
 
     protected type Input <: Batch

@@ -142,13 +142,12 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
       }(:+:(Double, :+:(Double, CNil)))
     }
     val symbolicIsLeft = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Boolean}]
-    val nn = getWeight(symbolicIsLeft.dsl)(symbolicIsLeft.ast).underlying
-//
-//    val trainLeft = nn.forward(Literal(Eval.now(true)))
-//    trainLeft.value should be (100.0)
-//    trainLeft.backward(trainLeft.value)
+    import symbolicIsLeft.dsl._
+    val nn = getWeight(symbolicIsLeft.dsl)(symbolicIsLeft.ast).toDifferentiable(:+:(Double, :+:(Double, CNil)))
 
-    println(nn)
+    val trainLeft = nn.forward(Literal(Eval.now(true)))
+    trainLeft.value should be (shapeless.Inl(100.0))
+    trainLeft.backward(trainLeft.value)
 
   }
 }
