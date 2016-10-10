@@ -17,7 +17,8 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
     def apply() = 0.003
   }
 
-  type Array2DPair[D <: Dsl] = D# ::[(D#Array2D), (D# ::)[(D#Array2D), (D#HNil)]]
+  // type Array2DPair[D <: Dsl] = D#Array2D D#:: D#Array2D D#:: D#HNil
+  type Array2DPair[D <: Dsl] = D# ::[D#Array2D, D# ::[D#Array2D, D#HNil]]
 
   // Does not compile because Scala compile is not able to search the implicit value with very complex dependent type
   // def array2DPairInput = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = Array2DPair[D]}]
@@ -39,17 +40,7 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
     }
 
     val predictInputSymbol = shapeless.the[SymbolicInput {type Ast[D <: SymbolicDsl] = D#Array2D}]
-    val predictNetwork:
-    Differentiable.Aux[
-      Batch.Aux[
-        Eval[INDArray],
-        Eval[Option[INDArray]]
-      ],
-      Batch.Aux[
-        Eval[INDArray],
-        Eval[Option[INDArray]]
-      ]
-    ] = predictDsl(predictInputSymbol.dsl)(predictInputSymbol.ast).underlying
+    val predictNetwork = predictDsl(predictInputSymbol.dsl)(predictInputSymbol.ast).underlying
 
     def lossDsl(dsl: SymbolicDsl)(scoresAndLabels: Array2DPair[dsl.type]): dsl.Double = {
       import dsl._
@@ -61,24 +52,22 @@ final class DeepLearningSpec extends FreeSpec with Matchers {
     val lossInputSymbol = array2DPairInput
     val lossNetwork = lossDsl(lossInputSymbol.dsl)(lossInputSymbol.ast).underlying
 
-    def trainingDsl(dsl: SymbolicDsl)(inputAndLabels: Array2DPair[dsl.type]) = {
+    def trainingDsl(dsl: SymbolicDsl)(inputAndLabels: Array2DPair[dsl.type]): dsl.Double = {
       import dsl._
 
       val input = inputAndLabels.head
       val expectedLabels = inputAndLabels.tail.head
       // val likelihood = predictNetwork(input)
-      // lossNetwork(likelihood :: expectedLabels :: HNil)
-
       val richPredictNetwork = RichDifferentiable(predictNetwork)
-      val richLossNetwork = RichDifferentiable(lossNetwork)(::(Array2D, ::(Array2D, HNil)), Double)
-
       val likelihood = richPredictNetwork(input)
+
+      // lossNetwork(likelihood :: expectedLabels :: HNil)
+      val richLossNetwork = RichDifferentiable(lossNetwork)(::(Array2D, ::(Array2D, HNil)), Double)
       richLossNetwork((likelihood :: (expectedLabels :: (HNil: HNil)) (Array2D, HNil)) (dsl.Array2D, ::(Array2D, HNil)))
     }
 
     val trainingInputSymbol = array2DPairInput
     val trainingNetwork = trainingDsl(trainingInputSymbol.dsl)(trainingInputSymbol.ast).underlying
-
 
     //
     //    val labelData = Eval.now(
