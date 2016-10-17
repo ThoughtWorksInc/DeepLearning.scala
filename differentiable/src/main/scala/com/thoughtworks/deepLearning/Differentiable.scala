@@ -11,7 +11,8 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 
-//import shapeless.ops._
+import scala.annotation.tailrec
+
 import shapeless._
 
 
@@ -364,6 +365,64 @@ object Differentiable {
 
   }
 
+  final case class ToArray2DUnsafe[Input0 <: Batch, HMatrixData <: HList, HMatrixDelta <: HList]
+  (
+    differentiableHList: Differentiable.Aux[Input0, Batch.Aux[HMatrixData, HMatrixDelta]],
+    numberOfRows: Int,
+    numberOfColumns: Int
+  ) extends Differentiable {
+    override type Input = Input0
+
+    final class Output(hlistBatch: Batch.Aux[HMatrixData, HMatrixDelta]) extends Batch {
+      override type Data = Eval[INDArray]
+      override type Delta = Eval[Option[INDArray]]
+
+
+      override def backward(delta: Eval[Option[INDArray]]): Unit = {
+        val doubleDeltas = delta.map(_.map { ndArray =>
+          ndArray.data.asDouble
+        }).memoize
+
+        val hmatrixDelta = ((0 until numberOfRows).foldRight[HList](HNil) { (y, rest) =>
+          (0 until numberOfColumns).foldRight[HList](HNil) { (x, innerRest) =>
+            doubleDeltas.map {
+              case None =>
+                0.0
+              case Some(doubleDeltaData) =>
+                doubleDeltaData(y * numberOfColumns + x)
+            } :: innerRest
+          } :: rest
+        }).asInstanceOf[HMatrixDelta]
+        hlistBatch.backward(hmatrixDelta)
+      }
+
+      override def value: Eval[INDArray] = {
+        @tailrec
+        def loop(accumulation: Vector[Eval[Vector[Double]]], data: HList): Vector[Eval[Vector[Double]]] = {
+          data match {
+            case HNil =>
+              accumulation
+            case (head: HList) :: tail =>
+              @tailrec
+              def innerLoop(innerAccumulation: Vector[Eval[Double]], innerData: HList): Vector[Eval[Double]] = {
+                innerData match {
+                  case HNil => innerAccumulation
+                  case (innerHead: Eval[Double]) :: innerTail =>
+                    innerLoop(innerAccumulation :+ innerHead, innerTail)
+                }
+              }
+              loop(accumulation :+ innerLoop(Vector.empty, head).sequence, tail)
+          }
+        }
+        loop(Vector.empty, hlistBatch.value).sequence.map(_.toNDArray)
+      }
+    }
+
+    override def forward(input: Input0): Output = {
+      new Output(differentiableHList.forward(input))
+    }
+  }
+
   final case class ToArray2D[
   Input0 <: Batch,
   HMatrix <: shapeless.HList,
@@ -403,7 +462,7 @@ object Differentiable {
           }
           Sized.wrap[IndexedSeq[Eval[Double]], NumberOfColumns](rowIndexedSeq).toHList
         }
-        Sized.wrap[IndexedSeq[Row], NumberOfRows](indexedSeq).toHList
+        hlistBatch.backward(Sized.wrap[IndexedSeq[Row], NumberOfRows](indexedSeq).toHList)
       }
 
       override val value: Eval[INDArray] = {
@@ -1313,7 +1372,10 @@ object Differentiable {
         SymbolicDsl.this.::[Head, Tail].toAst(DifferentiableHCons(headCompanion.toDifferentiable(head), tailCompanion.toDifferentiable(this)))
       }
 
-      def toArray2D: Array2D = {
+      def toArray2D[Self >: this.type <: HList](companion: HListCompanion[Self]): Array2D = {
+        //        ToArray2D()
+        //        ToArray2D(companion.toDifferentiable(this))
+
         ???
       }
 
