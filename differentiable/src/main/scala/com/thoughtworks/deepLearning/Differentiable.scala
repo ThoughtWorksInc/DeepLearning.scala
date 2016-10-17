@@ -6,13 +6,13 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
-import shapeless.{:+:, ::, Coproduct, DepFn0, Generic, HNil}
-import simulacrum.typeclass
+
+//import shapeless.ops._
+import shapeless._
 
 
 object Differentiable {
@@ -362,6 +362,61 @@ object Differentiable {
       new Output(head.forward(input), tail.forward(input))
     }
 
+  }
+
+  final case class ToArray2D[
+  Input0 <: Batch,
+  HMatrix <: shapeless.HList,
+  NumberOfRows <: Nat,
+  RowRange <: shapeless.HList,
+  Row <: shapeless.HList,
+  NumberOfColumns <: Nat,
+  ColumnRange <: shapeless.HList
+  ](
+     differentiableHList: Differentiable.Aux[Input0, Batch.Aux[HMatrix, HMatrix]]
+   )(
+     implicit matrixToTraversable: ops.hlist.ToTraversable.Aux[HMatrix, Vector, Row],
+     rowRangeToHList: ops.sized.ToHList.Aux[IndexedSeq[Row], NumberOfRows, HMatrix],
+     numberOfRowsToInt: ops.nat.ToInt[NumberOfRows],
+     rowToTraversable: ops.hlist.ToTraversable.Aux[Row, Vector, Eval[Double]],
+     columnRangeToHList: ops.sized.ToHList.Aux[IndexedSeq[Eval[Double]], NumberOfColumns, Row],
+     numberOfColumnsToInt: ops.nat.ToInt[NumberOfColumns]
+   ) extends Differentiable {
+    override type Input = Input0
+
+    final class Output(hlistBatch: Batch.Aux[HMatrix, HMatrix]) extends Batch {
+      override type Data = Eval[INDArray]
+      override type Delta = Eval[Option[INDArray]]
+
+      override def backward(delta: Eval[Option[INDArray]]): Unit = {
+        val doubleDeltas = delta.map(_.map { ndArray =>
+          ndArray.data.asDouble
+        }).memoize
+        val indexedSeq = for (y <- 0 until numberOfRowsToInt()) yield {
+          val rowIndexedSeq = for (x <- 0 until numberOfColumnsToInt()) yield {
+            doubleDeltas.map {
+              case None =>
+                0.0
+              case Some(doubleDeltaData) =>
+                doubleDeltaData(y * numberOfColumnsToInt() + x)
+            }
+          }
+          Sized.wrap[IndexedSeq[Eval[Double]], NumberOfColumns](rowIndexedSeq).toHList
+        }
+        Sized.wrap[IndexedSeq[Row], NumberOfRows](indexedSeq).toHList
+      }
+
+      override val value: Eval[INDArray] = {
+        val HMatrix: HMatrix = hlistBatch.value
+        HMatrix.to[Vector].map { row: Row =>
+          row.to[Vector].sequence
+        }.sequence.map(_.toNDArray)
+      }
+    }
+
+    override def forward(input: Input0): Output = {
+      new Output(differentiableHList.forward(input))
+    }
   }
 
   final case class Literal[Data0](value0: Data0) extends Differentiable with Batch {
@@ -1048,6 +1103,7 @@ object Differentiable {
       type OutputData <: scala.Any
       type OutputDelta >: scala.Nothing
       private[deepLearning] val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+
       def toDifferentiable[Self >: this.type <: Any](implicit companion: Companion[Self]) = companion.toDifferentiable(this)
     }
 
@@ -1256,6 +1312,11 @@ object Differentiable {
       override def ::[Head <: Any, Tail >: this.type <: HList](head: Head)(implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): Head :: Tail = {
         SymbolicDsl.this.::[Head, Tail].toAst(DifferentiableHCons(headCompanion.toDifferentiable(head), tailCompanion.toDifferentiable(this)))
       }
+
+      def toArray2D: Array2D = {
+        ???
+      }
+
     }
 
     sealed trait HNil extends HList {
