@@ -1234,7 +1234,7 @@ object Differentiable {
       override type OutputData = shapeless.:+:[HeadData, TailData]
       override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
 
-      override def choice[R <: Any : Companion](caseHead: (Head) => R, caseTail: (Tail) => R): R = {
+      override def choice[R <: Any : Companion](caseHead: (Head) => R)( caseTail: (Tail) => R): R = {
         Boolean.toAst(IsInl(underlying)).`if` {
           caseHead(headCompanion.toAst(CConsHead(underlying)))
         } {
@@ -1336,7 +1336,7 @@ object Differentiable {
       override type OutputData = shapeless.Inl[HeadData, Nothing]
       override type OutputDelta = shapeless.:+:[HeadDelta, shapeless.Coproduct]
 
-      override def choice[R <: Any : Companion](caseHead: (Head) => R, caseTail: Nothing => R): R = {
+      override def choice[R <: Any : Companion](caseHead: (Head) => R)( caseTail: Nothing => R): R = {
         caseHead(headCompanion.toAst(CConsHead(underlying)))
       }
     }
@@ -1355,7 +1355,7 @@ object Differentiable {
       override type OutputData = shapeless.Inr[Nothing, TailData]
       override type OutputDelta = shapeless.:+:[scala.Any, TailDelta]
 
-      override def choice[R <: Any : Companion](caseHead: Nothing => R, caseTail: Tail => R): R = {
+      override def choice[R <: Any : Companion](caseHead: Nothing => R)( caseTail: Tail => R): R = {
         caseTail(tailCompanion.toAst(CConsTail(underlying)))
       }
     }
@@ -1728,6 +1728,65 @@ object Differentiable {
       override def companion(anotherDsl: SymbolicDsl): anotherDsl.Boolean.type = anotherDsl.Boolean
 
       override val ast = dsl.Boolean(Id[OutputData, OutputDelta]())
+    }
+
+    implicit def cnilInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override type OutputData = shapeless.CNil
+      override type OutputDelta = shapeless.CNil
+      override type Ast[D <: SymbolicDsl] = D#CNil
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.CNil.type = anotherDsl.CNil
+
+      override val ast = dsl.CNil
+    }
+
+    implicit def cconsInput[HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
+    (implicit
+     learningRate: LearningRate,
+     headInput: SymbolicInput {
+       type OutputData = HeadData
+       type OutputDelta = HeadDelta
+     },
+     tailInput: SymbolicInput {
+       type OutputData = TailData
+       type OutputDelta = TailDelta
+       type Ast[D <: SymbolicDsl] <: D#Coproduct
+       def companion(anotherDsl: SymbolicDsl): anotherDsl.CoproductCompanion[Ast[anotherDsl.type]] {
+         type OutputData = TailData
+         type OutputDelta = TailDelta
+       }
+     }
+    ) = new SymbolicInput {
+      override type OutputData = shapeless.:+:[HeadData, TailData]
+      override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
+      override type Ast[D <: SymbolicDsl] = D# :+:[headInput.Ast[D], tailInput.Ast[D]]
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def companion(anotherDsl: SymbolicDsl)
+      : anotherDsl.CConsCompanion[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type], _ <: anotherDsl.Companion[headInput.Ast[anotherDsl.type]] {
+        type OutputData = HeadData
+        type OutputDelta = HeadDelta
+      }, _ <: anotherDsl.CoproductCompanion[tailInput.Ast[anotherDsl.type]] {
+        type OutputData = TailData
+        type OutputDelta = TailDelta
+      }] = {
+        val headCompanion = headInput.companion(anotherDsl)
+        val tailCompanion = tailInput.companion(anotherDsl)
+        anotherDsl.:+:[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type]](headCompanion, tailCompanion)
+      }
+
+      override val ast: Ast[dsl.type] = {
+        val id: Differentiable.Aux[Batch.Aux[OutputData, OutputDelta], Batch.Aux[OutputData, OutputDelta]] = Id[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]()
+        val headCompanion = headInput.companion(dsl)
+        val tailCompanion = tailInput.companion(dsl)
+        type Head = headInput.Ast[dsl.type]
+        type Tail = tailInput.Ast[dsl.type]
+        val companion: dsl.CConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = dsl.:+:[Head, Tail](headCompanion, tailCompanion)
+        companion.toAst(id)
+      }
     }
 
     implicit def hnilInput(implicit learningRate: LearningRate) = new SymbolicInput {
