@@ -6,13 +6,15 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
-import shapeless.{:+:, ::, Coproduct, DepFn0, Generic, HNil}
-import simulacrum.typeclass
+
+import scala.annotation.tailrec
+import shapeless._
+import shapeless.ops.hlist.Length
+import shapeless.ops.nat.ToInt
 
 
 object Differentiable {
@@ -362,6 +364,136 @@ object Differentiable {
       new Output(head.forward(input), tail.forward(input))
     }
 
+  }
+
+  final case class ToArray2DUnsafe[Input0 <: Batch, HMatrixData <: HList, HMatrixDelta <: HList]
+  (
+    differentiableHList: Differentiable.Aux[Input0, Batch.Aux[HMatrixData, HMatrixDelta]]
+  ) extends Differentiable {
+    override type Input = Input0
+
+    final class Output(hlistBatch: Batch.Aux[HMatrixData, HMatrixDelta]) extends Batch {
+      override type Data = Eval[INDArray]
+      override type Delta = Eval[Option[INDArray]]
+
+
+      override def backward(delta: Eval[Option[INDArray]]): Unit = {
+        val doubleDeltas = delta.map(_.map { ndArray =>
+          ndArray.data.asDouble
+        }).memoize
+
+        @tailrec
+        def loop(accumulation: HList, data: HList, i: Int): HList = {
+          data match {
+            case HNil =>
+              accumulation
+            case (head: HList) :: tail =>
+              @tailrec
+              def innerLoop(innerAccumulation: HList, innerData: HList, i: Int): (HList, Int) = {
+                innerData match {
+                  case HNil =>
+                    (innerAccumulation, i)
+                  case _ :: _ =>
+                    innerLoop(
+                      doubleDeltas.map {
+                        case None =>
+                          0.0
+                        case Some(doubleDeltaData) =>
+                          doubleDeltaData(i)
+                      } :: innerAccumulation,
+                      innerData,
+                      i + 1)
+                }
+              }
+              val (row, newIndex) = innerLoop(HNil, head, i)
+              loop(row :: accumulation, tail, newIndex)
+          }
+
+        }
+        val hmatrixDelta = loop(HNil, hlistBatch.value, 0).asInstanceOf[HMatrixDelta]
+        hlistBatch.backward(hmatrixDelta)
+      }
+
+      override def value: Eval[INDArray] = {
+        @tailrec
+        def loop(accumulation: Vector[Eval[Vector[Double]]], data: HList): Vector[Eval[Vector[Double]]] = {
+          data match {
+            case HNil =>
+              accumulation
+            case (head: HList) :: tail =>
+              @tailrec
+              def innerLoop(innerAccumulation: Vector[Eval[Double]], innerData: HList): Vector[Eval[Double]] = {
+                innerData match {
+                  case HNil => innerAccumulation
+                  case (innerHead: Eval[Double]) :: innerTail =>
+                    innerLoop(innerAccumulation :+ innerHead, innerTail)
+                }
+              }
+              loop(accumulation :+ innerLoop(Vector.empty, head).sequence, tail)
+          }
+        }
+        loop(Vector.empty, hlistBatch.value).sequence.map(_.toNDArray)
+      }
+    }
+
+    override def forward(input: Input0): Output = {
+      new Output(differentiableHList.forward(input))
+    }
+  }
+
+  final case class ToArray2D[
+  Input0 <: Batch,
+  HMatrix <: shapeless.HList,
+  NumberOfRows <: Nat,
+  RowRange <: shapeless.HList,
+  Row <: shapeless.HList,
+  NumberOfColumns <: Nat,
+  ColumnRange <: shapeless.HList
+  ](
+     differentiableHList: Differentiable.Aux[Input0, Batch.Aux[HMatrix, HMatrix]]
+   )(
+     implicit matrixToTraversable: ops.hlist.ToTraversable.Aux[HMatrix, Vector, Row],
+     rowRangeToHList: ops.sized.ToHList.Aux[IndexedSeq[Row], NumberOfRows, HMatrix],
+     numberOfRowsToInt: ops.nat.ToInt[NumberOfRows],
+     rowToTraversable: ops.hlist.ToTraversable.Aux[Row, Vector, Eval[Double]],
+     columnRangeToHList: ops.sized.ToHList.Aux[IndexedSeq[Eval[Double]], NumberOfColumns, Row],
+     numberOfColumnsToInt: ops.nat.ToInt[NumberOfColumns]
+   ) extends Differentiable {
+    override type Input = Input0
+
+    final class Output(hlistBatch: Batch.Aux[HMatrix, HMatrix]) extends Batch {
+      override type Data = Eval[INDArray]
+      override type Delta = Eval[Option[INDArray]]
+
+      override def backward(delta: Eval[Option[INDArray]]): Unit = {
+        val doubleDeltas = delta.map(_.map { ndArray =>
+          ndArray.data.asDouble
+        }).memoize
+        val indexedSeq = for (y <- 0 until numberOfRowsToInt()) yield {
+          val rowIndexedSeq = for (x <- 0 until numberOfColumnsToInt()) yield {
+            doubleDeltas.map {
+              case None =>
+                0.0
+              case Some(doubleDeltaData) =>
+                doubleDeltaData(y * numberOfColumnsToInt() + x)
+            }
+          }
+          Sized.wrap[IndexedSeq[Eval[Double]], NumberOfColumns](rowIndexedSeq).toHList
+        }
+        hlistBatch.backward(Sized.wrap[IndexedSeq[Row], NumberOfRows](indexedSeq).toHList)
+      }
+
+      override val value: Eval[INDArray] = {
+        val HMatrix: HMatrix = hlistBatch.value
+        HMatrix.to[Vector].map { row: Row =>
+          row.to[Vector].sequence
+        }.sequence.map(_.toNDArray)
+      }
+    }
+
+    override def forward(input: Input0): Output = {
+      new Output(differentiableHList.forward(input))
+    }
   }
 
   final case class Literal[Data0](value0: Data0) extends Differentiable with Batch {
@@ -1048,6 +1180,7 @@ object Differentiable {
       type OutputData <: scala.Any
       type OutputDelta >: scala.Nothing
       private[deepLearning] val underlying: Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+
       def toDifferentiable[Self >: this.type <: Any](implicit companion: Companion[Self]) = companion.toDifferentiable(this)
     }
 
@@ -1101,7 +1234,7 @@ object Differentiable {
       override type OutputData = shapeless.:+:[HeadData, TailData]
       override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
 
-      override def choice[R <: Any : Companion](caseHead: (Head) => R, caseTail: (Tail) => R): R = {
+      override def choice[R <: Any : Companion](caseHead: (Head) => R)( caseTail: (Tail) => R): R = {
         Boolean.toAst(IsInl(underlying)).`if` {
           caseHead(headCompanion.toAst(CConsHead(underlying)))
         } {
@@ -1203,7 +1336,7 @@ object Differentiable {
       override type OutputData = shapeless.Inl[HeadData, Nothing]
       override type OutputDelta = shapeless.:+:[HeadDelta, shapeless.Coproduct]
 
-      override def choice[R <: Any : Companion](caseHead: (Head) => R, caseTail: Nothing => R): R = {
+      override def choice[R <: Any : Companion](caseHead: (Head) => R)( caseTail: Nothing => R): R = {
         caseHead(headCompanion.toAst(CConsHead(underlying)))
       }
     }
@@ -1222,7 +1355,7 @@ object Differentiable {
       override type OutputData = shapeless.Inr[Nothing, TailData]
       override type OutputDelta = shapeless.:+:[scala.Any, TailDelta]
 
-      override def choice[R <: Any : Companion](caseHead: Nothing => R, caseTail: Tail => R): R = {
+      override def choice[R <: Any : Companion](caseHead: Nothing => R)( caseTail: Tail => R): R = {
         caseTail(tailCompanion.toAst(CConsTail(underlying)))
       }
     }
@@ -1246,6 +1379,7 @@ object Differentiable {
       override type OutputData <: shapeless.HList
       override type OutputDelta <: shapeless.HList
       override type LiftFrom <: shapeless.HList
+
     }
 
     sealed trait HList extends HListApi with Any {
@@ -1256,6 +1390,11 @@ object Differentiable {
       override def ::[Head <: Any, Tail >: this.type <: HList](head: Head)(implicit headCompanion: Companion[Head], tailCompanion: HListCompanion[Tail]): Head :: Tail = {
         SymbolicDsl.this.::[Head, Tail].toAst(DifferentiableHCons(headCompanion.toDifferentiable(head), tailCompanion.toDifferentiable(this)))
       }
+
+      def toArray2D: Array2D = {
+        Array2D.toAst(ToArray2DUnsafe(this.underlying))
+      }
+
     }
 
     sealed trait HNil extends HList {
@@ -1589,6 +1728,65 @@ object Differentiable {
       override def companion(anotherDsl: SymbolicDsl): anotherDsl.Boolean.type = anotherDsl.Boolean
 
       override val ast = dsl.Boolean(Id[OutputData, OutputDelta]())
+    }
+
+    implicit def cnilInput(implicit learningRate: LearningRate) = new SymbolicInput {
+      override type OutputData = shapeless.CNil
+      override type OutputDelta = shapeless.CNil
+      override type Ast[D <: SymbolicDsl] = D#CNil
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def companion(anotherDsl: SymbolicDsl): anotherDsl.CNil.type = anotherDsl.CNil
+
+      override val ast = dsl.CNil
+    }
+
+    implicit def cconsInput[HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
+    (implicit
+     learningRate: LearningRate,
+     headInput: SymbolicInput {
+       type OutputData = HeadData
+       type OutputDelta = HeadDelta
+     },
+     tailInput: SymbolicInput {
+       type OutputData = TailData
+       type OutputDelta = TailDelta
+       type Ast[D <: SymbolicDsl] <: D#Coproduct
+       def companion(anotherDsl: SymbolicDsl): anotherDsl.CoproductCompanion[Ast[anotherDsl.type]] {
+         type OutputData = TailData
+         type OutputDelta = TailDelta
+       }
+     }
+    ) = new SymbolicInput {
+      override type OutputData = shapeless.:+:[HeadData, TailData]
+      override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
+      override type Ast[D <: SymbolicDsl] = D# :+:[headInput.Ast[D], tailInput.Ast[D]]
+
+      override val dsl = SymbolicDsl[Batch.Aux[OutputData, OutputDelta]]
+
+      override def companion(anotherDsl: SymbolicDsl)
+      : anotherDsl.CConsCompanion[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type], _ <: anotherDsl.Companion[headInput.Ast[anotherDsl.type]] {
+        type OutputData = HeadData
+        type OutputDelta = HeadDelta
+      }, _ <: anotherDsl.CoproductCompanion[tailInput.Ast[anotherDsl.type]] {
+        type OutputData = TailData
+        type OutputDelta = TailDelta
+      }] = {
+        val headCompanion = headInput.companion(anotherDsl)
+        val tailCompanion = tailInput.companion(anotherDsl)
+        anotherDsl.:+:[headInput.Ast[anotherDsl.type], tailInput.Ast[anotherDsl.type]](headCompanion, tailCompanion)
+      }
+
+      override val ast: Ast[dsl.type] = {
+        val id: Differentiable.Aux[Batch.Aux[OutputData, OutputDelta], Batch.Aux[OutputData, OutputDelta]] = Id[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]()
+        val headCompanion = headInput.companion(dsl)
+        val tailCompanion = tailInput.companion(dsl)
+        type Head = headInput.Ast[dsl.type]
+        type Tail = tailInput.Ast[dsl.type]
+        val companion: dsl.CConsCompanion[Head, Tail, headCompanion.type, tailCompanion.type] = dsl.:+:[Head, Tail](headCompanion, tailCompanion)
+        companion.toAst(id)
+      }
     }
 
     implicit def hnilInput(implicit learningRate: LearningRate) = new SymbolicInput {

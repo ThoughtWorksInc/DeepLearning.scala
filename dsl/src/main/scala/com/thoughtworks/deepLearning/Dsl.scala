@@ -45,7 +45,7 @@ trait Dsl {
   }
 
   protected trait CConsApi[+Head <: Any, +Tail <: Coproduct] {
-    def choice[R <: Any : Companion](caseHead: Head => R, caseTail: Tail => R): R
+    def choice[R <: Any : Companion](caseHead: Head => R)(caseTail: Tail => R): R
   }
 
   protected trait Array2DApi {

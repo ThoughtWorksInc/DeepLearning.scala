@@ -10,11 +10,11 @@ trait DeepLearning {
   import dsl._
 
   def sigmoid(input: Array2D) = {
-    Double(1.0) / (exp(-input) + 1.0)
+    1.0 / (exp(-input) + 1.0)
   }
 
   def relu(input: Array2D) = {
-    max(input, Double(0.0))
+    max(input, 0.0)
   }
 
   def fullyConnected(input: Array2D, weight: Array2D, bias: Array2D) = {
