@@ -6,6 +6,24 @@ import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.Differentiable.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 
+trait Optimizer {
+
+  type Data
+  type Delta
+
+  def applyPatch(data: Data, delta: Delta): Data
+
+}
+
+object Optimizer {
+
+  type Aux[Data0, Delta0] = Optimizer {
+    type Data = Data0
+    type Delta = Delta0
+  }
+
+}
+
 trait Differentiable extends Product {
 
   type Data
@@ -17,16 +35,14 @@ trait Differentiable extends Product {
 
   def monoid: Monoid[Delta]
 
-  def applyPatch(data: Data, delta: Delta): Data
-
   final def id = DifferentiableFunction.Id[Data, Delta]()
 
   final def literal(initialValue: LiftFrom) = {
     DifferentiableFunction.Literal(lift(initialValue), this: Differentiable.Aux[Data, Delta])
   }
 
-  final def weight(initialValue: LiftFrom) = {
-    DifferentiableFunction.Weight(lift(initialValue), this: Differentiable.Aux[Data, Delta])
+  final def weight(initialValue: LiftFrom)(implicit optimizer: Optimizer.Aux[Data, Delta]) = {
+    DifferentiableFunction.Weight(lift(initialValue), this: Differentiable.Aux[Data, Delta], optimizer)
   }
 
 }
@@ -44,7 +60,6 @@ object Differentiable {
     override type LiftFrom = scala.Double
     override def lift(from: scala.Double) = Eval.now(from)
     override def monoid: Monoid[Delta] = implicitly
-    override def applyPatch(data: Data, delta: Delta): Data = data.map2(delta) { _ - _ * 0.03 }.memoize
   }
 
 }
@@ -130,7 +145,7 @@ object DifferentiableFunction {
   }
 
   // TODO: thread safety
-  final case class Weight[Data0, Delta0](var value: Data0, differentiable: Differentiable.Aux[Data0, Delta0]) extends DifferentiableFunction with Batch {
+  final case class Weight[Data0, Delta0](var value: Data0, differentiable: Differentiable.Aux[Data0, Delta0], optimizer: Optimizer.Aux[Data0,Delta0]) extends DifferentiableFunction with Batch {
     override type InputData = Any
     override type InputDelta = Nothing
     override type OutputData = Data0
@@ -139,7 +154,7 @@ object DifferentiableFunction {
     override type Delta = Delta0
 
     override def backward(delta: Delta): Unit = {
-      value = differentiable.applyPatch(value, delta)
+      value = optimizer.applyPatch(value, delta)
     }
 
     override def forward(input: Batch.Aux[InputData, InputDelta]) = this

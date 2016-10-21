@@ -3,13 +3,24 @@ package com.thoughtworks.deepLearning
 import org.scalatest._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
+import cats.implicits._
+import cats.Eval
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
-  "create neuron network by macros with no weight" in {
+  implicit def fixLearningRateDoubleOptimizer = new Optimizer {
+    override type Data = Eval[Double]
+    override type Delta = Eval[Double]
+    override def applyPatch(data: Data, delta: Delta): Data = {
+      val learningRate = 0.03
+      data.map2(delta) (_ - _ * learningRate)
+    }
+  }
+
+  "neuron network with no weight" in {
     //    @differenitable
     //    val f: DifferentiableFunction.Aux[Eval[scala.Double], Eval[scala.Double], Eval[scala.Double], Eval[scala.Double]] = { input: Double =>
     //      input + 3.0
@@ -31,7 +42,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
 
   }
 
-  "create neuron network by macros with a weight" in {
+  "neuron network with a weight" in {
     //    @differenitable
     //    val f: DifferentiableFunction.Aux[Eval[scala.Double], Eval[scala.Double], Eval[scala.Double], Eval[scala.Double]] = { input: Double =>
     //      input + 3.0
