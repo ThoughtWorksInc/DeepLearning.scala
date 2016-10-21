@@ -55,4 +55,4 @@ libraryDependencies += "com.thoughtworks.sde" %% "gen" % "2.0.0"
 
 addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.0" cross CrossVersion.binary)
 
-libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.8.0"
+libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.10.0"
