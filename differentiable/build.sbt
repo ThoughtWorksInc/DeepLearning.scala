@@ -54,3 +54,5 @@ addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVer
 libraryDependencies += "com.thoughtworks.sde" %% "gen" % "2.0.0"
 
 addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.0" cross CrossVersion.binary)
+
+libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.8.0"
