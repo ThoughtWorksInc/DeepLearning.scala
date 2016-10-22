@@ -5,8 +5,9 @@ import cats.implicits._
 import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.Metadata.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
-import shapeless.{:+:, CNil, Inr}
+import shapeless.{:+:, CNil, Coproduct, Inr}
 import simulacrum.{noop, typeclass}
+
 import scala.language.implicitConversions
 
 trait Optimizer {
@@ -28,7 +29,8 @@ object Optimizer {
 }
 
 @typeclass
-trait Differentiable[-LiftFrom] extends Metadata { typeClassInstance =>
+trait Differentiable[-LiftFrom] extends Metadata {
+  typeClassInstance =>
 
   def lift(from: LiftFrom): typeClassInstance.Data
 
@@ -40,7 +42,7 @@ trait Differentiable[-LiftFrom] extends Metadata { typeClassInstance =>
     DifferentiableFunction.Weight(lift(initialValue), this: Metadata.Aux[Data, Delta], optimizer)
   }
 
-  final def id = DifferentiableFunction.Id[Data, Delta]()
+  final def id = DifferentiableFunction.Id(this: Metadata.Aux[Data, Delta])
 
 }
 
@@ -113,7 +115,14 @@ object Metadata {
     type Delta = Delta0
   }
 
-  sealed trait Coproduct {
+  object Coproduct {
+    type Aux[Data0, DeltaValue0] = Coproduct {
+      type Data = Data0
+      type DeltaValue = DeltaValue0
+    }
+  }
+
+  sealed trait Coproduct extends Metadata {
 
     type Data <: shapeless.Coproduct
     type DeltaValue <: shapeless.Coproduct
@@ -164,7 +173,7 @@ trait DifferentiableFunction {
 
   def forward(input: Batch.Aux[InputData, InputDelta]): Batch.Aux[OutputData, OutputDelta]
 
-  def metadata(inputMetadata: Metadata.Aux[InputData, InputDelta]): Metadata.Aux[OutputData, OutputDelta]
+  def metadata: Metadata.Aux[OutputData, OutputDelta]
 
 }
 
@@ -178,7 +187,7 @@ object DifferentiableFunction {
   }
 
 
-  final case class Id[Data, Delta]() extends DifferentiableFunction {
+  final case class Id[Data, Delta](override val metadata: Metadata.Aux[Data, Delta]) extends DifferentiableFunction {
 
     override type InputData = Data
     override type OutputData = Data
@@ -187,11 +196,9 @@ object DifferentiableFunction {
 
     def forward(input: Batch.Aux[Data, Delta]): Batch.Aux[Data, Delta] = input
 
-    def metadata(input: Metadata.Aux[Data, Delta]): Metadata.Aux[Data, Delta] = input
-
   }
 
-  final case class Literal[Data0, Delta0](override val value: Data0, metadata: Metadata.Aux[Data0, Delta0]) extends DifferentiableFunction with Batch {
+  final case class Literal[Data0, Delta0](override val value: Data0, override val metadata: Metadata.Aux[Data0, Delta0]) extends DifferentiableFunction with Batch {
     override type InputData = Any
     override type InputDelta = Nothing
     override type OutputData = Data0
@@ -203,12 +210,10 @@ object DifferentiableFunction {
 
     override def forward(input: Batch.Aux[InputData, InputDelta]) = this
 
-    override def metadata(inputDifferentiable: Metadata.Aux[InputData, InputDelta]) = metadata
-
   }
 
   // TODO: thread safety
-  final case class Weight[Data0, Delta0](var value: Data0, differentiable: Metadata.Aux[Data0, Delta0], optimizer: Optimizer.Aux[Data0, Delta0]) extends DifferentiableFunction with Batch {
+  final case class Weight[Data0, Delta0](var value: Data0, override val metadata: Metadata.Aux[Data0, Delta0], optimizer: Optimizer.Aux[Data0, Delta0]) extends DifferentiableFunction with Batch {
     override type InputData = Any
     override type InputDelta = Nothing
     override type OutputData = Data0
@@ -222,14 +227,13 @@ object DifferentiableFunction {
 
     override def forward(input: Batch.Aux[InputData, InputDelta]) = this
 
-    override def metadata(inputDifferentiable: Metadata.Aux[InputData, InputDelta]) = differentiable
-
   }
 
-  final case class Add[InputData0, InputDelta0](
-                                                 left: DifferentiableFunction.Aux[InputData0, InputDelta0, Eval[scala.Double], Eval[scala.Double]],
-                                                 right: DifferentiableFunction.Aux[InputData0, InputDelta0, Eval[scala.Double], Eval[scala.Double]]
-                                               ) extends DifferentiableFunction {
+  final case class DoubleAddDouble[InputData0, InputDelta0]
+  (
+    left: DifferentiableFunction.Aux[InputData0, InputDelta0, Eval[scala.Double], Eval[scala.Double]],
+    right: DifferentiableFunction.Aux[InputData0, InputDelta0, Eval[scala.Double], Eval[scala.Double]]
+  ) extends DifferentiableFunction {
     override type InputData = InputData0
     override type InputDelta = InputDelta0
     override type OutputData = Eval[scala.Double]
@@ -240,8 +244,8 @@ object DifferentiableFunction {
       val rightBatch = right.forward(input)
       // TODO: cache
       new Batch {
-        type Data = Eval[scala.Double]
-        type Delta = Eval[scala.Double]
+        type Data = OutputData
+        type Delta = OutputDelta
         val value = leftBatch.value.map2(rightBatch.value) {
           _ + _
         }.memoize
@@ -253,7 +257,43 @@ object DifferentiableFunction {
       }
     }
 
-    override def metadata(inputDifferentiable: Metadata.Aux[InputData, InputDelta]) = Differentiable.Double
+    override def metadata = Differentiable.Double
+
+  }
+
+  final case class Inl[InputData0, InputDelta0, HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDeltaValue <: shapeless.Coproduct]
+  (
+    head: DifferentiableFunction.Aux[InputData0, InputDelta0, HeadData, HeadDelta],
+    tailMetadata: Metadata.Coproduct
+  ) extends DifferentiableFunction {
+    override type InputData = InputData0
+    override type InputDelta = InputDelta0
+
+    override type OutputData = shapeless.Inl[head.OutputData, Nothing]
+    override type OutputDelta = Option[shapeless.:+:[head.OutputData, shapeless.Coproduct]]
+
+    override def forward(input: Batch.Aux[InputData, InputDelta]) = {
+      val headBatch = head.forward(input)
+      new Batch {
+        type Data = OutputData
+        type Delta = OutputDelta
+        val value = ???
+
+        override def backward(delta: Delta): Unit = ???
+      }
+      ???
+    }
+
+    // Prefer asInstanceOf instead of complicated type constraint
+    override def metadata = {
+      def asDifferentiable[LiftFrom](metadata: Metadata) = {
+        metadata.asInstanceOf[Differentiable[LiftFrom]]
+      }
+      def asDifferentiableCoproduct[LiftFrom <: shapeless.Coproduct](metadata: Metadata) = {
+        metadata.asInstanceOf[Differentiable[LiftFrom] with Metadata.Coproduct]
+      }
+      Differentiable.CCons(asDifferentiable(head.metadata), asDifferentiableCoproduct(tailMetadata)).asInstanceOf[Metadata.Aux[OutputData, OutputDelta]]
+    }
 
   }
 
@@ -271,5 +311,5 @@ object DifferentiableFunction {
 //     this
 //   }
 //
-//   def metadata(inputMetadata: Metadata.Aux[InputData, InputDelta]): Metadata.Aux[OutputData, OutputDelta]
+//   def metadata: Metadata.Aux[OutputData, OutputDelta]
 // }

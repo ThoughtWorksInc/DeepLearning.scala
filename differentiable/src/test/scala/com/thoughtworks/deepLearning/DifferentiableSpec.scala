@@ -25,7 +25,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     //    val f: DifferentiableFunction.Aux[Eval[scala.Double], Eval[scala.Double], Eval[scala.Double], Eval[scala.Double]] = { input: Double =>
     //      input + 3.0
     //    }
-    val nn = DifferentiableFunction.Add(Differentiable.Double.id, Differentiable.Double.literal(3.0))
+    val nn = DifferentiableFunction.DoubleAddDouble(Differentiable.Double.id, Differentiable.Double.literal(3.0))
 
     def train(inputValue: scala.Double) = {
       val outputBatch = nn.forward(Differentiable.Double.literal(inputValue))
@@ -47,7 +47,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers with Inside {
     //    val f: DifferentiableFunction.Aux[Eval[scala.Double], Eval[scala.Double], Eval[scala.Double], Eval[scala.Double]] = { input: Double =>
     //      input + 3.0
     //    }
-    val nn = DifferentiableFunction.Add(Differentiable.Double.id, Differentiable.Double.weight(3.0))
+    val nn = DifferentiableFunction.DoubleAddDouble(Differentiable.Double.id, Differentiable.Double.weight(3.0))
 
     def train(inputValue: scala.Double) = {
       val outputBatch = nn.forward(Differentiable.Double.literal(inputValue))
