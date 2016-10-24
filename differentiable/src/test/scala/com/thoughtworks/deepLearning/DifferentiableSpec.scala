@@ -20,7 +20,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
     val network = {
       Differentiable.Dot(Differentiable.Array2DWeight(Array(Array(0.0, 5.0))),
-                         Differentiable.Id[Eval[INDArray], Eval[Option[INDArray]]])
+                         Differentiable.Id[Eval[INDArray], Eval[Option[INDArray]]]())
     }
 
     val inputBatch = Differentiable.Literal(
