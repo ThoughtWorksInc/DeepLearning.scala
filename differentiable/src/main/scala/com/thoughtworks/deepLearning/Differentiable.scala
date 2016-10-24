@@ -258,7 +258,6 @@ object Differentiable {
 
       override def backward(delta: shapeless.:+:[scala.Any, TailDelta]): Unit = {
         delta match {
-          case null =>
           case shapeless.Inr(tailDelta) => tailBatch.backward(tailDelta)
           case shapeless.Inl(_) =>
         }
@@ -289,7 +288,6 @@ object Differentiable {
 
       override def backward(delta: shapeless.:+:[HeadDelta, Coproduct]): Unit = {
         delta match {
-          case null =>
           case shapeless.Inl(headDelta) => headBatch.backward(headDelta)
           case shapeless.Inr(_) =>
         }
@@ -306,17 +304,35 @@ object Differentiable {
 
   }
 
+  final case class DifferentiableHNil[Input0 <: Batch]() extends Differentiable with Batch {
+    override type Input = Input0
+
+    override type Data = shapeless.HNil
+
+    override type Delta = shapeless.CNil
+
+    override type Output = Batch.Aux[Data, Delta]
+
+    override def forward(input: Input): Output = this
+
+    override def backward(delta: Delta): Unit = {}
+
+    override def value = shapeless.HNil
+
+    override def close(): Unit = {}
+  }
+
   object DifferentiableHCons {
 
-    final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct]
     (
-      differentiableHCons: Differentiable.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]]
-    )(implicit tailMonoid: Monoid[TailDelta]) extends Differentiable {
+      differentiableHCons: Differentiable.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+    ) extends Differentiable {
       override type Input = Input0
 
-      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]) extends Batch {
+      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch {
         override def backward(delta: Delta): Unit = {
-          upstream.backward(delta :: tailMonoid.empty)
+          upstream.backward(shapeless.Inl(delta))
         }
 
         override def value: Data = {
@@ -337,15 +353,15 @@ object Differentiable {
       }
     }
 
-    final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+    final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct]
     (
-      differentiableHCons: Differentiable.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]]
-    )(implicit headMonoid: Monoid[HeadDelta]) extends Differentiable {
+      differentiableHCons: Differentiable.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+    ) extends Differentiable {
       override type Input = Input0
 
-      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.::[HeadDelta, TailDelta]]) extends Batch {
+      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch {
         override def backward(delta: Delta): Unit = {
-          upstream.backward(headMonoid.empty :: delta)
+          upstream.backward(shapeless.Inr(delta))
         }
 
         override def value: Data = {
@@ -367,7 +383,7 @@ object Differentiable {
 
   }
 
-  final case class DifferentiableHCons[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.HList]
+  final case class DifferentiableHCons[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct]
   (
     head: Differentiable.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
     tail: Differentiable.Aux[Input0, Batch.Aux[TailData, TailDelta]]
@@ -376,8 +392,12 @@ object Differentiable {
 
     final class Output(headBatch: Batch.Aux[HeadData, HeadDelta], tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
       override def backward(delta: Delta): Unit = {
-        headBatch.backward(delta.head)
-        tailBatch.backward(delta.tail)
+        delta match {
+          case shapeless.Inl(headDelta) =>
+            headBatch.backward(headDelta)
+          case shapeless.Inr(tailDelta) =>
+            tailBatch.backward(tailDelta)
+        }
       }
 
       override def value: Data = {
@@ -390,7 +410,7 @@ object Differentiable {
       }
 
       override type Data = shapeless.::[HeadData, TailData]
-      override type Delta = shapeless.::[HeadDelta, TailDelta]
+      override type Delta = shapeless.:+:[HeadDelta, TailDelta]
     }
 
     override def forward(input: Input) = {
