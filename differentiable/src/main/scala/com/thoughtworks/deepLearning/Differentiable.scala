@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import cats.{Applicative, Eval, Monoid}
+import cats._
 
 import scala.language.existentials
 import scala.language.implicitConversions
@@ -36,7 +36,6 @@ object Differentiable {
 
       override type Delta = Eval[scala.Double]
 
-      // TODO: remove this monoid, use companion instead
       final def monoid: Monoid[Delta] = implicitly
 
     }
@@ -62,6 +61,7 @@ object Differentiable {
       override type Delta = Eval[Option[INDArray]]
 
       final def monoid = new Monoid[Delta] {
+        // TODO: empty should depends on shape
         override def empty: Eval[Option[INDArray]] = Eval.now(None)
 
         override def combine(x: Delta, y: Delta): Delta = x.map2(y) {
@@ -76,7 +76,7 @@ object Differentiable {
 
   }
 
-  trait Batch {
+  trait Batch extends AutoCloseable {
     type Data
     type Delta
 
@@ -102,7 +102,7 @@ object Differentiable {
     private[Differentiable] sealed trait ReferenceCount extends Batch {
       private[Cached] var count: Int = 1
 
-      implicit def monoid: Monoid[Delta]
+      implicit protected def monoid: Monoid[Delta]
 
       private var currentDelta: Delta = monoid.empty
 
@@ -110,16 +110,20 @@ object Differentiable {
 
       protected def cachedBackward(delta: Delta): Unit
 
-      override def backward(delta: Delta): Unit = {
-        val (newDelta, newCount) = synchronized {
+      override final def close(): Unit = {
+        val newCount = synchronized {
           count -= 1
-          currentDelta = currentDelta |+| delta
-          (currentDelta, count)
+          count
         }
-
         if (newCount == 0) {
           cache.remove(input)
-          cachedBackward(newDelta)
+          cachedBackward(currentDelta)
+        }
+      }
+
+      override final def backward(delta: Delta): Unit = {
+        synchronized {
+          currentDelta = currentDelta |+| delta
         }
       }
 
@@ -158,25 +162,27 @@ object Differentiable {
   final case class CConsHead[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
   (
     ccons: Differentiable.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+  ) extends Differentiable with Cached {
 
-  ) extends Differentiable {
-
-    final class Output(upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch {
+    final class Output(val input: Input, upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch with ReferenceCount {
       override type Data = HeadData
       override type Delta = HeadDelta
       type Input >: Input0
 
       val value = upstream.value.asInstanceOf[shapeless.Inl[HeadData, TailData]].head
 
-      override def backward(delta: Delta): Unit = {
+      override def cachedBackward(delta: Delta): Unit = {
         upstream.backward(shapeless.Inl(delta))
       }
+
+      def monoid = ???
+
     }
 
     type Input = Input0
 
-    override def forward(input: Input): Output = {
-      new Output(ccons.forward(input))
+    override def cachedForward(input: Input): Output = {
+      new Output(input, ccons.forward(input))
     }
 
   }
@@ -184,7 +190,6 @@ object Differentiable {
   final case class CConsTail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
   (
     ccons: Differentiable.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-
   ) extends Differentiable {
 
     final class Output(upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch {
@@ -196,6 +201,10 @@ object Differentiable {
 
       override def backward(delta: Delta): Unit = {
         upstream.backward(shapeless.Inr(delta))
+      }
+
+      override def close(): Unit = {
+        upstream.close()
       }
     }
 
@@ -219,8 +228,10 @@ object Differentiable {
         case shapeless.Inr(_) => Eval.now(false)
       }
 
-      override def backward(delta: Eval[scala.Boolean]): Unit = {
-        upstream.backward(null) // null is the empty delta of :+:
+      override def backward(delta: Eval[scala.Boolean]): Unit = {}
+
+      override def close(): Unit = {
+        upstream.close()
       }
     }
 
@@ -233,12 +244,11 @@ object Differentiable {
 
   final case class DifferentiableInr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
   (tail: Differentiable.Aux[Input0, Batch.Aux[TailData, TailDelta]])
-  (implicit monoid: Monoid[TailDelta])
     extends Differentiable {
 
     type Input = Input0
 
-    final class Output(tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
+    final class Output(val input: Input, tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
       def value = shapeless.Inr(tailBatch.value: TailData)
 
       type Data = shapeless.Inr[Nothing, TailData]
@@ -246,22 +256,25 @@ object Differentiable {
 
       override def backward(delta: shapeless.:+:[scala.Any, TailDelta]): Unit = {
         delta match {
-          case null => tailBatch.backward(monoid.empty)
+          case null =>
           case shapeless.Inr(tailDelta) => tailBatch.backward(tailDelta)
-          case shapeless.Inl(_) => throw new IllegalArgumentException
+          case shapeless.Inl(_) =>
         }
+      }
+
+      override def close(): Unit = {
+        tailBatch.close()
       }
     }
 
     override def forward(input: Input0): Output = {
-      new Output(tail.forward(input))
+      new Output(input, tail.forward(input))
     }
 
   }
 
   final case class DifferentiableInl[Input0 <: Batch, HeadData, HeadDelta]
   (head: Differentiable.Aux[Input0, Batch.Aux[HeadData, HeadDelta]])
-  (implicit monoid: Monoid[HeadDelta])
     extends Differentiable {
 
     type Input = Input0
@@ -274,10 +287,14 @@ object Differentiable {
 
       override def backward(delta: shapeless.:+:[HeadDelta, Coproduct]): Unit = {
         delta match {
-          case null => headBatch.backward(monoid.empty)
+          case null =>
           case shapeless.Inl(headDelta) => headBatch.backward(headDelta)
-          case shapeless.Inr(_) => throw new IllegalArgumentException
+          case shapeless.Inr(_) =>
         }
+      }
+
+      override def close(): Unit = {
+        headBatch.close()
       }
     }
 
@@ -306,6 +323,11 @@ object Differentiable {
 
         override type Data = HeadData
         override type Delta = HeadDelta
+
+        override def close(): Unit = {
+          upstream.close()
+        }
+
       }
 
       override def forward(input: Input) = {
@@ -326,6 +348,10 @@ object Differentiable {
 
         override def value: Data = {
           upstream.value.tail
+        }
+
+        override def close(): Unit = {
+          upstream.close()
         }
 
         override type Data = TailData
@@ -356,6 +382,11 @@ object Differentiable {
         headBatch.value :: tailBatch.value
       }
 
+      override def close(): Unit = {
+        headBatch.close()
+        tailBatch.close()
+      }
+
       override type Data = shapeless.::[HeadData, TailData]
       override type Delta = shapeless.::[HeadDelta, TailDelta]
     }
@@ -376,6 +407,9 @@ object Differentiable {
       override type Data = Eval[INDArray]
       override type Delta = Eval[Option[INDArray]]
 
+      override def close(): Unit = {
+        hlistBatch.close()
+      }
 
       override def backward(delta: Eval[Option[INDArray]]): Unit = {
         val doubleDeltas = delta.map(_.map { ndArray =>
@@ -465,6 +499,10 @@ object Differentiable {
       override type Data = Eval[INDArray]
       override type Delta = Eval[Option[INDArray]]
 
+      override def close(): Unit = {
+        hlistBatch.close()
+      }
+
       override def backward(delta: Eval[Option[INDArray]]): Unit = {
         val doubleDeltas = delta.map(_.map { ndArray =>
           ndArray.data.asDouble
@@ -507,6 +545,8 @@ object Differentiable {
     override def forward(input: Input): Output = this
 
     override def backward(delta: Delta): Unit = {}
+
+    override def close(): Unit = {}
   }
 
   final case class DoubleLessThanDouble[Input0 <: Batch]
@@ -660,6 +700,8 @@ object Differentiable {
 
     override def value = Eval.now(rawValue)
 
+    override def close(): Unit = {}
+
   }
 
   final case class BooleanWeight[Input0 <: Batch](var rawValue: scala.Boolean) extends Differentiable with BooleanBatch {
@@ -673,6 +715,8 @@ object Differentiable {
     }
 
     override def value = Eval.now(rawValue)
+
+    override def close(): Unit = {}
 
   }
 
@@ -691,6 +735,9 @@ object Differentiable {
         case None =>
       }
     }
+
+    override def close(): Unit = {}
+
   }
 
   object Array2DWeight {
