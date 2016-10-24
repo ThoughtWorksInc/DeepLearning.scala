@@ -162,26 +162,28 @@ object Differentiable {
   final case class CConsHead[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct]
   (
     ccons: Differentiable.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-  ) extends Differentiable with Cached {
+  ) extends Differentiable {
 
-    final class Output(val input: Input, upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch with ReferenceCount {
+    final class Output(val input: Input, upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]) extends Batch {
       override type Data = HeadData
       override type Delta = HeadDelta
       type Input >: Input0
 
       val value = upstream.value.asInstanceOf[shapeless.Inl[HeadData, TailData]].head
 
-      override def cachedBackward(delta: Delta): Unit = {
+      override def backward(delta: Delta): Unit = {
         upstream.backward(shapeless.Inl(delta))
       }
 
-      def monoid = ???
+      override def close(): Unit = {
+        upstream.close()
+      }
 
     }
 
     type Input = Input0
 
-    override def cachedForward(input: Input): Output = {
+    override def forward(input: Input): Output = {
       new Output(input, ccons.forward(input))
     }
 
