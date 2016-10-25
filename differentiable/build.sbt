@@ -4,10 +4,7 @@ crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 import org.apache.commons.lang3.SystemUtils
 
-incOptions := incOptions.value.withNameHashing(true).withRecompileOnMacroDef(false)
-
-// IntelliJ does not support ScalaTest 3.0.0 very well
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0-M15" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
 
 classpathTypes += "maven-plugin"
 
@@ -51,6 +48,4 @@ scalacOptions in Compile in doc ++= {
 
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
-libraryDependencies += "com.thoughtworks.sde" %% "gen" % "2.0.0"
-
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.0" cross CrossVersion.binary)
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.2" cross CrossVersion.binary)
