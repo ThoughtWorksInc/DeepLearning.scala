@@ -199,6 +199,8 @@ object Differentiable {
           }
           sharedBatch
       }
+
+      // When ASSERTION is disabled, fallback to the sharedBatch itself hence no check
       val checked: sharedBatch.Output = Option(sharedBatch.checkIfCloseOnlyOnce).getOrElse(sharedBatch)
 
       // Workaround for Scala compiler's stupid bug
