@@ -27,10 +27,15 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
       Eval.now(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)).toNDArray)
     )
 
-    def train() = managed(network.forward(inputBatch)).acquireAndGet { outputBatch =>
-      val loss = outputBatch.value.map(_.sumT)
-      outputBatch.backward(outputBatch.value)
-      loss
+    def train() = {
+      val outputBatch = network.forward(inputBatch)
+      try {
+        val loss = outputBatch.value.map(_.sumT)
+        outputBatch.backward(outputBatch.value)
+        loss
+      } finally {
+        outputBatch.close()
+      }
     }
 
     train().value should be(33.0)

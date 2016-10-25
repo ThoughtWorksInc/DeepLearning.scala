@@ -11,7 +11,7 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 
-import scala.annotation.tailrec
+import scala.annotation.{elidable, tailrec}
 import shapeless._
 import shapeless.ops.hlist.Length
 import shapeless.ops.nat.ToInt
@@ -89,9 +89,35 @@ object Differentiable {
   private[Differentiable] sealed trait Cached extends Differentiable {
 
     private val cache =
-      java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, Output](1))
+      java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, SharedBatch](1))
 
-    private[Cached] sealed trait ReferenceCount extends Batch {
+    private[Cached] sealed trait ReferenceCount extends Batch { this: SharedBatch =>
+
+      type Output = Batch.Aux[Data, Delta]
+
+      @elidable(elidable.ASSERTION)
+      private[Cached] def checked: Output = new Batch {
+        type Delta = ReferenceCount.this.Delta
+        type Data = ReferenceCount.this.Data
+
+        override final def backward(delta: Delta) = ReferenceCount.this.backward(delta)
+
+        def value = ReferenceCount.this.value
+
+        private var closed = false
+
+        override final def close(): Unit = {
+          ReferenceCount.this.synchronized {
+            if (closed) {
+              throw new IllegalStateException("close() method must be called once and only once.")
+            } else {
+              closed = true
+            }
+          }
+          ReferenceCount.this.close()
+        }
+      }
+
       private[Cached] var count: Int = 1
 
       private[Cached] def cachedBackward(): Unit
@@ -114,7 +140,7 @@ object Differentiable {
 
     }
 
-    private[Differentiable] sealed trait MonoidBatch extends ReferenceCount {
+    private[Differentiable] sealed trait MonoidBatch extends ReferenceCount { this: SharedBatch =>
 
       private var currentDelta: Delta = monoid.empty
 
@@ -133,7 +159,7 @@ object Differentiable {
       }
     }
 
-    private[Differentiable] sealed trait SemigroupBatch extends ReferenceCount {
+    private[Differentiable] sealed trait SemigroupBatch extends ReferenceCount { this: SharedBatch =>
 
       private var currentDelta: Option[Delta] = None
 
@@ -152,22 +178,26 @@ object Differentiable {
       }
     }
 
-    type Output <: ReferenceCount
+    type Output = Batch.Aux[SharedBatch#Data, SharedBatch#Delta]
 
-    protected def cachedForward(input: Input): Output
+    type SharedBatch <: ReferenceCount
 
-    override def forward(input: Input) = {
-      cache.get(input) match {
+    protected def cachedForward(input: Input): SharedBatch
+
+    override def forward(input: Input): Output = {
+      val sharedBatch = cache.get(input) match {
         case null =>
-          val output = cachedForward(input)
-          cache.put(input, output)
-          output
-        case output =>
-          output.synchronized {
-            output.count += 1
+          val sharedBatch: SharedBatch = cachedForward(input)
+          cache.put(input, sharedBatch)
+          sharedBatch
+        case sharedBatch =>
+          sharedBatch.synchronized {
+            sharedBatch.count += 1
           }
-          output
+          sharedBatch
       }
+      val checked = Option[sharedBatch.Output](sharedBatch.checked).getOrElse[sharedBatch.Output](sharedBatch)
+      checked.asInstanceOf[Output with Nothing]
     }
   }
 
@@ -190,8 +220,7 @@ object Differentiable {
                                 Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ) extends Differentiable {
 
-    final class Output(val input: Input,
-                       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+    final class Output(upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
         extends Batch {
       override type Data = HeadData
       override type Delta = HeadDelta
@@ -213,7 +242,7 @@ object Differentiable {
     type Input = Input0
 
     override def forward(input: Input): Output = {
-      new Output(input, ccons.forward(input))
+      new Output(ccons.forward(input))
     }
 
   }
@@ -284,7 +313,7 @@ object Differentiable {
 
     type Input = Input0
 
-    final class Output(val input: Input, tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
+    final class Output(tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
       def value = shapeless.Inr(tailBatch.value: TailData)
 
       type Data = shapeless.Inr[Nothing, TailData]
@@ -303,7 +332,7 @@ object Differentiable {
     }
 
     override def forward(input: Input0): Output = {
-      new Output(input, tail.forward(input))
+      new Output(tail.forward(input))
     }
 
   }
@@ -484,9 +513,9 @@ object Differentiable {
   ) extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends MonoidBatch
         with BooleanBatch {
       type Input >: Input0
@@ -505,8 +534,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -516,9 +545,9 @@ object Differentiable {
   ) extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends MonoidBatch
         with DoubleBatch {
       type Input >: Input0
@@ -537,8 +566,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
 
   }
@@ -549,9 +578,9 @@ object Differentiable {
   ) extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends MonoidBatch
         with DoubleBatch {
       type Input >: Input0
@@ -570,8 +599,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
 
   }
@@ -582,9 +611,9 @@ object Differentiable {
   ) extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends MonoidBatch
         with DoubleBatch {
       type Input >: Input0
@@ -605,8 +634,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
 
   }
@@ -616,7 +645,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends MonoidBatch
         with DoubleBatch {
       type Input >: Input0
@@ -636,9 +665,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableDouble.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -647,7 +676,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends MonoidBatch
         with DoubleBatch {
       type Input >: Input0
@@ -664,9 +693,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableDouble.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -748,9 +777,9 @@ object Differentiable {
   ) extends Differentiable
       with Cached {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                       upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
+                            upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
@@ -784,8 +813,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -803,9 +832,9 @@ object Differentiable {
   ) extends Differentiable
       with Cached {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                       upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
+                            upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = {
@@ -847,8 +876,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -858,9 +887,9 @@ object Differentiable {
   ) extends Differentiable
       with Cached {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                       upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
+                            upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = {
@@ -893,8 +922,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -904,9 +933,9 @@ object Differentiable {
   ) extends Differentiable
       with Cached {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
@@ -935,8 +964,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -946,9 +975,9 @@ object Differentiable {
   ) extends Differentiable
       with Cached {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream1.value.map2(upstream2.value)(Transforms.max).memoize
@@ -978,8 +1007,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -989,9 +1018,9 @@ object Differentiable {
   ) extends Differentiable
       with Cached {
 
-    final class Output(override val input: Input0,
-                       upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                       upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+    final class SharedBatch(override val input: Input0,
+                            upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
+                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
@@ -1002,6 +1031,7 @@ object Differentiable {
         upstream1.close()
         upstream2.close()
       }
+
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream1.backward(outputDelta)
         upstream2.backward(outputDelta.map(_.sumT))
@@ -1010,8 +1040,8 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
-      new Output(input, leftHandSide.forward(input), rightHandSide.forward(input))
+    override protected def cachedForward(input: Input): SharedBatch = {
+      new SharedBatch(input, leftHandSide.forward(input), rightHandSide.forward(input))
     }
   }
 
@@ -1020,7 +1050,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream.value.map(_ rdiv 1.0).memoize
@@ -1045,9 +1075,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableArray2D.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -1056,7 +1086,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends MonoidBatch
         with DoubleBatch {
       type Input >: Input0
@@ -1078,9 +1108,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableArray2D.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -1090,7 +1120,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream.value.map(_.sum(dimensions: _*)).memoize
@@ -1114,9 +1144,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableArray2D.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -1125,7 +1155,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream.value.map(-_).memoize
@@ -1143,9 +1173,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableArray2D.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -1154,7 +1184,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream.value.map(Transforms.log).memoize
@@ -1172,9 +1202,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableArray2D.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -1183,7 +1213,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
         extends Array2DBatch
         with SemigroupBatch {
       val value = upstream.value.map(Transforms.exp).memoize
@@ -1201,9 +1231,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableArray2D.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
@@ -1232,7 +1262,7 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]])
+    final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]])
         extends MonoidBatch
         with BooleanBatch {
       type Input >: Input0
@@ -1249,9 +1279,9 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): Output = {
+    override protected def cachedForward(input: Input): SharedBatch = {
       val upstream = differentiableBoolean.forward(input)
-      new Output(input, upstream)
+      new SharedBatch(input, upstream)
     }
   }
 
