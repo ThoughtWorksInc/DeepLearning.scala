@@ -60,11 +60,7 @@ object Differentiable {
 
       override type Delta = Eval[INDArray]
 
-      protected final val shape: Eval[Array[Int]] = value.map(_.shape).memoize
-
-      protected final def monoid = new Monoid[Delta] {
-        override def empty = shape.map(Nd4j.zeros(_: _*))
-
+      protected final def semigroup = new Semigroup[Delta] {
         override def combine(x: Delta, y: Delta): Delta = x.map2(y)(_ + _)
       }
 
@@ -95,12 +91,12 @@ object Differentiable {
     private val cache =
       java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, Output](1))
 
-    private[Differentiable] sealed trait ReferenceCount extends Batch {
+    private[Cached] sealed trait ReferenceCount extends Batch {
       private[Cached] var count: Int = 1
 
-      implicit protected def monoid: Monoid[Delta]
+      private[Cached] def cachedBackward(): Unit
 
-      protected def cachedBackward(): Unit
+      protected def cachedClose(): Unit
 
       def input: Input
 
@@ -112,23 +108,46 @@ object Differentiable {
         if (newCount == 0) {
           cache.remove(input)
           cachedBackward()
+          cachedClose()
         }
       }
 
     }
+
     private[Differentiable] sealed trait MonoidBatch extends ReferenceCount {
 
       private var currentDelta: Delta = monoid.empty
 
       protected def cachedBackward(delta: Delta): Unit
 
-      override protected final def cachedBackward(): Unit = {
+      implicit protected def monoid: Monoid[Delta]
+
+      override private[Cached] final def cachedBackward(): Unit = {
         cachedBackward(currentDelta)
       }
 
       override final def backward(delta: Delta): Unit = {
         synchronized {
           currentDelta = currentDelta |+| delta
+        }
+      }
+    }
+
+    private[Differentiable] sealed trait SemigroupBatch extends ReferenceCount {
+
+      private var currentDelta: Option[Delta] = None
+
+      protected def cachedBackward(delta: Delta): Unit
+
+      implicit protected def semigroup: Semigroup[Delta]
+
+      override private[Cached] final def cachedBackward(): Unit = {
+        currentDelta.foreach(cachedBackward)
+      }
+
+      override final def backward(delta: Delta): Unit = {
+        synchronized {
+          currentDelta = currentDelta |+| Some(delta)
         }
       }
     }
@@ -473,6 +492,11 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ < _).memoize
 
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
+
       override protected def cachedBackward(delta: Eval[scala.Boolean]): Unit = {
         upstream1.backward(Eval.now(0.0))
         upstream2.backward(Eval.now(0.0))
@@ -499,6 +523,11 @@ object Differentiable {
         with DoubleBatch {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ + _)
+
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
 
       override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
         upstream1.backward(delta)
@@ -528,6 +557,11 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ - _)
 
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
+
       override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
         upstream1.backward(delta)
         upstream2.backward(delta.map(-_))
@@ -556,6 +590,11 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ * _)
 
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
+
       override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
         val a = upstream1.value
         val b = upstream2.value
@@ -583,6 +622,10 @@ object Differentiable {
       type Input >: Input0
       val value = upstream.value.map(1.0 / _)
 
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
+
       override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
         val a = upstream.value
         upstream.backward(delta.map2(a) { (outputDeltaValue: scala.Double, aValue: scala.Double) =>
@@ -609,6 +652,10 @@ object Differentiable {
         with DoubleBatch {
       type Input >: Input0
       val value = upstream.value.map(-_)
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
 
       override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
         upstream.backward(delta.map(-_))
@@ -704,10 +751,16 @@ object Differentiable {
     final class Output(override val input: Input0,
                        upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
                        upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
-        extends {
+        extends Array2DBatch
+        with SemigroupBatch {
       override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val b = upstream2.value
@@ -753,7 +806,8 @@ object Differentiable {
     final class Output(override val input: Input0,
                        upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
                        upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
-        extends {
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = {
         upstream1.value
           .map2(upstream2.value) { (aValue, bValue) =>
@@ -765,8 +819,13 @@ object Differentiable {
           }
           .memoize
       }
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream1.value
@@ -802,7 +861,8 @@ object Differentiable {
     final class Output(override val input: Input0,
                        upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
                        upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
-        extends {
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = {
         Applicative[Eval]
           .map2(upstream1.value, upstream2.value) { (aValue, bValue) =>
@@ -814,8 +874,13 @@ object Differentiable {
           }
           .memoize
       }
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val sumAsOriginalShape = { (outputDeltaValue: INDArray, upstreamValue: INDArray) =>
@@ -842,10 +907,16 @@ object Differentiable {
     final class Output(override val input: Input0,
                        upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
                        upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
-        extends {
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream1.value
@@ -878,10 +949,16 @@ object Differentiable {
     final class Output(override val input: Input0,
                        upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
                        upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
-        extends {
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream1.value.map2(upstream2.value)(Transforms.max).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream1.value
@@ -915,11 +992,16 @@ object Differentiable {
     final class Output(override val input: Input0,
                        upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
                        upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
-        extends {
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
 
+      override protected def cachedClose(): Unit = {
+        upstream1.close()
+        upstream2.close()
+      }
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream1.backward(outputDelta)
         upstream2.backward(outputDelta.map(_.sumT))
@@ -938,10 +1020,16 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]]) extends {
+    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream.value.map(_ rdiv 1.0).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val upstreamValue = upstream.value
@@ -974,6 +1062,10 @@ object Differentiable {
       type Input >: Input0
       val value = upstream.value.map(_.sumT).memoize
 
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
+
       override protected def cachedBackward(outputDelta: Eval[scala.Double]): Unit = {
         upstream.backward(
           outputDelta
@@ -998,10 +1090,16 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]]) extends {
+    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream.value.map(_.sum(dimensions: _*)).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream.value
@@ -1027,10 +1125,16 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]]) extends {
+    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream.value.map(-_).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream.backward(outputDelta.map(-_).memoize)
@@ -1050,10 +1154,16 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]]) extends {
+    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream.value.map(Transforms.log).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream.backward(outputDelta.map2(upstream.value)(_ / _).memoize)
@@ -1073,10 +1183,16 @@ object Differentiable {
       extends Cached
       with Differentiable {
 
-    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]]) extends {
+    final class Output(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+        extends Array2DBatch
+        with SemigroupBatch {
       val value = upstream.value.map(Transforms.exp).memoize
-    } with Array2DBatch with MonoidBatch {
+
       type Input >: Input0
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
+      }
 
       override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream.backward(value.map2(outputDelta)(_ * _).memoize)
@@ -1124,6 +1240,10 @@ object Differentiable {
 
       override protected def cachedBackward(delta: Eval[scala.Boolean]): Unit = {
         upstream.backward(delta.map(!_))
+      }
+
+      override protected def cachedClose(): Unit = {
+        upstream.close()
       }
     }
 
