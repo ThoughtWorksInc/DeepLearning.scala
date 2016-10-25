@@ -48,4 +48,4 @@ scalacOptions in Compile in doc ++= {
 
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.0" cross CrossVersion.binary)
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.2" cross CrossVersion.binary)
