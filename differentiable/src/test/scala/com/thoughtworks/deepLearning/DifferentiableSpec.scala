@@ -20,7 +20,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
     val network = {
       Differentiable.Dot(Differentiable.Array2DWeight(Array(Array(0.0, 5.0))),
-                         Differentiable.Id[Eval[INDArray], Eval[Option[INDArray]]]())
+                         Differentiable.Id[Eval[INDArray], Eval[INDArray]]())
     }
 
     val inputBatch = Differentiable.Literal(
@@ -29,7 +29,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
     def train() = managed(network.forward(inputBatch)).acquireAndGet { outputBatch =>
       val loss = outputBatch.value.map(_.sumT)
-      outputBatch.backward(outputBatch.value.map(Some(_)))
+      outputBatch.backward(outputBatch.value)
       loss
     }
 
