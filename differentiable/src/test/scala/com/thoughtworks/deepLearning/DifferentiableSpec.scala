@@ -18,8 +18,12 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
   "Array2D dot Array2D" in {
 
     val network = {
-      Differentiable.Dot(Differentiable.Array2DWeight(Array(Array(0.0, 5.0))),
-                         Differentiable.Id[Eval[INDArray], Eval[INDArray]]())
+      Differentiable.Array2DNegative(
+        Differentiable.Dot(
+          Differentiable.Array2DWeight(Array(Array(0.0, 5.0))),
+          Differentiable.Id[Eval[INDArray], Eval[INDArray]]()
+        )
+      )
     }
 
     val inputBatch = Differentiable.Literal(
@@ -37,13 +41,13 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
       }
     }
 
-    train().value should be(33.0)
+    train().value should be(-33.0)
 
     for (_ <- 0 until 100) {
       train().value
     }
 
-    train().value should be < 1.0
+    math.abs(train().value) should be < 1.0
 
   }
 
