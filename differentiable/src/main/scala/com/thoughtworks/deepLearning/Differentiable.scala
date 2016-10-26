@@ -93,13 +93,13 @@ object Differentiable {
 
     private[Cached] sealed trait ReferenceCount extends Batch { this: SharedBatch =>
 
-      private[Cached] type Output = Batch.Aux[Data, Delta]
+      private[Cached] type Self = Batch.Aux[Data, Delta]
 
       /**
         * Returns a [[Batch]] able to detect error of closing more than once.
         */
       @elidable(elidable.ASSERTION)
-      private[Cached] def checkIfCloseOnlyOnce: Output = new Batch {
+      private[Cached] def checkIfCloseOnlyOnce: Self = new Batch {
         type Delta = ReferenceCount.this.Delta
         type Data = ReferenceCount.this.Data
 
@@ -123,9 +123,12 @@ object Differentiable {
 
       private[Cached] var count: Int = 1
 
-      private[Cached] def cachedBackward(): Unit
+      private[Cached] def flush(): Unit
 
-      protected def cachedClose(): Unit
+      /**
+        * Closes upstream batch of this [[SharedBatch]]
+        */
+      protected def closeUpstreams(): Unit
 
       def input: Input
 
@@ -136,8 +139,8 @@ object Differentiable {
         }
         if (newCount == 0) {
           cache.remove(input)
-          cachedBackward()
-          cachedClose()
+          flush()
+          closeUpstreams()
         }
       }
 
@@ -147,12 +150,19 @@ object Differentiable {
 
       private var currentDelta: Delta = monoid.empty
 
-      protected def cachedBackward(delta: Delta): Unit
+      /**
+        * Performs the underlying backward pass with all `delta`s that previously received from [[#backward]].
+        */
+      protected def rawBackward(delta: Delta): Unit
 
       implicit protected def monoid: Monoid[Delta]
 
-      override private[Cached] final def cachedBackward(): Unit = {
-        cachedBackward(currentDelta)
+      override private[Cached] final def flush(): Unit = {
+        rawBackward(synchronized {
+          val delta = currentDelta
+          currentDelta = monoid.empty
+          delta
+        })
       }
 
       override final def backward(delta: Delta): Unit = {
@@ -166,12 +176,16 @@ object Differentiable {
 
       private var currentDelta: Option[Delta] = None
 
-      protected def cachedBackward(delta: Delta): Unit
+      protected def rawBackward(delta: Delta): Unit
 
       implicit protected def semigroup: Semigroup[Delta]
 
-      override private[Cached] final def cachedBackward(): Unit = {
-        currentDelta.foreach(cachedBackward)
+      override private[Cached] final def flush(): Unit = {
+        synchronized {
+          val delta = currentDelta
+          currentDelta = None
+          delta
+        }.foreach(rawBackward)
       }
 
       override final def backward(delta: Delta): Unit = {
@@ -181,16 +195,21 @@ object Differentiable {
       }
     }
 
-    type Output = SharedBatch#Output
+    type Output = SharedBatch#Self
 
     protected type SharedBatch <: ReferenceCount
 
-    protected def cachedForward(input: Input): SharedBatch
+    /**
+      * Performs the underlying forward pass.
+      *
+      * @return a [[Batch]] that will cached for subsequent [[#forward]]
+      */
+    protected def rawForward(input: Input): SharedBatch
 
     override final def forward(input: Input): Output = {
       val sharedBatch: SharedBatch = cache.get(input) match {
         case null =>
-          val sharedBatch = cachedForward(input)
+          val sharedBatch = rawForward(input)
           cache.put(input, sharedBatch)
           sharedBatch
         case sharedBatch =>
@@ -201,9 +220,9 @@ object Differentiable {
       }
 
       // When ASSERTION is disabled, fallback to the sharedBatch itself hence no check
-      val checked: sharedBatch.Output = Option(sharedBatch.checkIfCloseOnlyOnce).getOrElse(sharedBatch)
+      val checked: sharedBatch.Self = Option(sharedBatch.checkIfCloseOnlyOnce).getOrElse(sharedBatch)
 
-      // Workaround for Scala compiler's stupid bug
+      // Workaround for Scala compiler's stupid bug: https://issues.scala-lang.org/browse/SI-10008
       checked.asInstanceOf[Output with Nothing]
     }
   }
@@ -527,12 +546,12 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ < _).memoize
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(delta: Eval[scala.Boolean]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Boolean]): Unit = {
         upstream1.backward(Eval.now(0.0))
         upstream2.backward(Eval.now(0.0))
       }
@@ -540,7 +559,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -558,12 +577,12 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ + _)
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
         upstream1.backward(delta)
         upstream2.backward(delta)
       }
@@ -571,7 +590,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
 
@@ -590,12 +609,12 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ - _)
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
         upstream1.backward(delta)
         upstream2.backward(delta.map(-_))
       }
@@ -603,7 +622,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
 
@@ -622,12 +641,12 @@ object Differentiable {
       type Input >: Input0
       val value = upstream1.value.map2(upstream2.value)(_ * _)
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
         val a = upstream1.value
         val b = upstream2.value
         upstream1.backward(delta.map2(b)(_ * _))
@@ -637,7 +656,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
 
@@ -654,11 +673,11 @@ object Differentiable {
       type Input >: Input0
       val value = upstream.value.map(1.0 / _)
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
         val a = upstream.value
         upstream.backward(delta.map2(a) { (outputDeltaValue: scala.Double, aValue: scala.Double) =>
           -outputDeltaValue / (aValue * aValue)
@@ -668,7 +687,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -685,18 +704,18 @@ object Differentiable {
       type Input >: Input0
       val value = upstream.value.map(-_)
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(delta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
         upstream.backward(delta.map(-_))
       }
     }
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -789,12 +808,12 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val b = upstream2.value
         upstream1.backward(
           outputDelta
@@ -816,7 +835,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -854,12 +873,12 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream1.value
         val b = upstream2.value
         upstream1.backward(
@@ -879,7 +898,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -909,12 +928,12 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val sumAsOriginalShape = { (outputDeltaValue: INDArray, upstreamValue: INDArray) =>
           sumAs(outputDeltaValue, upstreamValue.shape)
         }
@@ -925,7 +944,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -945,12 +964,12 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream1.value
         val b = upstream2.value
 
@@ -967,7 +986,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -987,12 +1006,12 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream1.value
         val b = upstream2.value
         upstream1.backward(
@@ -1010,7 +1029,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -1030,12 +1049,12 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream1.close()
         upstream2.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream1.backward(outputDelta)
         upstream2.backward(outputDelta.map(_.sumT))
       }
@@ -1043,7 +1062,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
     }
   }
@@ -1059,11 +1078,11 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val upstreamValue = upstream.value
         upstream.backward(
           outputDelta
@@ -1077,7 +1096,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -1093,11 +1112,11 @@ object Differentiable {
       type Input >: Input0
       val value = upstream.value.map(_.sumT).memoize
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[scala.Double]): Unit = {
         upstream.backward(
           outputDelta
             .map2(upstream.value) { (outputDeltaValue, aValue) =>
@@ -1109,7 +1128,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -1126,11 +1145,11 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         val a = upstream.value
         upstream.backward(
           outputDelta
@@ -1143,7 +1162,7 @@ object Differentiable {
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -1160,18 +1179,18 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream.backward(outputDelta.map(-_).memoize)
       }
     }
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -1188,18 +1207,18 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream.backward(outputDelta.map2(upstream.value)(_ / _).memoize)
       }
     }
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -1216,18 +1235,18 @@ object Differentiable {
 
       type Input >: Input0
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
 
-      override protected def cachedBackward(outputDelta: Eval[INDArray]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
         upstream.backward(value.map2(outputDelta)(_ * _).memoize)
       }
     }
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = operand.forward(input)
       new SharedBatch(input, upstream)
     }
@@ -1264,18 +1283,18 @@ object Differentiable {
       type Input >: Input0
       val value = upstream.value.map(!_)
 
-      override protected def cachedBackward(delta: Eval[scala.Boolean]): Unit = {
+      override protected def rawBackward(delta: Eval[scala.Boolean]): Unit = {
         upstream.backward(delta.map(!_))
       }
 
-      override protected def cachedClose(): Unit = {
+      override protected def closeUpstreams(): Unit = {
         upstream.close()
       }
     }
 
     type Input = Input0
 
-    override protected def cachedForward(input: Input): SharedBatch = {
+    override protected def rawForward(input: Input): SharedBatch = {
       val upstream = differentiableBoolean.forward(input)
       new SharedBatch(input, upstream)
     }
