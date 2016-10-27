@@ -6,6 +6,7 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
+import com.thoughtworks.deepLearning.Differentiable.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -77,13 +78,30 @@ object Differentiable {
     def value: Data
   }
 
-  final case class Id[Data0, Delta0]() extends Differentiable { outer =>
-    type Input = Batch.Aux[Data0, Delta0]
-    type Output = Batch.Aux[Data0, Delta0]
+  final case class Id[Data, Delta]() extends Differentiable {
+    type Input = Batch.Aux[Data, Delta]
+    type Output = Batch.Aux[Data, Delta]
 
     override def forward(input: Input): Output = {
       input
     }
+  }
+
+  final case class Throw(throwable: Eval[Throwable]) extends Differentiable with Batch {
+    type Input = Batch.Aux[Any, Nothing]
+    type Output = this.type
+    type Data = Nothing
+    type Delta = Any
+
+    override def forward(input: Input): Output = this
+
+    override def backward(delta: Any): Unit = {}
+
+    override def value: Nothing = {
+      throw throwable.value
+    }
+
+    override def close(): Unit = {}
   }
 
   private[Differentiable] sealed trait Cached extends Differentiable {
@@ -393,8 +411,8 @@ object Differentiable {
 
   }
 
-  final case class DifferentiableHNil[Input0 <: Batch]() extends Differentiable with Batch {
-    override type Input = Input0
+  final object DifferentiableHNil extends Differentiable with Batch {
+    override type Input = Batch
 
     override type Data = shapeless.HNil
 
@@ -721,10 +739,10 @@ object Differentiable {
     }
   }
 
-  final case class DoubleWeight[Input0 <: Batch](var rawValue: scala.Double)(implicit learningRate: LearningRate)
+  final case class DoubleWeight(var rawValue: scala.Double)(implicit learningRate: LearningRate)
       extends Differentiable
       with DoubleBatch {
-    override type Input = Input0
+    override type Input = Batch
     override type Output = this.type
 
     override def forward(any: Input) = this
