@@ -1277,6 +1277,35 @@ object Differentiable {
     }
   }
 
+  final case class MakeArray2D[Input0 <: Batch](
+      operands: Vector[Vector[Differentiable.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]]])
+      extends Differentiable {
+
+    type Input = Input0
+
+    final class Output private[MakeArray2D] (upstreams: Vector[Vector[Batch.Aux[Eval[Double], Eval[Double]]]])
+        extends Array2DBatch {
+      override def backward(delta: Eval[INDArray]): Unit = {
+        for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
+          upstream.backward(delta.map(_(i, j)))
+        }
+
+      }
+
+      override val value = {
+        upstreams.traverse(_.traverse(_.value)).map(_.toNDArray).memoize
+      }
+
+      override def close(): Unit = {
+        upstreams.foreach(_.foreach(_.close()))
+      }
+    }
+
+    override def forward(input: Input): Output = {
+      new Output(operands.map(_.map(_.forward(input))))
+    }
+  }
+
   final case class If[Input0 <: Batch, Output0 <: Batch](
       condition: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]],
       `then`: Differentiable.Aux[Input0, Output0],
