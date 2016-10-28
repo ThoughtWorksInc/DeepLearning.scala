@@ -17,6 +17,7 @@ import shapeless._
 import shapeless.ops.hlist.Length
 import shapeless.ops.nat.ToInt
 
+// TODO: Split this file into multiple modules
 object Differentiable {
 
   type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[scala.Any, scala.Nothing]] =
