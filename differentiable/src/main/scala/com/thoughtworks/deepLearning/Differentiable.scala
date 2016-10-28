@@ -1280,13 +1280,11 @@ object Differentiable {
 
     override def forward(input: Input0): Output0 = {
       val conditionForwardPass = condition.forward(input)
-      val output = if (conditionForwardPass.value.value) {
+      if (conditionForwardPass.value.value) {
         `then`.forward(input)
       } else {
         `else`.forward(input)
       }
-      conditionForwardPass.backward(Eval.now(false))
-      output
     }
   }
 
