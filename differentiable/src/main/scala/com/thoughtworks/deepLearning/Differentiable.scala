@@ -265,7 +265,8 @@ object Differentiable {
                                 Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ) extends Differentiable {
 
-    final class Output(upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+    final class Output private[Differentiable] (
+        upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
         extends Batch {
       override type Data = HeadData
       override type Delta = HeadDelta
@@ -298,7 +299,8 @@ object Differentiable {
                                 Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ) extends Differentiable {
 
-    final class Output(upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+    final class Output private[Differentiable] (
+        upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
         extends Batch {
       override type Data = TailData
       override type Delta = TailDelta
@@ -330,7 +332,8 @@ object Differentiable {
                                 Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ) extends Differentiable {
 
-    final class Output(upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+    final class Output private[Differentiable] (
+        upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
         extends BooleanBatch {
       type Input >: Input0
       val value = upstream.value match {
@@ -358,7 +361,7 @@ object Differentiable {
 
     type Input = Input0
 
-    final class Output(tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
+    final class Output private[Differentiable] (tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
       def value = shapeless.Inr(tailBatch.value: TailData)
 
       type Data = shapeless.Inr[Nothing, TailData]
@@ -388,7 +391,7 @@ object Differentiable {
 
     type Input = Input0
 
-    final class Output(headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch {
+    final class Output private[Differentiable] (headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch {
       def value = shapeless.Inl(headBatch.value: HeadData)
 
       type Data = shapeless.Inl[HeadData, Nothing]
@@ -440,7 +443,8 @@ object Differentiable {
     ) extends Differentiable {
       override type Input = Input0
 
-      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      final class Output private[Differentiable] (
+          upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch {
         override def backward(delta: Delta): Unit = {
           upstream.backward(shapeless.Inl(delta))
@@ -472,7 +476,8 @@ object Differentiable {
     ) extends Differentiable {
       override type Input = Input0
 
-      final class Output(upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      final class Output private[Differentiable] (
+          upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch {
         override def backward(delta: Delta): Unit = {
           upstream.backward(shapeless.Inr(delta))
@@ -507,7 +512,8 @@ object Differentiable {
   ) extends Differentiable {
     override type Input = Input0
 
-    final class Output(headBatch: Batch.Aux[HeadData, HeadDelta], tailBatch: Batch.Aux[TailData, TailDelta])
+    final class Output private[Differentiable] (headBatch: Batch.Aux[HeadData, HeadDelta],
+                                                tailBatch: Batch.Aux[TailData, TailDelta])
         extends Batch {
       override def backward(delta: Delta): Unit = {
         delta match {
