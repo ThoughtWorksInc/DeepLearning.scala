@@ -178,6 +178,55 @@ object DifferentiableOps {
 
 }
 
+object DifferentiableType {
+
+  trait Any {
+    type Data
+    type Delta
+  }
+
+  trait Double extends Any {
+    type Data = Eval[scala.Double]
+    type Delta = Eval[scala.Double]
+  }
+
+  trait Array2D extends Any {
+    type Data = Eval[scala.Double]
+    type Delta = Eval[scala.Double]
+  }
+
+  trait HList extends Any {
+    type Data <: shapeless.HList
+    type Delta <: shapeless.Coproduct
+  }
+
+  trait HNil extends HList {
+    type Data = shapeless.HNil
+    type Delta = shapeless.CNil
+  }
+
+  trait ::[Head <: Any, Tail <: HList] extends HList {
+    type Data = shapeless.::[Head#Data, Tail#Data]
+    type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
+  }
+
+  trait Coproduct extends Any {
+    type Data <: shapeless.Coproduct
+    type Delta <: shapeless.Coproduct
+  }
+
+  trait CNil extends Coproduct {
+    type Data = shapeless.CNil
+    type Delta = shapeless.CNil
+  }
+
+  trait :+:[Head <: Any, Tail <: Coproduct] extends Coproduct {
+    type Data = shapeless.:+:[Head#Data, Tail#Data]
+    type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
+  }
+
+}
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -200,10 +249,10 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply(): Double = 0.0003
     }
 
-    val factory = DifferentiableOps[InputData, InputDelta]()
+    val factory = DifferentiableOps[InputType#Data, InputType#Delta]()
     import factory._
 
-    val toArray2D: Differentiable.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[Eval[INDArray], Eval[INDArray]]] = {
+    val toArray2D: Differentiable.Aux[Batch.Aux[InputType#Data, InputType#Delta], Batch.Aux[Eval[INDArray], Eval[INDArray]]] = {
 
       val field0 = input.head
       val rest0 = input.tail
@@ -332,31 +381,25 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
 object VectorizeSpec {
 
-  import shapeless._
+//  import shapeless._
+  import DifferentiableType._
+  type Nullable[A <: Any] = HNil :+: A :+: CNil
 
-  // TODO: 将来要重构，把类型映射的元信息提到某个trait上。就不用写一遍Data再写一遍Delta了。
-  type NullableData[+A] = HNil :+: A :+: CNil
-  type NullableDelta[+A] = CNil :+: A :+: CNil
+//  // TODO: 将来要重构，把类型映射的元信息提到某个trait上。就不用写一遍Data再写一遍Delta了。
 
-  type InputFieldData[+A] = HNil :+: A :+: CNil
-  type InputFieldDelta[+A] = CNil :+: A :+: CNil
+  type InputField[A <: Any] = HNil :+: A :+: CNil
 
-  type LabelFieldData[+A] = HNil :+: A :+: CNil
+  type LabelField[A <: Any] = HNil :+: A :+: CNil
 
   type Enum0 = HNil :+: HNil :+: CNil
   type Enum1 = HNil :+: HNil :+: HNil :+: CNil
 
-  type Row = NullableData[Eval[Double]] :: Enum0 :: Eval[Double] :: Enum1 :: HNil
+  type Row = Nullable[Double] :: Enum0 :: Double :: Enum1 :: HNil
 
-  type InputData =
-    InputFieldData[NullableData[Eval[Double]]] :: InputFieldData[Enum0] :: InputFieldData[Eval[Double]] :: InputFieldData[
-      Enum1] :: HNil
-  type InputDelta =
-    InputFieldDelta[NullableDelta[Eval[Double]]] :+: InputFieldDelta[Enum0] :+: InputFieldDelta[Eval[Double]] :+: InputFieldDelta[
-      Enum1] :+: Coproduct
+  type InputType =
+    InputField[Nullable[Double]] :: InputField[Enum0] :: InputField[Double] :: InputField[Enum1] :: HNil
 
-  type ExpectedLabelData =
-    LabelFieldData[NullableData[Eval[Double]]] :: LabelFieldData[Enum0] :: LabelFieldData[Eval[Double]] :: LabelFieldData[
-      Enum1] :: HNil
+  type ExpectedLabel =
+    LabelField[Nullable[Double]] :: LabelField[Enum0] :: LabelField[Double] :: LabelField[Enum1] :: HNil
 
 }
