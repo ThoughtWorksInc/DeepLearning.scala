@@ -214,13 +214,13 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val field3 = rest2.head
       val rest3 = rest2.tail
 
-      val field0Flag0 = field0.choice { _: HNil#Network =>
+      val field0Flag0: Double#Network = field0.choice { _: HNil#Network =>
         Literal(Eval.now(0.0))
       } { _ =>
         Literal(Eval.now(1.0))
       }
 
-      val field0Flag1 = field0.choice { unknown: HNil#Network =>
+      val field0Flag1: Double#Network = field0.choice { unknown: HNil#Network =>
         DoubleWeight(0.5)
       } {
         _.choice { knownField0 =>
@@ -233,46 +233,26 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           `throw`(new IllegalArgumentException)
         }
       }
-      //
-      //      val isField0Unknown: Boolean = IsInl(field0)
-      //      val nullableField0 = CConsHead(CConsTail(field0))
-      //
-      //      val field0Flag0 = {
-      //        If(
-      //          isField0Unknown,
-      //          Literal(Eval.now(0.0)),
-      //          Literal(Eval.now(1.0))
-      //        )
-      //      }
-      //
-      //      val isField0Null: Boolean = IsInl(nullableField0)
-      //      val field0Flag1 = {
-      //        val defaultFlagForUnknownField0 = DoubleWeight(0.5)
-      //        If(
-      //          isField0Unknown,
-      //          defaultFlagForUnknownField0,
-      //          If(
-      //            isField0Null,
-      //            Literal(Eval.now(0.0)),
-      //            Literal(Eval.now(1.0))
-      //          )
-      //        )
-      //      }
-      //
-      //      val field0Value = {
-      //        val defaultValueForUnknownField0 = DoubleWeight(0.5)
-      //        val defaultValueForUnsetField0 = DoubleWeight(0.5)
-      //        If(
-      //          isField0Unknown,
-      //          defaultValueForUnknownField0,
-      //          If(
-      //            isField0Null,
-      //            defaultValueForUnsetField0,
-      //            CConsHead(CConsTail(nullableField0))
-      //          )
-      //        )
-      //      }
-      //
+
+      val field0Value: Double#Network = field0.choice { unknown: HNil#Network =>
+        DoubleWeight(0.5)
+      } {
+        _.choice { knownField0 =>
+          knownField0.choice { unset: HNil#Network =>
+            DoubleWeight(0.5)
+          } {
+            _.choice[Eval[scala.Double], Eval[scala.Double]] { value: Double#Network =>
+              value
+            } { _: CNil#Network =>
+              `throw`(new IllegalArgumentException): Double#Network
+            }
+          }
+        } { _: CNil#Network =>
+          `throw`(new IllegalArgumentException)
+        }
+
+      }
+
       //      val isField1Unknown: Boolean = IsInl(field1)
       //      val defaultValueForField1Value0 = DoubleWeight(0.5)
       //      val field1Choice0 = CConsHead(CConsTail(field1))
