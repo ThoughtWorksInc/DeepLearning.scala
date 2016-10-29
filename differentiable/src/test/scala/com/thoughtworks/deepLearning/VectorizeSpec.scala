@@ -9,7 +9,10 @@ import org.scalatest._
 import scala.language.implicitConversions
 import scala.language.existentials
 
-final case class DifferentiableOps[InputData, InputDelta]() {
+final case class DifferentiableOps[InputType <: DifferentiableType.Any]() {
+
+  type InputData = InputType#Data
+  type InputDelta = InputType#Delta
 
   type Input = Batch.Aux[InputData, InputDelta]
   val input = Id[InputData, InputDelta]()
@@ -249,7 +252,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply(): Double = 0.0003
     }
 
-    val factory = DifferentiableOps[InputType#Data, InputType#Delta]()
+    val factory = DifferentiableOps[InputType]()
     import factory._
 
     val toArray2D: Differentiable.Aux[Batch.Aux[InputType#Data, InputType#Delta], Batch.Aux[Eval[INDArray], Eval[INDArray]]] = {
