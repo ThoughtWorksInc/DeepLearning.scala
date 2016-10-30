@@ -1,15 +1,19 @@
 package com.thoughtworks.deepLearning
+package old
 
+import dsl._
 import cats.Eval
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable.DifferentiableHCons.{Head, Tail}
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.NeuralNetwork.DifferentiableHCons.{Head, Tail}
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.dsl.Coproduct.{CConsHead, CConsTail, IsInl}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.scalatest._
+
 import scala.language.implicitConversions
 import scala.language.existentials
 
-final case class DifferentiableOps[InputType <: DifferentiableType.Any]() {
+final case class DifferentiableOps[InputType <: dsl.Any]() {
 
   type InputData = InputType#Data
   type InputDelta = InputType#Delta
@@ -22,25 +26,25 @@ final case class DifferentiableOps[InputType <: DifferentiableType.Any]() {
   type Boolean = DifferentiableOps.Boolean[Input]
 
   implicit def toBoolean(
-      differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) =
+      differentiable: NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) =
     new Boolean(differentiable)
 
   type Double = DifferentiableOps.Double[Input]
 
-  implicit def toDouble(differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) =
+  implicit def toDouble(differentiable: NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) =
     new Double(differentiable)
 
-  type Coproduct = DifferentiableOps.Coproduct[Input]
-  type CNil = DifferentiableOps.CNil[Input]
+  type Coproduct = DifferentiableOps.CoproductOps[Input]
+  type CNil = DifferentiableOps.CNilOps[Input]
 
   type :+:[Head <: Any, Tail <: Coproduct] =
-    DifferentiableOps.CCons[Input, Head#OutputData, Head#OutputDelta, Tail#OutputData, Tail#OutputDelta]
+    DifferentiableOps.CConsOps[Input, Head#OutputData, Head#OutputDelta, Tail#OutputData, Tail#OutputDelta]
 
   implicit def toCCons[HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-      differentiable: Differentiable.Aux[
+      differentiable: NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) =
-    new DifferentiableOps.CCons(differentiable)
+    new DifferentiableOps.CConsOps(differentiable)
 
   type HList = DifferentiableOps.HList[Input]
   type HNil = DifferentiableOps.HNil[Input]
@@ -48,7 +52,7 @@ final case class DifferentiableOps[InputType <: DifferentiableType.Any]() {
     DifferentiableOps.HCons[Input, Head#OutputData, Head#OutputDelta, Tail#OutputData, Tail#OutputDelta]
 
   implicit def toHCons[HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
-      differentiable: Differentiable.Aux[
+      differentiable: NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) =
     new DifferentiableOps.HCons(differentiable)
@@ -57,7 +61,7 @@ final case class DifferentiableOps[InputType <: DifferentiableType.Any]() {
     Throw(Eval.later(throwable))
   }
 
-  // TODO: upcast for HCons and CCons
+  // TODO: upcast for HCons and CConsOps
 }
 
 object DifferentiableOps {
@@ -66,7 +70,7 @@ object DifferentiableOps {
   trait Any[Input <: Batch] extends scala.Any {
     type OutputData
     type OutputDelta
-    type Network = Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+    type Network = NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
 
     val differentiable: Network
 
@@ -86,7 +90,7 @@ object DifferentiableOps {
   }
 
   final class Boolean[Input <: Batch](
-      val differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]])
+      val differentiable: NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]])
       extends AnyVal
       with Any[Input] {
     override type OutputData = Eval[scala.Boolean]
@@ -94,24 +98,24 @@ object DifferentiableOps {
   }
 
   final class Double[Input <: Batch](
-      val differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+      val differentiable: NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
       extends AnyVal
       with Any[Input] {
     override type OutputData = Eval[scala.Double]
     override type OutputDelta = Eval[scala.Double]
   }
 
-  sealed trait Coproduct[Input <: Batch] extends scala.Any with Any[Input] {
+  sealed trait CoproductOps[Input <: Batch] extends scala.Any with Any[Input] {
     override type OutputData <: shapeless.Coproduct
     override type OutputDelta <: shapeless.Coproduct
   }
 
-  final class CCons[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+  final class CConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
   TailDelta <: shapeless.Coproduct](
-      val differentiable: Differentiable.Aux[
+      val differentiable: NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]])
-      extends Coproduct[Input] {
+      extends CoproductOps[Input] {
     override type OutputData = shapeless.:+:[HeadData, TailData]
     override type OutputDelta = shapeless.:+:[HeadDelta, TailDelta]
 
@@ -119,18 +123,18 @@ object DifferentiableOps {
     private lazy val tail = CConsTail(differentiable)
 
     def choice[ResultData, ResultDelta](
-        caseHead: Differentiable.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => Differentiable.Aux[
+        caseHead: NeuralNetwork.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => NeuralNetwork.Aux[
           Input,
           Batch.Aux[ResultData, ResultDelta]])(
-        caseTail: Differentiable.Aux[Input, Batch.Aux[TailData, TailDelta]] => Differentiable.Aux[
+        caseTail: NeuralNetwork.Aux[Input, Batch.Aux[TailData, TailDelta]] => NeuralNetwork.Aux[
           Input,
-          Batch.Aux[ResultData, ResultDelta]]): Differentiable.Aux[Input, Batch.Aux[ResultData, ResultDelta]] = {
+          Batch.Aux[ResultData, ResultDelta]]): NeuralNetwork.Aux[Input, Batch.Aux[ResultData, ResultDelta]] = {
       If(IsInl(differentiable), caseHead(head), caseTail(tail))
     }
 
   }
 
-  object CCons {
+  object CConsOps {
     implicit def covariant[
         Input <: Batch,
         HeadData,
@@ -141,13 +145,13 @@ object DifferentiableOps {
         HeadDelta1 <: HeadDelta,
         TailData1 >: TailData <: shapeless.Coproduct,
         TailDelta1 <: TailDelta
-    ](ccons: CCons[Input, HeadData, HeadDelta, TailData, TailDelta])
-      : CCons[Input, HeadData1, HeadDelta1, TailData1, TailDelta1] = {
-      new CCons[Input, HeadData1, HeadDelta1, TailData1, TailDelta1](ccons.differentiable)
+    ](ccons: CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta])
+      : CConsOps[Input, HeadData1, HeadDelta1, TailData1, TailDelta1] = {
+      new CConsOps[Input, HeadData1, HeadDelta1, TailData1, TailDelta1](ccons.differentiable)
     }
   }
 
-  sealed trait CNil[Input <: Batch] extends scala.Any with Coproduct[Input] {
+  sealed trait CNilOps[Input <: Batch] extends scala.Any with CoproductOps[Input] {
     override type OutputData = shapeless.CNil
     override type OutputDelta = shapeless.CNil
   }
@@ -158,7 +162,7 @@ object DifferentiableOps {
   }
 
   final class HCons[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
-      val differentiable: Differentiable.Aux[
+      val differentiable: NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]])
       extends AnyVal
@@ -172,7 +176,7 @@ object DifferentiableOps {
   }
 
   final class HNil[Input <: Batch](
-      val differentiable: Differentiable.Aux[Input, Batch.Aux[shapeless.HNil, shapeless.CNil]])
+      val differentiable: NeuralNetwork.Aux[Input, Batch.Aux[shapeless.HNil, shapeless.CNil]])
       extends AnyVal
       with HList[Input] {
     override type OutputData = shapeless.HNil
@@ -181,54 +185,6 @@ object DifferentiableOps {
 
 }
 
-object DifferentiableType {
-
-  trait Any {
-    type Data
-    type Delta
-  }
-
-  trait Double extends Any {
-    type Data = Eval[scala.Double]
-    type Delta = Eval[scala.Double]
-  }
-
-  trait Array2D extends Any {
-    type Data = Eval[scala.Double]
-    type Delta = Eval[scala.Double]
-  }
-
-  trait HList extends Any {
-    type Data <: shapeless.HList
-    type Delta <: shapeless.Coproduct
-  }
-
-  trait HNil extends HList {
-    type Data = shapeless.HNil
-    type Delta = shapeless.CNil
-  }
-
-  trait ::[Head <: Any, Tail <: HList] extends HList {
-    type Data = shapeless.::[Head#Data, Tail#Data]
-    type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
-  }
-
-  trait Coproduct extends Any {
-    type Data <: shapeless.Coproduct
-    type Delta <: shapeless.Coproduct
-  }
-
-  trait CNil extends Coproduct {
-    type Data = shapeless.CNil
-    type Delta = shapeless.CNil
-  }
-
-  trait :+:[Head <: Any, Tail <: Coproduct] extends Coproduct {
-    type Data = shapeless.:+:[Head#Data, Tail#Data]
-    type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
-  }
-
-}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -249,13 +205,13 @@ final class VectorizeSpec extends FreeSpec with Matchers {
      */
 
     implicit val learningRate = new LearningRate {
-      override def apply(): Double = 0.0003
+      override def apply() = 0.0003
     }
 
     val factory = DifferentiableOps[InputType]()
     import factory._
 
-    val toArray2D: Differentiable.Aux[Batch.Aux[InputType#Data, InputType#Delta], Batch.Aux[Eval[INDArray], Eval[INDArray]]] = {
+    val toArray2D: NeuralNetwork.Aux[Batch.Aux[InputType#Data, InputType#Delta], Batch.Aux[Eval[INDArray], Eval[INDArray]]] = {
 
       val field0 = input.head
       val rest0 = input.tail
@@ -374,9 +330,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     }
 
-    //    val predict: Differentiable.Aux[Batch.Aux[InputData, _], Batch.Aux[Row, _]] = ???
+    //    val predict: NeuralNetwork.Aux[Batch.Aux[InputData, _], Batch.Aux[Row, _]] = ???
     //
-    //    val train: Differentiable.Aux[Batch.Aux[InputData :: ExpectedLabelData :: HNil, _], Batch.Aux[Eval[Double], _]] = ???
+    //    val train: NeuralNetwork.Aux[Batch.Aux[InputData :: ExpectedLabelData :: HNil, _], Batch.Aux[Eval[Double], _]] = ???
 
   }
 
@@ -385,7 +341,6 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 object VectorizeSpec {
 
 //  import shapeless._
-  import DifferentiableType._
   type Nullable[A <: Any] = HNil :+: A :+: CNil
 
 //  // TODO: 将来要重构，把类型映射的元信息提到某个trait上。就不用写一遍Data再写一遍Delta了。

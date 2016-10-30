@@ -6,7 +6,7 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable.Batch.Aux
+import com.thoughtworks.deepLearning.NeuralNetwork.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -18,10 +18,10 @@ import shapeless.ops.hlist.Length
 import shapeless.ops.nat.ToInt
 
 // TODO: Split this file into multiple modules
-object Differentiable {
+object NeuralNetwork {
 
   type Aux[-Input0 <: Batch, +Output0 <: Batch.Aux[scala.Any, scala.Nothing]] =
-    Differentiable {
+    NeuralNetwork {
       type Input >: Input0
       type Output <: Output0
     }
@@ -32,7 +32,7 @@ object Differentiable {
       type Delta >: Delta0
     }
 
-    private[Differentiable] sealed trait DoubleBatch extends Batch {
+    private[NeuralNetwork] sealed trait DoubleBatch extends Batch {
 
       override type Data = Eval[scala.Double]
 
@@ -42,7 +42,7 @@ object Differentiable {
 
     }
 
-    private[Differentiable] sealed trait BooleanBatch extends Batch {
+    private[NeuralNetwork] sealed trait BooleanBatch extends Batch {
 
       override type Data = Eval[scala.Boolean]
 
@@ -56,7 +56,7 @@ object Differentiable {
 
     }
 
-    private[Differentiable] sealed trait Array2DBatch extends Batch {
+    private[NeuralNetwork] sealed trait Array2DBatch extends Batch {
 
       override type Data = Eval[INDArray]
 
@@ -79,7 +79,7 @@ object Differentiable {
     def value: Data
   }
 
-  final case class Id[Data, Delta]() extends Differentiable {
+  final case class Id[Data, Delta]() extends NeuralNetwork {
     type Input = Batch.Aux[Data, Delta]
     type Output = Batch.Aux[Data, Delta]
 
@@ -88,7 +88,7 @@ object Differentiable {
     }
   }
 
-  final case class Throw(throwable: Eval[Throwable]) extends Differentiable with Batch {
+  final case class Throw(throwable: Eval[Throwable]) extends NeuralNetwork with Batch {
     type Input = Batch.Aux[Any, Nothing]
     type Output = this.type
     type Data = Nothing
@@ -105,7 +105,7 @@ object Differentiable {
     override def close(): Unit = {}
   }
 
-  private[Differentiable] sealed trait Cached extends Differentiable {
+  private[NeuralNetwork] sealed trait Cached extends NeuralNetwork {
 
     private val cache =
       java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, SharedBatch](1))
@@ -248,9 +248,9 @@ object Differentiable {
 
   import Batch._
 
-  final case class Compose[A <: Batch, B <: Batch, C <: Batch](f: Differentiable.Aux[B, C],
-                                                               g: Differentiable.Aux[A, B])
-      extends Differentiable {
+  final case class Compose[A <: Batch, B <: Batch, C <: Batch](f: NeuralNetwork.Aux[B, C],
+                                                               g: NeuralNetwork.Aux[A, B])
+      extends NeuralNetwork {
     override type Input = A
     override type Output = C
 
@@ -259,163 +259,7 @@ object Differentiable {
     }
   }
 
-  final case class CConsHead[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
-  TailDelta <: shapeless.Coproduct](
-      ccons: Differentiable.Aux[Input0,
-                                Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-  ) extends Differentiable {
-
-    final class Output private[Differentiable] (
-        upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-        extends Batch {
-      override type Data = HeadData
-      override type Delta = HeadDelta
-      type Input >: Input0
-
-      val value =
-        upstream.value.asInstanceOf[shapeless.Inl[HeadData, TailData]].head
-
-      override def backward(delta: Delta): Unit = {
-        upstream.backward(shapeless.Inl(delta))
-      }
-
-      override def close(): Unit = {
-        upstream.close()
-      }
-
-    }
-
-    type Input = Input0
-
-    override def forward(input: Input): Output = {
-      new Output(ccons.forward(input))
-    }
-
-  }
-
-  final case class CConsTail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
-  TailDelta <: shapeless.Coproduct](
-      ccons: Differentiable.Aux[Input0,
-                                Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-  ) extends Differentiable {
-
-    final class Output private[Differentiable] (
-        upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-        extends Batch {
-      override type Data = TailData
-      override type Delta = TailDelta
-      type Input >: Input0
-
-      val value =
-        upstream.value.asInstanceOf[shapeless.Inr[TailData, TailData]].tail
-
-      override def backward(delta: Delta): Unit = {
-        upstream.backward(shapeless.Inr(delta))
-      }
-
-      override def close(): Unit = {
-        upstream.close()
-      }
-    }
-
-    type Input = Input0
-
-    override def forward(input: Input): Output = {
-      new Output(ccons.forward(input))
-    }
-
-  }
-
-  final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
-  TailDelta <: shapeless.Coproduct](
-      ccons: Differentiable.Aux[Input0,
-                                Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-  ) extends Differentiable {
-
-    final class Output private[Differentiable] (
-        upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-        extends BooleanBatch {
-      type Input >: Input0
-      val value = upstream.value match {
-        case shapeless.Inl(_) => Eval.now(true)
-        case shapeless.Inr(_) => Eval.now(false)
-      }
-
-      override def backward(delta: Eval[scala.Boolean]): Unit = {}
-
-      override def close(): Unit = {
-        upstream.close()
-      }
-    }
-
-    type Input = Input0
-
-    override def forward(input: Input): Output = {
-      new Output(ccons.forward(input))
-    }
-  }
-
-  final case class DifferentiableInr[Input0 <: Batch, TailData <: shapeless.Coproduct,
-  TailDelta <: shapeless.Coproduct](tail: Differentiable.Aux[Input0, Batch.Aux[TailData, TailDelta]])
-      extends Differentiable {
-
-    type Input = Input0
-
-    final class Output private[Differentiable] (tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
-      def value = shapeless.Inr(tailBatch.value: TailData)
-
-      type Data = shapeless.Inr[Nothing, TailData]
-      type Delta = shapeless.:+:[scala.Any, TailDelta]
-
-      override def backward(delta: shapeless.:+:[scala.Any, TailDelta]): Unit = {
-        delta match {
-          case shapeless.Inr(tailDelta) => tailBatch.backward(tailDelta)
-          case shapeless.Inl(_) =>
-        }
-      }
-
-      override def close(): Unit = {
-        tailBatch.close()
-      }
-    }
-
-    override def forward(input: Input0): Output = {
-      new Output(tail.forward(input))
-    }
-
-  }
-
-  final case class DifferentiableInl[Input0 <: Batch, HeadData, HeadDelta](
-      head: Differentiable.Aux[Input0, Batch.Aux[HeadData, HeadDelta]])
-      extends Differentiable {
-
-    type Input = Input0
-
-    final class Output private[Differentiable] (headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch {
-      def value = shapeless.Inl(headBatch.value: HeadData)
-
-      type Data = shapeless.Inl[HeadData, Nothing]
-      type Delta = shapeless.:+:[HeadDelta, shapeless.Coproduct]
-
-      override def backward(delta: shapeless.:+:[HeadDelta, Coproduct]): Unit = {
-        delta match {
-          case shapeless.Inl(headDelta) => headBatch.backward(headDelta)
-          case shapeless.Inr(_) =>
-        }
-      }
-
-      override def close(): Unit = {
-        headBatch.close()
-      }
-    }
-
-    override def forward(input: Input0): Output = {
-      new Output(head.forward(input))
-    }
-
-  }
-
-  final object DifferentiableHNil extends Differentiable with Batch {
+  final object DifferentiableHNil extends NeuralNetwork with Batch {
     override type Input = Batch
 
     override type Data = shapeless.HNil
@@ -437,13 +281,13 @@ object Differentiable {
 
     final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
     TailDelta <: shapeless.Coproduct](
-        differentiableHCons: Differentiable.Aux[
+        differentiableHCons: NeuralNetwork.Aux[
           Input0,
           Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-    ) extends Differentiable {
+    ) extends NeuralNetwork {
       override type Input = Input0
 
-      final class Output private[Differentiable] (
+      final class Output private[NeuralNetwork] (
           upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch {
         override def backward(delta: Delta): Unit = {
@@ -470,13 +314,13 @@ object Differentiable {
 
     final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
     TailDelta <: shapeless.Coproduct](
-        differentiableHCons: Differentiable.Aux[
+        differentiableHCons: NeuralNetwork.Aux[
           Input0,
           Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-    ) extends Differentiable {
+    ) extends NeuralNetwork {
       override type Input = Input0
 
-      final class Output private[Differentiable] (
+      final class Output private[NeuralNetwork] (
           upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch {
         override def backward(delta: Delta): Unit = {
@@ -507,12 +351,12 @@ object Differentiable {
                                        HeadDelta,
                                        TailData <: shapeless.HList,
                                        TailDelta <: shapeless.Coproduct](
-      head: Differentiable.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
-      tail: Differentiable.Aux[Input0, Batch.Aux[TailData, TailDelta]]
-  ) extends Differentiable {
+      head: NeuralNetwork.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
+      tail: NeuralNetwork.Aux[Input0, Batch.Aux[TailData, TailDelta]]
+  ) extends NeuralNetwork {
     override type Input = Input0
 
-    final class Output private[Differentiable] (headBatch: Batch.Aux[HeadData, HeadDelta],
+    final class Output private[NeuralNetwork] (headBatch: Batch.Aux[HeadData, HeadDelta],
                                                 tailBatch: Batch.Aux[TailData, TailDelta])
         extends Batch {
       override def backward(delta: Delta): Unit = {
@@ -543,7 +387,7 @@ object Differentiable {
 
   }
 
-  final case class Literal[Data0](value0: Data0) extends Differentiable with Batch {
+  final case class Literal[Data0](value0: Data0) extends NeuralNetwork with Batch {
     override type Data = Data0
     override type Delta = Any
     override type Input = Batch
@@ -559,8 +403,8 @@ object Differentiable {
   }
 
   final case class DoubleLessThanDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
   ) extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -590,8 +434,8 @@ object Differentiable {
   }
 
   final case class DoubleAddDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
   ) extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -622,8 +466,8 @@ object Differentiable {
   }
 
   final case class DoubleSubtractDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
   ) extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -654,8 +498,8 @@ object Differentiable {
   }
 
   final case class DoubleMultiplyDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
   ) extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -688,7 +532,7 @@ object Differentiable {
   }
 
   final case class DoubleReciprocal[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -719,7 +563,7 @@ object Differentiable {
   }
 
   final case class DoubleNegative[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -747,7 +591,7 @@ object Differentiable {
   }
 
   final case class DoubleWeight(var rawValue: scala.Double)(implicit learningRate: LearningRate)
-      extends Differentiable
+      extends NeuralNetwork
       with DoubleBatch {
     override type Input = Batch
     override type Output = this.type
@@ -765,7 +609,7 @@ object Differentiable {
   }
 
   final case class BooleanWeight[Input0 <: Batch](var rawValue: scala.Boolean)
-      extends Differentiable
+      extends NeuralNetwork
       with BooleanBatch {
     override type Input = Input0
     override type Output = BooleanWeight[Input0]
@@ -783,7 +627,7 @@ object Differentiable {
   }
 
   final case class Array2DWeight[Input0 <: Batch](var rawValue: INDArray)(implicit learningRate: LearningRate)
-      extends Differentiable
+      extends NeuralNetwork
       with Array2DBatch {
     override type Input = Input0
     override type Output = Array2DWeight[Input0]
@@ -819,9 +663,9 @@ object Differentiable {
   }
 
   final case class Dot[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
-  ) extends Differentiable
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
+  ) extends NeuralNetwork
       with Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -874,9 +718,9 @@ object Differentiable {
     }
 
   final case class Array2DMultiplyArray2D[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
-  ) extends Differentiable
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
+  ) extends NeuralNetwork
       with Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -929,9 +773,9 @@ object Differentiable {
   }
 
   final case class Array2DAddArray2D[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
-  ) extends Differentiable
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
+  ) extends NeuralNetwork
       with Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -975,9 +819,9 @@ object Differentiable {
   }
 
   final case class Array2DMultiplyDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-  ) extends Differentiable
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+  ) extends NeuralNetwork
       with Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -1017,9 +861,9 @@ object Differentiable {
   }
 
   final case class Array2DMaxDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-  ) extends Differentiable
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+  ) extends NeuralNetwork
       with Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -1060,9 +904,9 @@ object Differentiable {
   }
 
   final case class Array2DAddDouble[Input0 <: Batch](
-      leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-      rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-  ) extends Differentiable
+      leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+      rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+  ) extends NeuralNetwork
       with Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -1093,7 +937,7 @@ object Differentiable {
   }
 
   final case class Array2DReciprocal[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
@@ -1128,7 +972,7 @@ object Differentiable {
   }
 
   final case class ReduceSum[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
@@ -1159,7 +1003,7 @@ object Differentiable {
     }
   }
 
-  final case class Sum[Input0 <: Batch](operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+  final case class Sum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
                                         dimensions: Seq[Int])
       extends Cached {
 
@@ -1194,7 +1038,7 @@ object Differentiable {
   }
 
   final case class Array2DNegative[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
@@ -1222,7 +1066,7 @@ object Differentiable {
   }
 
   final case class Array2DLog[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
@@ -1250,7 +1094,7 @@ object Differentiable {
   }
 
   final case class Array2DExp[Input0 <: Batch](
-      operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
+      operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])
@@ -1278,8 +1122,8 @@ object Differentiable {
   }
 
   final case class MakeArray2D[Input0 <: Batch](
-      operands: Vector[Vector[Differentiable.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]]])
-      extends Differentiable {
+      operands: Vector[Vector[NeuralNetwork.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]]])
+      extends NeuralNetwork {
 
     type Input = Input0
 
@@ -1307,10 +1151,10 @@ object Differentiable {
   }
 
   final case class If[Input0 <: Batch, Output0 <: Batch](
-      condition: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]],
-      `then`: Differentiable.Aux[Input0, Output0],
-      `else`: Differentiable.Aux[Input0, Output0])
-      extends Differentiable {
+      condition: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]],
+      `then`: NeuralNetwork.Aux[Input0, Output0],
+      `else`: NeuralNetwork.Aux[Input0, Output0])
+      extends NeuralNetwork {
     override type Input = Input0
     override type Output = Output0
 
@@ -1325,7 +1169,7 @@ object Differentiable {
   }
 
   final case class Not[Input0 <: Batch](
-      differentiableBoolean: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]])
+      differentiableBoolean: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]])
       extends Cached {
 
     protected final class SharedBatch(override val input: Input0,
@@ -1358,9 +1202,9 @@ object Differentiable {
 
 }
 
-trait Differentiable {
+trait NeuralNetwork {
 
-  import Differentiable._
+  import NeuralNetwork._
 
   type Input <: Batch
 
