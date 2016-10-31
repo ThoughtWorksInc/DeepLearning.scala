@@ -13,10 +13,10 @@ import org.nd4j.linalg.ops.transforms.Transforms
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class If[Input0 <: Batch, Output0 <: Batch](
-                                                        condition: Ast.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]],
-                                                        `then`: Ast.Aux[Input0, Output0],
-                                                        `else`: Ast.Aux[Input0, Output0])
-  extends Ast {
+    condition: Ast.Aux[Input0, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]],
+    `then`: Ast.Aux[Input0, Output0],
+    `else`: Ast.Aux[Input0, Output0])
+    extends Ast {
   override type Input = Input0
   override type Output = Output0
 
