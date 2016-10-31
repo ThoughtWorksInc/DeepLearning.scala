@@ -17,7 +17,7 @@ final case class Weight(var rawValue: scala.Double)(implicit learningRate: Learn
     extends Ast
     with DoubleMonoidBatch {
   override type Input = Batch
-  override type Output = this.type
+  override type Output = Batch.Aux[Data, Delta]
 
   override def forward(any: Input) = this
 

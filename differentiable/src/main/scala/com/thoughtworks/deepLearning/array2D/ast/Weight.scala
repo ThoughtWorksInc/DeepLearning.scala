@@ -17,7 +17,7 @@ final case class Weight(var rawValue: INDArray)(implicit learningRate: LearningR
     extends Ast
     with Array2DSemigroupBatch {
   override type Input = Batch
-  override type Output = this.type
+  override type Output = Batch.Aux[Data, Delta]
 
   override def value = Eval.now(rawValue)
 

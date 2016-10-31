@@ -9,7 +9,7 @@ final case class Literal[Data0](value0: Data0) extends Ast with Batch {
   override type Data = Data0
   override type Delta = scala.Any
   override type Input = Batch
-  override type Output = this.type
+  override type Output = Batch.Aux[Data, Delta]
 
   override def value: Data = value0
 
