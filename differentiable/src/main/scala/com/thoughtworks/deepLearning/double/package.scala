@@ -8,14 +8,14 @@ import com.thoughtworks.deepLearning.double.ast.Add
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object double extends Workaround {
+package object double {
 
   type Double = {
     type Delta = Eval[scala.Double]
     type Data = Eval[scala.Double]
   }
 
-//  type DoubleBatch = Batch.Aux[Double#Data, Double#Delta]
+  type DoubleBatch = Batch.Aux[Double#Data, Double#Delta]
 
   implicit final class DoubleOps[Input <: Batch](differentiable: Differentiable.Aux[Input, DoubleBatch]) {
     def +[RightInput <: Input](right: Differentiable.Aux[RightInput, DoubleBatch]) = {
@@ -26,10 +26,5 @@ package object double extends Workaround {
   implicit def doubleLiteral[Input <: Batch](nativeDouble: scala.Double): Differentiable.Aux[Input, DoubleBatch] = {
     Literal(Eval.now(nativeDouble))
   }
-
-}
-
-trait Workaround {
-  type DoubleBatch >: Batch.Aux[Eval[scala.Double], Eval[scala.Double]] <:Batch.Aux[Eval[scala.Double], Eval[scala.Double]]
 
 }

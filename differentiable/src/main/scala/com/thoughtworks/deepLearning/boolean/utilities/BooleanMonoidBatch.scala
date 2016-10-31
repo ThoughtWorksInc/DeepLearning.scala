@@ -15,9 +15,9 @@ import org.nd4j.linalg.ops.transforms.Transforms
   */
 private[deepLearning] trait BooleanMonoidBatch extends Batch {
 
-  override type Data = Boolean#Data
+  override type Data = Eval[scala.Boolean]
 
-  override type Delta = Boolean#Delta
+  override type Delta = Eval[scala.Boolean]
 
   final def monoid = new Monoid[Delta] {
     override def empty = Eval.now(false)

@@ -13,6 +13,6 @@ package object any {
   }
 
   def input[TypePair <: Any] = {
-    Identity[TypePair#Data, TypePair#Delta]
+    Identity[Batch.Aux[TypePair#Data, TypePair#Delta]]
   }
 }

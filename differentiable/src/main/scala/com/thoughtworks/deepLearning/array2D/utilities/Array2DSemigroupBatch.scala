@@ -12,9 +12,9 @@ import org.nd4s.Implicits._
   */
 private[deepLearning] trait Array2DSemigroupBatch extends Batch {
 
-  override type Data = Array2D#Data
+  override type Data = Eval[INDArray]
 
-  override type Delta = Array2D#Delta
+  override type Delta = Eval[INDArray]
 
   protected final def semigroup = new Semigroup[Delta] {
     override def combine(x: Delta, y: Delta): Delta = x.map2(y)(_ + _)

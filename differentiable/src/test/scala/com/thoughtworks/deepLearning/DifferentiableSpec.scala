@@ -7,6 +7,7 @@ import com.thoughtworks.deepLearning.array2D.ast.Weight
 import com.thoughtworks.deepLearning.array2D._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
+import any._
 import org.scalatest._
 
 /**
@@ -20,7 +21,7 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
   "Array2D dot Array2D" in {
 
-    val network = -weight(Array(Array(0.0, 5.0))).dot(Identity[Eval[INDArray], Eval[INDArray]]())
+    val network = -weight(Array(Array(0.0, 5.0))).dot(input[Array2D])
 
     val inputBatch = array2D.literal(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)))
 

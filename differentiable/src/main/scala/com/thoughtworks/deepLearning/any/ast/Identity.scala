@@ -5,9 +5,9 @@ import com.thoughtworks.deepLearning.{Batch, Differentiable}
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Identity[Data, Delta]() extends Differentiable {
-  type Input = Batch.Aux[Data, Delta]
-  type Output = Batch.Aux[Data, Delta]
+final case class Identity[Input0 <: Batch]() extends Differentiable {
+  type Input = Input0
+  type Output = Input0
 
   override def forward(input: Input): Output = {
     input

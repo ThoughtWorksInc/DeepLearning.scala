@@ -15,9 +15,9 @@ import org.nd4j.linalg.ops.transforms.Transforms
   */
 private[deepLearning] trait DoubleMonoidBatch extends Batch {
 
-  override type Data = Double#Data
+  override type Data = Eval[scala.Double]
 
-  override type Delta = Double#Delta
+  override type Delta = Eval[scala.Double]
 
   final def monoid: Monoid[Delta] = implicitly
 
