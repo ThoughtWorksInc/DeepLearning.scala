@@ -34,32 +34,40 @@ object Ast {
 
     private[Cached] sealed trait ReferenceCount extends Batch { this: SharedBatch =>
 
-      private[Cached] type Self = Batch.Aux[Data, Delta]
+      // Workaround for Scala compiler's stupid bug: https://issues.scala-lang.org/browse/SI-10008
+      private[Cached] type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
 
       /**
-        * Returns a [[Batch]] able to detect error of closing more than once.
+        * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
+        * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
-      @elidable(elidable.ASSERTION)
-      private[Cached] def checkIfCloseOnlyOnce: Self = new Batch {
-        type Delta = ReferenceCount.this.Delta
-        type Data = ReferenceCount.this.Data
+      private[Cached] def maybeCheckIfCloseOnlyOnce: Self = {
 
-        override final def backward(delta: Delta) = ReferenceCount.this.backward(delta)
+        // Returns a [[Batch]] able to detect error of closing more than once.
+        @elidable(elidable.ASSERTION)
+        def checkIfCloseOnlyOnce: Self = new Batch {
+          type Delta = ReferenceCount.this.Delta
+          type Data = ReferenceCount.this.Data
 
-        def value = ReferenceCount.this.value
+          override final def backward(delta: Delta) = ReferenceCount.this.backward(delta)
 
-        private var closed = false
+          def value = ReferenceCount.this.value
 
-        override final def close(): Unit = {
-          ReferenceCount.this.synchronized {
-            if (closed) {
-              throw new IllegalStateException("close() method must be called once and only once.")
-            } else {
-              closed = true
+          private var closed = false
+
+          override final def close(): Unit = {
+            ReferenceCount.this.synchronized {
+              if (closed) {
+                throw new IllegalStateException("close() method must be called once and only once.")
+              } else {
+                closed = true
+              }
             }
+            ReferenceCount.this.close()
           }
-          ReferenceCount.this.close()
         }
+
+        Option(checkIfCloseOnlyOnce).getOrElse(this: Batch.Aux[Data, Delta])
       }
 
       private[Cached] var count: Int = 1
@@ -159,12 +167,7 @@ object Ast {
           }
           sharedBatch
       }
-
-      // When ASSERTION is disabled, fallback to the sharedBatch itself hence no check
-      val checked: sharedBatch.Self = Option(sharedBatch.checkIfCloseOnlyOnce).getOrElse(sharedBatch)
-
-      // Workaround for Scala compiler's stupid bug: https://issues.scala-lang.org/browse/SI-10008
-      checked.asInstanceOf[Output with Nothing]
+      sharedBatch.maybeCheckIfCloseOnlyOnce
     }
   }
 
