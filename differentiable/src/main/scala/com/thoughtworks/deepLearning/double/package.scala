@@ -15,8 +15,6 @@ package object double {
     type Data = Eval[scala.Double]
   }
 
-//  type DoubleBatch = Batch.Aux[Eval[scala.Double], Eval[scala.Double]]
-
   implicit final class DoubleOps[Input <: Batch](
       differentiable: Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) {
     def +[RightInput <: Input](right: Ast.Aux[RightInput, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) = {
@@ -24,17 +22,13 @@ package object double {
     }
   }
 
-  implicit def doubleLiteral[Input <: Batch](
-      nativeDouble: scala.Double): Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] = {
+  implicit def doubleLiteral[Input <: Batch](nativeDouble: scala.Double) = {
     Literal(Eval.now(nativeDouble))
   }
 
-  def weight(nativeDouble: scala.Double)(implicit learningRate: LearningRate) = {
-    Weight(nativeDouble)
-  }
-
-  def literal(nativeDouble: scala.Double) = {
-    Literal(Eval.now(nativeDouble))
+  implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
+    def toLiteral = doubleLiteral(nativeDouble)
+    def toWeight(implicit learningRate: LearningRate) = Weight(nativeDouble)
   }
 
 }

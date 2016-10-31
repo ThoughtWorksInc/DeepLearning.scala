@@ -35,10 +35,10 @@ package object coproduct {
 
     def choice[ThatInput <: Input, Output <: Batch](
         caseHead: Ast.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => Ast.Aux[ThatInput, Output])(
-        caseTail: Ast.Aux[Input, Batch.Aux[TailData, TailDelta]] => Ast.Aux[ThatInput, Output])
-       = {
+        caseTail: Ast.Aux[Input, Batch.Aux[TailData, TailDelta]] => Ast.Aux[ThatInput, Output]) = {
       If[ThatInput, Output](IsInl(differentiable), caseHead(head), caseTail(tail))
     }
 
   }
+
 }

@@ -36,13 +36,10 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-//    val factory = DifferentiableOps[InputTypePair]()
-//    import factory._
-
     type NN[OutputTypePair <: any.Any] = Ast.FromTypePair[InputTypePair, OutputTypePair]
 
     val toArray2D: NN[Array2D] = {
-//
+
       val field0 = input[Batch.FromTypePair[InputTypePair]].head
       val rest0 = input[Batch.FromTypePair[InputTypePair]].tail
       val field1 = rest0.head
@@ -53,42 +50,41 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val rest3 = rest2.tail
 
       val field0Flag0: NN[Double] = field0.choice { _ =>
-        double.literal(0.0)
+        0.0
       } { _ =>
-        double.literal(1.0)
+        1.0
       }
 
-      val field0Flag1: NN[Double] = field0.choice { unknown =>
-        double.weight(0.5)
+      val field0Flag1 = field0.choice { unknown =>
+        0.5.toWeight
       } {
         _.choice { knownField0 =>
           knownField0.choice { unset =>
-            double.literal(0.0)
+            0.0
           } { someValue =>
-            double.literal(1.0)
+            1.0
           }
-
         } { _ =>
           `throw`(new IllegalArgumentException)
         }
       }
 
       val field0Value: NN[Double] = field0.choice { unknown: NN[HNil] =>
-        double.weight(0.5)
+        0.5.toWeight: NN[Double]
       } {
         _.choice { knownField0 =>
           knownField0.choice { unset: NN[HNil] =>
-            double.weight(0.5)
+            0.5.toWeight: NN[Double]
           } {
             _.choice { nativeDouble =>
-              nativeDouble
+              nativeDouble: NN[Double]
             } { _: NN[CNil] =>
-              `throw`(new IllegalArgumentException)
-            }
-          }
+              `throw`(new IllegalArgumentException): NN[Double]
+            }: NN[Double]
+          }: NN[Double]
         } { _: NN[CNil] =>
-          `throw`(new IllegalArgumentException)
-        }
+          `throw`(new IllegalArgumentException): NN[Double]
+        }: NN[Double]
 
       }
 

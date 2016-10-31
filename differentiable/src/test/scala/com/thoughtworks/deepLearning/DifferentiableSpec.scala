@@ -1,14 +1,9 @@
 package com.thoughtworks.deepLearning
 
-import cats.Eval
-import com.thoughtworks.deepLearning.any.ast.Identity
-//import com.thoughtworks.deepLearning.DifferentiableAny.Ast
-import com.thoughtworks.deepLearning.array2D.ast.Weight
 import com.thoughtworks.deepLearning.array2D._
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4s.Implicits._
 import any._
 import org.scalatest._
+import org.nd4s.Implicits._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -21,9 +16,9 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
   "Array2D dot Array2D" in {
 
-    val network = -weight(Array(Array(0.0, 5.0))).dot(input[Batch.FromTypePair[Array2D]])
+    val network = -Array(Array(0.0, 5.0)).toWeight.dot(input[Batch.FromTypePair[Array2D]])
 
-    val inputBatch = array2D.literal(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)))
+    val inputBatch = array2DLiteral(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)))
 
     def train() = {
       val outputBatch = network.forward(inputBatch)
