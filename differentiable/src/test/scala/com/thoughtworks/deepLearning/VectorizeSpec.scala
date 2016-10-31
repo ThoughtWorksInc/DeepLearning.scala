@@ -64,7 +64,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           } { someValue =>
             1.0
           }
-        } { _ =>
+        } { cnil =>
           `throw`(new IllegalArgumentException)
         }
       }
@@ -78,11 +78,11 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           } {
             _.choice { nativeDouble =>
               nativeDouble: NN[Double]
-            } { _: NN[CNil] =>
+            } { cnil: NN[CNil] =>
               `throw`(new IllegalArgumentException): NN[Double]
             }: NN[Double]
           }: NN[Double]
-        } { _: NN[CNil] =>
+        } { cnil: NN[CNil] =>
           `throw`(new IllegalArgumentException): NN[Double]
         }: NN[Double]
 
@@ -94,7 +94,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         } {
           _.choice { known =>
             1.0
-          } { _ =>
+          } { cnil =>
             `throw`(new IllegalArgumentException)
           }
         }
