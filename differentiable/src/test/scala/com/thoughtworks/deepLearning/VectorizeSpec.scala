@@ -88,32 +88,38 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
       }
 
-      //      val isField1Unknown: Boolean = IsInl(field1)
-      //      val defaultValueForField1Value0 = DoubleWeight(0.5)
-      //      val field1Choice0 = Head(Tail(field1))
-      //      val isField1Value0: Boolean = IsInl(field1Choice0)
-      //      //      val isField1Value1 = IsInl(field1Choice1)
-      //
-      //      val field1Flag0 = {
-      //        If(
-      //          isField1Unknown,
-      //          Literal(Eval.now(0.0)),
-      //          Literal(Eval.now(1.0))
-      //        )
-      //      }
-      //      val field1Value0 = {
-      //        val defaultValue = DoubleWeight(0.5)
-      //        If(
-      //          isField1Unknown,
-      //          defaultValue,
-      //          If(
-      //            isField1Value0,
-      //            Literal(Eval.now(0.0)),
-      //            Literal(Eval.now(1.0))
-      //          )
-      //        )
-      //      }
-      //
+      val field1Flag0 = {
+        field1.choice { unknown =>
+          0.0
+        } {
+          _.choice { known =>
+            1.0
+          } { _ =>
+            `throw`(new IllegalArgumentException)
+          }
+        }
+      }
+
+      val field1Value0 = {
+        field1.choice { unknown =>
+          0.5.toWeight
+        } {
+          _.choice { known =>
+            known.choice { unset =>
+              0.0
+            } {
+              _.choice { set =>
+                1.0
+              } { cnil =>
+                `throw`(new IllegalArgumentException)
+              }
+            }
+          } { cnil =>
+            `throw`(new IllegalArgumentException)
+          }
+        }
+      }
+
       //      val isField3Unknown: Boolean = IsInl(field3)
       //      val defaultValueForField3Value0 = DoubleWeight(0.5)
       //      val field3Choice0 = Head(Tail(field3))
