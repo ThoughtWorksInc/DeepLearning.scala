@@ -20,9 +20,9 @@ package object array2D {
 
   type Array2DBatch = Batch.Aux[Eval[INDArray], Eval[INDArray]]
 
-  implicit final class Array2DOps[Input <: Batch](differentiable: Differentiable.Aux[Input, Array2DBatch]) {
+  implicit final class Array2DOps[Input <: Batch](differentiable: Ast.Aux[Input, Array2DBatch]) {
 
-    def dot[RightInput <: Input](right: Differentiable.Aux[RightInput, Array2DBatch]) = {
+    def dot[RightInput <: Input](right: Ast.Aux[RightInput, Array2DBatch]) = {
       Dot(differentiable, right)
     }
 
@@ -51,7 +51,7 @@ package object array2D {
   implicit def array2DLiteral(nativeArray: Array[Array[scala.Double]]) = literal(nativeArray)
 
   def make[Input <: Batch](
-      operands: Vector[Vector[Differentiable.Aux[Input, Batch.Aux[Eval[Double], Eval[Double]]]]]) = {
+      operands: Vector[Vector[Ast.Aux[Input, Batch.Aux[Eval[Double], Eval[Double]]]]]) = {
     ToArray2D(operands)
   }
 

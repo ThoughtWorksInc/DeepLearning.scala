@@ -3,7 +3,7 @@ package double.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.any.utilities.Cached
+import com.thoughtworks.deepLearning.Ast.Cached
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 
@@ -11,8 +11,8 @@ import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class LessThan[Input0 <: Batch](
-    leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-    rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+                                            leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+                                            rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
 ) extends Cached {
 
   protected final class SharedBatch(override val input: Input0,

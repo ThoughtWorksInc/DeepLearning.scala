@@ -3,9 +3,9 @@ package array2D.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable
-import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.any.utilities.Cached
+import com.thoughtworks.deepLearning.Ast
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Ast.Cached
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
@@ -15,9 +15,9 @@ import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class MultiplyDouble[Input0 <: Batch](
-    leftOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-    rightOperand: Differentiable.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
-) extends Differentiable
+                                                  leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+                                                  rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+) extends Ast
     with Cached {
 
   protected final class SharedBatch(override val input: Input0,

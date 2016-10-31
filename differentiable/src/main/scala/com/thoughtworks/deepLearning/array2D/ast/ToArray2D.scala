@@ -9,8 +9,8 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
 
 final case class ToArray2D[Input0 <: Batch](
-    operands: Vector[Vector[Differentiable.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]]])
-    extends Differentiable {
+    operands: Vector[Vector[Ast.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]]])
+    extends Ast {
 
   type Input = Input0
 

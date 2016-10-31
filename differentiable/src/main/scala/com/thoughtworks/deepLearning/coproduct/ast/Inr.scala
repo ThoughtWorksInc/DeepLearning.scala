@@ -1,14 +1,14 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.{Batch, Differentiable}
+import com.thoughtworks.deepLearning.{Batch, Ast}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-    tail: Differentiable.Aux[Input0, Batch.Aux[TailData, TailDelta]])
-    extends Differentiable {
+    tail: Ast.Aux[Input0, Batch.Aux[TailData, TailDelta]])
+    extends Ast {
 
   type Input = Input0
 

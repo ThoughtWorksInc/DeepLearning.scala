@@ -1,15 +1,15 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.{Batch, Differentiable}
+import com.thoughtworks.deepLearning.{Batch, Ast}
 
 final case class HCons[Input0 <: Batch,
                        HeadData,
                        HeadDelta,
                        TailData <: shapeless.HList,
                        TailDelta <: shapeless.Coproduct](
-    head: Differentiable.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
-    tail: Differentiable.Aux[Input0, Batch.Aux[TailData, TailDelta]]
-) extends Differentiable {
+                                                          head: Ast.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
+                                                          tail: Ast.Aux[Input0, Batch.Aux[TailData, TailDelta]]
+) extends Ast {
   override type Input = Input0
 
   final class Output private[HCons] (headBatch: Batch.Aux[HeadData, HeadDelta],

@@ -11,7 +11,7 @@
 //
 //  val a: List[Any#Data] = ???
 //
-//  type BatchOf[A <: Any] = Differentiable.Batch.Aux[A#Data, A#Delta]
+//  type BatchOf[A <: Any] = Ast.Batch.Aux[A#Data, A#Delta]
 //
 //  def cast(x: Double#Batch): Any#Batch = x
 //  def cast2(x: HNil#Batch): HList#Batch = x

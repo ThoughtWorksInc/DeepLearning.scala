@@ -9,7 +9,7 @@ package object hlist {
 
   implicit final class HConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
-      val differentiable: Differentiable.Aux[
+      val differentiable: Ast.Aux[
         Input,
         Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
     def head = Head(differentiable)

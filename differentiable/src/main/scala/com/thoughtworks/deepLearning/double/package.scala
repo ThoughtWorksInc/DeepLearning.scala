@@ -17,13 +17,13 @@ package object double {
 
   type DoubleBatch = Batch.Aux[Double#Data, Double#Delta]
 
-  implicit final class DoubleOps[Input <: Batch](differentiable: Differentiable.Aux[Input, DoubleBatch]) {
-    def +[RightInput <: Input](right: Differentiable.Aux[RightInput, DoubleBatch]) = {
+  implicit final class DoubleOps[Input <: Batch](differentiable: Ast.Aux[Input, DoubleBatch]) {
+    def +[RightInput <: Input](right: Ast.Aux[RightInput, DoubleBatch]) = {
       Add(differentiable, right)
     }
   }
 
-  implicit def doubleLiteral[Input <: Batch](nativeDouble: scala.Double): Differentiable.Aux[Input, DoubleBatch] = {
+  implicit def doubleLiteral[Input <: Batch](nativeDouble: scala.Double): Ast.Aux[Input, DoubleBatch] = {
     Literal(Eval.now(nativeDouble))
   }
 

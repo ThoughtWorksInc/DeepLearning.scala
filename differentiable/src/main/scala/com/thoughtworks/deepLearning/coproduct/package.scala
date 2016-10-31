@@ -26,7 +26,7 @@ package object coproduct {
 
   implicit final class CConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
   TailDelta <: shapeless.Coproduct](
-      differentiable: Differentiable.Aux[
+      differentiable: Ast.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
 
@@ -34,8 +34,8 @@ package object coproduct {
 
     lazy val tail = Tail(differentiable)
 
-    def choice[ThatInput <: Input, Output <: Batch](caseHead: head.type => Differentiable.Aux[ThatInput, Output])(
-        caseTail: tail.type => Differentiable.Aux[ThatInput, Output]) = {
+    def choice[ThatInput <: Input, Output <: Batch](caseHead: head.type => Ast.Aux[ThatInput, Output])(
+        caseTail: tail.type => Ast.Aux[ThatInput, Output]) = {
       If[ThatInput, Output](IsInl(differentiable), caseHead(head), caseTail(tail))
     }
 

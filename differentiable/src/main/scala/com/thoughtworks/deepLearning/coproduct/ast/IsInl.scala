@@ -3,7 +3,7 @@ package coproduct.ast
 
 import cats.Eval
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deepLearning.{Batch, Differentiable}
+import com.thoughtworks.deepLearning.{Batch, Ast}
 
 
 
@@ -11,9 +11,9 @@ import com.thoughtworks.deepLearning.{Batch, Differentiable}
 
 final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: Differentiable.Aux[Input0,
+    ccons: Ast.Aux[Input0,
                               Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-) extends Differentiable {
+) extends Ast {
 
   final class Output private[IsInl] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])

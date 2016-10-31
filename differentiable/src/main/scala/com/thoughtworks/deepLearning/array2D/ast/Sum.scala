@@ -3,14 +3,14 @@ package array2D.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.any.utilities.Cached
+import com.thoughtworks.deepLearning.Ast.Cached
 import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deepLearning.array2D.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Sum[Input0 <: Batch](operand: Differentiable.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+final case class Sum[Input0 <: Batch](operand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
                                       dimensions: Seq[Int])
     extends Cached {
 

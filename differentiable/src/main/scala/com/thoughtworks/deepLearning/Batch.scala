@@ -8,6 +8,8 @@ object Batch {
     type Data <: Data0
     type Delta >: Delta0
   }
+
+  type FromTypePair[TypePair <: { type Data; type Delta }] = Batch.Aux[TypePair#Data, TypePair#Delta]
 }
 
 trait Batch extends AutoCloseable {

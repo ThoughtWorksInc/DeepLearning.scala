@@ -2,7 +2,7 @@ package com.thoughtworks.deepLearning
 
 import cats.Eval
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
@@ -27,12 +27,12 @@ import scala.language.existentials
 //  type Boolean = DifferentiableOps.Boolean[Input]
 //
 //  implicit def toBoolean(
-//      differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) =
+//      differentiable: Ast.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]]) =
 //    new Boolean(differentiable)
 //
 //  type Double = DifferentiableOps.Double[Input]
 //
-//  implicit def toDouble(differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) =
+//  implicit def toDouble(differentiable: Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) =
 //    new Double(differentiable)
 //
 //  type Coproduct = DifferentiableOps.CoproductOps[Input]
@@ -42,7 +42,7 @@ import scala.language.existentials
 //    DifferentiableOps.CConsOps[Input, Head#OutputData, Head#OutputDelta, Tail#OutputData, Tail#OutputDelta]
 //
 //  implicit def toCCons[HeadData, HeadDelta, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-//      differentiable: Differentiable.Aux[
+//      differentiable: Ast.Aux[
 //        Input,
 //        Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) =
 //    new DifferentiableOps.CConsOps(differentiable)
@@ -53,7 +53,7 @@ import scala.language.existentials
 //    DifferentiableOps.HCons[Input, Head#OutputData, Head#OutputDelta, Tail#OutputData, Tail#OutputDelta]
 //
 //  implicit def toHCons[HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
-//      differentiable: Differentiable.Aux[
+//      differentiable: Ast.Aux[
 //        Input,
 //        Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) =
 //    new DifferentiableOps.HCons(differentiable)
@@ -71,7 +71,7 @@ import scala.language.existentials
 //  trait Any[Input <: Batch] extends scala.Any {
 //    type OutputData
 //    type OutputDelta
-//    type Network = Differentiable.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
+//    type Network = Ast.Aux[Input, Batch.Aux[OutputData, OutputDelta]]
 //
 //    val differentiable: Network
 //
@@ -91,7 +91,7 @@ import scala.language.existentials
 //  }
 //
 //  final class Boolean[Input <: Batch](
-//      val differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]])
+//      val differentiable: Ast.Aux[Input, Batch.Aux[Eval[scala.Boolean], Eval[scala.Boolean]]])
 //      extends AnyVal
 //      with Any[Input] {
 //    override type OutputData = Eval[scala.Boolean]
@@ -99,7 +99,7 @@ import scala.language.existentials
 //  }
 //
 //  final class Double[Input <: Batch](
-//      val differentiable: Differentiable.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+//      val differentiable: Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
 //      extends AnyVal
 //      with Any[Input] {
 //    override type OutputData = Eval[scala.Double]
@@ -113,7 +113,7 @@ import scala.language.existentials
 //
 //  final class CConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 //  TailDelta <: shapeless.Coproduct](
-//      val differentiable: Differentiable.Aux[
+//      val differentiable: Ast.Aux[
 //        Input,
 //        Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]])
 //      extends CoproductOps[Input] {
@@ -124,12 +124,12 @@ import scala.language.existentials
 //    private lazy val tail = Tail(differentiable)
 //
 //    def choice[ResultData, ResultDelta](
-//        caseHead: Differentiable.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => Differentiable.Aux[
+//        caseHead: Ast.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => Ast.Aux[
 //          Input,
 //          Batch.Aux[ResultData, ResultDelta]])(
-//        caseTail: Differentiable.Aux[Input, Batch.Aux[TailData, TailDelta]] => Differentiable.Aux[
+//        caseTail: Ast.Aux[Input, Batch.Aux[TailData, TailDelta]] => Ast.Aux[
 //          Input,
-//          Batch.Aux[ResultData, ResultDelta]]): Differentiable.Aux[Input, Batch.Aux[ResultData, ResultDelta]] = {
+//          Batch.Aux[ResultData, ResultDelta]]): Ast.Aux[Input, Batch.Aux[ResultData, ResultDelta]] = {
 //      If(IsInl(differentiable), caseHead(head), caseTail(tail))
 //    }
 //
@@ -163,7 +163,7 @@ import scala.language.existentials
 //  }
 //
 //  final class HCons[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
-//      val differentiable: Differentiable.Aux[
+//      val differentiable: Ast.Aux[
 //        Input,
 //        Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]])
 //      extends AnyVal
@@ -177,7 +177,7 @@ import scala.language.existentials
 //  }
 //
 //  final class HNil[Input <: Batch](
-//      val differentiable: Differentiable.Aux[Input, Batch.Aux[shapeless.HNil, shapeless.CNil]])
+//      val differentiable: Ast.Aux[Input, Batch.Aux[shapeless.HNil, shapeless.CNil]])
 //      extends AnyVal
 //      with HList[Input] {
 //    override type OutputData = shapeless.HNil
@@ -211,7 +211,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 //    val factory = DifferentiableOps[InputTypePair]()
 //    import factory._
 
-    type Network[OutputTypePair <: any.Any] = Differentiable.Aux[Batch.Aux[InputTypePair#Data, InputTypePair#Delta],
+    type Network[OutputTypePair <: any.Any] = Ast.Aux[Batch.Aux[InputTypePair#Data, InputTypePair#Delta],
                                                                  Batch.Aux[OutputTypePair#Data, OutputTypePair#Delta]]
 
     val toArray2D: Network[Array2D] = {
@@ -333,9 +333,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     }
 
-    //    val predict: Differentiable.Aux[Batch.Aux[InputData, _], Batch.Aux[Row, _]] = ???
+    //    val predict: Ast.Aux[Batch.Aux[InputData, _], Batch.Aux[Row, _]] = ???
     //
-    //    val train: Differentiable.Aux[Batch.Aux[InputData :: ExpectedLabelData :: HNil, _], Batch.Aux[Eval[Double], _]] = ???
+    //    val train: Ast.Aux[Batch.Aux[InputData :: ExpectedLabelData :: HNil, _], Batch.Aux[Eval[Double], _]] = ???
 
   }
 

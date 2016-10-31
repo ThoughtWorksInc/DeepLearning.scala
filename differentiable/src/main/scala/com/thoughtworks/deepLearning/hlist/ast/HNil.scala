@@ -1,11 +1,11 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.{Batch, Differentiable}
+import com.thoughtworks.deepLearning.{Batch, Ast}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-case object HNil extends Differentiable with Batch {
+case object HNil extends Ast with Batch {
   override type Input = Batch
 
   override type Data = shapeless.HNil
