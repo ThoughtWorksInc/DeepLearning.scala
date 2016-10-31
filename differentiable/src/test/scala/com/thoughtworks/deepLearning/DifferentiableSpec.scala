@@ -1,7 +1,10 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.NeuralNetwork.LearningRate
+import com.thoughtworks.deepLearning.any.ast.Identity
+//import com.thoughtworks.deepLearning.DifferentiableAny.Ast
+import com.thoughtworks.deepLearning.array2D.ast.Weight
+import com.thoughtworks.deepLearning.array2D._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import org.scalatest._
@@ -12,23 +15,14 @@ import org.scalatest._
 final class DifferentiableSpec extends FreeSpec with Matchers {
 
   implicit val learningRate = new LearningRate {
-    override def apply(): Double = 0.0003
+    override def apply() = 0.0003
   }
 
   "Array2D dot Array2D" in {
 
-    val network = {
-      NeuralNetwork.Array2DNegative(
-        NeuralNetwork.Dot(
-          NeuralNetwork.Array2DWeight(Array(Array(0.0, 5.0))),
-          NeuralNetwork.Id[Eval[INDArray], Eval[INDArray]]()
-        )
-      )
-    }
+    val network = -weight(Array(Array(0.0, 5.0))).dot(Identity[Eval[INDArray], Eval[INDArray]]())
 
-    val inputBatch = NeuralNetwork.Literal(
-      Eval.now(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)).toNDArray)
-    )
+    val inputBatch = array2D.literal(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)))
 
     def train() = {
       val outputBatch = network.forward(inputBatch)

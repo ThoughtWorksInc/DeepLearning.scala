@@ -1,0 +1,27 @@
+package com.thoughtworks.deepLearning
+
+import cats.Eval
+import com.thoughtworks.deepLearning.array2D.ast.{Dot, Negative}
+import com.thoughtworks.deepLearning.boolean.ast.If
+
+/**
+  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  */
+package object boolean {
+
+  type Boolean = {
+    type Delta = Eval[scala.Boolean]
+    type Data = Eval[scala.Boolean]
+  }
+
+  type BooleanBatch = Batch.Aux[Boolean#Data, Boolean#Delta]
+
+  implicit final class BooleanOps[Input <: Batch](differentiable: Differentiable.Aux[Input, BooleanBatch]) {
+
+    def `if`[ThatInput <: Input, Output <: Batch](`then`: Differentiable.Aux[ThatInput, Output])(`else`: Differentiable.Aux[ThatInput, Output]) = {
+      If(differentiable, `then`, `else`)
+    }
+
+  }
+
+}
