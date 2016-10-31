@@ -151,7 +151,7 @@ object Ast {
     /**
       * Performs the underlying forward pass.
       *
-      * @return a [[Batch]] that will cached for subsequent [[#forward]]
+      * @return a [[Batch]] that will be cached for subsequent [[#forward]]
       */
     protected def rawForward(input: Input): SharedBatch
 
