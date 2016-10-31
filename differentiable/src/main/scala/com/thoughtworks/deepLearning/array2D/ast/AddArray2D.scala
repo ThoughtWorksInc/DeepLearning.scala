@@ -10,13 +10,12 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 
-
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class AddArray2D[Input0 <: Batch](
-                                              leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-                                              rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
+    leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+    rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
 ) extends Ast
     with Cached {
 
@@ -43,7 +42,6 @@ final case class AddArray2D[Input0 <: Batch](
       upstream1.close()
       upstream2.close()
     }
-
 
     override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
       val sumAsOriginalShape = { (outputDeltaValue: INDArray, upstreamValue: INDArray) =>

@@ -45,7 +45,7 @@ object Ast {
 
         // Returns a [[Batch]] able to detect error of closing more than once.
         @elidable(elidable.ASSERTION)
-        def checkIfCloseOnlyOnce: Self = new Batch {
+        def checkIfCloseOnlyOnce = new Batch {
           type Delta = ReferenceCount.this.Delta
           type Data = ReferenceCount.this.Data
 
@@ -67,7 +67,7 @@ object Ast {
           }
         }
 
-        Option(checkIfCloseOnlyOnce).getOrElse(this: Batch.Aux[Data, Delta])
+        Option(checkIfCloseOnlyOnce).getOrElse[Batch.Aux[Data, Delta]](this)
       }
 
       private[Cached] var count: Int = 1

@@ -14,7 +14,7 @@ final case class ToArray2D[Input0 <: Batch](
 
   type Input = Input0
 
-  final class Output private[ToArray2D](upstreams: Vector[Vector[Batch.Aux[Eval[Double], Eval[Double]]]])
+  final class Output private[ToArray2D] (upstreams: Vector[Vector[Batch.Aux[Eval[Double], Eval[Double]]]])
       extends Array2DSemigroupBatch {
     override def backward(delta: Eval[INDArray]): Unit = {
       for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {

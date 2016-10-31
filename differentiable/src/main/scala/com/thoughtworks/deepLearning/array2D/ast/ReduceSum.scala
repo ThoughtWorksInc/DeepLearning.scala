@@ -14,8 +14,7 @@ import org.nd4s.Implicits._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ReduceSum[Input0 <: Batch](
-    operand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
+final case class ReduceSum[Input0 <: Batch](operand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]])
     extends Cached {
 
   protected final class SharedBatch(override val input: Input0, upstream: Batch.Aux[Eval[INDArray], Eval[INDArray]])

@@ -15,8 +15,8 @@ import org.nd4s.Implicits._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class MultiplyArray2D[Input0 <: Batch](
-                                                   leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-                                                   rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
+    leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+    rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
 ) extends Ast
     with Cached {
 
