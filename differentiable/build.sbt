@@ -36,16 +36,6 @@ libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
-scalacOptions in Compile in doc += "-implicits"
-
-scalacOptions in Compile in doc ++= {
-  if (scalaBinaryVersion.value == "2.11") {
-    Seq("-author")
-  } else {
-    Seq()
-  }
-}
-
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
 addCompilerPlugin("org.spire-math" % "kind-projector" % "0.8.2" cross CrossVersion.binary)
