@@ -14,7 +14,7 @@ package object any {
   }
 
   def input[Input <: Batch] = {
-    Identity[Input]
+    Identity[Input]()
   }
 
   def `throw`(throwable: => Throwable) = {

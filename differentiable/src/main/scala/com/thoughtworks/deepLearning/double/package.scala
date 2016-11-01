@@ -2,7 +2,7 @@ package com.thoughtworks.deepLearning
 
 import scala.language.implicitConversions
 import cats.Eval
-import com.thoughtworks.deepLearning.any.ast.Literal
+import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
 import com.thoughtworks.deepLearning.double.ast.{Add, Weight}
 
 /**
@@ -22,13 +22,19 @@ package object double {
     }
   }
 
-  implicit def doubleLiteral[Input <: Batch](nativeDouble: scala.Double) = {
+  implicit def doubleLiteral[Input <: Batch: Identity](
+      nativeDouble: scala.Double): Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] = {
     Literal(Eval.now(nativeDouble))
   }
 
+  class InputTypePair[Data, Delta]
+
   implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
-    def toLiteral = doubleLiteral(nativeDouble)
-    def toWeight(implicit learningRate: LearningRate) = Weight(nativeDouble)
+    def toLiteral[Input <: Batch: Identity] = doubleLiteral(nativeDouble)
+    def toWeight[Input <: Batch: Identity](
+        implicit learningRate: LearningRate): Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] = {
+      Weight(nativeDouble)
+    }
   }
 
 }

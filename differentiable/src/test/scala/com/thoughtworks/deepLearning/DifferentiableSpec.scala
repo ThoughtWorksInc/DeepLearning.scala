@@ -16,12 +16,14 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
   "Array2D dot Array2D" in {
 
-    val network = -Array(Array(0.0, 5.0)).toWeight.dot(input[Batch.FromTypePair[Array2D]])
+    implicit val x = input[Batch.FromTypePair[Array2D]]
 
-    val inputBatch = array2DLiteral(Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5)))
+    val network = -Array(Array(0.0, 5.0)).toWeight.dot(x)
+
+    val inputData = Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5))
 
     def train() = {
-      val outputBatch = network.forward(inputBatch)
+      val outputBatch = network.forward(inputData)
       try {
         val loss = outputBatch.value.map(_.sumT)
         outputBatch.backward(outputBatch.value)

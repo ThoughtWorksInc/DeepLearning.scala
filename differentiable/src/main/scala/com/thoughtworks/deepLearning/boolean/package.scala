@@ -18,8 +18,9 @@ package object boolean {
 
   implicit final class BooleanOps[Input <: Batch](differentiable: Ast.Aux[Input, BooleanBatch]) {
 
-    def `if`[ThatInput <: Input, Output <: Batch](`then`: Ast.Aux[ThatInput, Output])(`else`: Ast.Aux[ThatInput, Output]) = {
-      If(differentiable, `then`, `else`)
+    def `if`[ThatInput <: Input, Output <: Batch](`then`: Ast.Aux[ThatInput, Output])(
+        `else`: Ast.Aux[ThatInput, Output]):  Ast.Aux[ThatInput, Output] = {
+      If[ThatInput, Output](differentiable, `then`, `else`)
     }
 
   }

@@ -29,15 +29,17 @@ package object coproduct {
       differentiable: Ast.Aux[Input,
                               Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
 
-    lazy val head = Head(differentiable)
+    def head = Head(differentiable)
 
-    lazy val tail = Tail(differentiable)
+    def tail = Tail(differentiable)
 
     def choice[ThatInput <: Input, Output <: Batch](
         caseHead: Ast.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => Ast.Aux[ThatInput, Output])(
         caseTail: Ast.Aux[Input, Batch.Aux[TailData, TailDelta]] => Ast.Aux[ThatInput, Output]) = {
-      If[ThatInput, Output](IsInl(differentiable), caseHead(head), caseTail(tail))
+      If(isInl, caseHead(head), caseTail(tail))
     }
+
+    def isInl = IsInl(differentiable)
 
   }
 
