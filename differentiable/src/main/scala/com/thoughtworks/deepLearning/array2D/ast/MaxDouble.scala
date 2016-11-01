@@ -20,7 +20,7 @@ final case class MaxDouble[Input0 <: Batch](
 ) extends Ast
     with Cached {
 
-  protected final class SharedBatch(override val input: Input0,
+  protected final class SharedBatch private[deepLearning](override val input: Input0,
                                     upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
                                     upstream2: WidenBatch[Eval[scala.Double], Eval[scala.Double]])
       extends Array2DSemigroupBatch

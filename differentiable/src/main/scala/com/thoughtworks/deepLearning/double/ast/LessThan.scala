@@ -16,7 +16,7 @@ final case class LessThan[Input0 <: Batch](
     rightOperand: WidenAst[Input0, WidenBatch[Eval[scala.Double], Eval[scala.Double]]]
 ) extends Cached {
 
-  protected final class SharedBatch(override val input: Input0,
+  protected final class SharedBatch private[deepLearning](override val input: Input0,
                                     upstream1: WidenBatch[Eval[scala.Double], Eval[scala.Double]],
                                     upstream2: WidenBatch[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch

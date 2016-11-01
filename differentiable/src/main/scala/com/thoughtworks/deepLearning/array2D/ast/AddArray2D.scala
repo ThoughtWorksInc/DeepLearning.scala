@@ -19,9 +19,9 @@ final case class AddArray2D[Input0 <: Batch](
 ) extends Ast
     with Cached {
 
-  protected final class SharedBatch(override val input: Input0,
-                                    upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
-                                    upstream2: WidenBatch[Eval[INDArray], Eval[INDArray]])
+  protected final class SharedBatch private[deepLearning] (override val input: Input0,
+                                                           upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
+                                                           upstream2: WidenBatch[Eval[INDArray], Eval[INDArray]])
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = {

@@ -20,7 +20,7 @@ final case class Negative[Input0 <: Batch](
     operand: WidenAst[Input0, WidenBatch[Eval[scala.Double], Eval[scala.Double]]])
     extends Cached {
 
-  protected final class SharedBatch(override val input: Input0,
+  protected final class SharedBatch private[deepLearning](override val input: Input0,
                                     upstream: WidenBatch[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {

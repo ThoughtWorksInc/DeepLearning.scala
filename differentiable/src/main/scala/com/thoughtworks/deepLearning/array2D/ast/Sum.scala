@@ -15,7 +15,7 @@ final case class Sum[Input0 <: Batch](operand: WidenAst[Input0, WidenBatch[Eval[
                                       dimensions: Seq[Int])
     extends Cached {
 
-  protected final class SharedBatch(override val input: Input0, upstream: WidenBatch[Eval[INDArray], Eval[INDArray]])
+  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: WidenBatch[Eval[INDArray], Eval[INDArray]])
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream.value.map(_.sum(dimensions: _*)).memoize
