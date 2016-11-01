@@ -74,7 +74,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           knownField0.choice { unset: NN[HNil] =>
             0.5.toWeight: NN[Double]
           } {
-            _.choice { nativeDouble =>
+            _.choice { nativeDouble: NN[Double] =>
               nativeDouble: NN[Double]
             } { cnil: NN[CNil] =>
               `throw`(new IllegalArgumentException): NN[Double]
