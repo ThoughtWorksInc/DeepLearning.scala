@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.any.ast
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
 import com.thoughtworks.deepLearning.{Batch, Ast}
 

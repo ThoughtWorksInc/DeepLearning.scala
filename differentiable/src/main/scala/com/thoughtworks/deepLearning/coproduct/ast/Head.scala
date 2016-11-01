@@ -1,19 +1,20 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.{Batch, Ast}
+import com.thoughtworks.deepLearning.Ast.WidenAst
+import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.{Ast, Batch}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: Ast.Aux[Input0,
-                              Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+    ccons: WidenAst[Input0, WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
 ) extends Ast {
 
-  final class Output private[Head](
-      upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+  final class Output private[Head] (
+      upstream: WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Batch {
     override type Data = HeadData
     override type Delta = HeadDelta

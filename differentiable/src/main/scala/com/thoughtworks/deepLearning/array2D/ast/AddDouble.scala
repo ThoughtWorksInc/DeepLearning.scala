@@ -4,6 +4,7 @@ package array2D.ast
 import cats._
 import com.thoughtworks.deepLearning.Ast
 import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deepLearning.array2D.utilities._
 import org.nd4s.Implicits._
@@ -15,14 +16,14 @@ import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class AddDouble[Input0 <: Batch](
-    leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-    rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+    leftOperand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]],
+    rightOperand: WidenAst[Input0, WidenBatch[Eval[scala.Double], Eval[scala.Double]]]
 ) extends Ast
     with Cached {
 
   protected final class SharedBatch(override val input: Input0,
-                                    upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                                    upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+                                    upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
+                                    upstream2: WidenBatch[Eval[scala.Double], Eval[scala.Double]])
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream1.value.map2(upstream2.value)(_ + _).memoize

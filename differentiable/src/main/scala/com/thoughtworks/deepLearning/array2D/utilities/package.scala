@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.array2D
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import org.nd4j.linalg.api.ndarray.INDArray
 
 /**

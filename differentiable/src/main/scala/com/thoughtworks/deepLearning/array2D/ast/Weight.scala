@@ -2,9 +2,7 @@ package com.thoughtworks.deepLearning
 package array2D.ast
 
 import cats._
-import com.thoughtworks.deepLearning.Ast
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.array2D.utilities._
+import com.thoughtworks.deepLearning.Batch.WidenBatch
 import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
@@ -16,7 +14,7 @@ final case class Weight(var rawValue: INDArray)(implicit learningRate: LearningR
     extends Ast
     with Array2DSemigroupBatch {
   override type Input = Batch
-  override type Output = Batch.Aux[Data, Delta]
+  override type Output = WidenBatch[Data, Delta]
 
   override def value = Eval.now(rawValue)
 

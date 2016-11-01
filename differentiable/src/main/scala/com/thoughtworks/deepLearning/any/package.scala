@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import cats.Eval
 import com.thoughtworks.deepLearning.any.ast.{Identity, Literal, Throw}
 
@@ -8,12 +10,11 @@ import com.thoughtworks.deepLearning.any.ast.{Identity, Literal, Throw}
   */
 package object any {
 
-  type Any = {
-    type Data
-    type Delta
-  }
+  /** @template */
+  type Any = Batch
 
-  type InputAst[InputTypePair <: Any] = Identity[Batch.FromTypePair[InputTypePair]]
+  /** @template */
+  type InputAst[InputTypePair <: Any] = Identity[InputTypePair#Widen]
 
   implicit def input[Input <: Batch] = {
     Identity[Input]()
@@ -25,8 +26,8 @@ package object any {
 
   implicit final class NativeAnyOps[Data](data: Data) {
 
-    def toLiteral[Input <: Batch: Identity]: Ast.Aux[Input, Batch.Aux[Data, scala.Any]] = Literal[Data](data)
-    def toBatch: Batch.Aux[Data, scala.Any] = Literal[Data](data)
+    def toLiteral[Input <: Batch: Identity]: WidenAst[Input, WidenBatch[Data, scala.Any]] = Literal[Data](data)
+    def toBatch: WidenBatch[Data, scala.Any] = Literal[Data](data)
 
   }
 

@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.any.ast
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.{Batch, Ast}
 
 /**
@@ -9,7 +11,7 @@ final case class Literal[Data0](value0: Data0) extends Ast with Batch {
   override type Data = Data0
   override type Delta = scala.Any
   override type Input = Batch
-  override type Output = Batch.Aux[Data, Delta]
+  override type Output = WidenBatch[Data, Delta]
 
   override def value: Data = value0
 

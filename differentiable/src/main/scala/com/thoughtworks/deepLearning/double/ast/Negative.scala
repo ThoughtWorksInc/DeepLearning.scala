@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.double.ast
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
@@ -15,11 +17,11 @@ import org.nd4j.linalg.ops.transforms.Transforms
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Negative[Input0 <: Batch](
-    operand: Ast.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+    operand: WidenAst[Input0, WidenBatch[Eval[scala.Double], Eval[scala.Double]]])
     extends Cached {
 
   protected final class SharedBatch(override val input: Input0,
-                                    upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+                                    upstream: WidenBatch[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
     type Input >: Input0

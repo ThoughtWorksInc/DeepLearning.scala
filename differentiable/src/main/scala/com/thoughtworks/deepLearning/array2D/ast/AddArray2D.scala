@@ -5,7 +5,7 @@ import cats._
 import cats.implicits._
 import com.thoughtworks.deepLearning.Ast
 import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Ast.Cached
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.array2D.utilities._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
@@ -14,14 +14,14 @@ import org.nd4s.Implicits._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class AddArray2D[Input0 <: Batch](
-    leftOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-    rightOperand: Ast.Aux[Input0, Batch.Aux[Eval[INDArray], Eval[INDArray]]]
+    leftOperand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]],
+    rightOperand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]]
 ) extends Ast
     with Cached {
 
   protected final class SharedBatch(override val input: Input0,
-                                    upstream1: Batch.Aux[Eval[INDArray], Eval[INDArray]],
-                                    upstream2: Batch.Aux[Eval[INDArray], Eval[INDArray]])
+                                    upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
+                                    upstream2: WidenBatch[Eval[INDArray], Eval[INDArray]])
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = {

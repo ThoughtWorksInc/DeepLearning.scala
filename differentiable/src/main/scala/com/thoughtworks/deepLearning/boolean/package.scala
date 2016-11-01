@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.any.Any
 import cats.Eval
 import com.thoughtworks.deepLearning.array2D.ast.{Dot, Negative}
 import com.thoughtworks.deepLearning.boolean.ast.If
@@ -9,17 +11,16 @@ import com.thoughtworks.deepLearning.boolean.ast.If
   */
 package object boolean {
 
-  type Boolean = {
+  /** @template */
+  type Boolean = Any {
     type Delta = Eval[scala.Boolean]
     type Data = Eval[scala.Boolean]
   }
 
-  type BooleanBatch = Batch.Aux[Boolean#Data, Boolean#Delta]
+  implicit final class BooleanOps[Input <: Batch](differentiable: WidenAst[Input, Boolean#Widen]) {
 
-  implicit final class BooleanOps[Input <: Batch](differentiable: Ast.Aux[Input, BooleanBatch]) {
-
-    def `if`[ThatInput <: Input, Output <: Batch](`then`: Ast.Aux[ThatInput, Output])(
-        `else`: Ast.Aux[ThatInput, Output]):  Ast.Aux[ThatInput, Output] = {
+    def `if`[ThatInput <: Input, Output <: Batch](`then`: WidenAst[ThatInput, Output])(
+        `else`: WidenAst[ThatInput, Output]): WidenAst[ThatInput, Output] = {
       If[ThatInput, Output](differentiable, `then`, `else`)
     }
 

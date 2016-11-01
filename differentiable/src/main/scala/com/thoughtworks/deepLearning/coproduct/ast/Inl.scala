@@ -1,18 +1,18 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.{Batch, Ast}
+import com.thoughtworks.deepLearning.Ast.WidenAst
+import com.thoughtworks.deepLearning.Batch.WidenBatch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Inl[Input0 <: Batch, HeadData, HeadDelta](
-    head: Ast.Aux[Input0, Batch.Aux[HeadData, HeadDelta]])
+final case class Inl[Input0 <: Batch, HeadData, HeadDelta](head: WidenAst[Input0, WidenBatch[HeadData, HeadDelta]])
     extends Ast {
 
   type Input = Input0
 
-  final class Output private[Inl](headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch {
+  final class Output private[Inl] (headBatch: WidenBatch[HeadData, HeadDelta]) extends Batch {
     def value = shapeless.Inl(headBatch.value: HeadData)
 
     type Data = shapeless.Inl[HeadData, Nothing]

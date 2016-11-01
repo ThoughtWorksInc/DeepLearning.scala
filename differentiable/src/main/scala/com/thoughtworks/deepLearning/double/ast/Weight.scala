@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.double.ast
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
@@ -17,7 +19,7 @@ final case class Weight(var rawValue: scala.Double)(implicit learningRate: Learn
     extends Ast
     with DoubleMonoidBatch {
   override type Input = Batch
-  override type Output = Batch.Aux[Data, Delta]
+  override type Output = WidenBatch[Data, Delta]
 
   override def forward(any: Input) = this
 

@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.boolean._
 import com.thoughtworks.deepLearning.double._
@@ -34,8 +36,8 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    def rowToArray2D(implicit row: InputAst[InputTypePair]): Ast.FromTypePair[InputTypePair, Array2D] = {
-      type NN[OutputTypePair <: { type Data; type Delta }] = Ast.FromTypePair[InputTypePair, OutputTypePair]
+    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#ToWidenAst[Array2D] = {
+      type NN[OutputTypePair <: Batch] = InputTypePair#ToWidenAst[OutputTypePair]
       val field0 = row.head
       val rest0 = row.tail
       val field1 = rest0.head
@@ -188,9 +190,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       Vector(encodedAstRow0).toArray2D
     }
 
-    //    val predict: Ast.Aux[Batch.Aux[InputData, _], Batch.Aux[Row, _]] = ???
+    //    val predict: Ast.WidenBatch[WidenBatch[InputData, _], WidenBatch[Row, _]] = ???
     //
-    //    val train: Ast.Aux[Batch.Aux[InputData :: ExpectedLabelData :: HNil, _], Batch.Aux[Eval[Double], _]] = ???
+    //    val train: Ast.WidenBatch[WidenBatch[InputData :: ExpectedLabelData :: HNil, _], WidenBatch[Eval[Double], _]] = ???
 
   }
 

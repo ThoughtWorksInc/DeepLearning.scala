@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.any.Any
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast.{Head, Tail, IsInl}
@@ -9,37 +11,40 @@ import com.thoughtworks.deepLearning.coproduct.ast.{Head, Tail, IsInl}
   */
 package object coproduct {
 
-  type Coproduct = {
+  /** @template */
+  type Coproduct = Any {
     type Data <: shapeless.Coproduct
     type Delta <: shapeless.Coproduct
   }
 
-  type CNil = {
+  /** @template */
+  type CNil = Coproduct {
     type Data = shapeless.CNil
     type Delta = shapeless.CNil
   }
 
-  type :+:[Head <: Any, Tail <: Coproduct] = {
+  /** @template */
+  type :+:[Head <: Any, Tail <: Coproduct] = Coproduct {
     type Data = shapeless.:+:[Head#Data, Tail#Data]
     type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
   }
 
   implicit final class CConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
   TailDelta <: shapeless.Coproduct](
-      differentiable: Ast.Aux[Input,
-                              Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+      differentiable: WidenAst[Input,
+                               WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
 
-    def head = Head(differentiable)
+    def head = Head[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
 
-    def tail = Tail(differentiable)
+    def tail = Tail[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
 
     def choice[ThatInput <: Input, Output <: Batch](
-        caseHead: Ast.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => Ast.Aux[ThatInput, Output])(
-        caseTail: Ast.Aux[Input, Batch.Aux[TailData, TailDelta]] => Ast.Aux[ThatInput, Output]) = {
+        caseHead: WidenAst[Input, WidenBatch[HeadData, HeadDelta]] => WidenAst[ThatInput, Output])(
+        caseTail: WidenAst[Input, WidenBatch[TailData, TailDelta]] => WidenAst[ThatInput, Output]) = {
       If(isInl, caseHead(head), caseTail(tail))
     }
 
-    def isInl = IsInl(differentiable)
+    def isInl = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
 
   }
 

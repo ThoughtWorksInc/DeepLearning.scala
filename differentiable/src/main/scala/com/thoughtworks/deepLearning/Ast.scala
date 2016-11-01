@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
 
 import scala.language.existentials
@@ -12,14 +14,12 @@ import scala.annotation.elidable
 // TODO: Split this file into multiple modules
 object Ast {
 
-  type Aux[-Input0 <: Batch, +Output0 <: Batch] =
+  /** @template */
+  type WidenAst[-Input0 <: Batch, +Output0 <: Batch] =
     Ast {
       type Input >: Input0
       type Output <: Output0
     }
-
-  type FromTypePair[InputTypePair <: { type Data; type Delta }, OutputTypePair <: { type Data; type Delta }] =
-    Ast.Aux[Batch.FromTypePair[InputTypePair], Batch.FromTypePair[OutputTypePair]]
 
   trait Cached extends Ast {
 
@@ -28,14 +28,11 @@ object Ast {
 
     private[Cached] sealed trait ReferenceCount extends Batch { this: SharedBatch =>
 
-      // Workaround for Scala compiler's stupid bug: https://issues.scala-lang.org/browse/SI-10008
-      private[Cached] type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
-
       /**
         * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
-      private[Cached] def maybeCheckIfCloseOnlyOnce: Self = {
+      private[Cached] def maybeCheckIfCloseOnlyOnce: Widen = {
 
         // Returns a [[Batch]] able to detect error of closing more than once.
         @elidable(elidable.ASSERTION)
@@ -61,7 +58,7 @@ object Ast {
           }
         }
 
-        Option(checkIfCloseOnlyOnce).getOrElse[Batch.Aux[Data, Delta]](this)
+        Option(checkIfCloseOnlyOnce).getOrElse(widen)
       }
 
       private[Cached] var count: Int = 1
@@ -138,7 +135,7 @@ object Ast {
       }
     }
 
-    type Output = SharedBatch#Self
+    type Output = SharedBatch#Widen
 
     protected type SharedBatch <: ReferenceCount
 

@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.{Batch, Ast}
 
 /**
@@ -12,7 +14,7 @@ case object HNil extends Ast with Batch {
 
   override type Delta = shapeless.CNil
 
-  override type Output = Batch.Aux[Data, Delta]
+  override type Output = WidenBatch[Data, Delta]
 
   override def forward(input: Input): Output = this
 

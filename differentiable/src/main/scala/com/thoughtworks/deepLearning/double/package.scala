@@ -1,5 +1,8 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.any.Any
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import scala.language.implicitConversions
 import cats.Eval
 import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
@@ -10,20 +13,19 @@ import com.thoughtworks.deepLearning.double.ast.{Add, Weight}
   */
 package object double {
 
-  type Double = {
+  /** @template */
+  type Double = Any {
     type Delta = Eval[scala.Double]
     type Data = Eval[scala.Double]
   }
 
-  implicit final class DoubleOps[Input <: Batch](
-      differentiable: Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) {
-    def +[RightInput <: Input](right: Ast.Aux[RightInput, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) = {
+  implicit final class DoubleOps[Input <: Batch](differentiable: WidenAst[Input, Double#Widen]) {
+    def +[RightInput <: Input](right: WidenAst[RightInput, Double#Widen]) = {
       Add(differentiable, right)
     }
   }
 
-  implicit def doubleLiteral[Input <: Batch: Identity](
-      nativeDouble: scala.Double): Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] = {
+  implicit def doubleLiteral[Input <: Batch: Identity](nativeDouble: scala.Double): WidenAst[Input, Double#Widen] = {
     Literal(Eval.now(nativeDouble))
   }
 
@@ -31,8 +33,7 @@ package object double {
 
   implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
     def toLiteral[Input <: Batch: Identity] = doubleLiteral(nativeDouble)
-    def toWeight[Input <: Batch: Identity](
-        implicit learningRate: LearningRate): Ast.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] = {
+    def toWeight[Input <: Batch: Identity](implicit learningRate: LearningRate): WidenAst[Input, Double#Widen] = {
       Weight(nativeDouble)
     }
   }

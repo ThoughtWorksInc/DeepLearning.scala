@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
+import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.{Batch, Ast}
 
 /**
@@ -7,14 +9,14 @@ import com.thoughtworks.deepLearning.{Batch, Ast}
   */
 final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
 TailDelta <: shapeless.Coproduct](
-    differentiableHCons: Ast.Aux[
+    differentiableHCons: WidenAst[
       Input0,
-      Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+      WidenBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
 ) extends Ast {
   override type Input = Input0
 
   final class Output private[Head] (
-      upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      upstream: WidenBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Batch {
     override def backward(delta: Delta): Unit = {
       upstream.backward(shapeless.Inl(delta))
