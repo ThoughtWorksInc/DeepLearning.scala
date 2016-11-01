@@ -33,7 +33,7 @@ trait Batch extends AutoCloseable { outer =>
     */
   type ToWidenAst[Output <: Batch] >: WidenAst[Widen, Output#Widen] <: WidenAst[Widen, Output#Widen]
 
-  def widen: Widen = this: WidenBatch[Data, Delta]
+  final def widen: Widen = this: WidenBatch[Data, Delta]
 
   def backward(delta: Delta): Unit
 
