@@ -18,14 +18,8 @@ object Ast {
       type Output <: Output0
     }
 
-  type FromTypePair[InputTypePair <: {
-                      type Data
-                      type Delta
-                    },
-                    OutputTypePair <: {
-                      type Data
-                      type Delta
-                    }] = Ast.Aux[Batch.FromTypePair[InputTypePair], Batch.FromTypePair[OutputTypePair]]
+  type FromTypePair[InputTypePair <: { type Data; type Delta }, OutputTypePair <: { type Data; type Delta }] =
+    Ast.Aux[Batch.FromTypePair[InputTypePair], Batch.FromTypePair[OutputTypePair]]
 
   trait Cached extends Ast {
 

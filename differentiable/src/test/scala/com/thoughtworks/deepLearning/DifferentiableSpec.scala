@@ -16,9 +16,12 @@ final class DifferentiableSpec extends FreeSpec with Matchers {
 
   "Array2D dot Array2D" in {
 
-    implicit val x = input[Batch.FromTypePair[Array2D]]
+    def makeNetwork(implicit x: InputAst[Array2D]) = {
+      val weightInitialValue = Array(Array(0.0, 5.0))
+      -weightInitialValue.toWeight.dot(x)
+    }
 
-    val network = -Array(Array(0.0, 5.0)).toWeight.dot(x)
+    val network = makeNetwork
 
     val inputData = Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5))
 

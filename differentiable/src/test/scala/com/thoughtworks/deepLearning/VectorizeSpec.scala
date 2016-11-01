@@ -5,6 +5,7 @@ import com.thoughtworks.deepLearning.boolean._
 import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
+import com.thoughtworks.deepLearning.any.ast.Identity
 import com.thoughtworks.deepLearning.coproduct._
 import org.scalatest._
 
@@ -17,7 +18,6 @@ import scala.language.existentials
 final class VectorizeSpec extends FreeSpec with Matchers {
 
   import VectorizeSpec._
-  type NN[OutputTypePair <: { type Data; type Delta }] = Ast.FromTypePair[InputTypePair, OutputTypePair]
 
   "Convert HMatrix to Array2D" in {
     /*
@@ -34,10 +34,8 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    implicit val row = input[Batch.FromTypePair[InputTypePair]]
-
-    val toArray2D: NN[Array2D] = {
-
+    def rowToArray2D(implicit row: InputAst[InputTypePair]): Ast.FromTypePair[InputTypePair, Array2D] = {
+      type NN[OutputTypePair <: { type Data; type Delta }] = Ast.FromTypePair[InputTypePair, OutputTypePair]
       val field0 = row.head
       val rest0 = row.tail
       val field1 = rest0.head

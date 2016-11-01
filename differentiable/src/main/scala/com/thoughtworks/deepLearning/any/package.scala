@@ -13,6 +13,8 @@ package object any {
     type Delta
   }
 
+  type InputAst[InputTypePair <: Any] = Identity[Batch.FromTypePair[InputTypePair]]
+
   implicit def input[Input <: Batch] = {
     Identity[Input]()
   }
