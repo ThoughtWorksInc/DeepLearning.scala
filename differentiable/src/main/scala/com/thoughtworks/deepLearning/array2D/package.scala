@@ -32,28 +32,28 @@ package object array2D {
 
   }
 
-  implicit final class NativeArrayOps(nativeArray: Array[Array[scala.Double]]) {
+  implicit final class INDArrayOps(ndarray: INDArray) {
     def toWeight[Input <: Batch: Identity](
         implicit learningRate: LearningRate): Ast.Aux[Input, Batch.Aux[Eval[INDArray], Eval[INDArray]]] =
-      Weight(nativeArray.toNDArray)
-    def toLiteral[Input <: Batch: Identity] = array2DLiteral(nativeArray)
-    def toBatch = array2DBatch(nativeArray)
+      Weight(ndarray)
+    def toLiteral[Input <: Batch: Identity] = ndarrayLiteral(ndarray)
+    def toBatch = ndarrayBatch(ndarray)
   }
 
-  def randn(numberOfRows: Int, numberOfColumns: Int)(implicit learningRate: LearningRate) = {
-    Weight(Nd4j.randn(numberOfRows, numberOfColumns))
-  }
+  implicit def nativeArrayToINDArrayOps(nativeArray: Array[Array[scala.Double]]) =
+    new INDArrayOps(nativeArray.toNDArray)
 
-  def zeros(numberOfRows: Int, numberOfColumns: Int)(implicit learningRate: LearningRate) = {
-    Weight(Nd4j.zeros(numberOfRows, numberOfColumns))
-  }
+  implicit def ndarrayLiteral[Input <: Batch: Identity](
+      ndarray: INDArray): Ast.Aux[Input, Batch.Aux[Eval[INDArray], Eval[INDArray]]] =
+    Literal(Eval.now(ndarray))
 
-  implicit def array2DLiteral[Input <: Batch: Identity](
-      nativeArray: Array[Array[scala.Double]]): Ast.Aux[Input, Batch.Aux[Eval[INDArray], Eval[INDArray]]] =
-    Literal(Eval.now(nativeArray.toNDArray))
+  implicit def ndarrayBatch(ndarray: INDArray): Batch.Aux[Eval[INDArray], Eval[INDArray]] =
+    Literal(Eval.now(ndarray))
 
-  implicit def array2DBatch(nativeArray: Array[Array[scala.Double]]): Batch.Aux[Eval[INDArray], Eval[INDArray]] =
-    Literal(Eval.now(nativeArray.toNDArray))
+  implicit def nativeArrayLiteral[Input <: Batch: Identity](nativeArray: Array[Array[scala.Double]]) =
+    ndarrayLiteral(nativeArray.toNDArray)
+
+  implicit def nativeArrayBatch(nativeArray: Array[Array[scala.Double]]) = ndarrayBatch(nativeArray.toNDArray)
 
   // TODO: Support scala.Array for better performance.
   implicit final class AstVectorOps[Input <: Batch](
