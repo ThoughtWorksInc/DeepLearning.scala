@@ -29,6 +29,8 @@ final class BatchSpec extends FreeSpec with Matchers {
     "implicitly[(Double :: HNil)#Widen =:= WidenBatch[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
     "implicitly[(Any :: HNil)#Widen <:< HList#Widen]" should compile
     "implicitly[(Any :: HList)#Widen <:< HList#Widen]" should compile
+    "implicitly[(Any :: HList)#Widen <:< (Any :: HList)#Widen]" should compile
+    "implicitly[(Any :: HList)#Widen =:= (Any :: HList)#Widen]" should compile
     "implicitly[(Any :: HNil)#Widen =:= HList#Widen]" shouldNot compile
     "implicitly[(Boolean :: Double :: HNil) <:< HList]" should compile
     "implicitly[(Boolean :: Double :: HNil) <:< (Boolean :: HList)]" shouldNot compile
