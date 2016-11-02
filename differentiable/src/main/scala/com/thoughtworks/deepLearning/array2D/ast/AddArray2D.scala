@@ -9,6 +9,7 @@ import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.array2D.utilities._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
+import SumAs._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
