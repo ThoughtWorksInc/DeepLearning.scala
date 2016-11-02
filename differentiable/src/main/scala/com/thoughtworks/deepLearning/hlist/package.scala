@@ -33,7 +33,7 @@ package object hlist {
   }
 
   /** @template */
-  type ::[Head <: Batch, Tail <: HList] = HNil {
+  type ::[Head <: Batch, Tail <: HList] = HList {
     type Data = shapeless.::[Head#Data, Tail#Data]
     type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
   }
