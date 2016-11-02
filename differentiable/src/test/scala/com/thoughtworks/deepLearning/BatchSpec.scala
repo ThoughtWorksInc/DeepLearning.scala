@@ -37,6 +37,14 @@ final class BatchSpec extends FreeSpec with Matchers {
   }
 
   "(Any :: HList)#Widen" ignore {
+    /*
+      以下几个测试符合逻辑，但Scala编译器不认可
+      */
+
+
+    "implicitly[(Any :: HNil)#Data <:< HList#Data]" should compile
+    "implicitly[shapeless.::[cats.Eval[Double],shapeless.HNil] <:< HList#Data]" should compile
+    "implicitly[(Boolean :: Double :: HNil)#Data <:< (Boolean :: HList)#Data]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Widen <:< (Boolean :: HList)#Widen]" should compile
     "implicitly[(Double :: HNil)#Widen <:< (Any :: HNil)#Widen]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Widen <:< (Boolean :: Any :: HNil)#Widen]" should compile
