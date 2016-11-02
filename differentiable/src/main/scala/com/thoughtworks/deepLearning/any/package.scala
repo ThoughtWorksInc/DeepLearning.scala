@@ -21,7 +21,7 @@ package object any {
   }
 
   def `throw`(throwable: => Throwable) = {
-    Throw(Eval.later(throwable))
+    Throw(throwable _)
   }
 
   implicit final class NativeAnyOps[Data](data: Data) {
