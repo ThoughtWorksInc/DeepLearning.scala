@@ -39,6 +39,7 @@ final class BatchSpec extends FreeSpec with Matchers {
   "(Any :: HList)#Widen" ignore {
     /*
       以下几个测试符合逻辑，但Scala编译器不认可
+      没有很好的解决办法，只能尽量避免使用抽象类型吧
       */
 
 
