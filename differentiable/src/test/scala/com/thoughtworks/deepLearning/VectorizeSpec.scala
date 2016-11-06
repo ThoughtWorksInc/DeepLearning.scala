@@ -37,6 +37,18 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
+    def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
+      : (Array2D :: ExpectedLabel :: HNil)#ToWidenAst[Double] = {
+      type NN[TypePair <: Batch] = WidenAst[(Array2D :: ExpectedLabel :: HNil)#Widen, TypePair#Widen]
+
+      val row = rowAndExpectedLabel.head
+      val expectedLabel = rowAndExpectedLabel.tail.head
+      val rowSeq = row.toSeq
+
+      // TODO: loss
+      3.0
+    }
+
     def Array2DToRow(implicit row: InputAst[Array2D]): Array2D#ToWidenAst[PredictionResult] = {
       type NN[TypePair <: Batch] = WidenAst[Array2D#Widen, TypePair#Widen]
       val rowSeq = row.toSeq
