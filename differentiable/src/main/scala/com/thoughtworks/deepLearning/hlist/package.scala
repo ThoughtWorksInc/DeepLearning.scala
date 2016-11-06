@@ -24,19 +24,11 @@ package object hlist {
            TailDelta <: shapeless.Coproduct](head: HeadAst)(
         implicit unapplyHead: IsAst[HeadAst, Input0, HeadData, HeadDelta],
         unapplyTail: IsAst[TailAst, Input0, TailData, TailDelta]
-    ) = {
+    ): WidenAst[Input0, WidenBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
       HCons[Input0, HeadData, HeadDelta, TailData, TailDelta](unapplyHead(head), unapplyTail(tail))
     }
 
   }
-
-  //  implicit def hlistOpsUnapply[Tail,
-  //                               Input0 <: Batch,
-  //                               OutputData <: shapeless.HList,
-  //                               OutputDelta <: shapeless.Coproduct](tail: Tail)(
-  //      implicit unapplyTail: UnapplyOutput.Aux[Tail, Input0, OutputData, OutputDelta])
-  //    : HListOps[Input0, OutputData, OutputDelta] =
-  //    new HListOps[Input0, OutputData, OutputDelta](unapplyTail(tail))
 
   implicit final class HConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](

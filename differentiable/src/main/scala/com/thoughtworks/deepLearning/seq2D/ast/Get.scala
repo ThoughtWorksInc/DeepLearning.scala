@@ -2,6 +2,7 @@ package com.thoughtworks.deepLearning.seq2D.ast
 
 import cats._
 import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.{Ast, Batch}
 import com.thoughtworks.deepLearning.array2D.utilities._
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
@@ -11,6 +12,8 @@ import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Get[Input0 <: Batch](operand0: WidenAst[Input0, Seq2D#Widen], i: Int, j: Int) extends Ast {
+  this: WidenAst[Input0, WidenBatch[Eval[scala.Double], Eval[scala.Double]]] =>
+
   final class Output private[Get] (upstream: Seq2D#Widen) extends DoubleMonoidBatch {
 
     override def backward(delta: Eval[scala.Double]): Unit = {
