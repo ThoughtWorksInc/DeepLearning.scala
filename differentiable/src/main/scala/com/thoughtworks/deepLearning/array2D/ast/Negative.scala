@@ -6,15 +6,15 @@ import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
+import com.thoughtworks.deepLearning.array2D.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Negative[Input0 <: Batch](operand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]])
+final case class Negative[Input0 <: Batch](operand: WidenAst[Input0, Array2D#Widen])
     extends Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: WidenBatch[Eval[INDArray], Eval[INDArray]])
+  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#Widen)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream.value.map(-_).memoize

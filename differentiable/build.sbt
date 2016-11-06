@@ -30,6 +30,8 @@ def osClassifier(moduleId: ModuleID) = {
 
 libraryDependencies += osClassifier("org.nd4j" % "nd4j-native" % "0.4-rc3.9" % Test classifier "")
 
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.7"
+
 libraryDependencies += "org.typelevel" %% "cats" % "0.7.2"
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"

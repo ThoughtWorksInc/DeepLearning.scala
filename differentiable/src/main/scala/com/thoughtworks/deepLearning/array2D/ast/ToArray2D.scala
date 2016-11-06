@@ -8,15 +8,15 @@ import com.thoughtworks.deepLearning.Batch.WidenBatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
+import com.thoughtworks.deepLearning.array2D.utilities._
 
-final case class ToArray2D[Input0 <: Batch](
+final case class FromAstVector[Input0 <: Batch](
     operands: Vector[Vector[WidenAst[Input0, WidenBatch[Eval[Double], Eval[Double]]]]])
     extends Ast {
 
   type Input = Input0
 
-  final class Output private[ToArray2D] (upstreams: Vector[Vector[WidenBatch[Eval[Double], Eval[Double]]]])
+  final class Output private[FromAstVector] (upstreams: Vector[Vector[WidenBatch[Eval[Double], Eval[Double]]]])
       extends Array2DSemigroupBatch {
     override def backward(delta: Eval[INDArray]): Unit = {
       for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {

@@ -13,14 +13,14 @@ import com.thoughtworks.deepLearning.array2D.utilities._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Dot[Input0 <: Batch](
-    leftOperand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]],
-    rightOperand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]]
+    leftOperand: WidenAst[Input0, Array2D#Widen],
+    rightOperand: WidenAst[Input0, Array2D#Widen]
 ) extends Ast
     with Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0,
-                                    upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
-                                    upstream2: WidenBatch[Eval[INDArray], Eval[INDArray]])
+                                    upstream1: Array2D#Widen,
+                                    upstream2: Array2D#Widen)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize

@@ -1,11 +1,10 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.any.Any
 import cats.Eval
 import com.thoughtworks.deepLearning.Ast.WidenAst
 import com.thoughtworks.deepLearning.Batch.WidenBatch
 import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
-import com.thoughtworks.deepLearning.array2D.ast.{Dot, Negative, ToArray2D, Weight}
+import com.thoughtworks.deepLearning.array2D.ast._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 
@@ -16,13 +15,8 @@ import scala.language.implicitConversions
   */
 package object array2D {
 
-  /**
-    * @template
-    */
-  type Array2D = Any {
-    type Data = Eval[INDArray]
-    type Delta = Eval[INDArray]
-  }
+  /** @template */
+  type Array2D = utilities.Array2D
 
   implicit final class Array2DOps[Input <: Batch](differentiable: WidenAst[Input, Array2D#Widen]) {
 
@@ -32,6 +26,10 @@ package object array2D {
 
     def unary_- = {
       Negative(differentiable)
+    }
+
+    def toSeq = {
+      ToSeq(differentiable)
     }
 
   }
@@ -62,7 +60,7 @@ package object array2D {
   // TODO: Support scala.Array for better performance.
   implicit final class AstVectorOps[Input <: Batch](
       astVector: Vector[Vector[WidenAst[Input, WidenBatch[Eval[Double], Eval[Double]]]]]) {
-    def toArray2D = ToArray2D(astVector)
+    def toArray2D = FromAstVector(astVector)
   }
 
 }

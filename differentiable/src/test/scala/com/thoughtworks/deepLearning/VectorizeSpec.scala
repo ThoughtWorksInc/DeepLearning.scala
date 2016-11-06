@@ -4,6 +4,7 @@ import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.boolean._
+import com.thoughtworks.deepLearning.seq2D._
 import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
@@ -34,6 +35,26 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     implicit val learningRate = new LearningRate {
       override def apply() = 0.0003
+    }
+
+    def Array2DToRow(implicit row: InputAst[Array2D]): Array2D#ToWidenAst[PredictionResult] = {
+      type NN[TypePair <: Batch] = WidenAst[Array2D#Widen, TypePair#Widen]
+      val rowSeq = row.toSeq
+      val n: WidenAst[Array2D#Widen, HNil#Widen] = hnil
+      val n2: NN[HNil] = hnil
+      val d: NN[Double] = rowSeq(0, 0)
+//      val pair0 = d :: hnil
+
+      val pair1 = d :: n
+      val pair2 = d :: n2
+
+//      val field0: NN[Double :: Double :: HNil] = rowSeq(0, 0) :: rowSeq(0, 1) :: hnil
+//      val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: hnil
+//      val field2: NN[Double] = rowSeq(0, 4)
+//      val field3: NN[Enum1Prediction] = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
+//      field0 :: field1 :: field2 :: field3 :: hnil
+
+      ???
     }
 
     def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#ToWidenAst[Array2D] = {
@@ -216,5 +237,13 @@ object VectorizeSpec {
 
   type ExpectedLabel =
     LabelField[Nullable[Double]] :: LabelField[Enum0] :: LabelField[Double] :: LabelField[Enum1] :: HNil
+
+  type UnsetProbability = Double
+  type NullableFieldPrediction[Value <: Any] = UnsetProbability :: Value :: HNil
+
+  type Enum0Prediction = Double :: Double :: HNil
+  type Enum1Prediction = Double :: Double :: Double :: HNil
+
+  type PredictionResult = NullableFieldPrediction[Double] :: Enum0Prediction :: Double :: Enum1Prediction :: HNil
 
 }

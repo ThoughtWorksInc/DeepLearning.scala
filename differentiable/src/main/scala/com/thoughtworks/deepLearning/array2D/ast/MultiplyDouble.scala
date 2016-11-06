@@ -7,19 +7,19 @@ import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.array2D.utilities.Array2DSemigroupBatch
+import com.thoughtworks.deepLearning.array2D.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class MultiplyDouble[Input0 <: Batch](
-    leftOperand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]],
+    leftOperand: WidenAst[Input0, Array2D#Widen],
     rightOperand: WidenAst[Input0, WidenBatch[Eval[scala.Double], Eval[scala.Double]]]
 ) extends Ast
     with Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0,
-                                    upstream1: WidenBatch[Eval[INDArray], Eval[INDArray]],
+                                    upstream1: Array2D#Widen,
                                     upstream2: WidenBatch[Eval[scala.Double], Eval[scala.Double]])
       extends Array2DSemigroupBatch
       with SemigroupBatch {

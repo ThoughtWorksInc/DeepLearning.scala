@@ -1,23 +1,15 @@
 package com.thoughtworks.deepLearning.boolean.ast
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
-import cats._
-import cats.implicits._
-import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.{Batch, Ast}
 import com.thoughtworks.deepLearning.Ast._
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
+import com.thoughtworks.deepLearning.boolean.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class If[Input0 <: Batch, Output0 <: Batch](
-                                                        condition: WidenAst[Input0, WidenBatch[Eval[scala.Boolean], Eval[scala.Boolean]]],
-                                                        `then`: WidenAst[Input0, Output0],
-                                                        `else`: WidenAst[Input0, Output0])
+final case class If[Input0 <: Batch, Output0 <: Batch](condition: WidenAst[Input0, Boolean#Widen],
+                                                       `then`: WidenAst[Input0, Output0],
+                                                       `else`: WidenAst[Input0, Output0])
     extends Ast {
   override type Input = Input0
   override type Output = Output0

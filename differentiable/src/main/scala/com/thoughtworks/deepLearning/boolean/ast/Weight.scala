@@ -2,7 +2,6 @@ package com.thoughtworks.deepLearning
 package boolean.ast
 
 import cats._
-import cats.implicits._
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
 
 /**

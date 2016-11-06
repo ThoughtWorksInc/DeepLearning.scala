@@ -3,18 +3,30 @@ package com.thoughtworks.deepLearning
 import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.Batch.WidenBatch
+import shapeless.DepFn1
+
 import scala.language.higherKinds
+import scalaz.Liskov
+import scalaz.Liskov.<~<
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object Batch {
 
+  type Aux[Data0, Delta0] = Batch {
+    type Data = Data0
+    type Delta = Delta0
+  }
+
   /** @template */
   type WidenBatch[+Data0, -Delta0] = Batch {
     type Data <: Data0
     type Delta >: Delta0
   }
+
+  implicit def proveWiden[Pair <: Batch]: Pair#Widen <~< WidenBatch[Pair#Data, Pair#Delta] = Liskov.force
+
 }
 
 trait Batch extends AutoCloseable { outer =>

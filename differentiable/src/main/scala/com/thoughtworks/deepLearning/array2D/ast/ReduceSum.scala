@@ -5,6 +5,7 @@ import cats._
 import cats.implicits._
 import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.array2D.utilities._
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -13,10 +14,10 @@ import org.nd4s.Implicits._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ReduceSum[Input0 <: Batch](operand: WidenAst[Input0, WidenBatch[Eval[INDArray], Eval[INDArray]]])
+final case class ReduceSum[Input0 <: Batch](operand: WidenAst[Input0, Array2D#Widen])
     extends Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: WidenBatch[Eval[INDArray], Eval[INDArray]])
+  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#Widen)
       extends MonoidBatch
       with DoubleMonoidBatch {
     type Input >: Input0

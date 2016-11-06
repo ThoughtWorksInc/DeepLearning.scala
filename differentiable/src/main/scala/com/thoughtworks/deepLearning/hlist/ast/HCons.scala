@@ -9,8 +9,8 @@ final case class HCons[Input0 <: Batch,
                        HeadDelta,
                        TailData <: shapeless.HList,
                        TailDelta <: shapeless.Coproduct](
-                                                          head: WidenAst[Input0, WidenBatch[HeadData, HeadDelta]],
-                                                          tail: WidenAst[Input0, WidenBatch[TailData, TailDelta]]
+    head: WidenAst[Input0, WidenBatch[HeadData, HeadDelta]],
+    tail: WidenAst[Input0, WidenBatch[TailData, TailDelta]]
 ) extends Ast {
   override type Input = Input0
 

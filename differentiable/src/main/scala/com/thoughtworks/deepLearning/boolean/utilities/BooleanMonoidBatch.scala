@@ -19,9 +19,10 @@ private[deepLearning] trait BooleanMonoidBatch extends Batch {
 
   override type Delta = Eval[scala.Boolean]
 
-  final def monoid = new Monoid[Delta] {
+  protected final def monoid = new Monoid[Delta] {
     override def empty = Eval.now(false)
 
     override def combine(x: Delta, y: Delta) = x.map2(y)(_ ^ _)
   }
+
 }

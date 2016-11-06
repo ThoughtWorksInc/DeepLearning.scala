@@ -1,18 +1,31 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
-import cats._
+import cats.{~> => _, _}
 
 import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
+import shapeless.DepFn1
 
 import scala.annotation.elidable
+import scalaz.Leibniz.===
+import scalaz.{Liskov, ~>}
+import scalaz.Liskov.<~<
+
+private[deepLearning] sealed trait LowPriorityAst {
+  import Ast._
+  implicit def outputPairAst2[NN[_ <: Batch], OutputPair <: Batch, Input <: Batch](
+      implicit d: NN[OutputPair] <~< WidenAst[Input, OutputPair#Widen])
+    : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+    d.andThen(outputPairAst)
+  }
+
+}
 
 // TODO: Split this file into multiple modules
-object Ast {
+object Ast extends LowPriorityAst {
 
   /** @template */
   type WidenAst[-Input0 <: Batch, +Output0 <: Batch] =
@@ -21,12 +34,26 @@ object Ast {
       type Output <: Output0
     }
 
+  type IsAst[Ast, Input <: Batch, OutputData, OutputDelta] =
+    Ast <~< WidenAst[Input, WidenBatch[OutputData, OutputDelta]]
+
+  implicit def outputPairAst[Input <: Batch, OutputPair <: Batch]
+    : IsAst[WidenAst[Input, OutputPair#Widen], Input, OutputPair#Data, OutputPair#Delta] = {
+
+    val batchProve = Batch.proveWiden[OutputPair]
+
+    type NN[+Output] = WidenAst[Input, Output with Batch]
+
+    Liskov.co[NN, OutputPair#Widen, WidenBatch[OutputPair#Data, OutputPair#Delta]](batchProve)
+
+  }
+
   trait Cached extends Ast {
 
     private val cache =
       java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, SharedBatch](1))
 
-    private[Cached] sealed trait ReferenceCount extends Batch { this: SharedBatch =>
+    protected trait ReferenceCount extends Batch { this: SharedBatch =>
 
       /**
         * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
@@ -63,7 +90,7 @@ object Ast {
 
       private[Cached] var count: Int = 1
 
-      private[Cached] def flush(): Unit
+      protected def flush(): Unit
 
       /**
         * Closes upstream batch of this [[SharedBatch]]
@@ -91,13 +118,13 @@ object Ast {
       private var currentDelta: Delta = monoid.empty
 
       /**
-        * Performs the underlying backward pass with all `delta`s that previously received from [[#backward]].
+        * Performs the underlying backward pass with all `upstreamDelta`s that previously received from [[#backward]].
         */
       protected def rawBackward(delta: Delta): Unit
 
       implicit protected def monoid: Monoid[Delta]
 
-      override private[Cached] final def flush(): Unit = {
+      override protected final def flush(): Unit = {
         rawBackward(synchronized {
           val delta = currentDelta
           currentDelta = monoid.empty
@@ -120,7 +147,7 @@ object Ast {
 
       implicit protected def semigroup: Semigroup[Delta]
 
-      override private[Cached] final def flush(): Unit = {
+      override protected final def flush(): Unit = {
         synchronized {
           val delta = currentDelta
           currentDelta = None

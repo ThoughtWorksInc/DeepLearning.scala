@@ -1,27 +1,17 @@
 package com.thoughtworks.deepLearning.boolean.ast
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
 import cats._
-import cats.implicits._
-import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.{Batch, Ast}
+import com.thoughtworks.deepLearning.Batch
 import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Ast.Cached
-import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
+import com.thoughtworks.deepLearning.boolean.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Not[Input0 <: Batch](
-    differentiableBoolean: WidenAst[Input0, WidenBatch[Eval[scala.Boolean], Eval[scala.Boolean]]])
-    extends Cached {
+final case class Not[Input0 <: Batch](differentiableBoolean: WidenAst[Input0, Boolean#Widen]) extends Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0,
-                                    upstream: WidenBatch[Eval[scala.Boolean], Eval[scala.Boolean]])
+  protected final class SharedBatch private[deepLearning] (override val input: Input0, upstream: Boolean#Widen)
       extends MonoidBatch
       with BooleanMonoidBatch {
     type Input >: Input0

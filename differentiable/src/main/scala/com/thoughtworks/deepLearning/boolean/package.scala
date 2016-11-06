@@ -12,10 +12,7 @@ import com.thoughtworks.deepLearning.boolean.ast.If
 package object boolean {
 
   /** @template */
-  type Boolean = Any {
-    type Delta = Eval[scala.Boolean]
-    type Data = Eval[scala.Boolean]
-  }
+  type Boolean = utilities.Boolean
 
   implicit final class BooleanOps[Input <: Batch](differentiable: WidenAst[Input, Boolean#Widen]) {
 
