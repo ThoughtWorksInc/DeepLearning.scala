@@ -13,17 +13,9 @@ import scala.annotation.elidable
 import scalaz.Liskov
 import scalaz.Liskov.<~<
 
+sealed trait LowPriortyAst {
 
-object Ast {
-
-  /** @template */
-  type WidenAst[-Input0 <: Batch, +Output0 <: Batch] =
-    Ast {
-      type Input >: Input0
-      type Output <: Output0
-    }
-
-  type IsAst[T, Input <: Batch, OutputData, OutputDelta] = T <~< WidenAst[Input, WidenBatch[OutputData, OutputDelta]]
+  import Ast._
 
   implicit def isAstPair[Input <: Batch, OutputPair <: Batch]
     : IsAst[WidenAst[Input, OutputPair#Widen], Input, OutputPair#Data, OutputPair#Delta] = {
@@ -36,6 +28,19 @@ object Ast {
     : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
     nn.value.andThen(isAstPair)
   }
+
+}
+
+object Ast extends LowPriortyAst {
+
+  /** @template */
+  type WidenAst[-Input0 <: Batch, +Output0 <: Batch] =
+    Ast {
+      type Input >: Input0
+      type Output <: Output0
+    }
+
+  type IsAst[T, Input <: Batch, OutputData, OutputDelta] = T <~< WidenAst[Input, WidenBatch[OutputData, OutputDelta]]
 
   implicit def isAst[Input <: Batch, OutputData, OutputDelta]
     : IsAst[WidenAst[Input, WidenBatch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {

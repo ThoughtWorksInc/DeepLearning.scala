@@ -45,7 +45,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val field0: NN[Double :: Double :: HNil] = rowSeq(0, 0) :: rowSeq(0, 1) :: n
       val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
       val field2: NN[Double] = rowSeq(0, 4)
-      val field3: NN[Enum1Prediction] = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
+      val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
       field0 :: field1 :: field2 :: field3 :: hnil
     }
 
