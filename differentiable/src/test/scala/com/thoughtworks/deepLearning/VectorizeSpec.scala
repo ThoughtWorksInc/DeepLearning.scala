@@ -43,7 +43,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val n: WidenAst[Array2D#Widen, HNil#Widen] = hnil
       val n2: NN[HNil] = hnil
       val d: NN[Double] = rowSeq(0, 0)
-//      val pair0 = d :: hnil
+      val pair0 = d :: hnil
 
       val pair1 = d :: n
       val pair2 = d :: n2

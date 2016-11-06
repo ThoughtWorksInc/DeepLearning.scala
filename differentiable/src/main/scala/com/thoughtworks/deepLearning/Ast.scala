@@ -1,31 +1,20 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.Batch._
-import cats.{~> => _, _}
+import cats._
 
 import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import shapeless.DepFn1
+import shapeless.{DepFn1, Lazy}
 
 import scala.annotation.elidable
-import scalaz.Leibniz.===
-import scalaz.{Liskov, ~>}
+import scalaz.Liskov
 import scalaz.Liskov.<~<
 
-private[deepLearning] sealed trait LowPriorityAst {
-  import Ast._
-  implicit def outputPairAst2[NN[_ <: Batch], OutputPair <: Batch, Input <: Batch](
-      implicit d: NN[OutputPair] <~< WidenAst[Input, OutputPair#Widen])
-    : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-    d.andThen(outputPairAst)
-  }
 
-}
-
-// TODO: Split this file into multiple modules
-object Ast extends LowPriorityAst {
+object Ast {
 
   /** @template */
   type WidenAst[-Input0 <: Batch, +Output0 <: Batch] =
@@ -34,18 +23,23 @@ object Ast extends LowPriorityAst {
       type Output <: Output0
     }
 
-  type IsAst[Ast, Input <: Batch, OutputData, OutputDelta] =
-    Ast <~< WidenAst[Input, WidenBatch[OutputData, OutputDelta]]
+  type IsAst[T, Input <: Batch, OutputData, OutputDelta] = T <~< WidenAst[Input, WidenBatch[OutputData, OutputDelta]]
 
-  implicit def outputPairAst[Input <: Batch, OutputPair <: Batch]
+  implicit def isAstPair[Input <: Batch, OutputPair <: Batch]
     : IsAst[WidenAst[Input, OutputPair#Widen], Input, OutputPair#Data, OutputPair#Delta] = {
+    // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
+    Liskov.force
+  }
 
-    val batchProve = Batch.proveWiden[OutputPair]
+  implicit def isAstNN[Input <: Batch, NN[_ <: Batch], OutputPair <: Batch](
+      implicit nn: Lazy[NN[OutputPair] <~< WidenAst[Input, OutputPair#Widen]])
+    : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+    nn.value.andThen(isAstPair)
+  }
 
-    type NN[+Output] = WidenAst[Input, Output with Batch]
-
-    Liskov.co[NN, OutputPair#Widen, WidenBatch[OutputPair#Data, OutputPair#Delta]](batchProve)
-
+  implicit def isAst[Input <: Batch, OutputData, OutputDelta]
+    : IsAst[WidenAst[Input, WidenBatch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {
+    Liskov.refl
   }
 
   trait Cached extends Ast {

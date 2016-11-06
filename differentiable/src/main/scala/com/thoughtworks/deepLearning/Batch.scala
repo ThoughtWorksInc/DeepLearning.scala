@@ -25,8 +25,6 @@ object Batch {
     type Delta >: Delta0
   }
 
-  implicit def proveWiden[Pair <: Batch]: Pair#Widen <~< WidenBatch[Pair#Data, Pair#Delta] = Liskov.force
-
 }
 
 trait Batch extends AutoCloseable { outer =>
