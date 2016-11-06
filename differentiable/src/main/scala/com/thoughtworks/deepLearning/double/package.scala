@@ -14,10 +14,7 @@ import com.thoughtworks.deepLearning.double.ast.{Add, Weight}
 package object double {
 
   /** @template */
-  type Double = Any {
-    type Delta = Eval[scala.Double]
-    type Data = Eval[scala.Double]
-  }
+  type Double = utilities.Double
 
   implicit final class DoubleOps[Input <: Batch](differentiable: WidenAst[Input, Double#Widen]) {
     def +[RightInput <: Input](right: WidenAst[RightInput, Double#Widen]) = {
