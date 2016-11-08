@@ -40,8 +40,9 @@ package object coproduct {
 
     def choice[ThatInput <: Input, Output <: Batch](
         caseHead: WidenAst[Input, WidenBatch[HeadData, HeadDelta]] => WidenAst[ThatInput, Output])(
-        caseTail: WidenAst[Input, WidenBatch[TailData, TailDelta]] => WidenAst[ThatInput, Output]) = {
-      If(isInl, caseHead(head), caseTail(tail))
+        caseTail: WidenAst[Input, WidenBatch[TailData, TailDelta]] => WidenAst[ThatInput, Output])
+      : WidenAst[ThatInput, Output] = {
+      If[ThatInput, Output](isInl, caseHead(head), caseTail(tail))
     }
 
     def isInl = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)

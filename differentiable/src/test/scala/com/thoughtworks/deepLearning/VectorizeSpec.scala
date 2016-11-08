@@ -45,16 +45,36 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val expectedLabel = rowAndExpectedLabel.tail.head
       val rowSeq = row.toSeq
 
+      // 暂时先在CPU上计算
+
+      val expectedField0Label = expectedLabel.head
+
+      val loss0 = expectedField0Label.choice { _ =>
+        0.0 // Drop out
+      } {
+        _.head.choice { _ =>
+          1.0 - log(rowSeq(0, 0))
+        } { expectedValue =>
+          (log(rowSeq(0, 0)) + abs(log(rowSeq(0, 1)) - log(expectedValue.head)))
+        }
+      }
+//
+//
+
       // TODO: loss
       3.0
     }
 
-    def Array2DToRow(implicit row: InputAst[Array2D]): Array2D#ToWidenAst[PredictionResult] = {
+    def sigmoid[Input <: Batch: Identity](x: WidenAst[Input, Double#Widen]) = {
+      1.0 / (exp(-x) + 1.0)
+    }
+
+    def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#ToWidenAst[PredictionResult] = {
       type NN[TypePair <: Batch] = WidenAst[Array2D#Widen, TypePair#Widen]
       val rowSeq = row.toSeq
       val n: WidenAst[Array2D#Widen, HNil#Widen] = hnil
       val n2: NN[HNil] = hnil
-      val field0: NN[Double :: Double :: HNil] = rowSeq(0, 0) :: rowSeq(0, 1) :: n
+      val field0: NN[Double :: Double :: HNil] = log(rowSeq(0, 0)) :: rowSeq(0, 1) :: n
       val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
       val field2: NN[Double] = rowSeq(0, 4)
       val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
