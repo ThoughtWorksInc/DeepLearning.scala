@@ -20,12 +20,15 @@ package object array2D {
   /** @template */
   type Array2D = utilities.Array2D
 
-  implicit final class Array2DOps[Input <: Differentiable](differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
+  implicit final class Array2DOps[Input <: Differentiable](
+      differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
 
-    def dot[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Array2D#Batch]): DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
+    def dot[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Array2D#Batch])
+      : DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
       Dot(differentiable, right)
     }
-    def +[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Array2D#Batch]): DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
+    def +[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Array2D#Batch])
+      : DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
       AddArray2D(differentiable, right)
     }
 
@@ -36,14 +39,30 @@ package object array2D {
     def toSeq: DifferentiableFunction.Ast[Input, Seq2D#Batch] = {
       ToSeq(differentiable)
     }
-
-    def max[RightInput <: Input](rightAst: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
-      MaxDouble(differentiable, rightAst)
-    }
+//
+//    def max[RightInput <: Input](rightAst: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
+//      MaxDouble(differentiable, rightAst)
+//    }
   }
 
+  implicit def array2DMaxDouble[Input <: Differentiable] =
+    max
+      .at[DifferentiableFunction.Ast[Input, Array2D#Batch], DifferentiableFunction.Ast[Input, Double#Batch]]
+      .apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] {
+        MaxDouble(_, _)
+      }
+
+  implicit def array2DMaxNativeDouble[Input <: Differentiable, Right](
+      implicit view: Right => DifferentiableFunction.Ast[Input, Double#Batch]) =
+    max
+      .at[DifferentiableFunction.Ast[Input, Array2D#Batch], Right]
+      .apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] {
+        MaxDouble(_, _)
+      }
+
   implicit final class INDArrayOps(ndarray: INDArray) {
-    def toWeight[Input <: Differentiable: Identity](implicit learningRate: LearningRate): DifferentiableFunction.Ast[Input, Array2D#Batch] =
+    def toWeight[Input <: Differentiable: Identity](
+        implicit learningRate: LearningRate): DifferentiableFunction.Ast[Input, Array2D#Batch] =
       Weight(ndarray)
     def toLiteral[Input <: Differentiable: Identity] = ndarrayLiteral(ndarray)
     def toBatch = ndarrayBatch(ndarray)
@@ -52,7 +71,8 @@ package object array2D {
   implicit def nativeArrayToINDArrayOps(nativeArray: Array[Array[scala.Double]]): INDArrayOps =
     new INDArrayOps(nativeArray.toNDArray)
 
-  implicit def ndarrayLiteral[Input <: Differentiable: Identity](ndarray: INDArray): DifferentiableFunction.Ast[Input, Array2D#Batch] =
+  implicit def ndarrayLiteral[Input <: Differentiable: Identity](
+      ndarray: INDArray): DifferentiableFunction.Ast[Input, Array2D#Batch] =
     Literal(Eval.now(ndarray))
 
   implicit def ndarrayBatch(ndarray: INDArray): Array2D#Batch =
@@ -67,7 +87,8 @@ package object array2D {
 
   // TODO: Support scala.Array for better performance.
   implicit final class AstVectorOps[Input <: Differentiable](
-      astVector: Vector[Vector[DifferentiableFunction.Ast[Input, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]]]]) {
+      astVector: Vector[
+        Vector[DifferentiableFunction.Ast[Input, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]]]]) {
     def toArray2D = FromAstVector(astVector)
   }
 

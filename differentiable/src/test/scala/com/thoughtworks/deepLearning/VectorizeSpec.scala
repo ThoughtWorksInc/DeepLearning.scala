@@ -289,7 +289,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {
       val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
       val b = Nd4j.zeros(50).toWeight
-      ((row dot w) + b) max 0.0
+      max(((row dot w) + b), 0.0)
     }
 
     def predict(implicit row: InputAst[InputTypePair]) = {
