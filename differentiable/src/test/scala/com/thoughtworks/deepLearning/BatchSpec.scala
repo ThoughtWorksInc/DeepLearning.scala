@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.core.DifferentiableFunction._
-import com.thoughtworks.deepLearning.core.Differentiable._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
 import double._

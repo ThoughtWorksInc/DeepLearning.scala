@@ -1,6 +1,13 @@
-package com.thoughtworks.deepLearning.core
+package com.thoughtworks.deepLearning
+
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.Differentiable.Batch
+import shapeless.DepFn1
 
 import scala.language.higherKinds
+import scalaz.Liskov
+import scalaz.Liskov.<~<
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

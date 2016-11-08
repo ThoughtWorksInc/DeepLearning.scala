@@ -1,11 +1,10 @@
 package com.thoughtworks.deepLearning.seq2D.ast
 
 import cats._
-import com.thoughtworks.deepLearning.core.DifferentiableFunction._
-import com.thoughtworks.deepLearning.core.Differentiable._
-import com.thoughtworks.deepLearning.core.DifferentiableFunction
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 

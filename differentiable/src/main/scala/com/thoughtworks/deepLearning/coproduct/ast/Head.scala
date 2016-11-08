@@ -1,10 +1,9 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.core.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.core.Differentiable.Batch
-import com.thoughtworks.deepLearning.core.DifferentiableFunction
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

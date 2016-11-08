@@ -1,7 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
-import com.thoughtworks.deepLearning.core.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
 import com.thoughtworks.deepLearning.seq2D.ast.Get
 import com.thoughtworks.deepLearning.double.utilities.Double
 

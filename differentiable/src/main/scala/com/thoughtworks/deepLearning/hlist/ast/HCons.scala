@@ -1,7 +1,6 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.core.DifferentiableFunction
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
 
 final case class HCons[Input0 <: Differentiable,
                        HeadData,

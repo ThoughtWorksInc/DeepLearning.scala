@@ -3,11 +3,10 @@ package com.thoughtworks.deepLearning.array2D.ast
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.core.Differentiable._
-import com.thoughtworks.deepLearning.core.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.core.DifferentiableFunction
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
 import com.thoughtworks.deepLearning.seq2D.utilities.{Seq2D, Seq2DBatch}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j

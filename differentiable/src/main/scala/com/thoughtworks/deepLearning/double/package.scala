@@ -1,8 +1,8 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.any.Any
-import com.thoughtworks.deepLearning.core.DifferentiableFunction._
-import com.thoughtworks.deepLearning.core.Differentiable._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 
 import scala.language.implicitConversions
 import cats.Eval
@@ -10,7 +10,6 @@ import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.double.ast._
 import com.thoughtworks.deepLearning.boolean.utilities.Boolean
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction, LearningRate}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

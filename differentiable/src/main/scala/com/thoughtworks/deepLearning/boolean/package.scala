@@ -1,11 +1,10 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.core.DifferentiableFunction._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.any.Any
 import cats.Eval
 import com.thoughtworks.deepLearning.array2D.ast.{Dot, Negative}
 import com.thoughtworks.deepLearning.boolean.ast.If
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

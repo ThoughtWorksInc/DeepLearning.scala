@@ -4,7 +4,6 @@ package utilities
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.core.Differentiable
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 

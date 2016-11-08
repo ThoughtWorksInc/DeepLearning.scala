@@ -2,11 +2,10 @@ package com.thoughtworks.deepLearning
 package coproduct.ast
 
 import cats.Eval
-import com.thoughtworks.deepLearning.core.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.core.Differentiable.Batch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deepLearning.core.DifferentiableFunction
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
 
 final case class IsInl[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](

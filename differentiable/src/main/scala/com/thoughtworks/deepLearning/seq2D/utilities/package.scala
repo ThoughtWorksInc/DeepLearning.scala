@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning.seq2D
 
 import cats.Eval
-import com.thoughtworks.deepLearning.core.Differentiable
+import com.thoughtworks.deepLearning.Differentiable
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

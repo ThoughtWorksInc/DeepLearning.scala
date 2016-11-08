@@ -1,10 +1,9 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.core.DifferentiableFunction._
-import com.thoughtworks.deepLearning.core.Differentiable._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.array2D._
 import any._
-import com.thoughtworks.deepLearning.core.LearningRate
 import org.scalatest._
 import org.nd4s.Implicits._
 

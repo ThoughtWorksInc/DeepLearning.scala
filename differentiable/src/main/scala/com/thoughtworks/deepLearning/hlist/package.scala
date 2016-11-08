@@ -1,11 +1,10 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.core.DifferentiableFunction.{Ast, IsAst}
-import com.thoughtworks.deepLearning.core.Differentiable.Batch
+import com.thoughtworks.deepLearning.DifferentiableFunction.{IsAst, Ast}
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import hlist.ast._
 import any._
 import com.thoughtworks.deepLearning.any.ast.Identity
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 import scala.language.implicitConversions
 import scalaz.Liskov.<~<

@@ -3,7 +3,6 @@ package boolean.ast
 
 import cats._
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

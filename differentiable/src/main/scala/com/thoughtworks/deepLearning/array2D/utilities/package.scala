@@ -1,7 +1,8 @@
 package com.thoughtworks.deepLearning.array2D
 
 import cats._
-import com.thoughtworks.deepLearning.core.Differentiable
+import com.thoughtworks.deepLearning.Differentiable
+import com.thoughtworks.deepLearning.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 
 /**

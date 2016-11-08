@@ -2,9 +2,8 @@ package com.thoughtworks.deepLearning
 package array2D.ast
 
 import cats._
-import com.thoughtworks.deepLearning.core.Differentiable.Batch
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction, LearningRate}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 
