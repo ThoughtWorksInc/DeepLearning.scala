@@ -38,6 +38,28 @@ package object double {
     def unary_- : WidenAst[Input, Double#Widen] = {
       Negative(differentiable)
     }
+
+    def exp: WidenAst[Input, Double#Widen] = {
+      Exp(differentiable)
+    }
+
+    def log: WidenAst[Input, Double#Widen] = {
+      Log(differentiable)
+    }
+
+    def abs: WidenAst[Input, Double#Widen] = {
+      If(differentiable < 0.0, -differentiable, differentiable)
+    }
+
+    def max[RightInput <: Input](
+        rightAst: WidenAst[RightInput, Double#Widen]): WidenAst[RightInput, Double#Widen] = {
+      If(differentiable < rightAst, rightAst, differentiable)
+    }
+
+    def min[RightInput <: Input](rightAst: WidenAst[RightInput, Double#Widen]): WidenAst[RightInput, Double#Widen] = {
+      If(differentiable < rightAst, differentiable, rightAst)
+    }
+
   }
 
   implicit def nativeDoubleToDoubleOps(nativeDouble: scala.Double): DoubleOps[Batch] = {
@@ -55,26 +77,6 @@ package object double {
     def toWeight[Input <: Batch: Identity](implicit learningRate: LearningRate): WidenAst[Input, Double#Widen] = {
       Weight(nativeDouble)
     }
-  }
-
-  def exp[Input <: Batch](doubleAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
-    Exp(doubleAst)
-  }
-
-  def log[Input <: Batch](doubleAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
-    Log(doubleAst)
-  }
-
-  def abs[Input <: Batch](doubleAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
-    If(doubleAst < 0.0, -doubleAst, doubleAst)
-  }
-
-  def max[Input <: Batch](leftAst: WidenAst[Input, Double#Widen], rightAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
-    If(leftAst < rightAst, rightAst, leftAst)
-  }
-
-  def min[Input <: Batch](leftAst: WidenAst[Input, Double#Widen], rightAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
-    If(leftAst < rightAst, leftAst, rightAst)
   }
 
 }

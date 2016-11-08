@@ -3,7 +3,7 @@ package com.thoughtworks.deepLearning
 import com.thoughtworks.deepLearning.Ast._
 import com.thoughtworks.deepLearning.Batch._
 import cats.Eval
-import com.thoughtworks.deepLearning.any.ast.{Identity, Literal, Throw}
+import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -28,6 +28,14 @@ package object any {
 
     def toLiteral[Input <: Batch: Identity]: WidenAst[Input, WidenBatch[Data, scala.Any]] = Literal[Data](data)
     def toBatch: WidenBatch[Data, scala.Any] = Literal[Data](data)
+
+  }
+
+  implicit final class AnyOps[Input <: Batch, Output <: Batch](f: WidenAst[Input, Output]) {
+
+    def compose[NewInput <: Batch](g: WidenAst[NewInput, Input]): WidenAst[NewInput, Output] = {
+      Compose[NewInput, Input, Output](f, g)
+    }
 
   }
 

@@ -10,10 +10,14 @@ import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.any.ast.Identity
 import com.thoughtworks.deepLearning.coproduct._
+import org.nd4j.linalg.factory.Nd4j
+import org.nd4s.Implicits._
 import org.scalatest._
 
 import scala.language.implicitConversions
 import scala.language.existentials
+
+import Predef.{any2stringadd => _, _}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -38,7 +42,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     }
 
     def probabilityLoss[Input <: Batch: Identity](x: WidenAst[Input, Double#Widen]) = {
-      1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
+      1.0 - 0.5 / (1.0 - (1.0 - x).log) + 0.5 / (1.0 - x.log)
     }
 
     def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
@@ -63,9 +67,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         0.0 // Drop out
       } {
         _.head.choice { _ =>
-          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0))
+          probabilityLoss(((1.0 - rowSeq(0, 0)) max 0.0))
         } { expectedValue =>
-          rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue.head)
+          rowSeq(0, 0) + (rowSeq(0, 1) - expectedValue.head).abs
         }
       }
 
@@ -87,7 +91,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val loss2 = expectedLabelField2.choice { _ =>
         0.0 // Drop out
       } { expectedDouble =>
-        abs(expectedDouble.head - rowSeq(0, 4))
+        (expectedDouble.head - rowSeq(0, 4)).abs
       }
 
       val loss3 = expectedLabelField3.choice { _ =>
@@ -119,7 +123,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val rowSeq = row.toSeq
       val n: WidenAst[Array2D#Widen, HNil#Widen] = hnil
       val n2: NN[HNil] = hnil
-      val field0: NN[Double :: Double :: HNil] = min(rowSeq(0, 0), 1.0) :: rowSeq(0, 1) :: n
+      val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: n
       val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
       val field2: NN[Double] = rowSeq(0, 4)
       val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
@@ -280,7 +284,17 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       Vector(encodedAstRow0).toArray2D
     }
 
-    //    val predict: Ast.WidenBatch[WidenBatch[InputData, _], WidenBatch[Row, _]] = ???
+    val rowToArray2DNetwork = rowToArray2D
+
+    def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {
+      val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
+      val b = Nd4j.zeros(50).toWeight
+      ((row dot w) + b) max 0.0
+    }
+
+    def predict(implicit row: InputAst[InputTypePair]) = {
+      rowToArray2DNetwork.compose(row)
+    }
     //
     //    val train: Ast.WidenBatch[WidenBatch[InputData :: ExpectedLabelData :: HNil, _], WidenBatch[Eval[Double], _]] = ???
 

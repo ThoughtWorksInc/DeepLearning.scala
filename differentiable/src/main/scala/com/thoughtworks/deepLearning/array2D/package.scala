@@ -5,6 +5,8 @@ import com.thoughtworks.deepLearning.Ast.WidenAst
 import com.thoughtworks.deepLearning.Batch.WidenBatch
 import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
 import com.thoughtworks.deepLearning.array2D.ast._
+import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
+import com.thoughtworks.deepLearning.double.utilities.Double
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 
@@ -20,18 +22,24 @@ package object array2D {
 
   implicit final class Array2DOps[Input <: Batch](differentiable: WidenAst[Input, Array2D#Widen]) {
 
-    def dot[RightInput <: Input](right: WidenAst[RightInput, Array2D#Widen]) = {
+    def dot[RightInput <: Input](right: WidenAst[RightInput, Array2D#Widen]): WidenAst[RightInput, Array2D#Widen] = {
       Dot(differentiable, right)
     }
+    def +[RightInput <: Input](right: WidenAst[RightInput, Array2D#Widen]): WidenAst[RightInput, Array2D#Widen] = {
+      AddArray2D(differentiable, right)
+    }
 
-    def unary_- = {
+    def unary_- : WidenAst[Input, Array2D#Widen] = {
       Negative(differentiable)
     }
 
-    def toSeq = {
+    def toSeq: WidenAst[Input, Seq2D#Widen] = {
       ToSeq(differentiable)
     }
 
+    def max[RightInput <: Input](rightAst: WidenAst[RightInput, Double#Widen]): WidenAst[RightInput, Array2D#Widen] = {
+      MaxDouble(differentiable, rightAst)
+    }
   }
 
   implicit final class INDArrayOps(ndarray: INDArray) {
@@ -59,7 +67,7 @@ package object array2D {
 
   // TODO: Support scala.Array for better performance.
   implicit final class AstVectorOps[Input <: Batch](
-      astVector: Vector[Vector[WidenAst[Input, WidenBatch[Eval[Double], Eval[Double]]]]]) {
+      astVector: Vector[Vector[WidenAst[Input, WidenBatch[Eval[scala.Double], Eval[scala.Double]]]]]) {
     def toArray2D = FromAstVector(astVector)
   }
 
