@@ -69,4 +69,12 @@ package object double {
     If(doubleAst < 0.0, -doubleAst, doubleAst)
   }
 
+  def max[Input <: Batch](leftAst: WidenAst[Input, Double#Widen], rightAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
+    If(leftAst < rightAst, rightAst, leftAst)
+  }
+
+  def min[Input <: Batch](leftAst: WidenAst[Input, Double#Widen], rightAst: WidenAst[Input, Double#Widen]): WidenAst[Input, Double#Widen] = {
+    If(leftAst < rightAst, leftAst, rightAst)
+  }
+
 }

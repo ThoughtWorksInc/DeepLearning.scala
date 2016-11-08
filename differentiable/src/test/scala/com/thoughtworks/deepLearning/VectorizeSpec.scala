@@ -37,6 +37,10 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
+    def probabilityLoss[Input <: Batch: Identity](x: WidenAst[Input, Double#Widen]) = {
+      1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
+    }
+
     def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
       : (Array2D :: ExpectedLabel :: HNil)#ToWidenAst[Double] = {
       type NN[TypePair <: Batch] = WidenAst[(Array2D :: ExpectedLabel :: HNil)#Widen, TypePair#Widen]
@@ -59,9 +63,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         0.0 // Drop out
       } {
         _.head.choice { _ =>
-          1.0 - log(rowSeq(0, 0))
+          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0))
         } { expectedValue =>
-          (log(rowSeq(0, 0)) + abs(log(rowSeq(0, 1)) - log(expectedValue.head)))
+          rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue.head)
         }
       }
 
@@ -83,12 +87,12 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val loss2 = expectedLabelField2.choice { _ =>
         0.0 // Drop out
       } { expectedDouble =>
-        abs(log(expectedDouble.head) - log(rowSeq(0, 4)))
+        abs(expectedDouble.head - rowSeq(0, 4))
       }
 
       val loss3 = expectedLabelField3.choice { _ =>
         0.0 // Drop out
-      } {  expectedEnum =>
+      } { expectedEnum =>
         val score0 = rowSeq(0, 5)
         val score1 = rowSeq(0, 6)
         val score2 = rowSeq(0, 7)
@@ -115,7 +119,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val rowSeq = row.toSeq
       val n: WidenAst[Array2D#Widen, HNil#Widen] = hnil
       val n2: NN[HNil] = hnil
-      val field0: NN[Double :: Double :: HNil] = log(rowSeq(0, 0)) :: rowSeq(0, 1) :: n
+      val field0: NN[Double :: Double :: HNil] = min(rowSeq(0, 0), 1.0) :: rowSeq(0, 1) :: n
       val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
       val field2: NN[Double] = rowSeq(0, 4)
       val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
