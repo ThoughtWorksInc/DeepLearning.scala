@@ -47,9 +47,15 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
       // 暂时先在CPU上计算
 
-      val expectedField0Label = expectedLabel.head
+      val expectedLabelField0 = expectedLabel.head
+      val expectedLabelRest1 = expectedLabel.tail
+      val expectedLabelField1 = expectedLabelRest1.head
+      val expectedLabelRest2 = expectedLabelRest1.tail
+      val expectedLabelField2 = expectedLabelRest2.head
+      val expectedLabelRest3 = expectedLabelRest2.tail
+      val expectedLabelField3 = expectedLabelRest3.head
 
-      val loss0 = expectedField0Label.choice { _ =>
+      val loss0 = expectedLabelField0.choice { _ =>
         0.0 // Drop out
       } {
         _.head.choice { _ =>
@@ -58,15 +64,50 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           (log(rowSeq(0, 0)) + abs(log(rowSeq(0, 1)) - log(expectedValue.head)))
         }
       }
-//
-//
 
-      // TODO: loss
-      3.0
-    }
+      val loss1 = expectedLabelField1.choice { _ =>
+        0.0 // Drop out
+      } { expectedEnum =>
+        val score0 = rowSeq(0, 2)
+        val score1 = rowSeq(0, 3)
+        val sum = score0 + score1
+        val probability0 = score0 / sum
+        val probability1 = score1 / sum
+        expectedEnum.head.choice { _ =>
+          1.0 - probability0
+        } { _ =>
+          1.0 - probability1
+        }
+      }
 
-    def sigmoid[Input <: Batch: Identity](x: WidenAst[Input, Double#Widen]) = {
-      1.0 / (exp(-x) + 1.0)
+      val loss2 = expectedLabelField2.choice { _ =>
+        0.0 // Drop out
+      } { expectedDouble =>
+        abs(log(expectedDouble.head) - log(rowSeq(0, 4)))
+      }
+
+      val loss3 = expectedLabelField3.choice { _ =>
+        0.0 // Drop out
+      } {  expectedEnum =>
+        val score0 = rowSeq(0, 5)
+        val score1 = rowSeq(0, 6)
+        val score2 = rowSeq(0, 7)
+        val sum = score0 + score1 + score2
+        val probability0 = score0 / sum
+        val probability1 = score1 / sum
+        val probability2 = score2 / sum
+        expectedEnum.head.choice { _ =>
+          1.0 - probability0
+        } {
+          _.choice { _ =>
+            1.0 - probability1
+          } { _ =>
+            1.0 - probability2
+          }
+        }
+      }
+
+      loss0 + loss1 + loss2 + loss3
     }
 
     def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#ToWidenAst[PredictionResult] = {
