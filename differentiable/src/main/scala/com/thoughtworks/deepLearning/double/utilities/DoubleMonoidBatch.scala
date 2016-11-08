@@ -3,7 +3,7 @@ package utilities
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.Differentiable
+import com.thoughtworks.deepLearning.core.Differentiable
 import shapeless.the
 
 /**

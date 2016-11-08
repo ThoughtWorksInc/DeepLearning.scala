@@ -3,8 +3,9 @@ package double.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.DifferentiableFunction.Cached
+import com.thoughtworks.deepLearning.core.DifferentiableFunction.Cached
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

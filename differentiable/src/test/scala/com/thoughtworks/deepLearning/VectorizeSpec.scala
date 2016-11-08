@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.core.DifferentiableFunction._
+import com.thoughtworks.deepLearning.core.Differentiable._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.boolean._
 import com.thoughtworks.deepLearning.seq2D._
@@ -10,13 +10,13 @@ import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.any.ast.Identity
 import com.thoughtworks.deepLearning.coproduct._
+import com.thoughtworks.deepLearning.core.{Differentiable, LearningRate}
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
 
 import scala.language.implicitConversions
 import scala.language.existentials
-
 import Predef.{any2stringadd => _, _}
 
 /**

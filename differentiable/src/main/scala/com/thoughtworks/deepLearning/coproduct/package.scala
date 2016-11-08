@@ -1,10 +1,11 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.core.DifferentiableFunction._
+import com.thoughtworks.deepLearning.core.Differentiable._
 import com.thoughtworks.deepLearning.any.Any
 import com.thoughtworks.deepLearning.boolean.ast.If
-import com.thoughtworks.deepLearning.coproduct.ast.{Head, Tail, IsInl}
+import com.thoughtworks.deepLearning.coproduct.ast.{Head, IsInl, Tail}
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

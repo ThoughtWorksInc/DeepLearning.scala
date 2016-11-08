@@ -1,8 +1,9 @@
 package com.thoughtworks.deepLearning.boolean.ast
 
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
-import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.core.DifferentiableFunction
+import com.thoughtworks.deepLearning.core.DifferentiableFunction._
 import com.thoughtworks.deepLearning.boolean.utilities._
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

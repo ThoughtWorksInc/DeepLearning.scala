@@ -1,8 +1,6 @@
 package com.thoughtworks.deepLearning.any.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

@@ -3,12 +3,13 @@ package array2D.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.core.DifferentiableFunction._
+import com.thoughtworks.deepLearning.core.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deepLearning.array2D.utilities._
 import org.nd4s.Implicits._
 import SumAs._
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

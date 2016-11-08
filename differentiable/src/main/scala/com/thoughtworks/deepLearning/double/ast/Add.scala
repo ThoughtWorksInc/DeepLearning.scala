@@ -3,7 +3,8 @@ package double.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.DifferentiableFunction.Cached
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.core.DifferentiableFunction.Cached
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 
 /**

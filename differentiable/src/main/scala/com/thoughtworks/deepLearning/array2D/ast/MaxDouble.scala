@@ -2,14 +2,15 @@ package com.thoughtworks.deepLearning
 package array2D.ast
 
 import cats._
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.core.DifferentiableFunction._
+import com.thoughtworks.deepLearning.core.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import cats.implicits._
-import com.thoughtworks.deepLearning.DifferentiableFunction.Cached
+import com.thoughtworks.deepLearning.core.DifferentiableFunction.Cached
 import com.thoughtworks.deepLearning.array2D.utilities._
+import com.thoughtworks.deepLearning.core.{Differentiable, DifferentiableFunction}
 import com.thoughtworks.deepLearning.double.utilities._
 
 /**

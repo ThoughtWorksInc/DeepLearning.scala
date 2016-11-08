@@ -1,15 +1,11 @@
-package com.thoughtworks.deepLearning
+package com.thoughtworks.deepLearning.core
 
-import com.thoughtworks.deepLearning.Differentiable._
 import cats._
-
-import scala.language.existentials
-import scala.language.implicitConversions
-import scala.language.higherKinds
 import cats.implicits._
-import shapeless.{DepFn1, Lazy}
+import shapeless.Lazy
 
 import scala.annotation.elidable
+import scala.language.{existentials, higherKinds, implicitConversions}
 import scalaz.Liskov
 import scalaz.Liskov.<~<
 
@@ -191,8 +187,6 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
 }
 
 trait DifferentiableFunction {
-
-  import DifferentiableFunction._
 
   type Input <: Differentiable
 
