@@ -1,8 +1,8 @@
 package com.thoughtworks.deepLearning.array2D
 
 import cats._
-import com.thoughtworks.deepLearning.Batch
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.Differentiable
+import com.thoughtworks.deepLearning.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 
 /**
@@ -10,7 +10,7 @@ import org.nd4j.linalg.api.ndarray.INDArray
   */
 package object utilities {
 
-  private[array2D] type Array2D = Batch {
+  private[array2D] type Array2D = Differentiable {
     type Data = Eval[INDArray]
     type Delta = Eval[INDArray]
   }

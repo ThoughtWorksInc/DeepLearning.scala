@@ -4,8 +4,8 @@ package utilities
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.{Batch, Ast}
-import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.DifferentiableFunction._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
@@ -13,7 +13,7 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-private[deepLearning] trait BooleanMonoidBatch extends Batch {
+private[deepLearning] trait BooleanMonoidBatch extends Differentiable {
 
   override type Data = Eval[scala.Boolean]
 

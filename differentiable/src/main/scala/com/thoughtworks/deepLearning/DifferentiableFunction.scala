@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.Differentiable._
 import cats._
 
 import scala.language.existentials
@@ -13,56 +13,56 @@ import scala.annotation.elidable
 import scalaz.Liskov
 import scalaz.Liskov.<~<
 
-sealed trait LowPriortyAst {
+sealed trait LowPriortyDifferentiableFunction {
 
-  import Ast._
+  import DifferentiableFunction._
 
-  implicit def isAstPair[Input <: Batch, OutputPair <: Batch]
-    : IsAst[WidenAst[Input, OutputPair#Widen], Input, OutputPair#Data, OutputPair#Delta] = {
+  implicit def isAstPair[Input <: Differentiable, OutputPair <: Differentiable]
+    : IsAst[Ast[Input, OutputPair#Widen], Input, OutputPair#Data, OutputPair#Delta] = {
     // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
     Liskov.force
   }
 
-  implicit def isAstNN[Input <: Batch, NN[_ <: Batch], OutputPair <: Batch](
-      implicit nn: Lazy[NN[OutputPair] <~< WidenAst[Input, OutputPair#Widen]])
+  implicit def isAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
+      implicit nn: Lazy[NN[OutputPair] <~< Ast[Input, OutputPair#Widen]])
     : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
     nn.value.andThen(isAstPair)
   }
 
 }
 
-object Ast extends LowPriortyAst {
+object DifferentiableFunction extends LowPriortyDifferentiableFunction {
 
   /** @template */
-  type WidenAst[-Input0 <: Batch, +Output0 <: Batch] =
-    Ast {
+  type Ast[-Input0 <: Differentiable, +Output0 <: Differentiable] =
+    DifferentiableFunction {
       type Input >: Input0
       type Output <: Output0
     }
 
-  type IsAst[T, Input <: Batch, OutputData, OutputDelta] = T <~< WidenAst[Input, WidenBatch[OutputData, OutputDelta]]
+  type IsAst[T, Input <: Differentiable, OutputData, OutputDelta] = T <~< Ast[Input, Batch[OutputData, OutputDelta]]
 
-  implicit def isAst[Input <: Batch, OutputData, OutputDelta]
-    : IsAst[WidenAst[Input, WidenBatch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {
+  implicit def isAst[Input <: Differentiable, OutputData, OutputDelta]
+    : IsAst[Ast[Input, Batch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {
     Liskov.refl
   }
 
-  trait Cached extends Ast {
+  trait Cached extends DifferentiableFunction {
 
     private val cache =
       java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, SharedBatch](1))
 
-    protected trait ReferenceCount extends Batch { this: SharedBatch =>
+    protected trait ReferenceCount extends Differentiable { this: SharedBatch =>
 
       /**
-        * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
+        * Returns a wrapped [[Differentiable]] able to detect error of closing more than once if ASSERTION is enabled,
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
       private[Cached] def maybeCheckIfCloseOnlyOnce: Widen = {
 
-        // Returns a [[Batch]] able to detect error of closing more than once.
+        // Returns a [[Differentiable]] able to detect error of closing more than once.
         @elidable(elidable.ASSERTION)
-        def checkIfCloseOnlyOnce = new Batch {
+        def checkIfCloseOnlyOnce = new Differentiable {
           type Delta = ReferenceCount.this.Delta
           type Data = ReferenceCount.this.Data
 
@@ -168,7 +168,7 @@ object Ast extends LowPriortyAst {
     /**
       * Performs the underlying forward pass.
       *
-      * @return a [[Batch]] that will be cached for subsequent [[#forward]]
+      * @return a [[Differentiable]] that will be cached for subsequent [[#forward]]
       */
     protected def rawForward(input: Input): SharedBatch
 
@@ -190,13 +190,13 @@ object Ast extends LowPriortyAst {
 
 }
 
-trait Ast {
+trait DifferentiableFunction {
 
-  import Ast._
+  import DifferentiableFunction._
 
-  type Input <: Batch
+  type Input <: Differentiable
 
-  type Output <: Batch
+  type Output <: Differentiable
 
   def forward(input: Input): Output
 

@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.array2D._
 import any._
 import org.scalatest._

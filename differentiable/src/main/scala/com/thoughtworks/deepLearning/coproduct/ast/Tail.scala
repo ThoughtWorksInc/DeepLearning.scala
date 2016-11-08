@@ -1,20 +1,20 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.Ast.WidenAst
-import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Differentiable.Batch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+final case class Tail[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: WidenAst[Input0, WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-) extends Ast {
+    ccons: Ast[Input0, Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+) extends DifferentiableFunction {
 
   final class Output private[Tail] (
-      upstream: WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends Batch {
+      upstream: Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      extends Differentiable {
     override type Data = TailData
     override type Delta = TailDelta
     type Input >: Input0

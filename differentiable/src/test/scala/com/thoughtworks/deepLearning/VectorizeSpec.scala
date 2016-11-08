@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.boolean._
 import com.thoughtworks.deepLearning.seq2D._
@@ -41,13 +41,13 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    def probabilityLoss[Input <: Batch: Identity](x: WidenAst[Input, Double#Widen]) = {
+    def probabilityLoss[Input <: Differentiable: Identity](x: Ast[Input, Double#Widen]) = {
       1.0 - 0.5 / (1.0 - (1.0 - x).log) + 0.5 / (1.0 - x.log)
     }
 
     def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
       : (Array2D :: ExpectedLabel :: HNil)#ToWidenAst[Double] = {
-      type NN[TypePair <: Batch] = WidenAst[(Array2D :: ExpectedLabel :: HNil)#Widen, TypePair#Widen]
+      type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Widen, TypePair#Widen]
 
       val row = rowAndExpectedLabel.head
       val expectedLabel = rowAndExpectedLabel.tail.head
@@ -119,9 +119,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     }
 
     def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#ToWidenAst[PredictionResult] = {
-      type NN[TypePair <: Batch] = WidenAst[Array2D#Widen, TypePair#Widen]
+      type NN[TypePair <: Differentiable] = Ast[Array2D#Widen, TypePair#Widen]
       val rowSeq = row.toSeq
-      val n: WidenAst[Array2D#Widen, HNil#Widen] = hnil
+      val n: Ast[Array2D#Widen, HNil#Widen] = hnil
       val n2: NN[HNil] = hnil
       val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: n
       val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
@@ -131,7 +131,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     }
 
     def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#ToWidenAst[Array2D] = {
-      type NN[OutputTypePair <: Batch] = InputTypePair#ToWidenAst[OutputTypePair]
+      type NN[OutputTypePair <: Differentiable] = InputTypePair#ToWidenAst[OutputTypePair]
       val field0 = row.head
       val rest0 = row.tail
       val field1 = rest0.head
@@ -296,7 +296,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       rowToArray2DNetwork.compose(row)
     }
     //
-    //    val train: Ast.WidenBatch[WidenBatch[InputData :: ExpectedLabelData :: HNil, _], WidenBatch[Eval[Double], _]] = ???
+    //    val train: DifferentiableFunction.Batch[Batch[InputData :: ExpectedLabelData :: HNil, _], Batch[Eval[Double], _]] = ???
 
   }
 

@@ -3,10 +3,10 @@ package com.thoughtworks.deepLearning.array2D.ast
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.{Ast, Batch}
+import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
 import com.thoughtworks.deepLearning.seq2D.utilities.{Seq2D, Seq2DBatch}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -15,7 +15,7 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ToSeq[Input0 <: Batch](operand: WidenAst[Input0, Array2D#Widen]) extends Cached {
+final case class ToSeq[Input0 <: Differentiable](operand: Ast[Input0, Array2D#Widen]) extends Cached {
   override type Input = Input0
 
   final class SharedBatch private[ToSeq] (override val input: Input, upstream: Array2D#Widen)
@@ -63,7 +63,7 @@ final case class ToSeq[Input0 <: Batch](operand: WidenAst[Input0, Array2D#Widen]
   /**
     * Performs the underlying forward pass.
     *
-    * @return a [[Batch]] that will be cached for subsequent [[#forward]]
+    * @return a [[Differentiable]] that will be cached for subsequent [[#forward]]
     */
   override protected def rawForward(input: Input): SharedBatch = {
     new SharedBatch(input, operand.forward(input))

@@ -1,22 +1,22 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.{Batch, Ast}
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
 
-final case class HCons[Input0 <: Batch,
+final case class HCons[Input0 <: Differentiable,
                        HeadData,
                        HeadDelta,
                        TailData <: shapeless.HList,
                        TailDelta <: shapeless.Coproduct](
-    head: WidenAst[Input0, WidenBatch[HeadData, HeadDelta]],
-    tail: WidenAst[Input0, WidenBatch[TailData, TailDelta]]
-) extends Ast {
+                                                          head: Ast[Input0, Batch[HeadData, HeadDelta]],
+                                                          tail: Ast[Input0, Batch[TailData, TailDelta]]
+) extends DifferentiableFunction {
   override type Input = Input0
 
-  final class Output private[HCons] (headBatch: WidenBatch[HeadData, HeadDelta],
-                                     tailBatch: WidenBatch[TailData, TailDelta])
-      extends Batch {
+  final class Output private[HCons] (headBatch: Batch[HeadData, HeadDelta],
+                                     tailBatch: Batch[TailData, TailDelta])
+      extends Differentiable {
     override def backward(delta: Delta): Unit = {
       delta match {
         case shapeless.Inl(headDelta) =>

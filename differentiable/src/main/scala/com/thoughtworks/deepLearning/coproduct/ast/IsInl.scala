@@ -2,18 +2,18 @@ package com.thoughtworks.deepLearning
 package coproduct.ast
 
 import cats.Eval
-import com.thoughtworks.deepLearning.Ast.WidenAst
-import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deepLearning.{Ast, Batch}
+import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
 
-final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+final case class IsInl[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: WidenAst[Input0, WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-) extends Ast {
+    ccons: Ast[Input0, Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+) extends DifferentiableFunction {
 
   final class Output private[IsInl] (
-      upstream: WidenBatch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      upstream: Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends BooleanMonoidBatch {
 
     type Input >: Input0

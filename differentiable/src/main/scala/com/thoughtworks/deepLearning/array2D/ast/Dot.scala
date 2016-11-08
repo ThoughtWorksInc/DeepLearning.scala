@@ -3,8 +3,8 @@ package array2D.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
@@ -12,10 +12,10 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Dot[Input0 <: Batch](
-    leftOperand: WidenAst[Input0, Array2D#Widen],
-    rightOperand: WidenAst[Input0, Array2D#Widen]
-) extends Ast
+final case class Dot[Input0 <: Differentiable](
+                                       leftOperand: Ast[Input0, Array2D#Widen],
+                                       rightOperand: Ast[Input0, Array2D#Widen]
+) extends DifferentiableFunction
     with Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0,

@@ -3,20 +3,20 @@ package array2D.ast
 
 import cats.Eval
 import cats.implicits._
-import com.thoughtworks.deepLearning.Ast.WidenAst
-import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
 import com.thoughtworks.deepLearning.array2D.utilities._
 
-final case class FromAstVector[Input0 <: Batch](
-    operands: Vector[Vector[WidenAst[Input0, WidenBatch[Eval[Double], Eval[Double]]]]])
-    extends Ast {
+final case class FromAstVector[Input0 <: Differentiable](
+    operands: Vector[Vector[Ast[Input0, Batch[Eval[Double], Eval[Double]]]]])
+    extends DifferentiableFunction {
 
   type Input = Input0
 
-  final class Output private[FromAstVector] (upstreams: Vector[Vector[WidenBatch[Eval[Double], Eval[Double]]]])
+  final class Output private[FromAstVector] (upstreams: Vector[Vector[Batch[Eval[Double], Eval[Double]]]])
       extends Array2DSemigroupBatch {
     override def backward(delta: Eval[INDArray]): Unit = {
       for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {

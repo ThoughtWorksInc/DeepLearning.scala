@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Ast.{IsAst, WidenAst}
-import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.DifferentiableFunction.{IsAst, Ast}
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import hlist.ast._
 import any._
 import com.thoughtworks.deepLearning.any.ast.Identity
@@ -16,7 +16,7 @@ package object hlist {
 
   implicit final class HListOps[TailAst](val tail: TailAst) {
 
-    def ::[Input0 <: Batch,
+    def ::[Input0 <: Differentiable,
            HeadAst,
            HeadData,
            HeadDelta,
@@ -24,15 +24,15 @@ package object hlist {
            TailDelta <: shapeless.Coproduct](head: HeadAst)(
         implicit unapplyHead: IsAst[HeadAst, Input0, HeadData, HeadDelta],
         unapplyTail: IsAst[TailAst, Input0, TailData, TailDelta]
-    ): WidenAst[Input0, WidenBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
+    ): Ast[Input0, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
       HCons[Input0, HeadData, HeadDelta, TailData, TailDelta](unapplyHead(head), unapplyTail(tail))
     }
 
   }
 
-  implicit final class HConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
+  implicit final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
-      val hcons: WidenAst[Input, WidenBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+      val hcons: Ast[Input, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
     def head = Head(hcons)
 
     def tail = Tail(hcons)
@@ -50,10 +50,10 @@ package object hlist {
     type Delta = shapeless.CNil
   }
 
-  def hnil[Input <: Batch: Identity]: WidenAst[Input, WidenBatch[shapeless.HNil, shapeless.CNil]] = HNil
+  def hnil[Input <: Differentiable: Identity]: Ast[Input, Batch[shapeless.HNil, shapeless.CNil]] = HNil
 
   /** @template */
-  type ::[Head <: Batch, Tail <: HList] = HList {
+  type ::[Head <: Differentiable, Tail <: HList] = HList {
     type Data = shapeless.::[Head#Data, Tail#Data]
     type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
   }

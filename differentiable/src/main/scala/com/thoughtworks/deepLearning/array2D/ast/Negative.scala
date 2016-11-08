@@ -2,8 +2,8 @@ package com.thoughtworks.deepLearning
 package array2D.ast
 
 import cats._
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
@@ -11,7 +11,7 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Negative[Input0 <: Batch](operand: WidenAst[Input0, Array2D#Widen])
+final case class Negative[Input0 <: Differentiable](operand: Ast[Input0, Array2D#Widen])
     extends Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#Widen)

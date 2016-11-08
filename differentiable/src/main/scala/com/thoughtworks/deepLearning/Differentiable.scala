@@ -1,8 +1,8 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import shapeless.DepFn1
 
 import scala.language.higherKinds
@@ -12,22 +12,22 @@ import scalaz.Liskov.<~<
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object Batch {
+object Differentiable {
 
-  type Aux[Data0, Delta0] = Batch {
+  type Aux[Data0, Delta0] = Differentiable {
     type Data = Data0
     type Delta = Delta0
   }
 
   /** @template */
-  type WidenBatch[+Data0, -Delta0] = Batch {
+  type Batch[+Data0, -Delta0] = Differentiable {
     type Data <: Data0
     type Delta >: Delta0
   }
 
 }
 
-trait Batch extends AutoCloseable { outer =>
+trait Differentiable extends AutoCloseable { outer =>
   type Data
   type Delta
 
@@ -35,15 +35,15 @@ trait Batch extends AutoCloseable { outer =>
     * @note This is a workaround for https://issues.scala-lang.org/browse/SI-10008
     * @template
     */
-  type Widen >: WidenBatch[Data, Delta] <: WidenBatch[Data, Delta]
+  type Widen >: Batch[Data, Delta] <: Batch[Data, Delta]
 
   /**
     * @note This is a workaround for https://issues.scala-lang.org/browse/SI-10008
     * @template
     */
-  type ToWidenAst[Output <: Batch] >: WidenAst[Widen, Output#Widen] <: WidenAst[Widen, Output#Widen]
+  type ToWidenAst[Output <: Differentiable] >: Ast[Widen, Output#Widen] <: Ast[Widen, Output#Widen]
 
-  final def widen: Widen = this: WidenBatch[Data, Delta]
+  final def widen: Widen = this: Batch[Data, Delta]
 
   def backward(delta: Delta): Unit
 

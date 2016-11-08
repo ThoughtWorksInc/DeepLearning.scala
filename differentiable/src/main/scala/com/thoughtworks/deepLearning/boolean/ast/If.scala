@@ -1,16 +1,16 @@
 package com.thoughtworks.deepLearning.boolean.ast
 
-import com.thoughtworks.deepLearning.{Batch, Ast}
-import com.thoughtworks.deepLearning.Ast._
+import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.boolean.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class If[Input0 <: Batch, Output0 <: Batch](condition: WidenAst[Input0, Boolean#Widen],
-                                                       `then`: WidenAst[Input0, Output0],
-                                                       `else`: WidenAst[Input0, Output0])
-    extends Ast {
+final case class If[Input0 <: Differentiable, Output0 <: Differentiable](condition: Ast[Input0, Boolean#Widen],
+                                                                         `then`: Ast[Input0, Output0],
+                                                                         `else`: Ast[Input0, Output0])
+    extends DifferentiableFunction {
   override type Input = Input0
   override type Output = Output0
 

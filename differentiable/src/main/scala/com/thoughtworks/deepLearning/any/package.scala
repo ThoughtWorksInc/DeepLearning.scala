@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
 import cats.Eval
 import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
 
@@ -11,12 +11,12 @@ import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
 package object any {
 
   /** @template */
-  type Any = Batch
+  type Any = Differentiable
 
   /** @template */
   type InputAst[InputTypePair <: Any] = Identity[InputTypePair#Widen]
 
-  implicit def input[Input <: Batch] = {
+  implicit def input[Input <: Differentiable] = {
     Identity[Input]()
   }
 
@@ -26,14 +26,14 @@ package object any {
 
   implicit final class NativeAnyOps[Data](data: Data) {
 
-    def toLiteral[Input <: Batch: Identity]: WidenAst[Input, WidenBatch[Data, scala.Any]] = Literal[Data](data)
-    def toBatch: WidenBatch[Data, scala.Any] = Literal[Data](data)
+    def toLiteral[Input <: Differentiable: Identity]: Ast[Input, Batch[Data, scala.Any]] = Literal[Data](data)
+    def toBatch: Batch[Data, scala.Any] = Literal[Data](data)
 
   }
 
-  implicit final class AnyOps[Input <: Batch, Output <: Batch](f: WidenAst[Input, Output]) {
+  implicit final class AnyOps[Input <: Differentiable, Output <: Differentiable](f: Ast[Input, Output]) {
 
-    def compose[NewInput <: Batch](g: WidenAst[NewInput, Input]): WidenAst[NewInput, Output] = {
+    def compose[NewInput <: Differentiable](g: Ast[NewInput, Input]): Ast[NewInput, Output] = {
       Compose[NewInput, Input, Output](f, g)
     }
 

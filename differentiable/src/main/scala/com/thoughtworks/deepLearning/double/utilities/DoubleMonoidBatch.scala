@@ -3,13 +3,13 @@ package utilities
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.Batch
+import com.thoughtworks.deepLearning.Differentiable
 import shapeless.the
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-private[deepLearning] trait DoubleMonoidBatch extends Batch {
+private[deepLearning] trait DoubleMonoidBatch extends Differentiable {
 
   override type Data = Eval[scala.Double]
 

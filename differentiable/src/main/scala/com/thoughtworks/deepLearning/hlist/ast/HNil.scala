@@ -1,20 +1,20 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.Ast._
-import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.{Batch, Ast}
+import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-case object HNil extends Ast with Batch {
-  override type Input = Batch
+case object HNil extends DifferentiableFunction with Differentiable {
+  override type Input = Differentiable
 
   override type Data = shapeless.HNil
 
   override type Delta = shapeless.CNil
 
-  override type Output = WidenBatch[Data, Delta]
+  override type Output = Batch[Data, Delta]
 
   override def forward(input: Input): Output = this
 

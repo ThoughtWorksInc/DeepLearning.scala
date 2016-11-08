@@ -1,18 +1,18 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.Ast.WidenAst
-import com.thoughtworks.deepLearning.Batch.WidenBatch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Differentiable.Batch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Inl[Input0 <: Batch, HeadData, HeadDelta](head: WidenAst[Input0, WidenBatch[HeadData, HeadDelta]])
-    extends Ast {
+final case class Inl[Input0 <: Differentiable, HeadData, HeadDelta](head: Ast[Input0, Batch[HeadData, HeadDelta]])
+    extends DifferentiableFunction {
 
   type Input = Input0
 
-  final class Output private[Inl] (headBatch: WidenBatch[HeadData, HeadDelta]) extends Batch {
+  final class Output private[Inl] (headBatch: Batch[HeadData, HeadDelta]) extends Differentiable {
     def value = shapeless.Inl(headBatch.value: HeadData)
 
     type Data = shapeless.Inl[HeadData, Nothing]
