@@ -1,7 +1,5 @@
 name := "differentiable"
 
-crossScalaVersions := Seq("2.10.6", "2.11.8")
-
 import org.apache.commons.lang3.SystemUtils
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
