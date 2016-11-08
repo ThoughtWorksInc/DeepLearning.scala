@@ -14,10 +14,10 @@ package object boolean {
   /** @template */
   type Boolean = utilities.Boolean
 
-  implicit final class BooleanOps[Input <: Differentiable](differentiable: Ast[Input, Boolean#Widen]) {
+  implicit final class BooleanOps[Input <: Differentiable](differentiable: DifferentiableFunction.Ast[Input, Boolean#Batch]) {
 
-    def `if`[ThatInput <: Input, Output <: Differentiable](`then`: Ast[ThatInput, Output])(
-        `else`: Ast[ThatInput, Output]): Ast[ThatInput, Output] = {
+    def `if`[ThatInput <: Input, Output <: Differentiable](`then`: DifferentiableFunction.Ast[ThatInput, Output])(
+        `else`: DifferentiableFunction.Ast[ThatInput, Output]): DifferentiableFunction.Ast[ThatInput, Output] = {
       If[ThatInput, Output](differentiable, `then`, `else`)
     }
 

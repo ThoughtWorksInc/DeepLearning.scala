@@ -11,10 +11,10 @@ import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Get[Input0 <: Differentiable](operand0: Ast[Input0, Seq2D#Widen], i: Int, j: Int) extends DifferentiableFunction {
-  this: Ast[Input0, Batch[Eval[scala.Double], Eval[scala.Double]]] =>
+final case class Get[Input0 <: Differentiable](operand0: DifferentiableFunction.Ast[Input0, Seq2D#Batch], i: Int, j: Int) extends DifferentiableFunction {
+  this: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]] =>
 
-  final class Output private[Get] (upstream: Seq2D#Widen) extends DoubleMonoidBatch {
+  final class Output private[Get] (upstream: Seq2D#Batch) extends DoubleMonoidBatch {
 
     override def backward(delta: Eval[scala.Double]): Unit = {
       upstream.backward(delta.map((i, j, _)))

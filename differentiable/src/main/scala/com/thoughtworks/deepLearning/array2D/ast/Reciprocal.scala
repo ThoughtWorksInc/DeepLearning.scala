@@ -12,10 +12,10 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Reciprocal[Input0 <: Differentiable](operand: Ast[Input0, Array2D#Widen])
+final case class Reciprocal[Input0 <: Differentiable](operand: DifferentiableFunction.Ast[Input0, Array2D#Batch])
     extends Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#Widen)
+  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream.value.map(_ rdiv 1.0).memoize

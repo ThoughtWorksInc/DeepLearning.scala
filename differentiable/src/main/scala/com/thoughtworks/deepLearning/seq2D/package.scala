@@ -12,8 +12,8 @@ package object seq2D {
   /** @template */
   type Seq2D = utilities.Seq2D
 
-  implicit final class Seq2DOps[Input <: Differentiable](differentiable: Ast[Input, Seq2D#Widen]) {
-    def apply(rowIndex: Int, columnIndex: Int): Ast[Input, Double#Widen] =
+  implicit final class Seq2DOps[Input <: Differentiable](differentiable: DifferentiableFunction.Ast[Input, Seq2D#Batch]) {
+    def apply(rowIndex: Int, columnIndex: Int): DifferentiableFunction.Ast[Input, Double#Batch] =
       Get(differentiable, rowIndex, columnIndex)
   }
 }

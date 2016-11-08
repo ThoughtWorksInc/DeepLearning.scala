@@ -1,7 +1,5 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
 
 /**
@@ -14,7 +12,7 @@ case object HNil extends DifferentiableFunction with Differentiable {
 
   override type Delta = shapeless.CNil
 
-  override type Output = Batch[Data, Delta]
+  override type Output = Differentiable.Batch[Data, Delta]
 
   override def forward(input: Input): Output = this
 

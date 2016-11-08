@@ -14,7 +14,7 @@ package object any {
   type Any = Differentiable
 
   /** @template */
-  type InputAst[InputTypePair <: Any] = Identity[InputTypePair#Widen]
+  type InputAst[InputTypePair <: Any] = Identity[InputTypePair#Batch]
 
   implicit def input[Input <: Differentiable] = {
     Identity[Input]()
@@ -26,14 +26,14 @@ package object any {
 
   implicit final class NativeAnyOps[Data](data: Data) {
 
-    def toLiteral[Input <: Differentiable: Identity]: Ast[Input, Batch[Data, scala.Any]] = Literal[Data](data)
-    def toBatch: Batch[Data, scala.Any] = Literal[Data](data)
+    def toLiteral[Input <: Differentiable: Identity]: DifferentiableFunction.Ast[Input, Differentiable.Batch[Data, scala.Any]] = Literal[Data](data)
+    def toBatch: Differentiable.Batch[Data, scala.Any] = Literal[Data](data)
 
   }
 
-  implicit final class AnyOps[Input <: Differentiable, Output <: Differentiable](f: Ast[Input, Output]) {
+  implicit final class AnyOps[Input <: Differentiable, Output <: Differentiable](f: DifferentiableFunction.Ast[Input, Output]) {
 
-    def compose[NewInput <: Differentiable](g: Ast[NewInput, Input]): Ast[NewInput, Output] = {
+    def compose[NewInput <: Differentiable](g: DifferentiableFunction.Ast[NewInput, Input]): DifferentiableFunction.Ast[NewInput, Output] = {
       Compose[NewInput, Input, Output](f, g)
     }
 

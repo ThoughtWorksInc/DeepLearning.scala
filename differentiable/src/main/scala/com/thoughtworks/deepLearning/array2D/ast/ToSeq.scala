@@ -15,10 +15,10 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ToSeq[Input0 <: Differentiable](operand: Ast[Input0, Array2D#Widen]) extends Cached {
+final case class ToSeq[Input0 <: Differentiable](operand: DifferentiableFunction.Ast[Input0, Array2D#Batch]) extends Cached {
   override type Input = Input0
 
-  final class SharedBatch private[ToSeq] (override val input: Input, upstream: Array2D#Widen)
+  final class SharedBatch private[ToSeq] (override val input: Input, upstream: Array2D#Batch)
       extends ReferenceCount
       with Seq2DBatch {
 

@@ -18,13 +18,13 @@ sealed trait LowPriortyDifferentiableFunction {
   import DifferentiableFunction._
 
   implicit def isAstPair[Input <: Differentiable, OutputPair <: Differentiable]
-    : IsAst[Ast[Input, OutputPair#Widen], Input, OutputPair#Data, OutputPair#Delta] = {
+    : IsAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] = {
     // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
     Liskov.force
   }
 
   implicit def isAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
-      implicit nn: Lazy[NN[OutputPair] <~< Ast[Input, OutputPair#Widen]])
+      implicit nn: Lazy[NN[OutputPair] <~< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
     : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
     nn.value.andThen(isAstPair)
   }
@@ -40,10 +40,10 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
       type Output <: Output0
     }
 
-  type IsAst[T, Input <: Differentiable, OutputData, OutputDelta] = T <~< Ast[Input, Batch[OutputData, OutputDelta]]
+  type IsAst[T, Input <: Differentiable, OutputData, OutputDelta] = T <~< DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
 
   implicit def isAst[Input <: Differentiable, OutputData, OutputDelta]
-    : IsAst[Ast[Input, Batch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {
+    : IsAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {
     Liskov.refl
   }
 
@@ -58,7 +58,7 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
         * Returns a wrapped [[Differentiable]] able to detect error of closing more than once if ASSERTION is enabled,
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
-      private[Cached] def maybeCheckIfCloseOnlyOnce: Widen = {
+      private[Cached] def maybeCheckIfCloseOnlyOnce: Batch = {
 
         // Returns a [[Differentiable]] able to detect error of closing more than once.
         @elidable(elidable.ASSERTION)
@@ -84,7 +84,7 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
           }
         }
 
-        Option(checkIfCloseOnlyOnce).getOrElse(widen)
+        Option(checkIfCloseOnlyOnce).getOrElse(toBatch)
       }
 
       private[Cached] var count: Int = 1
@@ -161,7 +161,7 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
       }
     }
 
-    type Output = SharedBatch#Widen
+    type Output = SharedBatch#Batch
 
     protected type SharedBatch <: ReferenceCount
 

@@ -8,19 +8,20 @@ import com.thoughtworks.deepLearning.Differentiable._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
+import com.thoughtworks.deepLearning.double.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class MultiplyDouble[Input0 <: Differentiable](
-                                                  leftOperand: Ast[Input0, Array2D#Widen],
-                                                  rightOperand: Ast[Input0, Batch[Eval[scala.Double], Eval[scala.Double]]]
+                                                           leftOperand: DifferentiableFunction.Ast[Input0, Array2D#Batch],
+                                                           rightOperand: DifferentiableFunction.Ast[Input0, Double#Batch]
 ) extends DifferentiableFunction
     with Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0,
-                                    upstream1: Array2D#Widen,
-                                    upstream2: Batch[Eval[scala.Double], Eval[scala.Double]])
+                                                          upstream1: Array2D#Batch,
+                                                          upstream2: Double#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream1.value.map2(upstream2.value)(_ * _).memoize

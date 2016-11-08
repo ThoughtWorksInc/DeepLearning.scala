@@ -41,13 +41,13 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    def probabilityLoss[Input <: Differentiable: Identity](x: Ast[Input, Double#Widen]) = {
+    def probabilityLoss[Input <: Differentiable: Identity](x: Ast[Input, Double#Batch]) = {
       1.0 - 0.5 / (1.0 - (1.0 - x).log) + 0.5 / (1.0 - x.log)
     }
 
     def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
-      : (Array2D :: ExpectedLabel :: HNil)#ToWidenAst[Double] = {
-      type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Widen, TypePair#Widen]
+      : (Array2D :: ExpectedLabel :: HNil)#Ast[Double] = {
+      type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Batch, TypePair#Batch]
 
       val row = rowAndExpectedLabel.head
       val expectedLabel = rowAndExpectedLabel.tail.head
@@ -118,10 +118,10 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       loss0 + loss1 + loss2 + loss3
     }
 
-    def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#ToWidenAst[PredictionResult] = {
-      type NN[TypePair <: Differentiable] = Ast[Array2D#Widen, TypePair#Widen]
+    def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#Ast[PredictionResult] = {
+      type NN[TypePair <: Differentiable] = Ast[Array2D#Batch, TypePair#Batch]
       val rowSeq = row.toSeq
-      val n: Ast[Array2D#Widen, HNil#Widen] = hnil
+      val n: Ast[Array2D#Batch, HNil#Batch] = hnil
       val n2: NN[HNil] = hnil
       val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: n
       val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
@@ -130,8 +130,8 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       field0 :: field1 :: field2 :: field3 :: hnil
     }
 
-    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#ToWidenAst[Array2D] = {
-      type NN[OutputTypePair <: Differentiable] = InputTypePair#ToWidenAst[OutputTypePair]
+    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#Ast[Array2D] = {
+      type NN[OutputTypePair <: Differentiable] = InputTypePair#Ast[OutputTypePair]
       val field0 = row.head
       val rest0 = row.tail
       val field1 = rest0.head

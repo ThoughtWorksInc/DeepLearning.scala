@@ -9,11 +9,11 @@ import com.thoughtworks.deepLearning.Differentiable.Batch
   */
 final case class Tail[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: Ast[Input0, Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+    ccons: DifferentiableFunction.Ast[Input0, Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
 ) extends DifferentiableFunction {
 
   final class Output private[Tail] (
-      upstream: Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      upstream: Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Differentiable {
     override type Data = TailData
     override type Delta = TailDelta

@@ -8,12 +8,12 @@ import com.thoughtworks.deepLearning.Differentiable.Batch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Inr[Input0 <: Differentiable, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-    tail: Ast[Input0, Batch[TailData, TailDelta]])
+    tail: DifferentiableFunction.Ast[Input0, Differentiable.Batch[TailData, TailDelta]])
     extends DifferentiableFunction {
 
   type Input = Input0
 
-  final class Output private[Inr] (tailBatch: Batch[TailData, TailDelta]) extends Differentiable {
+  final class Output private[Inr] (tailBatch: Differentiable.Batch[TailData, TailDelta]) extends Differentiable {
     def value = shapeless.Inr(tailBatch.value: TailData)
 
     type Data = shapeless.Inr[Nothing, TailData]

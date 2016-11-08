@@ -14,7 +14,7 @@ final case class Weight(var rawValue: INDArray)(implicit learningRate: LearningR
     extends DifferentiableFunction
     with Array2DSemigroupBatch {
   override type Input = Differentiable
-  override type Output = Batch[Data, Delta]
+  override type Output = Differentiable.Batch[Data, Delta]
 
   override def value = Eval.now(rawValue)
 

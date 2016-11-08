@@ -35,15 +35,15 @@ trait Differentiable extends AutoCloseable { outer =>
     * @note This is a workaround for https://issues.scala-lang.org/browse/SI-10008
     * @template
     */
-  type Widen >: Batch[Data, Delta] <: Batch[Data, Delta]
+  type Batch >: Differentiable.Batch[Data, Delta] <: Differentiable.Batch[Data, Delta]
 
   /**
     * @note This is a workaround for https://issues.scala-lang.org/browse/SI-10008
     * @template
     */
-  type ToWidenAst[Output <: Differentiable] >: Ast[Widen, Output#Widen] <: Ast[Widen, Output#Widen]
+  type Ast[Output <: Differentiable] >: DifferentiableFunction.Ast[Batch, Output#Batch] <: DifferentiableFunction.Ast[Batch, Output#Batch]
 
-  final def widen: Widen = this: Batch[Data, Delta]
+  final def toBatch: Batch = this: Differentiable.Batch[Data, Delta]
 
   def backward(delta: Delta): Unit
 

@@ -31,17 +31,17 @@ package object coproduct {
 
   implicit final class CConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
   TailDelta <: shapeless.Coproduct](
-      differentiable: Ast[Input,
-                               Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+      differentiable: DifferentiableFunction.Ast[Input,
+                               Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
 
     def head = Head[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
 
     def tail = Tail[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
 
     def choice[ThatInput <: Input, Output <: Differentiable](
-        caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => Ast[ThatInput, Output])(
-        caseTail: Ast[Input, Batch[TailData, TailDelta]] => Ast[ThatInput, Output])
-      : Ast[ThatInput, Output] = {
+        caseHead: DifferentiableFunction.Ast[Input, Differentiable.Batch[HeadData, HeadDelta]] => DifferentiableFunction.Ast[ThatInput, Output])(
+        caseTail: DifferentiableFunction.Ast[Input, Differentiable.Batch[TailData, TailDelta]] => DifferentiableFunction.Ast[ThatInput, Output])
+      : DifferentiableFunction.Ast[ThatInput, Output] = {
       If[ThatInput, Output](isInl, caseHead(head), caseTail(tail))
     }
 

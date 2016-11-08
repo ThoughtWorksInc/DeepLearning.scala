@@ -18,25 +18,25 @@ final class BatchSpec extends FreeSpec with Matchers {
   Batch有两种，一种是Invariant的，一种是covariant/contravariant的（即Widen版）。所有的Ast中应该使用后者
 
    */
-  "Differentiable#Widen" in {
-    "implicitly[Double#Widen <:< Batch[Eval[scala.Double], Eval[scala.Double]]]" should compile
-    "implicitly[Double#Widen =:= Batch[Eval[scala.Double], Eval[scala.Double]]]" should compile
-    "implicitly[Double#Widen <:< Any#Widen]" should compile
-    "implicitly[Double#Widen =:= Any#Widen]" shouldNot compile
-    "implicitly[Any#Widen =:= Double#Widen]" shouldNot compile
-    "implicitly[(Double :: HNil)#Widen <:< HList#Widen]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Widen <:< HList#Widen]" should compile
-    "implicitly[(Double :: HNil)#Widen =:= Batch[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
-    "implicitly[(Any :: HNil)#Widen <:< HList#Widen]" should compile
-    "implicitly[(Any :: HList)#Widen <:< HList#Widen]" should compile
-    "implicitly[(Any :: HList)#Widen <:< (Any :: HList)#Widen]" should compile
-    "implicitly[(Any :: HList)#Widen =:= (Any :: HList)#Widen]" should compile
-    "implicitly[(Any :: HNil)#Widen =:= HList#Widen]" shouldNot compile
+  "Differentiable#Batch" in {
+    "implicitly[Double#Batch <:< Batch[Eval[scala.Double], Eval[scala.Double]]]" should compile
+    "implicitly[Double#Batch =:= Batch[Eval[scala.Double], Eval[scala.Double]]]" should compile
+    "implicitly[Double#Batch <:< Any#Batch]" should compile
+    "implicitly[Double#Batch =:= Any#Batch]" shouldNot compile
+    "implicitly[Any#Batch =:= Double#Batch]" shouldNot compile
+    "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
+    "implicitly[(Boolean :: Double :: HNil)#Batch <:< HList#Batch]" should compile
+    "implicitly[(Double :: HNil)#Batch =:= Batch[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
+    "implicitly[(Any :: HNil)#Batch <:< HList#Batch]" should compile
+    "implicitly[(Any :: HList)#Batch <:< HList#Batch]" should compile
+    "implicitly[(Any :: HList)#Batch <:< (Any :: HList)#Batch]" should compile
+    "implicitly[(Any :: HList)#Batch =:= (Any :: HList)#Batch]" should compile
+    "implicitly[(Any :: HNil)#Batch =:= HList#Batch]" shouldNot compile
     "implicitly[(Boolean :: Double :: HNil) <:< HList]" should compile
     "implicitly[(Boolean :: Double :: HNil) <:< (Boolean :: HList)]" shouldNot compile
   }
 
-  "(Any :: HList)#Widen" ignore {
+  "(Any :: HList)#Batch" ignore {
     /*
       以下几个测试符合逻辑，但Scala编译器不认可
       没有很好的解决办法，只能尽量避免使用抽象类型吧
@@ -46,9 +46,9 @@ final class BatchSpec extends FreeSpec with Matchers {
     "implicitly[(Any :: HNil)#Data <:< HList#Data]" should compile
     "implicitly[shapeless.::[cats.Eval[Double],shapeless.HNil] <:< HList#Data]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Data <:< (Boolean :: HList)#Data]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Widen <:< (Boolean :: HList)#Widen]" should compile
-    "implicitly[(Double :: HNil)#Widen <:< (Any :: HNil)#Widen]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Widen <:< (Boolean :: Any :: HNil)#Widen]" should compile
+    "implicitly[(Boolean :: Double :: HNil)#Batch <:< (Boolean :: HList)#Batch]" should compile
+    "implicitly[(Double :: HNil)#Batch <:< (Any :: HNil)#Batch]" should compile
+    "implicitly[(Boolean :: Double :: HNil)#Batch <:< (Boolean :: Any :: HNil)#Batch]" should compile
   }
 
 }

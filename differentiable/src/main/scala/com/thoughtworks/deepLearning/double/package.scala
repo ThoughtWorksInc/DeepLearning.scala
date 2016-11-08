@@ -19,44 +19,44 @@ package object double {
   /** @template */
   type Double = utilities.Double
 
-  implicit final class DoubleOps[Input <: Differentiable](differentiable: Ast[Input, Double#Widen]) {
-    def +[RightInput <: Input](right: Ast[RightInput, Double#Widen]): Ast[RightInput, Double#Widen] = {
+  implicit final class DoubleOps[Input <: Differentiable](differentiable: DifferentiableFunction.Ast[Input, Double#Batch]) {
+    def +[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Double#Batch] = {
       Add(differentiable, right)
     }
-    def -[RightInput <: Input](right: Ast[RightInput, Double#Widen]): Ast[RightInput, Double#Widen] = {
+    def -[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Double#Batch] = {
       Add(differentiable, Negative(right))
     }
-    def /[RightInput <: Input](right: Ast[RightInput, Double#Widen]): Ast[RightInput, Double#Widen] = {
+    def /[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Double#Batch] = {
       Multiply(differentiable, Reciprocal(right))
     }
-    def *[RightInput <: Input](right: Ast[RightInput, Double#Widen]): Ast[RightInput, Double#Widen] = {
+    def *[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Double#Batch] = {
       Multiply(differentiable, right)
     }
-    def <[RightInput <: Input](right: Ast[RightInput, Double#Widen]): Ast[RightInput, Boolean#Widen] = {
+    def <[RightInput <: Input](right: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Boolean#Batch] = {
       LessThan(differentiable, right)
     }
-    def unary_- : Ast[Input, Double#Widen] = {
+    def unary_- : DifferentiableFunction.Ast[Input, Double#Batch] = {
       Negative(differentiable)
     }
 
-    def exp: Ast[Input, Double#Widen] = {
+    def exp: DifferentiableFunction.Ast[Input, Double#Batch] = {
       Exp(differentiable)
     }
 
-    def log: Ast[Input, Double#Widen] = {
+    def log: DifferentiableFunction.Ast[Input, Double#Batch] = {
       Log(differentiable)
     }
 
-    def abs: Ast[Input, Double#Widen] = {
+    def abs: DifferentiableFunction.Ast[Input, Double#Batch] = {
       If(differentiable < 0.0, -differentiable, differentiable)
     }
 
     def max[RightInput <: Input](
-        rightAst: Ast[RightInput, Double#Widen]): Ast[RightInput, Double#Widen] = {
+        rightAst: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Double#Batch] = {
       If(differentiable < rightAst, rightAst, differentiable)
     }
 
-    def min[RightInput <: Input](rightAst: Ast[RightInput, Double#Widen]): Ast[RightInput, Double#Widen] = {
+    def min[RightInput <: Input](rightAst: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Double#Batch] = {
       If(differentiable < rightAst, differentiable, rightAst)
     }
 
@@ -66,7 +66,7 @@ package object double {
     DoubleOps(Literal(Eval.now(nativeDouble)))
   }
 
-  implicit def doubleLiteral[Input <: Differentiable: Identity](nativeDouble: scala.Double): Ast[Input, Double#Widen] = {
+  implicit def doubleLiteral[Input <: Differentiable: Identity](nativeDouble: scala.Double): DifferentiableFunction.Ast[Input, Double#Batch] = {
     Literal(Eval.now(nativeDouble))
   }
 
@@ -74,7 +74,7 @@ package object double {
 
   implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
     def toLiteral[Input <: Differentiable: Identity] = doubleLiteral(nativeDouble)
-    def toWeight[Input <: Differentiable: Identity](implicit learningRate: LearningRate): Ast[Input, Double#Widen] = {
+    def toWeight[Input <: Differentiable: Identity](implicit learningRate: LearningRate): DifferentiableFunction.Ast[Input, Double#Batch] = {
       Weight(nativeDouble)
     }
   }

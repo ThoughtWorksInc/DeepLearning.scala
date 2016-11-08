@@ -11,12 +11,12 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 import com.thoughtworks.deepLearning.array2D.utilities._
 
 final case class FromAstVector[Input0 <: Differentiable](
-    operands: Vector[Vector[Ast[Input0, Batch[Eval[Double], Eval[Double]]]]])
+    operands: Vector[Vector[DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[Double], Eval[Double]]]]])
     extends DifferentiableFunction {
 
   type Input = Input0
 
-  final class Output private[FromAstVector] (upstreams: Vector[Vector[Batch[Eval[Double], Eval[Double]]]])
+  final class Output private[FromAstVector] (upstreams: Vector[Vector[Differentiable.Batch[Eval[Double], Eval[Double]]]])
       extends Array2DSemigroupBatch {
     override def backward(delta: Eval[INDArray]): Unit = {
       for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {

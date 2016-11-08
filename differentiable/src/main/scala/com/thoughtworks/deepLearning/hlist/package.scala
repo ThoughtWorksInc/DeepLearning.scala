@@ -24,7 +24,7 @@ package object hlist {
            TailDelta <: shapeless.Coproduct](head: HeadAst)(
         implicit unapplyHead: IsAst[HeadAst, Input0, HeadData, HeadDelta],
         unapplyTail: IsAst[TailAst, Input0, TailData, TailDelta]
-    ): Ast[Input0, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
+    ): DifferentiableFunction.Ast[Input0, Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
       HCons[Input0, HeadData, HeadDelta, TailData, TailDelta](unapplyHead(head), unapplyTail(tail))
     }
 
@@ -32,7 +32,7 @@ package object hlist {
 
   implicit final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
-      val hcons: Ast[Input, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+      val hcons: DifferentiableFunction.Ast[Input, Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
     def head = Head(hcons)
 
     def tail = Tail(hcons)
@@ -50,7 +50,7 @@ package object hlist {
     type Delta = shapeless.CNil
   }
 
-  def hnil[Input <: Differentiable: Identity]: Ast[Input, Batch[shapeless.HNil, shapeless.CNil]] = HNil
+  def hnil[Input <: Differentiable: Identity]: DifferentiableFunction.Ast[Input, Differentiable.Batch[shapeless.HNil, shapeless.CNil]] = HNil
 
   /** @template */
   type ::[Head <: Differentiable, Tail <: HList] = HList {

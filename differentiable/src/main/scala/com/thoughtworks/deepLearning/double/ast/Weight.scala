@@ -19,7 +19,7 @@ final case class Weight(var rawValue: scala.Double)(implicit learningRate: Learn
     extends DifferentiableFunction
     with DoubleMonoidBatch {
   override type Input = Differentiable
-  override type Output = Batch[Data, Delta]
+  override type Output = Differentiable.Batch[Data, Delta]
 
   override def forward(any: Input) = this
 

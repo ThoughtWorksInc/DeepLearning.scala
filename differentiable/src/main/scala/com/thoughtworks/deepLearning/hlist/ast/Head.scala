@@ -1,7 +1,5 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
 
 /**
@@ -9,14 +7,14 @@ import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
   */
 final case class Head[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
 TailDelta <: shapeless.Coproduct](
-    differentiableHCons: Ast[
+    differentiableHCons: DifferentiableFunction.Ast[
       Input0,
-      Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+      Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
 ) extends DifferentiableFunction {
   override type Input = Input0
 
   final class Output private[Head] (
-      upstream: Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      upstream: Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Differentiable {
     override def backward(delta: Delta): Unit = {
       upstream.backward(shapeless.Inl(delta))

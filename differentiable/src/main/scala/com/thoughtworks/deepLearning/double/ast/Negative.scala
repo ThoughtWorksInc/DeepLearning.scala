@@ -17,11 +17,11 @@ import org.nd4j.linalg.ops.transforms.Transforms
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Negative[Input0 <: Differentiable](
-    operand: Ast[Input0, Batch[Eval[scala.Double], Eval[scala.Double]]])
+    operand: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]])
     extends Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0,
-                                    upstream: Batch[Eval[scala.Double], Eval[scala.Double]])
+                                    upstream: Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
     type Input >: Input0

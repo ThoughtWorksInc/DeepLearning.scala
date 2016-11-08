@@ -1,7 +1,5 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
 
 final case class HCons[Input0 <: Differentiable,
@@ -9,13 +7,13 @@ final case class HCons[Input0 <: Differentiable,
                        HeadDelta,
                        TailData <: shapeless.HList,
                        TailDelta <: shapeless.Coproduct](
-                                                          head: Ast[Input0, Batch[HeadData, HeadDelta]],
-                                                          tail: Ast[Input0, Batch[TailData, TailDelta]]
+    head: DifferentiableFunction.Ast[Input0, Differentiable.Batch[HeadData, HeadDelta]],
+    tail: DifferentiableFunction.Ast[Input0, Differentiable.Batch[TailData, TailDelta]]
 ) extends DifferentiableFunction {
   override type Input = Input0
 
-  final class Output private[HCons] (headBatch: Batch[HeadData, HeadDelta],
-                                     tailBatch: Batch[TailData, TailDelta])
+  final class Output private[HCons] (headBatch: Differentiable.Batch[HeadData, HeadDelta],
+                                     tailBatch: Differentiable.Batch[TailData, TailDelta])
       extends Differentiable {
     override def backward(delta: Delta): Unit = {
       delta match {

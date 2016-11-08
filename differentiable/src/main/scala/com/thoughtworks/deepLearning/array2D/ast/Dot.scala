@@ -13,14 +13,14 @@ import com.thoughtworks.deepLearning.array2D.utilities._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Dot[Input0 <: Differentiable](
-                                       leftOperand: Ast[Input0, Array2D#Widen],
-                                       rightOperand: Ast[Input0, Array2D#Widen]
+                                                leftOperand: DifferentiableFunction.Ast[Input0, Array2D#Batch],
+                                                rightOperand: DifferentiableFunction.Ast[Input0, Array2D#Batch]
 ) extends DifferentiableFunction
     with Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: Input0,
-                                    upstream1: Array2D#Widen,
-                                    upstream2: Array2D#Widen)
+                                                          upstream1: Array2D#Batch,
+                                                          upstream2: Array2D#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
