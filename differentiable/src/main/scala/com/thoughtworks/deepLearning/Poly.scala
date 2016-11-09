@@ -35,41 +35,16 @@ object Poly {
 
   trait Poly2 {
 
+    object Case {
+      type Aux[Input <: Differentiable, LeftOperandData, LeftOperandDelta, RightOperandData, RightOperandDelta, Out0] =
+        Case[Input, LeftOperandData, LeftOperandDelta, RightOperandData, RightOperandDelta] {
+          type Out = Out0
+        }
+    }
+
     trait Case[Input <: Differentiable, LeftOperandData, LeftOperandDelta, RightOperandData, RightOperandDelta]
         extends DepFn2[Ast[Input, Batch[LeftOperandData, LeftOperandDelta]],
                        Ast[Input, Batch[RightOperandData, RightOperandDelta]]]
-    //
-    // trait Case {
-    //   type Input <: Differentiable
-    //
-    //   type LeftOperandData
-    //   type LeftOperandDelta
-    //   type RightOperandData
-    //   type RightOperandDelta
-    //   type OutputData
-    //   type OutputDelta
-    //   protected[Poly2] def apply(leftOperand: Ast[Input, Batch[LeftOperandData, LeftOperandDelta]],
-    //                              rightOperand: Ast[Input, Batch[RightOperandData, RightOperandDelta]])
-    //     : Ast[Input, Batch[OutputData, OutputDelta]]
-    // }
-    //
-    // object Case {
-    //   type Aux[Input0 <: Differentiable,
-    //            LeftOperandData0,
-    //            LeftOperandDelta0,
-    //            RightOperandData0,
-    //            RightOperandDelta0,
-    //            OutputData0,
-    //            OutputDelta0] = Case {
-    //     type Input = Input0
-    //     type LeftOperandData = LeftOperandData0
-    //     type LeftOperandDelta = LeftOperandDelta0
-    //     type RightOperandData = RightOperandData0
-    //     type RightOperandDelta = RightOperandDelta0
-    //     type OutputData = OutputData0
-    //     type OutputDelta = OutputDelta0
-    //   }
-    // }
 
     final def apply[Input <: Differentiable,
                     LeftOperand,

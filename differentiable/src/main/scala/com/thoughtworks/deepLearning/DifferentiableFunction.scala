@@ -65,7 +65,7 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
     }
 
   trait ToAst[T, Input <: Differentiable, OutputData, OutputDelta] {
-    def apply(value: T): DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
+    def apply(value: T): Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
   }
 
   implicit def toAst[Input <: Differentiable, OutputData, OutputDelta]
