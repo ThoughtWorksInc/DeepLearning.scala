@@ -4,6 +4,7 @@ import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.Differentiable._
 import com.thoughtworks.deepLearning.any.Any
 import com.thoughtworks.deepLearning.boolean.ast.If
+import com.thoughtworks.deepLearning.boolean.utilities._
 import com.thoughtworks.deepLearning.coproduct.ast.{Head, IsInl, Tail}
 import shapeless.Lub
 
@@ -30,17 +31,24 @@ package object coproduct {
     type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
   }
 
-  implicit final class CConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
-  TailDelta <: shapeless.Coproduct](
-      differentiable: DifferentiableFunction.Ast[
+  implicit final class CConsOps[
+      Input <: Differentiable,
+      HeadData,
+      HeadDelta,
+      TailData <: shapeless.Coproduct,
+      TailDelta <: shapeless.Coproduct
+  ](
+      ccons: DifferentiableFunction.Ast[
         Input,
-        Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+        Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+      ]
+  ) {
 
     def head: Ast[Input, Batch[HeadData, HeadDelta]] =
-      Head[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
+      Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
     def tail: Ast[Input, Batch[TailData, TailDelta]] =
-      Tail[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
+      Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
     def choice[NewInput <: Input, HeadCase, TailCase, Output <: Differentiable](
         caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => Ast[NewInput, Output])(
@@ -49,7 +57,7 @@ package object coproduct {
       If[NewInput, Output](isInl, caseHead(head), caseTail(tail))
     }
 
-    def isInl = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](differentiable)
+    def isInl: Ast[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 

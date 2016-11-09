@@ -18,13 +18,20 @@ sealed trait LowPriortyDifferentiableFunction {
   implicit def toAstPair[Input <: Differentiable, OutputPair <: Differentiable]
     : ToAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] = {
     // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
-    (identity _).asInstanceOf[Any with Nothing]
+    new ToAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] {
+      override def apply(value: Ast[Input, OutputPair#Batch]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] =
+        value.asInstanceOf[Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]]]
+    }
   }
 
   implicit def toAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
       implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
     : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-    nn.value.andThen(toAstPair)
+    new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+      override def apply(value: NN[OutputPair]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] = {
+        toAstPair(nn.value(value))
+      }
+    }
   }
 
 }
@@ -38,15 +45,23 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
       type Output <: Output0
     }
 
-  type ToAst[T, Input <: Differentiable, OutputData, OutputDelta] =
-    T => DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
+  trait ToAst[T, Input <: Differentiable, OutputData, OutputDelta] {
+    def apply(value: T): DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
+  }
 
   implicit def toAst[Input <: Differentiable, OutputData, OutputDelta]
     : ToAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]],
             Input,
             OutputData,
             OutputDelta] = {
-    identity
+    new ToAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]],
+              Input,
+              OutputData,
+              OutputDelta] {
+      override def apply(
+          value: Ast[Input, Batch[OutputData, OutputDelta]]): Ast[Input, Batch[OutputData, OutputDelta]] = value
+    }
+
   }
 
   trait Cached extends DifferentiableFunction {

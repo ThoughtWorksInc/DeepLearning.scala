@@ -45,11 +45,9 @@ package object array2D {
   implicit def array2DMaxDouble[Input <: Differentiable, Left, Right](
       implicit leftView: ToAst[Left, Input, Eval[INDArray], Eval[INDArray]],
       rightView: ToAst[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
-    max
-      .at[DifferentiableFunction.Ast[Input, Array2D#Batch], Right]
-      .apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] {
-        MaxDouble(_, _)
-      }
+    max.at[Left, Right].apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] { (left, right) =>
+      MaxDouble(leftView(left), rightView(right))
+    }
 
   implicit final class INDArrayOps(ndarray: INDArray) {
     def toWeight[Input <: Differentiable: Identity](
