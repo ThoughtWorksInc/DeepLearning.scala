@@ -1,9 +1,9 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction.{ToAst, Ast}
-import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.DifferentiableFunction.{Ast, ToAst}
 import hlist.ast._
 import any._
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.any.ast.Identity
 
 import scala.language.implicitConversions
@@ -21,9 +21,9 @@ package object hlist {
            HeadDelta,
            TailData <: shapeless.HList,
            TailDelta <: shapeless.Coproduct](head: HeadAst)(
-      implicit unapplyHead: ToAst[HeadAst, Input0, HeadData, HeadDelta],
-      unapplyTail: ToAst[TailAst, Input0, TailData, TailDelta]
-    ): DifferentiableFunction.Ast[Input0, Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
+        implicit unapplyHead: ToAst[HeadAst, Input0, HeadData, HeadDelta],
+        unapplyTail: ToAst[TailAst, Input0, TailData, TailDelta]
+    ): Ast[Input0, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
       HCons[Input0, HeadData, HeadDelta, TailData, TailDelta](unapplyHead(head), unapplyTail(tail))
     }
 
@@ -31,10 +31,10 @@ package object hlist {
 
   implicit final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
-      val hcons: DifferentiableFunction.Ast[Input, Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
-    def head = Head(hcons)
+      hcons: Ast[Input, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+    def head: Ast[Input, Batch[HeadData, HeadDelta]] = Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
 
-    def tail = Tail(hcons)
+    def tail: Ast[Input, Batch[TailData, TailDelta]] = Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
   }
 
   /** @template */
@@ -49,7 +49,7 @@ package object hlist {
     type Delta = shapeless.CNil
   }
 
-  def hnil[Input <: Differentiable: Identity]: DifferentiableFunction.Ast[Input, Differentiable.Batch[shapeless.HNil, shapeless.CNil]] = HNil
+  def hnil[Input <: Differentiable: Identity]: Ast[Input, Batch[shapeless.HNil, shapeless.CNil]] = HNil
 
   /** @template */
   type ::[Head <: Differentiable, Tail <: HList] = HList {

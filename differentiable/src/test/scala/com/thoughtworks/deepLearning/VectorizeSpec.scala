@@ -68,7 +68,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         _.head.choice { _ =>
           probabilityLoss(max((1.0 - rowSeq(0, 0)), 0.0)): NN[Double]
         } { expectedValue =>
-          ((rowSeq(0, 0)) + abs(rowSeq(0, 1) - expectedValue.head)): NN[Double]
+          (rowSeq(0, 0)) + abs(rowSeq(0, 1) - expectedValue.head): NN[Double]
         }
       }
 
