@@ -15,6 +15,7 @@ package object deepLearning {
 
   object log extends Poly1
   object exp extends Poly1
+  object abs extends Poly1
   object max extends Poly2
 
 }

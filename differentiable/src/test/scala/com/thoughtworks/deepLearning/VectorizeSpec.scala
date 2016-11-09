@@ -41,10 +41,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    def probabilityLoss[Input <: Differentiable: Identity](x: Ast[Input, Double#Batch]) = {
+    def probabilityLoss[Input <: Differentiable](x: Ast[Input, Double#Batch]): Ast[Input, Double#Batch] = {
       1.0 - 0.5 / (1.0 - (1.0 - x).log) + 0.5 / (1.0 - x.log)
     }
-
     def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
       : (Array2D :: ExpectedLabel :: HNil)#Ast[Double] = {
       type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Batch, TypePair#Batch]
@@ -67,9 +66,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         0.0 // Drop out
       } {
         _.head.choice { _ =>
-          probabilityLoss(((1.0 - rowSeq(0, 0)) max 0.0))
+          probabilityLoss(max((1.0 - rowSeq(0, 0)), 0.0)): NN[Double]
         } { expectedValue =>
-          rowSeq(0, 0) + (rowSeq(0, 1) - expectedValue.head).abs
+          ((rowSeq(0, 0)) + abs(rowSeq(0, 1) - expectedValue.head)): NN[Double]
         }
       }
 
@@ -91,7 +90,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val loss2 = expectedLabelField2.choice { _ =>
         0.0 // Drop out
       } { expectedDouble =>
-        (expectedDouble.head - rowSeq(0, 4)).abs
+        abs(expectedDouble.head - rowSeq(0, 4))
       }
 
       val loss3 = expectedLabelField3.choice { _ =>
@@ -289,7 +288,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {
       val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
       val b = Nd4j.zeros(50).toWeight
-      max(((row dot w) + b), 0.0)
+      max(((row dot w) + b), 0.0.toLiteral)
     }
 
     def predict(implicit row: InputAst[InputTypePair]) = {

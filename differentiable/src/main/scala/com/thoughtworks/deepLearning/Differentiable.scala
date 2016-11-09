@@ -6,8 +6,6 @@ import com.thoughtworks.deepLearning.Differentiable.Batch
 import shapeless.DepFn1
 
 import scala.language.higherKinds
-import scalaz.Liskov
-import scalaz.Liskov.<~<
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

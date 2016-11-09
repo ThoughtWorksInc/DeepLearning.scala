@@ -10,23 +10,21 @@ import cats.implicits._
 import shapeless.{DepFn1, Lazy}
 
 import scala.annotation.elidable
-import scalaz.Liskov
-import scalaz.Liskov.<~<
 
 sealed trait LowPriortyDifferentiableFunction {
 
   import DifferentiableFunction._
 
-  implicit def isAstPair[Input <: Differentiable, OutputPair <: Differentiable]
-    : IsAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] = {
+  implicit def toAstPair[Input <: Differentiable, OutputPair <: Differentiable]
+    : ToAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] = {
     // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
-    Liskov.force
+    (identity _).asInstanceOf[Any with Nothing]
   }
 
-  implicit def isAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
-      implicit nn: Lazy[NN[OutputPair] <~< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
-    : IsAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-    nn.value.andThen(isAstPair)
+  implicit def toAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
+      implicit nn: Lazy[NN[OutputPair] => DifferentiableFunction.Ast[Input, OutputPair#Batch]])
+    : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+    nn.value.andThen(toAstPair)
   }
 
 }
@@ -40,11 +38,15 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
       type Output <: Output0
     }
 
-  type IsAst[T, Input <: Differentiable, OutputData, OutputDelta] = T <~< DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
+  type ToAst[T, Input <: Differentiable, OutputData, OutputDelta] =
+    T => DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
 
-  implicit def isAst[Input <: Differentiable, OutputData, OutputDelta]
-    : IsAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]], Input, OutputData, OutputDelta] = {
-    Liskov.refl
+  implicit def toAst[Input <: Differentiable, OutputData, OutputDelta]
+    : ToAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]],
+            Input,
+            OutputData,
+            OutputDelta] = {
+    identity
   }
 
   trait Cached extends DifferentiableFunction {

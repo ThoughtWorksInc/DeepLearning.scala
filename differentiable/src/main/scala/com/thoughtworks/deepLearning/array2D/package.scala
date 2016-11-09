@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.DifferentiableFunction.{Ast, ToAst}
 import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
 import com.thoughtworks.deepLearning.array2D.ast._
@@ -39,21 +39,12 @@ package object array2D {
     def toSeq: DifferentiableFunction.Ast[Input, Seq2D#Batch] = {
       ToSeq(differentiable)
     }
-//
-//    def max[RightInput <: Input](rightAst: DifferentiableFunction.Ast[RightInput, Double#Batch]): DifferentiableFunction.Ast[RightInput, Array2D#Batch] = {
-//      MaxDouble(differentiable, rightAst)
-//    }
+
   }
 
-  implicit def array2DMaxDouble[Input <: Differentiable] =
-    max
-      .at[DifferentiableFunction.Ast[Input, Array2D#Batch], DifferentiableFunction.Ast[Input, Double#Batch]]
-      .apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] {
-        MaxDouble(_, _)
-      }
-
-  implicit def array2DMaxNativeDouble[Input <: Differentiable, Right](
-      implicit view: Right => DifferentiableFunction.Ast[Input, Double#Batch]) =
+  implicit def array2DMaxDouble[Input <: Differentiable, Left, Right](
+      implicit leftView: ToAst[Left, Input, Eval[INDArray], Eval[INDArray]],
+      rightView: ToAst[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
     max
       .at[DifferentiableFunction.Ast[Input, Array2D#Batch], Right]
       .apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] {
