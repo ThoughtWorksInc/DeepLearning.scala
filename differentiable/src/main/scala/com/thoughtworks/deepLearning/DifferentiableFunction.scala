@@ -8,10 +8,39 @@ import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
 import shapeless.{DepFn1, Lazy}
+import any.ast._
+import com.thoughtworks.deepLearning.DifferentiableFunction.ToAst
 
 import scala.annotation.elidable
+sealed trait LowLowLowPriortyDifferentiableFunction {
 
-sealed trait LowPriortyDifferentiableFunction {
+  implicit def subtypingToAst[Input <: Differentiable, OutputData, OutputDelta, From](
+      implicit view: Lazy[From <:< DifferentiableFunction.Ast[Input, Batch[OutputData, OutputDelta]]])
+    : ToAst[From, Input, OutputData, OutputDelta] = {
+    new ToAst[From, Input, OutputData, OutputDelta] {
+      override def apply(value: From) = view.value(value)
+    }
+
+  }
+}
+sealed trait LowLowPriortyDifferentiableFunction extends LowLowLowPriortyDifferentiableFunction {
+  this: LowPriortyDifferentiableFunction =>
+
+  import DifferentiableFunction._
+
+  implicit def toAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
+      implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
+    : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+    new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+      override def apply(value: NN[OutputPair]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] = {
+        toAstPair.apply(nn.value(value))
+      }
+    }
+  }
+
+}
+
+sealed trait LowPriortyDifferentiableFunction extends LowLowPriortyDifferentiableFunction {
 
   import DifferentiableFunction._
 
@@ -21,16 +50,6 @@ sealed trait LowPriortyDifferentiableFunction {
     new ToAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] {
       override def apply(value: Ast[Input, OutputPair#Batch]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] =
         value.asInstanceOf[Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]]]
-    }
-  }
-
-  implicit def toAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
-      implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
-    : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-    new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
-      override def apply(value: NN[OutputPair]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] = {
-        toAstPair(nn.value(value))
-      }
     }
   }
 

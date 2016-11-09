@@ -3,6 +3,7 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.DifferentiableFunction.{Ast, ToAst}
 import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.Poly.Poly2
 import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
 import com.thoughtworks.deepLearning.array2D.ast._
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
@@ -41,13 +42,30 @@ package object array2D {
     }
 
   }
+//
+//  private[array2D] trait Case2Double { this: Poly2#Case =>
+//    override type LeftOperandData = Eval[INDArray]
+//    override type LeftOperandDelta = Eval[INDArray]
+//    override type RightOperandData = Eval[scala.Double]
+//    override type RightOperandDelta = Eval[scala.Double]
+//    override type OutputData = Eval[INDArray]
+//    override type OutputDelta = Eval[INDArray]
+//  }
 
-  implicit def array2DMaxDouble[Input <: Differentiable, Left, Right](
-      implicit leftView: ToAst[Left, Input, Eval[INDArray], Eval[INDArray]],
-      rightView: ToAst[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
-    max.at[Left, Right].apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] { (left, right) =>
-      MaxDouble(leftView(left), rightView(right))
+  implicit def maxArray2DDouble[Input <: Differentiable] =
+    new max.Case[Input, Eval[INDArray], Eval[INDArray], Eval[scala.Double], Eval[scala.Double]] {
+      override type Out = Ast[Input, Array2D#Batch]
+      override def apply(leftOperand: Ast[Input, Batch[Eval[INDArray], Eval[INDArray]]],
+                         rightOperand: Ast[Input, Batch[Eval[scala.Double], Eval[scala.Double]]]) = {
+        MaxDouble(leftOperand, rightOperand)
+      }
     }
+//  implicit def array2DMaxDouble[Input <: Differentiable, Left, Right](
+//      implicit leftView: ToAst[Left, Input, Eval[INDArray], Eval[INDArray]],
+//      rightView: ToAst[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
+//    max.at[Left, Right].apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] { (left, right) =>
+//      MaxDouble(leftView(left), rightView(right))
+//    }
 
   implicit final class INDArrayOps(ndarray: INDArray) {
     def toWeight[Input <: Differentiable: Identity](
