@@ -22,7 +22,7 @@ sealed trait LowPriortyDifferentiableFunction {
   }
 
   implicit def toAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
-      implicit nn: Lazy[NN[OutputPair] => DifferentiableFunction.Ast[Input, OutputPair#Batch]])
+      implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
     : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
     nn.value.andThen(toAstPair)
   }
