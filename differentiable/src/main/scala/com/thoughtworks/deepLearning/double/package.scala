@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 import cats.Eval
+import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.ToAst.InvariantAst
 import com.thoughtworks.deepLearning.any.ast.Literal
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.double.ast._
@@ -28,9 +28,9 @@ package object double {
   /** @template */
   type Double = utilities.Double
 
-  implicit def liftNativeDouble[Input <: Differentiable: DifferentiableType.OfBatch]
-    : ToAst.Aux[scala.Double, Input, Eval[scala.Double], Eval[scala.Double]] =
-    new ToAst[scala.Double, Input] {
+  implicit def liftNativeDouble[InputData, InputDelta](implicit inputType: DifferentiableType[InputData, InputDelta])
+    : ToAst.Aux[scala.Double, Batch[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =
+    new ToAst[scala.Double, Batch[InputData, InputDelta]] {
       override type OutputData = Eval[scala.Double]
       override type OutputDelta = Eval[scala.Double]
       override def apply(nativeDouble: scala.Double) = {

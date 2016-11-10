@@ -17,8 +17,8 @@ import scala.language.existentials
 class DifferentiableTypeSpec extends FreeSpec with Matchers {
 
   "Double :: HNil" in {
-    "implicitly[(Double :: HNil) =:= DifferentiableType.ConcreteType[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
-    "implicitly[Array[Double :: HNil] =:= Array[DifferentiableType.ConcreteType[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]]" should compile
+    "implicitly[(Double :: HNil) =:= DifferentiableType[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
+    "implicitly[Array[Double :: HNil] =:= Array[DifferentiableType[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]]" should compile
   }
 
   "x" in {

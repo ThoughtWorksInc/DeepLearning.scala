@@ -1,6 +1,5 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableType.ConcreteType
 //import com.thoughtworks.deepLearning.DifferentiableFunction._
 //import com.thoughtworks.deepLearning.Differentiable._
 //import com.thoughtworks.deepLearning.any.Any
@@ -16,17 +15,14 @@ import scala.language.existentials
 package object coproduct {
 
   /** @template */
-  type Coproduct = DifferentiableType {
-    type Data <: shapeless.Coproduct
-    type Delta <: shapeless.Coproduct
-  }
+  type Coproduct = DifferentiableType[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
 
   /** @template */
-  type CNil = ConcreteType[shapeless.CNil, shapeless.CNil]
+  type CNil = DifferentiableType[shapeless.CNil, shapeless.CNil]
 
   /** @template */
-  type :+:[Head <: DifferentiableType, Tail <: Coproduct] =
-    ConcreteType[shapeless.:+:[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
+  type :+:[Head <: DifferentiableType[_,_], Tail <: Coproduct] =
+    DifferentiableType[shapeless.:+:[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
       val head: Head
       val tail: Tail
     }

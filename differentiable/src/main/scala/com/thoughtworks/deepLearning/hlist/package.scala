@@ -6,8 +6,6 @@ package com.thoughtworks.deepLearning
 //import com.thoughtworks.deepLearning.Differentiable.ConcreteBatch
 //import com.thoughtworks.deepLearning.any.ast.Identity
 //
-import com.thoughtworks.deepLearning.DifferentiableType.ConcreteType
-
 import scala.language.implicitConversions
 import scala.language.existentials
 
@@ -15,16 +13,16 @@ import scala.language.existentials
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 package object hlist {
+
   /** @template */
-  type HList = DifferentiableType {
-    type Data <: shapeless.HList
-    type Delta <: shapeless.Coproduct
-  }
+  type HList = DifferentiableType[_ <: shapeless.HList, _ <: shapeless.Coproduct]
+
   /** @template */
-  type HNil = ConcreteType[shapeless.HNil, shapeless.CNil]
+  type HNil = DifferentiableType[shapeless.HNil, shapeless.CNil]
+
   /** @template */
-  type ::[Head <: DifferentiableType, Tail <: HList] =
-    ConcreteType[shapeless.::[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
+  type ::[Head <: DifferentiableType[_, _], Tail <: HList] =
+    DifferentiableType[shapeless.::[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
       val head: Head
       val tail: Tail
     }

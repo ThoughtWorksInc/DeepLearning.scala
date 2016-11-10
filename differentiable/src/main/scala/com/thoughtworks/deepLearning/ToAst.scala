@@ -4,7 +4,9 @@ import cats._
 import cats.implicits._
 import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.ToAst.InvariantAst
+import com.thoughtworks.deepLearning.DifferentiableType
+import shapeless.Lazy
+//import com.thoughtworks.deepLearning.ToAst.Ast
 import shapeless.DepFn1
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning._
@@ -22,7 +24,7 @@ trait ToAst[From, Input <: Differentiable] extends DepFn1[From] {
   type OutputData
   type OutputDelta
   type Output = Batch[OutputData, OutputDelta]
-  type Out = InvariantAst[Input, Output]
+  type Out = Ast[Input, Output]
 }
 
 object ToAst {
@@ -32,13 +34,13 @@ object ToAst {
     type OutputDelta = OutputDelta0
   }
 
-  type OfType[From, Input <: Differentiable, Type <: DifferentiableType] = ToAst[From, Input] {
+  type OfType[From, Input <: Differentiable, Type <: DifferentiableType[_, _]] = ToAst[From, Input] {
     type OutputData = differentiableType.Data
     type OutputDelta = differentiableType.Delta
   } forSome { val differentiableType: Type }
 
   // FIXME: I don't know if invariance is required, please remove this line if Ast is enough
-  type InvariantAst[Input <: Differentiable, Output <: Differentiable] = Ast[Input, Output]
+//  type Ast[Input <: Differentiable, Output <: Differentiable] = Ast[Input, Output]
 
   implicit def astToAst[Input <: Differentiable, OutputData0, OutputDelta0]
     : ToAst.Aux[Ast[Input, Batch[OutputData0, OutputDelta0]], Input, OutputData0, OutputDelta0] =
@@ -49,12 +51,14 @@ object ToAst {
       override def apply(ast: Ast[Input, Batch[OutputData, OutputDelta]]) = ast
     }
 
-  implicit def inputTypeToAst[InputType <: DifferentiableType]
-    : ToAst.Aux[InputType, Batch[InputType#Data, InputType#Delta], InputType#Data, InputType#Delta] =
-    new ToAst[InputType, Batch[InputType#Data, InputType#Delta]] {
-      override type OutputData = InputType#Data
-      override type OutputDelta = InputType#Delta
-      override def apply(input: InputType) =
-        Identity[Batch[InputType#Data, InputType#Delta]]()
+  implicit def inputTypeToAst[InputData, InputDelta]: ToAst.Aux[DifferentiableType[InputData, InputDelta],
+                                                                Batch[InputData, InputDelta],
+                                                                InputData,
+                                                                InputDelta] =
+    new ToAst[DifferentiableType[InputData, InputDelta], Batch[InputData, InputDelta]] {
+      override type OutputData = InputData
+      override type OutputDelta = InputDelta
+      override def apply(input: DifferentiableType[InputData, InputDelta]) =
+        Identity[Batch[InputData, InputDelta]]()
     }
 }

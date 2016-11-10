@@ -3,7 +3,6 @@ package com.thoughtworks.deepLearning
 import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.Differentiable._
 import cats.Eval
-import com.thoughtworks.deepLearning.DifferentiableType.OfBatch
 import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
 
 /**
@@ -12,7 +11,7 @@ import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
 package object any {
 
   /** @template */
-  type Any = DifferentiableType
+  type Any = DifferentiableType[_, _]
 
 //
 //  /** @template */

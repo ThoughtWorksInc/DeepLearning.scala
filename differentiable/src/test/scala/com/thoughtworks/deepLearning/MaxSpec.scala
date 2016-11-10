@@ -4,6 +4,7 @@ import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.double._
 import org.scalatest.{FreeSpec, Matchers}
+import ToAst._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -26,7 +27,7 @@ final class MaxSpec extends FreeSpec with Matchers {
       val m1: input.Ast[Double] = max(input, 1.6)
       val m2 = max(m0, m1)
       val m3 = max(0.0, max(m0, max(max(input, m1), m2)))
-//      val m4: input.Ast[Double] = max(1.6, input)
+      val m4: input.Ast[Double] = max(1.6, input)(maxDoubleDouble)
     }
 
     buildNeuralNetwork
