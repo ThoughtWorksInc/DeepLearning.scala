@@ -20,11 +20,24 @@ package object deepLearning {
   object max extends Poly2
 
   object - extends Poly2
+  object + extends Poly2
+  object * extends Poly2
+  object / extends Poly2
 
-//  implicit final class RichAstOps[Left](left: Left) {
-//
-//    def -[Right](right: Right)(implicit ev: deepLearning.-.Case[Left, Right]) = deepLearning.-(left, right)
-//
-//  }
+  implicit final class AstOps[Left](left: Left) {
+
+    def -[Right](right: Right)(implicit cse: deepLearning.-.Case[Left, Right]): cse.Result =
+      deepLearning.-(left, right)
+
+    def +[Right](right: Right)(implicit cse: deepLearning.+.Case[Left, Right]): cse.Result =
+      deepLearning.+(left, right)
+
+    def *[Right](right: Right)(implicit cse: deepLearning.*.Case[Left, Right]): cse.Result =
+      deepLearning.*(left, right)
+
+    def /[Right](right: Right)(implicit cse: deepLearning./.Case[Left, Right]): cse.Result =
+      deepLearning./(left, right)
+
+  }
 
 }

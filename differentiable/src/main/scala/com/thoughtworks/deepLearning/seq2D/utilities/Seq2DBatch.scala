@@ -13,7 +13,7 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait Seq2DBatch extends Differentiable {
+private[deepLearning] trait Seq2DBatch extends Differentiable {
   override type Data = Eval[Seq[Seq[scala.Double]]]
   override type Delta = Eval[(scala.Int, scala.Int, scala.Double)]
 }

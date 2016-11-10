@@ -4,7 +4,7 @@ import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
 import com.thoughtworks.deepLearning.ToAst.InvariantAst
 import com.thoughtworks.deepLearning.any.ast.Literal
 import com.thoughtworks.deepLearning.boolean.ast.If
-import com.thoughtworks.deepLearning.double.ast.LessThan
+import com.thoughtworks.deepLearning.double.ast._
 
 //import com.thoughtworks.deepLearning.any.Any
 //import com.thoughtworks.deepLearning.DifferentiableFunction._
@@ -40,12 +40,24 @@ package object double {
 
   implicit def maxDoubleDouble[Left, Right, Input <: Differentiable](
       implicit leftToAst: ToAst.OfType[Left, Input, Double],
-      rightToAst: ToAst.OfType[Right, Input, Double]): max.Case.Aux[Left, Right, Ast[Input, Double#Batch]] =
+      rightToAst: ToAst.OfType[Right, Input, Double]): max.Case.Aux[Left, Right, Ast[Input, Double#Batch]] = {
     max.at { (left, right) =>
       val leftAst = leftToAst(left)
       val rightAst = rightToAst(right)
       If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
     }
+  }
+
+  implicit def minusDoubleDouble[Left, Right, Input <: Differentiable](
+      implicit leftToAst: ToAst.OfType[Left, Input, Double],
+      rightToAst: ToAst.OfType[Right, Input, Double]): -.Case.Aux[Left, Right, Ast[Input, Double#Batch]] = {
+    com.thoughtworks.deepLearning.-.at { (left, right) =>
+      val leftAst = leftToAst(left)
+      val rightAst = rightToAst(right)
+      Add(leftAst, Negative(rightAst))
+    }
+  }
+
 //
 //  implicit final class DoubleOps[Input <: Differentiable](double: Ast[Input, Double#ConcreteBatch]) {
 //    def +(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Double#ConcreteBatch] = {

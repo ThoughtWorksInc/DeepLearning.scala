@@ -1,8 +1,6 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.DifferentiableType.ConcreteType
-
-//
 //import com.thoughtworks.deepLearning.DifferentiableFunction._
 //import com.thoughtworks.deepLearning.Differentiable._
 //import com.thoughtworks.deepLearning.any.Any
@@ -10,10 +8,11 @@ import com.thoughtworks.deepLearning.DifferentiableType.ConcreteType
 //import com.thoughtworks.deepLearning.boolean.utilities._
 //import com.thoughtworks.deepLearning.coproduct.ast.{Head, IsInl, Tail}
 //import shapeless.Lub
-//
-///**
-//  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
-//  */
+import scala.language.existentials
+
+/**
+  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  */
 package object coproduct {
 
   /** @template */
