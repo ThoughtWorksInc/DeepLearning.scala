@@ -15,14 +15,14 @@ import SumAs._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class AddArray2D[Input0 <: Differentiable](
-                                                       leftOperand: DifferentiableFunction.Ast[Input0, Array2D#Batch],
-                                                       rightOperand: DifferentiableFunction.Ast[Input0, Array2D#Batch]
+                                                       leftOperand: DifferentiableFunction.Ast[Input0, Array2D#ConcreteBatch],
+                                                       rightOperand: DifferentiableFunction.Ast[Input0, Array2D#ConcreteBatch]
 ) extends DifferentiableFunction
     with Cached {
 
   protected final class SharedBatch private[deepLearning] (override val input: Input0,
-                                                           upstream1: Array2D#Batch,
-                                                           upstream2: Array2D#Batch)
+                                                           upstream1: Array2D#ConcreteBatch,
+                                                           upstream2: Array2D#ConcreteBatch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = {

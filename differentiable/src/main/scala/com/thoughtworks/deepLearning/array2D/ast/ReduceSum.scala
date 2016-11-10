@@ -14,10 +14,10 @@ import org.nd4s.Implicits._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ReduceSum[Input0 <: Differentiable](operand: DifferentiableFunction.Ast[Input0, Array2D#Batch])
+final case class ReduceSum[Input0 <: Differentiable](operand: DifferentiableFunction.Ast[Input0, Array2D#ConcreteBatch])
     extends Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#Batch)
+  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#ConcreteBatch)
       extends MonoidBatch
       with DoubleMonoidBatch {
     type Input >: Input0

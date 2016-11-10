@@ -7,7 +7,7 @@ import com.thoughtworks.deepLearning.boolean.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class If[Input0 <: Differentiable, Output0 <: Differentiable](condition: DifferentiableFunction.Ast[Input0, Boolean#Batch],
+final case class If[Input0 <: Differentiable, Output0 <: Differentiable](condition: DifferentiableFunction.Ast[Input0, Boolean#ConcreteBatch],
                                                                          `then`: DifferentiableFunction.Ast[Input0, Output0],
                                                                          `else`: DifferentiableFunction.Ast[Input0, Output0])
     extends DifferentiableFunction {

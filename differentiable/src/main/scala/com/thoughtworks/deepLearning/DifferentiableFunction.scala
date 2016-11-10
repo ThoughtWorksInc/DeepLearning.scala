@@ -7,55 +7,65 @@ import scala.language.existentials
 import scala.language.implicitConversions
 import scala.language.higherKinds
 import cats.implicits._
-import shapeless.{DepFn1, Lazy}
-import any.ast._
-import com.thoughtworks.deepLearning.DifferentiableFunction.ToAst
 
 import scala.annotation.elidable
-sealed trait LowLowLowPriortyDifferentiableFunction {
 
-  implicit def subtypingToAst[Input <: Differentiable, OutputData, OutputDelta, From](
-      implicit view: Lazy[From <:< DifferentiableFunction.Ast[Input, Batch[OutputData, OutputDelta]]])
-    : ToAst[From, Input, OutputData, OutputDelta] = {
-    new ToAst[From, Input, OutputData, OutputDelta] {
-      override def apply(value: From) = view.value(value)
-    }
+//import scala.annotation.elidable
+//sealed trait LowLowLowPriortyDifferentiableFunction {
+//
+//  implicit def subtypingToAst[Input <: Differentiable, OutputData, OutputDelta, From](
+//      implicit view: Lazy[From <:< DifferentiableFunction.Ast[Input, ConcreteBatch[OutputData, OutputDelta]]])
+//    : ToAst[From, Input, OutputData, OutputDelta] = {
+//    new ToAst[From, Input, OutputData, OutputDelta] {
+//      override def apply(value: From) = view.value(value)
+//    }
+//
+//  }
+//}
+//sealed trait LowLowPriortyDifferentiableFunction extends LowLowLowPriortyDifferentiableFunction {
+//  this: LowPriortyDifferentiableFunction =>
+//
+//  import DifferentiableFunction._
+//
+//  implicit def toAstNN[Input <: Differentiable : Identity, NN[_ <: Differentiable], OutputPair <: Differentiable](
+//      implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch]])
+//    : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+//    new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+//      override def apply(value: NN[OutputPair]): Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
+//        toAstPair.apply(nn.value(value))
+//      }
+//    }
+//  }
+//  //
+//  // implicit def toAstNN2[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
+//  //     implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch]])
+//  //   : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+//  //   new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+//  //     override def apply(value: NN[OutputPair]): Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
+//  //       toAstPair.apply(nn.value(value))
+//  //     }
+//  //   }
+//  // }
+//
+//
+//}
+//
+//sealed trait LowPriortyDifferentiableFunction extends LowLowPriortyDifferentiableFunction {
+//
+//  import DifferentiableFunction._
+//
+//  implicit def toAstPair[Input <: Differentiable, OutputPair <: Differentiable]
+//    : ToAst[DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] = {
+//    // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
+//    new ToAst[DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] {
+//      override def apply(value: Ast[Input, OutputPair#ConcreteBatch]): Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] =
+//        value.asInstanceOf[Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]]]
+//    }
+//  }
+//
+//}
 
-  }
-}
-sealed trait LowLowPriortyDifferentiableFunction extends LowLowLowPriortyDifferentiableFunction {
-  this: LowPriortyDifferentiableFunction =>
-
-  import DifferentiableFunction._
-
-  implicit def toAstNN[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
-      implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#Batch]])
-    : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-    new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
-      override def apply(value: NN[OutputPair]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] = {
-        toAstPair.apply(nn.value(value))
-      }
-    }
-  }
-
-}
-
-sealed trait LowPriortyDifferentiableFunction extends LowLowPriortyDifferentiableFunction {
-
-  import DifferentiableFunction._
-
-  implicit def toAstPair[Input <: Differentiable, OutputPair <: Differentiable]
-    : ToAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] = {
-    // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
-    new ToAst[DifferentiableFunction.Ast[Input, OutputPair#Batch], Input, OutputPair#Data, OutputPair#Delta] {
-      override def apply(value: Ast[Input, OutputPair#Batch]): Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]] =
-        value.asInstanceOf[Ast[Input, Batch[OutputPair#Data, OutputPair#Delta]]]
-    }
-  }
-
-}
-
-object DifferentiableFunction extends LowPriortyDifferentiableFunction {
+object DifferentiableFunction /*extends LowPriortyDifferentiableFunction*/ {
 
   /** @template */
   type Ast[-Input0 <: Differentiable, +Output0 <: Differentiable] =
@@ -64,24 +74,24 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
       type Output <: Output0
     }
 
-  trait ToAst[T, Input <: Differentiable, OutputData, OutputDelta] {
-    def apply(value: T): Ast[Input, Differentiable.Batch[OutputData, OutputDelta]]
-  }
-
-  implicit def toAst[Input <: Differentiable, OutputData, OutputDelta]
-    : ToAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]],
-            Input,
-            OutputData,
-            OutputDelta] = {
-    new ToAst[DifferentiableFunction.Ast[Input, Differentiable.Batch[OutputData, OutputDelta]],
-              Input,
-              OutputData,
-              OutputDelta] {
-      override def apply(
-          value: Ast[Input, Batch[OutputData, OutputDelta]]): Ast[Input, Batch[OutputData, OutputDelta]] = value
-    }
-
-  }
+//  trait ToAst[T, Input <: Differentiable, OutputData, OutputDelta] {
+//    def apply(value: T): Ast[Input, Differentiable.ConcreteBatch[OutputData, OutputDelta]]
+//  }
+//
+//  implicit def toAst[Input <: Differentiable, OutputData, OutputDelta]
+//    : ToAst[DifferentiableFunction.Ast[Input, Differentiable.ConcreteBatch[OutputData, OutputDelta]],
+//            Input,
+//            OutputData,
+//            OutputDelta] = {
+//    new ToAst[DifferentiableFunction.Ast[Input, Differentiable.ConcreteBatch[OutputData, OutputDelta]],
+//              Input,
+//              OutputData,
+//              OutputDelta] {
+//      override def apply(
+//          value: Ast[Input, ConcreteBatch[OutputData, OutputDelta]]): Ast[Input, ConcreteBatch[OutputData, OutputDelta]] = value
+//    }
+//
+//  }
 
   trait Cached extends DifferentiableFunction {
 
@@ -120,8 +130,12 @@ object DifferentiableFunction extends LowPriortyDifferentiableFunction {
           }
         }
 
-        Option(checkIfCloseOnlyOnce).getOrElse(toBatch)
+        Option(checkIfCloseOnlyOnce).getOrElse(ReferenceCount.this.toBatch)
       }
+
+      type Batch >: Differentiable.Batch[Data, Delta] <: Differentiable.Batch[Data, Delta]
+
+      private final def toBatch: Batch = this: Differentiable.Batch[Data, Delta]
 
       private[Cached] var count: Int = 1
 

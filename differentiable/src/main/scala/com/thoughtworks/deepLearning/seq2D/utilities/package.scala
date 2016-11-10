@@ -11,9 +11,7 @@ package object utilities {
   /**
     * TODO: allow type parameters
     */
-  private[deepLearning] type Seq2D = Differentiable {
-    type Data = Eval[Seq[Seq[scala.Double]]]
-    type Delta = Eval[(scala.Int, scala.Int, scala.Double)]
-  }
+  private[deepLearning] type Seq2D =
+    com.thoughtworks.deepLearning.DifferentiableType.ConcreteType[Eval[Seq[Seq[scala.Double]]], Eval[(scala.Int, scala.Int, scala.Double)]]
 
 }

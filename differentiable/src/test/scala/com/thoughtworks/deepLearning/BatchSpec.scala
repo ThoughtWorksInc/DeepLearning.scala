@@ -27,6 +27,8 @@ final class BatchSpec extends FreeSpec with Matchers {
     "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[(Double :: HNil)#Batch =:= Batch[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
+    "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
+    "implicitly[HList#Batch <:< (Double :: HNil)#Batch]" shouldNot compile
     "implicitly[(Any :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[(Any :: HList)#Batch <:< HList#Batch]" should compile
     "implicitly[(Any :: HList)#Batch <:< (Any :: HList)#Batch]" should compile
@@ -40,9 +42,9 @@ final class BatchSpec extends FreeSpec with Matchers {
     /*
       以下几个测试符合逻辑，但Scala编译器不认可
       没有很好的解决办法，只能尽量避免使用抽象类型吧
-      */
+     */
 
-
+    "implicitly[(Double :: HNil)#Batch <:< (Double :: HList)#Batch]" should compile
     "implicitly[(Any :: HNil)#Data <:< HList#Data]" should compile
     "implicitly[shapeless.::[cats.Eval[Double],shapeless.HNil] <:< HList#Data]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Data <:< (Boolean :: HList)#Data]" should compile

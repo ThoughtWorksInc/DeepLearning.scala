@@ -16,8 +16,5 @@ import org.nd4j.linalg.ops.transforms.Transforms
   */
 package object utilities {
 
-  type Boolean = Differentiable {
-    type Delta = Eval[scala.Boolean]
-    type Data = Eval[scala.Boolean]
-  }
+  type Boolean = com.thoughtworks.deepLearning.DifferentiableType.ConcreteType[Eval[scala.Boolean], Eval[scala.Boolean]]
 }

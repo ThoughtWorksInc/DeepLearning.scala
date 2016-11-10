@@ -10,9 +10,6 @@ import org.nd4j.linalg.api.ndarray.INDArray
   */
 package object utilities {
 
-  private[array2D] type Array2D = Differentiable {
-    type Data = Eval[INDArray]
-    type Delta = Eval[INDArray]
-  }
+  private[array2D] type Array2D = com.thoughtworks.deepLearning.DifferentiableType.ConcreteType[Eval[INDArray], Eval[INDArray]]
 
 }

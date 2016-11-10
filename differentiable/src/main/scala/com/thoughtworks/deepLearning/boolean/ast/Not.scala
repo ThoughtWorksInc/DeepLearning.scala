@@ -8,9 +8,9 @@ import com.thoughtworks.deepLearning.boolean.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Not[Input0 <: Differentiable](differentiableBoolean: DifferentiableFunction.Ast[Input0, Boolean#Batch]) extends Cached {
+final case class Not[Input0 <: Differentiable](differentiableBoolean: DifferentiableFunction.Ast[Input0, Boolean#ConcreteBatch]) extends Cached {
 
-  protected final class SharedBatch private[deepLearning] (override val input: Input0, upstream: Boolean#Batch)
+  protected final class SharedBatch private[deepLearning] (override val input: Input0, upstream: Boolean#ConcreteBatch)
       extends MonoidBatch
       with BooleanMonoidBatch {
     type Input >: Input0

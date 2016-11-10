@@ -2,7 +2,6 @@ package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.Differentiable.Batch
 import shapeless.DepFn1
 
 import scala.language.higherKinds
@@ -28,20 +27,6 @@ object Differentiable {
 trait Differentiable extends AutoCloseable { outer =>
   type Data
   type Delta
-
-  /**
-    * @note This is a workaround for https://issues.scala-lang.org/browse/SI-10008
-    * @template
-    */
-  type Batch >: Differentiable.Batch[Data, Delta] <: Differentiable.Batch[Data, Delta]
-
-  /**
-    * @note This is a workaround for https://issues.scala-lang.org/browse/SI-10008
-    * @template
-    */
-  type Ast[Output <: Differentiable] >: DifferentiableFunction.Ast[Batch, Output#Batch] <: DifferentiableFunction.Ast[Batch, Output#Batch]
-
-  final def toBatch: Batch = this: Differentiable.Batch[Data, Delta]
 
   def backward(delta: Delta): Unit
 

@@ -41,262 +41,263 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    def probabilityLoss[Input <: Differentiable](x: Ast[Input, Double#Batch]): Ast[Input, Double#Batch] = {
-      1.0 - 0.5 / (1.0 - (1.0 - x).log) + 0.5 / (1.0 - x.log)
+//    def probabilityLoss(implicit x: Double): x.Ast[Double] = {
+//      1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
+//    }
+    def loss(implicit rowAndExpectedLabel: Array2D :: ExpectedLabel :: HNil): rowAndExpectedLabel.Ast[Double] = {
+//      type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Batch, TypePair#Batch]
+//
+//      val row = rowAndExpectedLabel.head
+//      val expectedLabel = rowAndExpectedLabel.tail.head
+//      val rowSeq = row.toSeq
+//
+//      // 暂时先在CPU上计算
+//
+//      val expectedLabelField0 = expectedLabel.head
+//      val expectedLabelRest1 = expectedLabel.tail
+//      val expectedLabelField1 = expectedLabelRest1.head
+//      val expectedLabelRest2 = expectedLabelRest1.tail
+//      val expectedLabelField2 = expectedLabelRest2.head
+//      val expectedLabelRest3 = expectedLabelRest2.tail
+//      val expectedLabelField3 = expectedLabelRest3.head
+//
+//      val loss0 = expectedLabelField0.choice { _ =>
+//        0.0 // Drop out
+//      } {
+//        _.head.choice { _ =>
+//          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0))
+//        } { expectedValue =>
+////          rowSeq(0, 0) + abs((rowSeq(0, 1) - expectedValue.head))
+//          0.0
+//        }
+//      }
+//
+//      val loss1 = expectedLabelField1.choice { _ =>
+//        0.0 // Drop out
+//      } { expectedEnum =>
+//        val score0 = rowSeq(0, 2)
+//        val score1 = rowSeq(0, 3)
+//        val sum = score0 + score1
+//        val probability0 = score0 / sum
+//        val probability1 = score1 / sum
+//        expectedEnum.head.choice { _ =>
+//          1.0 - probability0
+//        } { _ =>
+//          1.0 - probability1
+//        }
+//      }
+//
+//      val loss2 = expectedLabelField2.choice { _ =>
+//        0.0 // Drop out
+//      } { expectedDouble =>
+//        abs(expectedDouble.head - rowSeq(0, 4))
+//      }
+//
+//      val loss3 = expectedLabelField3.choice { _ =>
+//        0.0 // Drop out
+//      } { expectedEnum =>
+//        val score0 = rowSeq(0, 5)
+//        val score1 = rowSeq(0, 6)
+//        val score2 = rowSeq(0, 7)
+//        val sum = score0 + score1 + score2
+//        val probability0 = score0 / sum
+//        val probability1 = score1 / sum
+//        val probability2 = score2 / sum
+//        expectedEnum.head.choice { _ =>
+//          1.0 - probability0
+//        } {
+//          _.choice { _ =>
+//            1.0 - probability1
+//          } { _ =>
+//            1.0 - probability2
+//          }
+//        }
+//      }
+//
+//      loss0 + loss1 + loss2 + loss3
+      ???
     }
-    def loss(implicit rowAndExpectedLabel: InputAst[Array2D :: ExpectedLabel :: HNil])
-      : (Array2D :: ExpectedLabel :: HNil)#Ast[Double] = {
-      type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Batch, TypePair#Batch]
-
-      val row = rowAndExpectedLabel.head
-      val expectedLabel = rowAndExpectedLabel.tail.head
-      val rowSeq = row.toSeq
-
-      // 暂时先在CPU上计算
-
-      val expectedLabelField0 = expectedLabel.head
-      val expectedLabelRest1 = expectedLabel.tail
-      val expectedLabelField1 = expectedLabelRest1.head
-      val expectedLabelRest2 = expectedLabelRest1.tail
-      val expectedLabelField2 = expectedLabelRest2.head
-      val expectedLabelRest3 = expectedLabelRest2.tail
-      val expectedLabelField3 = expectedLabelRest3.head
-
-      val loss0 = expectedLabelField0.choice { _ =>
-        0.0 // Drop out
-      } {
-        _.head.choice { _ =>
-          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0)): NN[Double]
-        } { expectedValue =>
-          rowSeq(0, 0) + abs((rowSeq(0, 1) - expectedValue.head)): NN[Double]
-        }
-      }
-
-      val loss1 = expectedLabelField1.choice { _ =>
-        0.0 // Drop out
-      } { expectedEnum =>
-        val score0 = rowSeq(0, 2)
-        val score1 = rowSeq(0, 3)
-        val sum = score0 + score1
-        val probability0 = score0 / sum
-        val probability1 = score1 / sum
-        expectedEnum.head.choice { _ =>
-          1.0 - probability0
-        } { _ =>
-          1.0 - probability1
-        }
-      }
-
-      val loss2 = expectedLabelField2.choice { _ =>
-        0.0 // Drop out
-      } { expectedDouble =>
-        abs(expectedDouble.head - rowSeq(0, 4))
-      }
-
-      val loss3 = expectedLabelField3.choice { _ =>
-        0.0 // Drop out
-      } { expectedEnum =>
-        val score0 = rowSeq(0, 5)
-        val score1 = rowSeq(0, 6)
-        val score2 = rowSeq(0, 7)
-        val sum = score0 + score1 + score2
-        val probability0 = score0 / sum
-        val probability1 = score1 / sum
-        val probability2 = score2 / sum
-        expectedEnum.head.choice { _ =>
-          1.0 - probability0
-        } {
-          _.choice { _ =>
-            1.0 - probability1
-          } { _ =>
-            1.0 - probability2
-          }
-        }
-      }
-
-      loss0 + loss1 + loss2 + loss3
-    }
-
-    def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#Ast[PredictionResult] = {
-      type NN[TypePair <: Differentiable] = Ast[Array2D#Batch, TypePair#Batch]
-      val rowSeq = row.toSeq
-      val n: Ast[Array2D#Batch, HNil#Batch] = hnil
-      val n2: NN[HNil] = hnil
-      val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: n
-      val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
-      val field2: NN[Double] = rowSeq(0, 4)
-      val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
-      field0 :: field1 :: field2 :: field3 :: hnil
-    }
-
-    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#Ast[Array2D] = {
-      type NN[OutputTypePair <: Differentiable] = InputTypePair#Ast[OutputTypePair]
-      val field0 = row.head
-      val rest0 = row.tail
-      val field1 = rest0.head
-      val rest1 = rest0.tail
-      val field2 = rest1.head
-      val rest2 = rest1.tail
-      val field3 = rest2.head
-      val rest3 = rest2.tail
-
-      val field0Flag0: NN[Double] = field0.choice { _ =>
-        1.0
-      } { _ =>
-        0.0
-      }
-
-      val field0Flag1 = field0.choice { unknown =>
-        0.5.toWeight
-      } {
-        _.choice { knownField0 =>
-          knownField0.choice { unset =>
-            1.0
-          } { someValue =>
-            0.0
-          }
-        } { cnil =>
-          `throw`(new IllegalArgumentException)
-        }
-      }
-
-      val field0Value0: NN[Double] = field0.choice { unknown: NN[HNil] =>
-        0.5.toWeight: NN[Double]
-      } {
-        _.choice { knownField0 =>
-          knownField0.choice { unset: NN[HNil] =>
-            0.5.toWeight: NN[Double]
-          } {
-            _.choice { nativeDouble: NN[Double] =>
-              nativeDouble: NN[Double]
-            } { cnil: NN[CNil] =>
-              `throw`(new IllegalArgumentException): NN[Double]
-            }: NN[Double]
-          }: NN[Double]
-        } { cnil: NN[CNil] =>
-          `throw`(new IllegalArgumentException): NN[Double]
-        }: NN[Double]
-
-      }
-
-      val isField1Unknown = field1.isInl
-      val field1Enum = field1.tail.head
-      val isField1Case0 = field1Enum.isInl
-      val isField1Case1 = field1Enum.tail.isInl
-
-      val field1Flag0 = isField1Unknown.`if` {
-        1.0
-      } {
-        0.0
-      }
-
-      val field1Value0: NN[Double] = isField1Unknown.`if` {
-        0.5.toWeight
-      } {
-        isField1Case0.`if` {
-          1.0
-        } {
-          0.0
-        }
-      }
-
-      val field1Value1 = isField1Unknown.`if` {
-        0.5.toWeight: NN[Double]
-      } {
-        isField1Case0.`if` {
-          0.0: NN[Double]
-        } {
-          1.0: NN[Double]
-        }: NN[Double]
-      }
-
-      val isField2Unknown = field2.isInl
-      val field2Flag0 = isField2Unknown.`if` {
-        1.0
-      } {
-        0.0
-      }
-
-      val field2Value0 = isField2Unknown.`if` {
-        0.5.toWeight
-      } {
-        field2.tail.head
-      }
-
-      val isField3Unknown = field3.isInl
-      val field3Enum = field3.tail.head
-      val isField3Case0 = field3Enum.isInl
-      val isField3Case1 = field3Enum.tail.isInl
-      val field3Flag0 = isField3Unknown.`if` {
-        1.0
-      } {
-        0.0
-      }
-
-      val field3Value0 = isField3Unknown.`if` {
-        0.5.toWeight
-      } {
-        isField3Case0.`if` {
-          1.0
-        } {
-          0.0
-        }
-      }
-
-      val field3Value1 = isField3Unknown.`if` {
-        0.5.toWeight
-      } {
-        isField3Case0.`if` {
-          0.0
-        } {
-          1.0
-        }
-      }
-
-      val field3Value2 = isField3Unknown.`if` {
-        0.5.toWeight
-      } {
-        isField3Case0.`if` {
-          0.0
-        } {
-          isField3Case1.`if` {
-            0.0
-          } {
-            1.0
-          }
-        }
-      }
-
-      val encodedAstRow0 = Vector(field0Flag0,
-                                  field0Flag1,
-                                  field0Value0,
-                                  field1Flag0,
-                                  field1Value0,
-                                  field1Value1,
-                                  field2Flag0,
-                                  field2Value0,
-                                  field3Flag0,
-                                  field3Value0,
-                                  field3Value1,
-                                  field3Value2)
-
-      Vector(encodedAstRow0).toArray2D
-    }
-
-    val rowToArray2DNetwork = rowToArray2D
-
-    def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {
-      val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
-      val b = Nd4j.zeros(50).toWeight
-      max((row dot w) + b, 0.0)
-    }
-
-    def predict(implicit row: InputAst[InputTypePair]) = {
-      rowToArray2DNetwork.compose(row)
-    }
-    //
-    //    val train: DifferentiableFunction.Batch[Batch[InputData :: ExpectedLabelData :: HNil, _], Batch[Eval[Double], _]] = ???
-
+//
+//    def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#Ast[PredictionResult] = {
+//      type NN[TypePair <: Differentiable] = Ast[Array2D#Batch, TypePair#Batch]
+//      val rowSeq = row.toSeq
+//      val n: Ast[Array2D#Batch, HNil#Batch] = hnil
+//      val n2: NN[HNil] = hnil
+//      val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: n
+//      val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
+//      val field2: NN[Double] = rowSeq(0, 4)
+//      val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
+//      field0 :: field1 :: field2 :: field3 :: hnil
+//    }
+//
+//    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#Ast[Array2D] = {
+//      type NN[OutputTypePair <: Differentiable] = InputTypePair#Ast[OutputTypePair]
+//      val field0 = row.head
+//      val rest0 = row.tail
+//      val field1 = rest0.head
+//      val rest1 = rest0.tail
+//      val field2 = rest1.head
+//      val rest2 = rest1.tail
+//      val field3 = rest2.head
+//      val rest3 = rest2.tail
+//
+//      val field0Flag0: NN[Double] = field0.choice { _ =>
+//        1.0
+//      } { _ =>
+//        0.0
+//      }
+//
+//      val field0Flag1 = field0.choice { unknown =>
+//        0.5.toWeight
+//      } {
+//        _.choice { knownField0 =>
+//          knownField0.choice { unset =>
+//            1.0
+//          } { someValue =>
+//            0.0
+//          }
+//        } { cnil =>
+//          `throw`(new IllegalArgumentException)
+//        }
+//      }
+//
+//      val field0Value0: NN[Double] = field0.choice { unknown: NN[HNil] =>
+//        0.5.toWeight: NN[Double]
+//      } {
+//        _.choice { knownField0 =>
+//          knownField0.choice { unset: NN[HNil] =>
+//            0.5.toWeight: NN[Double]
+//          } {
+//            _.choice { nativeDouble: NN[Double] =>
+//              nativeDouble: NN[Double]
+//            } { cnil: NN[CNil] =>
+//              `throw`(new IllegalArgumentException): NN[Double]
+//            }: NN[Double]
+//          }: NN[Double]
+//        } { cnil: NN[CNil] =>
+//          `throw`(new IllegalArgumentException): NN[Double]
+//        }: NN[Double]
+//
+//      }
+//
+//      val isField1Unknown = field1.isInl
+//      val field1Enum = field1.tail.head
+//      val isField1Case0 = field1Enum.isInl
+//      val isField1Case1 = field1Enum.tail.isInl
+//
+//      val field1Flag0 = isField1Unknown.`if` {
+//        1.0
+//      } {
+//        0.0
+//      }
+//
+//      val field1Value0: NN[Double] = isField1Unknown.`if` {
+//        0.5.toWeight
+//      } {
+//        isField1Case0.`if` {
+//          1.0
+//        } {
+//          0.0
+//        }
+//      }
+//
+//      val field1Value1 = isField1Unknown.`if` {
+//        0.5.toWeight: NN[Double]
+//      } {
+//        isField1Case0.`if` {
+//          0.0: NN[Double]
+//        } {
+//          1.0: NN[Double]
+//        }: NN[Double]
+//      }
+//
+//      val isField2Unknown = field2.isInl
+//      val field2Flag0 = isField2Unknown.`if` {
+//        1.0
+//      } {
+//        0.0
+//      }
+//
+//      val field2Value0 = isField2Unknown.`if` {
+//        0.5.toWeight
+//      } {
+//        field2.tail.head
+//      }
+//
+//      val isField3Unknown = field3.isInl
+//      val field3Enum = field3.tail.head
+//      val isField3Case0 = field3Enum.isInl
+//      val isField3Case1 = field3Enum.tail.isInl
+//      val field3Flag0 = isField3Unknown.`if` {
+//        1.0
+//      } {
+//        0.0
+//      }
+//
+//      val field3Value0 = isField3Unknown.`if` {
+//        0.5.toWeight
+//      } {
+//        isField3Case0.`if` {
+//          1.0
+//        } {
+//          0.0
+//        }
+//      }
+//
+//      val field3Value1 = isField3Unknown.`if` {
+//        0.5.toWeight
+//      } {
+//        isField3Case0.`if` {
+//          0.0
+//        } {
+//          1.0
+//        }
+//      }
+//
+//      val field3Value2 = isField3Unknown.`if` {
+//        0.5.toWeight
+//      } {
+//        isField3Case0.`if` {
+//          0.0
+//        } {
+//          isField3Case1.`if` {
+//            0.0
+//          } {
+//            1.0
+//          }
+//        }
+//      }
+//
+//      val encodedAstRow0 = Vector(field0Flag0,
+//                                  field0Flag1,
+//                                  field0Value0,
+//                                  field1Flag0,
+//                                  field1Value0,
+//                                  field1Value1,
+//                                  field2Flag0,
+//                                  field2Value0,
+//                                  field3Flag0,
+//                                  field3Value0,
+//                                  field3Value1,
+//                                  field3Value2)
+//
+//      Vector(encodedAstRow0).toArray2D
+//    }
+//
+//    val rowToArray2DNetwork = rowToArray2D
+//
+//    def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {
+//      val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
+//      val b = Nd4j.zeros(50).toWeight
+//      max((row dot w) + b, 0.0)
+//    }
+//
+//    def predict(implicit row: InputAst[InputTypePair]) = {
+//      rowToArray2DNetwork.compose(row)
+//    }
+//    //
+//    //    val train: DifferentiableFunction.Batch[Batch[InputData :: ExpectedLabelData :: HNil, _], Batch[Eval[Double], _]] = ???
+//
   }
 
 }
