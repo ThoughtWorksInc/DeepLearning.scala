@@ -20,8 +20,7 @@ package object array2D {
     : max.Case.Aux[Ast[Input, Array2D#Batch], Ast[Input, Double#Batch], Ast[Input, Array2D#Batch]] =
     max.at { MaxDouble(_, _) }
 
-  implicit final class Array2DOps[Input <: Differentiable](
-      differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
+  final class Array2DOps[Input <: Differentiable](differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
 //
 //    def dot(right: DifferentiableFunction.Ast[Input, Array2D#Batch])
 //      : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
