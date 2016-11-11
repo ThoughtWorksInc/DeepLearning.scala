@@ -9,7 +9,7 @@ import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Multiply[Input0 <: Differentiable](
+final case class Times[Input0 <: Differentiable](
     leftOperand: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]],
     rightOperand: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]]
 ) extends Cached {

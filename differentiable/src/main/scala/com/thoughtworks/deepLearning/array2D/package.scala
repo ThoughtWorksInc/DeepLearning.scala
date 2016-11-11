@@ -44,7 +44,7 @@ package object array2D extends LowPriorityImplicits {
   /** @template */
   type Array2D = utilities.Array2D
 
-  implicit def maxArray2DDouble[Left, Right, Input <: Differentiable]
+  implicit def `max(Array2D,Double)`[Left, Right, Input <: Differentiable]
     : max.Case.Aux[Ast[Input, Array2D#Batch], Ast[Input, Double#Batch], Ast[Input, Array2D#Batch]] =
     max.at { MaxDouble(_, _) }
 //

@@ -41,9 +41,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-//    def probabilityLoss(implicit x: Double): x.Ast[Double] = {
-//      1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
-//    }
+    def probabilityLoss(implicit x: Double): x.Ast[Double] = {
+      1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
+    }
     def loss(implicit rowAndExpectedLabel: Array2D :: ExpectedLabel :: HNil): rowAndExpectedLabel.Ast[Double] = {
 //      type NN[TypePair <: Differentiable] = Ast[(Array2D :: ExpectedLabel :: HNil)#Batch, TypePair#Batch]
 //

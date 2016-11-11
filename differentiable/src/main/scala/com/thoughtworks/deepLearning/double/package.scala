@@ -66,36 +66,58 @@ package object double extends LowPriorityImplicits {
       }
     }
 
-  implicit def maxDoubleAstDouble[Input <: Differentiable]
+  implicit def `max(Double,Double)`[Input <: Differentiable]
     : max.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
     max.at { (leftAst, rightAst) =>
       If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
     }
   }
 
-  implicit def minusDoubleDouble[Input <: Differentiable]
+  implicit def `Double-Double`[Input <: Differentiable]
     : -.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
     com.thoughtworks.deepLearning.-.at { (leftAst, rightAst) =>
-      Add(leftAst, Negative(rightAst))
+      Plus(leftAst, Negative(rightAst))
     }
   }
 
+  implicit def `Double+Double`[Input <: Differentiable]
+    : +.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    com.thoughtworks.deepLearning.+.at { (leftAst, rightAst) =>
+      Plus(leftAst, Negative(rightAst))
+    }
+  }
+
+  implicit def `Double/Double`[Input <: Differentiable]
+    : /.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    /.at { (leftAst, rightAst) =>
+      Times(leftAst, Reciprocal(rightAst))
+    }
+  }
+
+  implicit def `Double*Double`[Input <: Differentiable]
+    : *.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    *.at(Times(_, _))
+  }
+
+  implicit def `log(Double)`[Input <: Differentiable]: log.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    log.at(Log(_))
+  }
 //
 //  implicit final class DoubleOps[Input <: Differentiable](double: Ast[Input, Double#ConcreteBatch]) {
 //    def +(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Double#ConcreteBatch] = {
-//      Add(double, right)
+//      Plus(double, right)
 //    }
 //
 //    def -(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Double#ConcreteBatch] = {
-//      Add(double, Negative(right))
+//      Plus(double, Negative(right))
 //    }
 //
 //    def /(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Double#ConcreteBatch] = {
-//      Multiply(double, Reciprocal(right))
+//      Times(double, Reciprocal(right))
 //    }
 //
 //    def *(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Double#ConcreteBatch] = {
-//      Multiply(double, right)
+//      Times(double, right)
 //    }
 //
 //    def <(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Boolean#ConcreteBatch] = {
