@@ -1,12 +1,11 @@
 package com.thoughtworks.deepLearning
 
-//import com.thoughtworks.deepLearning.DifferentiableFunction._
-//import com.thoughtworks.deepLearning.Differentiable._
-//import com.thoughtworks.deepLearning.any.Any
-//import com.thoughtworks.deepLearning.boolean.ast.If
-//import com.thoughtworks.deepLearning.boolean.utilities._
-//import com.thoughtworks.deepLearning.coproduct.ast.{Head, IsInl, Tail}
-//import shapeless.Lub
+import com.thoughtworks.deepLearning.boolean.utilities._
+import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.boolean.ast.If
+import com.thoughtworks.deepLearning.coproduct.ast._
+
 import scala.language.existentials
 
 /**
@@ -21,40 +20,40 @@ package object coproduct {
   type CNil = DifferentiableType[shapeless.CNil, shapeless.CNil]
 
   /** @template */
-  type :+:[Head <: DifferentiableType[_,_], Tail <: Coproduct] =
+  type :+:[Head <: DifferentiableType[_, _], Tail <: Coproduct] =
     DifferentiableType[shapeless.:+:[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
       val head: Head
       val tail: Tail
     }
-//
-//  implicit final class CConsOps[
-//      Input <: Differentiable,
-//      HeadData,
-//      HeadDelta,
-//      TailData <: shapeless.Coproduct,
-//      TailDelta <: shapeless.Coproduct
-//  ](
-//      ccons: DifferentiableFunction.Ast[
-//        Input,
-//        Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
-//      ]
-//  ) {
-//
-//    def head: Ast[Input, Batch[HeadData, HeadDelta]] =
-//      Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
-//
-//    def tail: Ast[Input, Batch[TailData, TailDelta]] =
-//      Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
-//
-//    def choice[HeadCase, TailCase, Output <: Differentiable](
-//        caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => Ast[Input, Output])(
-//        caseTail: Ast[Input, Batch[TailData, TailDelta]] => Ast[Input, Output])
-//      : DifferentiableFunction.Ast[Input, Output] = {
-//      If[Input, Output](isInl, caseHead(head), caseTail(tail))
-//    }
-//
-//    def isInl: Ast[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
-//
-//  }
-//
+
+  implicit final class CConsOps[
+      Input <: Differentiable,
+      HeadData,
+      HeadDelta,
+      TailData <: shapeless.Coproduct,
+      TailDelta <: shapeless.Coproduct
+  ](
+      ccons: DifferentiableFunction.Ast[
+        Input,
+        Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+      ]
+  ) {
+
+    def head: Ast[Input, Batch[HeadData, HeadDelta]] =
+      Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+
+    def tail: Ast[Input, Batch[TailData, TailDelta]] =
+      Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+
+    def choice[HeadCase, TailCase, Output <: Differentiable](
+        caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => Ast[Input, Output])(
+        caseTail: Ast[Input, Batch[TailData, TailDelta]] => Ast[Input, Output])
+      : DifferentiableFunction.Ast[Input, Output] = {
+      If[Input, Output](isInl, caseHead(head), caseTail(tail))
+    }
+
+    def isInl: Ast[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+
+  }
+
 }
