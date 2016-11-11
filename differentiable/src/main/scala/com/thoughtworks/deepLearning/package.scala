@@ -31,17 +31,16 @@ package object deepLearning {
     toAst(a)
   }
 
-  implicit final class ToLiteral[A](a: A) {
+  implicit final class ToLiteralOps[A](a: A) {
     def toLiteral[Input <: Differentiable, OutputData, OutputDelta](
         implicit toAst: ToAst.Aux[A, Input, OutputData, OutputDelta]): Ast[Input, Batch[OutputData, OutputDelta]] = {
       toAst(a)
     }
   }
 
-  //
   object log extends AstPoly1
-  //  object exp extends AstPoly1
-  //  object abs extends AstPoly1
+  object exp extends AstPoly1
+  object abs extends AstPoly1
   object max extends AstPoly2
 
 }

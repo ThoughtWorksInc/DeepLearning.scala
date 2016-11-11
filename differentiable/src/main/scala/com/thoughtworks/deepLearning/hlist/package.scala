@@ -3,7 +3,6 @@ package com.thoughtworks.deepLearning
 //import com.thoughtworks.deepLearning.DifferentiableFunction.{Ast, ToAst}
 //import hlist.ast._
 //import any._
-//import com.thoughtworks.deepLearning.Differentiable.ConcreteBatch
 //import com.thoughtworks.deepLearning.any.ast.Identity
 //
 import com.thoughtworks.deepLearning.Differentiable.Batch
@@ -41,7 +40,7 @@ package object hlist {
 //           TailDelta <: shapeless.Coproduct](head: HeadAst)(
 //        implicit unapplyHead: ToAst[HeadAst, Input0, HeadData, HeadDelta],
 //        unapplyTail: ToAst[TailAst, Input0, TailData, TailDelta]
-//    ): Ast[Input0, ConcreteBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
+//    ): Ast[Input0, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
 //      HCons[Input0, HeadData, HeadDelta, TailData, TailDelta](unapplyHead(head), unapplyTail(tail))
 //    }
 //

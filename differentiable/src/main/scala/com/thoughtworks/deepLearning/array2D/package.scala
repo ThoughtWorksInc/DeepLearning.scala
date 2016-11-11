@@ -23,20 +23,20 @@ package object array2D {
   implicit final class Array2DOps[Input <: Differentiable](
       differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
 //
-//    def dot(right: DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch])
-//      : DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] = {
+//    def dot(right: DifferentiableFunction.Ast[Input, Array2D#Batch])
+//      : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
 //      Dot(differentiable, right)
 //    }
-//    def +(right: DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch])
-//      : DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] = {
+//    def +(right: DifferentiableFunction.Ast[Input, Array2D#Batch])
+//      : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
 //      AddArray2D(differentiable, right)
 //    }
 //
-//    def unary_- : DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] = {
+//    def unary_- : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
 //      Negative(differentiable)
 //    }
 //
-    def toSeq: Ast[Input, Seq2D#ConcreteBatch] = {
+    def toSeq: Ast[Input, Seq2D#Batch] = {
       ToSeq(differentiable)
     }
 
@@ -60,22 +60,22 @@ package object array2D {
 //
 //  implicit def maxArray2DDouble[Input <: Differentiable] =
 //    new max.Case[Input, Eval[INDArray], Eval[INDArray], Eval[scala.Double], Eval[scala.Double]] {
-//      override type Out = Ast[Input, Array2D#ConcreteBatch]
-//      override def apply(leftOperand: Ast[Input, ConcreteBatch[Eval[INDArray], Eval[INDArray]]],
-//                         rightOperand: Ast[Input, ConcreteBatch[Eval[scala.Double], Eval[scala.Double]]]) = {
+//      override type Out = Ast[Input, Array2D#Batch]
+//      override def apply(leftOperand: Ast[Input, Batch[Eval[INDArray], Eval[INDArray]]],
+//                         rightOperand: Ast[Input, Batch[Eval[scala.Double], Eval[scala.Double]]]) = {
 //        MaxDouble(leftOperand, rightOperand)
 //      }
 //    }
 ////  implicit def array2DMaxDouble[Input <: Differentiable, Left, Right](
 ////      implicit leftView: ToAst[Left, Input, Eval[INDArray], Eval[INDArray]],
 ////      rightView: ToAst[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
-////    max.at[Left, Right].apply[DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch]] { (left, right) =>
+////    max.at[Left, Right].apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] { (left, right) =>
 ////      MaxDouble(leftView(left), rightView(right))
 ////    }
 //
 //  implicit final class INDArrayOps(ndarray: INDArray) {
 //    def toWeight[Input <: Differentiable: Identity](
-//        implicit learningRate: LearningRate): DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] =
+//        implicit learningRate: LearningRate): DifferentiableFunction.Ast[Input, Array2D#Batch] =
 //      Weight(ndarray)
 //    def toLiteral[Input <: Differentiable: Identity] = ndarrayLiteral(ndarray)
 //    def toBatch = ndarrayBatch(ndarray)
@@ -85,23 +85,23 @@ package object array2D {
 //    new INDArrayOps(nativeArray.toNDArray)
 //
 //  implicit def ndarrayLiteral[Input <: Differentiable: Identity](
-//      ndarray: INDArray): DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] =
+//      ndarray: INDArray): DifferentiableFunction.Ast[Input, Array2D#Batch] =
 //    Literal(Eval.now(ndarray))
 //
-//  implicit def ndarrayBatch(ndarray: INDArray): Array2D#ConcreteBatch =
+//  implicit def ndarrayBatch(ndarray: INDArray): Array2D#Batch =
 //    Literal(Eval.now(ndarray))
 //
 //  implicit def nativeArrayLiteral[Input <: Differentiable: Identity](
-//      nativeArray: Array[Array[scala.Double]]): DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] =
+//      nativeArray: Array[Array[scala.Double]]): DifferentiableFunction.Ast[Input, Array2D#Batch] =
 //    ndarrayLiteral(nativeArray.toNDArray)
 //
-//  implicit def nativeArrayBatch(nativeArray: Array[Array[scala.Double]]): Array2D#ConcreteBatch =
+//  implicit def nativeArrayBatch(nativeArray: Array[Array[scala.Double]]): Array2D#Batch =
 //    ndarrayBatch(nativeArray.toNDArray)
 //
 //  // TODO: Support scala.Array for better performance.
 //  implicit final class AstVectorOps[Input <: Differentiable](
 //      astVector: Vector[
-//        Vector[DifferentiableFunction.Ast[Input, Differentiable.ConcreteBatch[Eval[scala.Double], Eval[scala.Double]]]]]) {
+//        Vector[DifferentiableFunction.Ast[Input, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]]]]) {
 //    def toArray2D = FromAstVector(astVector)
 //  }
 

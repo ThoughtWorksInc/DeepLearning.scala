@@ -63,6 +63,12 @@ package object double {
     : log.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
     log.at(Log(_))
   }
+  implicit def `abs(Double)`[Input <: Differentiable]
+    : abs.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    abs.at { operand =>
+      If(LessThan(operand, Literal(Eval.now(0.0))), Negative(operand), operand)
+    }
+  }
 //
 //  implicit final class DoubleOps[Input <: Differentiable](double: Ast[Input, Double#ConcreteBatch]) {
 //    def +(right: Ast[Input, Double#ConcreteBatch]): Ast[Input, Double#ConcreteBatch] = {
