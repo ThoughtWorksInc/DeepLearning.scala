@@ -54,10 +54,8 @@ object ToAst {
       override def apply(ast: Ast[Input, Batch[OutputData, OutputDelta]]) = ast
     }
 
-  implicit def inputTypeToAst[InputData, InputDelta]: ToAst.Aux[DifferentiableType[InputData, InputDelta],
-                                                                Batch[InputData, InputDelta],
-                                                                InputData,
-                                                                InputDelta] =
+  implicit def inputTypeToAst[InputData, InputDelta]
+    : ToAst.Aux[DifferentiableType[InputData, InputDelta], Batch[InputData, InputDelta], InputData, InputDelta] =
     new ToAst[DifferentiableType[InputData, InputDelta], Batch[InputData, InputDelta]] {
       override type OutputData = InputData
       override type OutputDelta = InputDelta

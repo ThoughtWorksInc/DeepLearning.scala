@@ -11,7 +11,7 @@ final case class Literal[Data0](value0: Data0) extends DifferentiableFunction wi
   override type Data = Data0
   override type Delta = scala.Any
   override type Input = Differentiable
-  override type Output = Differentiable.Batch[Data, Delta]
+  override type Output = Batch[Data, Delta]
 
   override def value: Data = value0
 

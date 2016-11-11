@@ -6,6 +6,10 @@ package com.thoughtworks.deepLearning
 //import com.thoughtworks.deepLearning.Differentiable.ConcreteBatch
 //import com.thoughtworks.deepLearning.any.ast.Identity
 //
+import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.hlist.ast._
+
 import scala.language.implicitConversions
 import scala.language.existentials
 
@@ -42,32 +46,30 @@ package object hlist {
 //    }
 //
 //  }
-//
-//  implicit final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
-//  TailDelta <: shapeless.Coproduct](
-//      hcons: Ast[Input, ConcreteBatch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
-//    def head: Ast[Input, ConcreteBatch[HeadData, HeadDelta]] = Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
-//
-//    def tail: Ast[Input, ConcreteBatch[TailData, TailDelta]] = Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
-//  }
-//
-//  /** @template */
-//  type HList = Any {
-//    type Data <: shapeless.HList
-//    type Delta <: shapeless.Coproduct
-//  }
-//
-//  /** @template */
-//  type HNil = HList {
-//    type Data = shapeless.HNil
-//    type Delta = shapeless.CNil
-//  }
-//
-//  def hnil[Input <: Differentiable: Identity]: Ast[Input, ConcreteBatch[shapeless.HNil, shapeless.CNil]] = HNil
-//
-//  /** @template */
-//  type ::[Head <: Differentiable, Tail <: HList] = HList {
-//    type Data = shapeless.::[Head#Data, Tail#Data]
-//    type Delta = shapeless.:+:[Head#Delta, Tail#Delta]
-//  }
+  val HNil = ast.HNil
+
+  implicit final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
+  TailDelta <: shapeless.Coproduct](
+      hcons: Ast[Input, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
+    def head: Ast[Input, Batch[HeadData, HeadDelta]] = Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
+
+    def tail: Ast[Input, Batch[TailData, TailDelta]] = Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
+  }
+
+  implicit def toHConsOps[From,
+                          Input <: Differentiable,
+                          OutputData,
+                          OutputDelta,
+                          HeadData,
+                          HeadDelta,
+                          TailData <: shapeless.HList,
+                          TailDelta <: shapeless.Coproduct](from: From)(
+      implicit toAst: ToAst.Aux[From, Input, OutputData, OutputDelta],
+      toHListAst: Ast[Input, Batch[OutputData, OutputDelta]] <:< Ast[
+        Input,
+        Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+  ): HConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
+    new HConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListAst(toAst(from)))
+  }
+
 }
