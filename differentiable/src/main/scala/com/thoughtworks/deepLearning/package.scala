@@ -38,6 +38,12 @@ package object deepLearning {
     }
   }
 
+  //
+  object log extends AstPoly1
+  //  object exp extends AstPoly1
+  //  object abs extends AstPoly1
+  object max extends AstPoly2
+
 }
 
 package deepLearning {
@@ -48,11 +54,5 @@ package deepLearning {
     object * extends AstPoly2
     object / extends AstPoly2
   }
-
-  //
-  object log extends AstPoly1
-  //  object exp extends AstPoly1
-  //  object abs extends AstPoly1
-  object max extends AstPoly2
 
 }
