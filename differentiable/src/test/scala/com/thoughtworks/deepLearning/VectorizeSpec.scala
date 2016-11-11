@@ -47,7 +47,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     def loss(implicit rowAndExpectedLabel: Array2D :: ExpectedLabel :: HNil): rowAndExpectedLabel.Ast[Double] = {
       val row = rowAndExpectedLabel.head
       val expectedLabel = rowAndExpectedLabel.tail.head
-//      val rowSeq = row.toSeq
+      val rowSeq = row.toSeq
 //
 //      // 暂时先在CPU上计算
 //

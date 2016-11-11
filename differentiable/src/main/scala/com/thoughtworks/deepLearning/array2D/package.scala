@@ -1,25 +1,13 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.array2D.ast.MaxDouble
+import com.thoughtworks.deepLearning.array2D.ast.{MaxDouble, ToSeq}
 import com.thoughtworks.deepLearning.double.utilities.Double
+import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 import shapeless.PolyDefns._
 import shapeless.{Lazy, Poly2}
+import scala.language.implicitConversions
 
-//
-//import cats.Eval
-//import com.thoughtworks.deepLearning.DifferentiableFunction.{Ast, ToAst}
-//import com.thoughtworks.deepLearning.Differentiable.ConcreteBatch
-//import com.thoughtworks.deepLearning.Poly.Poly2
-//import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
-//import com.thoughtworks.deepLearning.array2D.ast._
-//import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
-//import com.thoughtworks.deepLearning.double.utilities.Double
-//import org.nd4j.linalg.api.ndarray.INDArray
-//import org.nd4s.Implicits._
-//
-//import scala.language.implicitConversions
-//
 package array2D {
   private[array2D] sealed trait LowPriorityImplicits {
     implicit def array2DDoubleCase[P <: Poly2, Left, Right, Input <: Differentiable](
@@ -47,9 +35,9 @@ package object array2D extends LowPriorityImplicits {
   implicit def `max(Array2D,Double)`[Left, Right, Input <: Differentiable]
     : max.Case.Aux[Ast[Input, Array2D#Batch], Ast[Input, Double#Batch], Ast[Input, Array2D#Batch]] =
     max.at { MaxDouble(_, _) }
-//
-//  implicit final class Array2DOps[Input <: Differentiable](
-//      differentiable: DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch]) {
+
+  implicit final class Array2DOps[Input <: Differentiable](
+      differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
 //
 //    def dot(right: DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch])
 //      : DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch] = {
@@ -64,12 +52,19 @@ package object array2D extends LowPriorityImplicits {
 //      Negative(differentiable)
 //    }
 //
-//    def toSeq: DifferentiableFunction.Ast[Input, Seq2D#ConcreteBatch] = {
-//      ToSeq(differentiable)
-//    }
-//
-//  }
-////
+    def toSeq: Ast[Input, Seq2D#ConcreteBatch] = {
+      ToSeq(differentiable)
+    }
+
+  }
+
+  implicit def toArray2DOps[From, Input <: Differentiable](from: From)(
+      implicit toAst: ToAst.OfType[From, Input, Array2D]
+  ): Array2DOps[Input] = {
+    new Array2DOps(toAst(from))
+  }
+
+  ////
 ////  private[array2D] trait Case2Double { this: Poly2#Case =>
 ////    override type LeftOperandData = Eval[INDArray]
 ////    override type LeftOperandDelta = Eval[INDArray]
