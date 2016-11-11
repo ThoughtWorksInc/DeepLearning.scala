@@ -28,12 +28,13 @@ package double {
 
     implicit def doubleCase[P <: Poly1, Operand, Input <: Differentiable](
         implicit toAst: ToAst.OfType[Operand, Input, Double],
-        astCase: Case1[P, Ast[Input, Double#Batch]]
-    ): Case1.Aux[P, Operand, astCase.Result] = {
+        astCase: Lazy[Case1[P, Ast[Input, Double#Batch]]]
+    ): Case1.Aux[P, Operand, astCase.value.Result] = {
       Case1 { operand =>
-        astCase(toAst(operand))
+        astCase.value(toAst(operand))
       }
     }
+
     implicit def doubleDoubleCase[P <: Poly2, LeftOperand, RightOperand, Input <: Differentiable](
         implicit leftToAst: ToAst.OfType[LeftOperand, Input, Double],
         rightToAst: ToAst.OfType[RightOperand, Input, Double],
@@ -99,7 +100,8 @@ package object double extends LowPriorityImplicits {
     *.at(Times(_, _))
   }
 
-  implicit def `log(Double)`[Input <: Differentiable]: log.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+  implicit def `log(Double)`[Input <: Differentiable]
+    : log.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
     log.at(Log(_))
   }
 //

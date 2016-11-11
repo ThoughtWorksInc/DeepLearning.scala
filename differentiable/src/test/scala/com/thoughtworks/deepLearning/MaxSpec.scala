@@ -13,9 +13,9 @@ final class MaxSpec extends FreeSpec with Matchers {
 
   "complex input" in {
     def buildNeuralNetwork(implicit input: Double :: Array2D :: HNil) = {
-      val m0 = max(1.0, 2.0)
+      val m0 = max(1.0, 2.0.toLiteral)
       val m1: input.Ast[Double] = max(m0, 1.6)
-      val m2 = max(m0, m1)
+      val m2 = max(m0.toLiteral, m1.toLiteral)
     }
 
     buildNeuralNetwork
