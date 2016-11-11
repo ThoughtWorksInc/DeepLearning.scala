@@ -2,62 +2,21 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import AstMethods._
 import com.thoughtworks.deepLearning.any.ast.Literal
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.double.ast._
-import shapeless.Lazy
-import shapeless.PolyDefns._
-import shapeless.{Poly1, Poly2}
-
-//import com.thoughtworks.deepLearning.any.Any
-//import com.thoughtworks.deepLearning.DifferentiableFunction._
-//import com.thoughtworks.deepLearning.Differentiable._
-//import com.thoughtworks.Extractor._
-//
-//import scala.language.implicitConversions
-//import cats.Eval
-//import com.thoughtworks.deepLearning.Poly.{Poly1, Poly2}
-//import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
-//import com.thoughtworks.deepLearning.boolean.ast.If
-//import com.thoughtworks.deepLearning.double.ast._
-//import com.thoughtworks.deepLearning.double.utilities.Double
-//import com.thoughtworks.deepLearning.boolean.utilities.Boolean
-package double {
-
-  private[double] sealed trait LowPriorityImplicits {
-
-    implicit def doubleCase[P <: Poly1, Operand, Input <: Differentiable](
-        implicit toAst: ToAst.OfType[Operand, Input, Double],
-        astCase: Lazy[Case1[P, Ast[Input, Double#Batch]]]
-    ): Case1.Aux[P, Operand, astCase.value.Result] = {
-      Case1 { operand =>
-        astCase.value(toAst(operand))
-      }
-    }
-
-    implicit def doubleDoubleCase[P <: Poly2, LeftOperand, RightOperand, Input <: Differentiable](
-        implicit leftToAst: ToAst.OfType[LeftOperand, Input, Double],
-        rightToAst: ToAst.OfType[RightOperand, Input, Double],
-        astCase: Case2[P, Ast[Input, Double#Batch], Ast[Input, Double#Batch]]
-    ): Case2.Aux[P, LeftOperand, RightOperand, astCase.Result] = {
-      Case2 { (left, right) =>
-        val leftAst = leftToAst(left)
-        val rightAst = rightToAst(right)
-        astCase(leftAst, rightAst)
-      }
-    }
-  }
-}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object double extends LowPriorityImplicits {
+package object double {
 
   /** @template */
   type Double = utilities.Double
 
-  implicit def liftNativeDouble[InputData, InputDelta](implicit inputType: DifferentiableType[InputData, InputDelta])
+  implicit def liftNativeDoubleToAst[InputData, InputDelta](
+      implicit inputType: DifferentiableType[InputData, InputDelta])
     : ToAst.Aux[scala.Double, Batch[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =
     new ToAst[scala.Double, Batch[InputData, InputDelta]] {
       override type OutputData = Eval[scala.Double]
@@ -76,14 +35,14 @@ package object double extends LowPriorityImplicits {
 
   implicit def `Double-Double`[Input <: Differentiable]
     : -.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
-    com.thoughtworks.deepLearning.-.at { (leftAst, rightAst) =>
+    AstMethods.-.at { (leftAst, rightAst) =>
       Plus(leftAst, Negative(rightAst))
     }
   }
 
   implicit def `Double+Double`[Input <: Differentiable]
     : +.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
-    com.thoughtworks.deepLearning.+.at { (leftAst, rightAst) =>
+    AstMethods.+.at { (leftAst, rightAst) =>
       Plus(leftAst, Negative(rightAst))
     }
   }

@@ -8,26 +8,10 @@ import shapeless.PolyDefns._
 import shapeless.{Lazy, Poly2}
 import scala.language.implicitConversions
 
-package array2D {
-  private[array2D] sealed trait LowPriorityImplicits {
-    implicit def array2DDoubleCase[P <: Poly2, Left, Right, Input <: Differentiable](
-        implicit leftToAst: ToAst.OfType[Left, Input, Array2D],
-        rightToAst: ToAst.OfType[Right, Input, Double],
-        astCase: Case2[P, Ast[Input, Array2D#Batch], Ast[Input, Double#Batch]]
-    ): Case2.Aux[P, Left, Right, astCase.Result] = {
-      Case2 { (left, right) =>
-        val leftAst = leftToAst(left)
-        val rightAst = rightToAst(right)
-        astCase(leftAst, rightAst)
-      }
-    }
-  }
-}
-
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object array2D extends LowPriorityImplicits {
+package object array2D {
 
   /** @template */
   type Array2D = utilities.Array2D
