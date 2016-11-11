@@ -4,7 +4,6 @@ import cats._
 import cats.implicits._
 import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.DifferentiableType
 import shapeless.Lazy
 //import com.thoughtworks.deepLearning.ToAst.Ast
 import shapeless.DepFn1
@@ -32,6 +31,10 @@ object ToAst {
   type Aux[From, Input <: Differentiable, OutputData0, OutputDelta0] = ToAst[From, Input] {
     type OutputData = OutputData0
     type OutputDelta = OutputDelta0
+  }
+
+  type OfBatch[From, Input <: Differentiable, Output0 <: Differentiable] = ToAst[From, Input] {
+    type Output = Output0
   }
 
   type OfType[From, Input <: Differentiable, Type <: DifferentiableType[_, _]] = ToAst[From, Input] {

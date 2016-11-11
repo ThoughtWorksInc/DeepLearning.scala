@@ -5,6 +5,9 @@ import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
 import com.thoughtworks.deepLearning.any.ast.Literal
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.double.ast._
+import shapeless.Lazy
+import shapeless.PolyDefns._
+import shapeless.{Poly1, Poly2}
 
 //import com.thoughtworks.deepLearning.any.Any
 //import com.thoughtworks.deepLearning.DifferentiableFunction._
@@ -19,11 +22,36 @@ import com.thoughtworks.deepLearning.double.ast._
 //import com.thoughtworks.deepLearning.double.ast._
 //import com.thoughtworks.deepLearning.double.utilities.Double
 //import com.thoughtworks.deepLearning.boolean.utilities.Boolean
+package double {
+
+  private[double] sealed trait LowPriorityImplicits {
+
+    implicit def doubleCase[P <: Poly1, Operand, Input <: Differentiable](
+        implicit toAst: ToAst.OfType[Operand, Input, Double],
+        astCase: Case1[P, Ast[Input, Double#Batch]]
+    ): Case1.Aux[P, Operand, astCase.Result] = {
+      Case1 { operand =>
+        astCase(toAst(operand))
+      }
+    }
+    implicit def doubleDoubleCase[P <: Poly2, LeftOperand, RightOperand, Input <: Differentiable](
+        implicit leftToAst: ToAst.OfType[LeftOperand, Input, Double],
+        rightToAst: ToAst.OfType[RightOperand, Input, Double],
+        astCase: Case2[P, Ast[Input, Double#Batch], Ast[Input, Double#Batch]]
+    ): Case2.Aux[P, LeftOperand, RightOperand, astCase.Result] = {
+      Case2 { (left, right) =>
+        val leftAst = leftToAst(left)
+        val rightAst = rightToAst(right)
+        astCase(leftAst, rightAst)
+      }
+    }
+  }
+}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object double {
+package object double extends LowPriorityImplicits {
 
   /** @template */
   type Double = utilities.Double
@@ -38,22 +66,16 @@ package object double {
       }
     }
 
-  implicit def maxDoubleDouble[Left, Right, Input <: Differentiable](
-      implicit leftToAst: ToAst.OfType[Left, Input, Double],
-      rightToAst: ToAst.OfType[Right, Input, Double]): max.Case.Aux[Left, Right, Ast[Input, Double#Batch]] = {
-    max.at { (left, right) =>
-      val leftAst = leftToAst(left)
-      val rightAst = rightToAst(right)
+  implicit def maxDoubleAstDouble[Input <: Differentiable]
+    : max.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    max.at { (leftAst, rightAst) =>
       If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
     }
   }
 
-  implicit def minusDoubleDouble[Left, Right, Input <: Differentiable](
-      implicit leftToAst: ToAst.OfType[Left, Input, Double],
-      rightToAst: ToAst.OfType[Right, Input, Double]): -.Case.Aux[Left, Right, Ast[Input, Double#Batch]] = {
-    com.thoughtworks.deepLearning.-.at { (left, right) =>
-      val leftAst = leftToAst(left)
-      val rightAst = rightToAst(right)
+  implicit def minusDoubleDouble[Input <: Differentiable]
+    : -.Case.Aux[Ast[Input, Double#Batch], Ast[Input, Double#Batch], Ast[Input, Double#Batch]] = {
+    com.thoughtworks.deepLearning.-.at { (leftAst, rightAst) =>
       Add(leftAst, Negative(rightAst))
     }
   }

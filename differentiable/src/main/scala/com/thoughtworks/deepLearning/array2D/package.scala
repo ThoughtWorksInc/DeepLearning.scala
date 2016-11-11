@@ -3,6 +3,8 @@ package com.thoughtworks.deepLearning
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
 import com.thoughtworks.deepLearning.array2D.ast.MaxDouble
 import com.thoughtworks.deepLearning.double.utilities.Double
+import shapeless.PolyDefns._
+import shapeless.{Lazy, Poly2}
 
 //
 //import cats.Eval
@@ -18,23 +20,33 @@ import com.thoughtworks.deepLearning.double.utilities.Double
 //
 //import scala.language.implicitConversions
 //
+package array2D {
+  private[array2D] sealed trait LowPriorityImplicits {
+    implicit def array2DDoubleCase[P <: Poly2, Left, Right, Input <: Differentiable](
+        implicit leftToAst: ToAst.OfType[Left, Input, Array2D],
+        rightToAst: ToAst.OfType[Right, Input, Double],
+        astCase: Case2[P, Ast[Input, Array2D#Batch], Ast[Input, Double#Batch]]
+    ): Case2.Aux[P, Left, Right, astCase.Result] = {
+      Case2 { (left, right) =>
+        val leftAst = leftToAst(left)
+        val rightAst = rightToAst(right)
+        astCase(leftAst, rightAst)
+      }
+    }
+  }
+}
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object array2D {
+package object array2D extends LowPriorityImplicits {
 
   /** @template */
   type Array2D = utilities.Array2D
 
-  implicit def maxArray2DDouble[Left, Right, Input <: Differentiable](
-      implicit leftToAst: ToAst.OfType[Left, Input, Array2D],
-      rightToAst: ToAst.OfType[Right, Input, Double]): max.Case.Aux[Left, Right, Ast[Input, Array2D#Batch]] =
-    max.at { (left, right) =>
-      val leftAst = leftToAst(left)
-      val rightAst = rightToAst(right)
-      MaxDouble(leftAst, rightAst)
-//      If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
-    }
+  implicit def maxArray2DDouble[Left, Right, Input <: Differentiable]
+    : max.Case.Aux[Ast[Input, Array2D#Batch], Ast[Input, Double#Batch], Ast[Input, Array2D#Batch]] =
+    max.at { MaxDouble(_, _) }
 //
 //  implicit final class Array2DOps[Input <: Differentiable](
 //      differentiable: DifferentiableFunction.Ast[Input, Array2D#ConcreteBatch]) {
