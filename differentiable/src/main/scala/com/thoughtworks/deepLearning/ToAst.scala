@@ -31,7 +31,7 @@ private[deepLearning] sealed trait ToAstLowPriorityImplicits {
 
 object ToAst extends ToAstLowPriorityImplicits {
   trait AstPoly1 extends Poly1 {
-    implicit def doubleCase[Operand, Input <: Differentiable, OperandData, OperandDelta](
+    implicit def toAstCase[Operand, Input <: Differentiable, OperandData, OperandDelta](
         implicit toAst: ToAst.Aux[Operand, Input, OperandData, OperandDelta],
         astCase: Lazy[Case[Ast[Input, Batch[OperandData, OperandDelta]]]]
     ): Case.Aux[Operand, astCase.value.Result] = {
@@ -42,7 +42,7 @@ object ToAst extends ToAstLowPriorityImplicits {
   }
 
   trait AstPoly2 extends Poly2 {
-    implicit def autoToAst[LeftOperand,
+    implicit def toAstCase[LeftOperand,
                            RightOperand,
                            Input <: Differentiable,
                            LeftData,
