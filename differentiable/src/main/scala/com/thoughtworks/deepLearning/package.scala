@@ -1,5 +1,9 @@
 package com.thoughtworks
+import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
 import shapeless.{Poly1, Poly2}
+
+import scala.language.implicitConversions
 //
 //import cats._
 //import cats.implicits._
@@ -38,6 +42,18 @@ package object deepLearning {
     def /[Right](right: Right)(implicit cse: deepLearning./.Case[Left, Right]): cse.Result =
       deepLearning./(left, right)
 
+  }
+
+  implicit def autoToLiteral[A, Input <: Differentiable, OutputData, OutputDelta](a: A)(
+      implicit toAst: ToAst.Aux[A, Input, OutputData, OutputDelta]): Ast[Input, Batch[OutputData, OutputDelta]] = {
+    toAst(a)
+  }
+
+  implicit final class ToLiteral[A](a: A) {
+    def toLiteral[Input <: Differentiable, OutputData, OutputDelta](
+        implicit toAst: ToAst.Aux[A, Input, OutputData, OutputDelta]): Ast[Input, Batch[OutputData, OutputDelta]] = {
+      toAst(a)
+    }
   }
 
 }
