@@ -7,6 +7,8 @@ import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast._
 
 import scala.language.existentials
+import scala.language.implicitConversions
+
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -26,7 +28,7 @@ package object coproduct {
       val tail: Tail
     }
 
-  implicit final class CConsOps[
+  final class CConsOps[
       Input <: Differentiable,
       HeadData,
       HeadDelta,
@@ -45,15 +47,32 @@ package object coproduct {
     def tail: Ast[Input, Batch[TailData, TailDelta]] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
-    def choice[HeadCase, TailCase, Output <: Differentiable](
-        caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => Ast[Input, Output])(
-        caseTail: Ast[Input, Batch[TailData, TailDelta]] => Ast[Input, Output])
-      : DifferentiableFunction.Ast[Input, Output] = {
-      If[Input, Output](isInl, caseHead(head), caseTail(tail))
+    def choice[HeadCase, TailCase, OutputData, OutputDelta](
+        caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => HeadCase)(
+        caseTail: Ast[Input, Batch[TailData, TailDelta]] => TailCase)(
+        implicit headToAst: ToAst.Aux[HeadCase, Input, OutputData, OutputDelta],
+        tailToAst: ToAst.Aux[TailCase, Input, OutputData, OutputDelta])
+      : DifferentiableFunction.Ast[Input, Batch[OutputData, OutputDelta]] = {
+      If[Input, Batch[OutputData, OutputDelta]](isInl, caseHead(head), caseTail(tail))
     }
 
     def isInl: Ast[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 
+  implicit def toCConsOps[From,
+                          Input <: Differentiable,
+                          OutputData,
+                          OutputDelta,
+                          HeadData,
+                          HeadDelta,
+                          TailData <: shapeless.Coproduct,
+                          TailDelta <: shapeless.Coproduct](from: From)(
+      implicit toAst: ToAst.Aux[From, Input, OutputData, OutputDelta],
+      toCoproductAst: Ast[Input, Batch[OutputData, OutputDelta]] <:< Ast[
+        Input,
+        Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+  ): CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
+    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductAst(toAst(from)))
+  }
 }

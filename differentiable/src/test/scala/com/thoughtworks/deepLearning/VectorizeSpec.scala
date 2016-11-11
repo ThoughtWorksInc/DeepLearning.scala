@@ -44,32 +44,35 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     def probabilityLoss(implicit x: Double): x.Ast[Double] = {
       1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
     }
+    val probabilityLossNetwork = probabilityLoss
     def loss(implicit rowAndExpectedLabel: Array2D :: ExpectedLabel :: HNil): rowAndExpectedLabel.Ast[Double] = {
       val row = rowAndExpectedLabel.head
       val expectedLabel = rowAndExpectedLabel.tail.head
       val rowSeq = row.toSeq
-//
-//      // 暂时先在CPU上计算
-//
-//      val expectedLabelField0 = expectedLabel.head
-//      val expectedLabelRest1 = expectedLabel.tail
-//      val expectedLabelField1 = expectedLabelRest1.head
-//      val expectedLabelRest2 = expectedLabelRest1.tail
-//      val expectedLabelField2 = expectedLabelRest2.head
-//      val expectedLabelRest3 = expectedLabelRest2.tail
-//      val expectedLabelField3 = expectedLabelRest3.head
-//
-//      val loss0 = expectedLabelField0.choice { _ =>
-//        0.0 // Drop out
-//      } {
-//        _.head.choice { _ =>
-//          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0))
-//        } { expectedValue =>
-////          rowSeq(0, 0) + abs((rowSeq(0, 1) - expectedValue.head))
-//          0.0
-//        }
-//      }
-//
+
+      // 暂时先在CPU上计算
+
+      val expectedLabelField0: rowAndExpectedLabel.Ast[LabelField[Nullable[Double]]] = expectedLabel.head
+      val expectedLabelRest1 = expectedLabel.tail
+      val expectedLabelField1 = expectedLabelRest1.head
+      val expectedLabelRest2 = expectedLabelRest1.tail
+      val expectedLabelField2 = expectedLabelRest2.head
+      val expectedLabelRest3 = expectedLabelRest2.tail
+      val expectedLabelField3 = expectedLabelRest3.head
+
+
+      val loss0 = expectedLabelField0.choice { _ =>
+        0.0 // Drop out
+      } {
+        _.head.choice { _ =>
+//          probabilityLossNetwork(max(1.0 - rowSeq(0, 0), 0.0))
+          ???
+        } { expectedValue =>
+//          rowSeq(0, 0) + abs((rowSeq(0, 1) - expectedValue.head))
+          ???
+        }
+      }
+
 //      val loss1 = expectedLabelField1.choice { _ =>
 //        0.0 // Drop out
 //      } { expectedEnum =>

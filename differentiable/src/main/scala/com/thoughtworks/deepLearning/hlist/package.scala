@@ -48,7 +48,7 @@ package object hlist {
 //  }
   val HNil = ast.HNil
 
-  implicit final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
+  final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
       hcons: Ast[Input, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
     def head: Ast[Input, Batch[HeadData, HeadDelta]] = Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
