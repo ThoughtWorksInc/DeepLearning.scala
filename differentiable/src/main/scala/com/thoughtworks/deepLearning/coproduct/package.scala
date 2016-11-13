@@ -35,24 +35,24 @@ package object coproduct {
       TailData <: shapeless.Coproduct,
       TailDelta <: shapeless.Coproduct
   ](
-      ccons: DifferentiableFunction.Ast[
+      ccons: Ast[
         Input,
         Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
       ]
   ) {
 
-    def head: Ast[Input, Batch[HeadData, HeadDelta]] =
+    def head: Ast[Input, DifferentiableType[HeadData, HeadDelta]#Batch] =
       Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
-    def tail: Ast[Input, Batch[TailData, TailDelta]] =
+    def tail: Ast[Input, DifferentiableType[TailData, TailDelta]#Batch] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
     def choice[HeadCase, TailCase, OutputData, OutputDelta](
-        caseHead: Ast[Input, Batch[HeadData, HeadDelta]] => HeadCase)(
-        caseTail: Ast[Input, Batch[TailData, TailDelta]] => TailCase)(
+        caseHead: Ast[Input, DifferentiableType[HeadData, HeadDelta]#Batch] => HeadCase)(
+        caseTail: Ast[Input, DifferentiableType[TailData, TailDelta]#Batch] => TailCase)(
         implicit headToAst: ToAst.Aux[HeadCase, Input, OutputData, OutputDelta],
         tailToAst: ToAst.Aux[TailCase, Input, OutputData, OutputDelta])
-      : DifferentiableFunction.Ast[Input, Batch[OutputData, OutputDelta]] = {
+      : DifferentiableFunction.Ast[Input, DifferentiableType[OutputData, OutputDelta]#Batch] = {
       If[Input, Batch[OutputData, OutputDelta]](isInl, caseHead(head), caseTail(tail))
     }
 
