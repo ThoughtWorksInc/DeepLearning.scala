@@ -6,11 +6,10 @@ import com.thoughtworks.deepLearning.NeuralNetwork.Aux
 import com.thoughtworks.deepLearning.Type.{DataOf, DeltaOf}
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast._
-import shapeless.Lazy
-import shapeless.ops.coproduct.IsCCons
 
 import scala.language.existentials
 import scala.language.implicitConversions
+
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -22,17 +21,10 @@ package object coproduct {
 
   /** @template */
   type CNil = Type[shapeless.CNil, shapeless.CNil]
-  val CNil: CNil = implicitly
 
   /** @template */
   type :+:[Head <: Type[_, _], Tail <: Coproduct] =
     Type[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
-
-  implicit final class RichCoproductType[TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-      tail: Type[TailData, TailDelta]) {
-    def :+:[HeadData, HeadDelta](head: Type[HeadData, HeadDelta]) =
-      new Type[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
-  }
 
   final class CConsOps[
       Input <: Batch,

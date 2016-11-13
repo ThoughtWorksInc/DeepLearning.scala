@@ -14,7 +14,6 @@ package object double {
 
   /** @template */
   type Double = utilities.Double
-  val Double: Double = implicitly
 
   implicit def liftNativeDoubleIsNeuralNetwork[InputData, InputDelta](
       implicit inputType: Type[InputData, InputDelta])

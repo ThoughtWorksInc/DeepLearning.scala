@@ -23,17 +23,11 @@ package object hlist {
 
   /** @template */
   type HNil = Type[shapeless.HNil, shapeless.CNil]
-  val HNil: HNil = implicitly
 
   /** @template */
   type ::[Head <: Type[_, _], Tail <: HList] =
     Type[shapeless.::[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  implicit final class RichHListType[TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
-      tail: Type[TailData, TailDelta]) {
-    def ::[HeadData, HeadDelta](head: Type[HeadData, HeadDelta]) =
-      new Type[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
-  }
 //
 //  implicit final class HListOps[TailAst](val tail: TailAst) {
 //
@@ -50,6 +44,7 @@ package object hlist {
 //    }
 //
 //  }
+  val HNil = ast.HNil
 
   final class HConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
