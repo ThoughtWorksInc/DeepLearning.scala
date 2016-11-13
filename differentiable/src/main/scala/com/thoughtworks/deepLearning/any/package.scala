@@ -43,7 +43,7 @@ package object any {
   }
 
   implicit def toAnyOps[F, NewInputData, NewInputDelta, Input <: Batch, OutputData, OutputDelta](f: F)(
-    implicit isNeuralNetwork: IsNeuralNetwork.Aux[F, Input, OutputData, OutputDelta],
+    implicit toNeuralNetwork: ToNeuralNetwork.Aux[F, Input, OutputData, OutputDelta],
     differentiableType: Type[NewInputData, NewInputDelta])
-    : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(isNeuralNetwork(f))
+    : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(toNeuralNetwork(f))
 }

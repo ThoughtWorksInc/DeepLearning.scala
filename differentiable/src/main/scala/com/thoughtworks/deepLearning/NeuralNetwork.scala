@@ -13,10 +13,10 @@ import scala.annotation.elidable
 //import scala.annotation.elidable
 //sealed trait LowLowLowPriortyDifferentiableFunction {
 //
-//  implicit def subtypingIsNeuralNetwork[Input <: Batch, OutputData, OutputDelta, From](
+//  implicit def subtypingToNeuralNetwork[Input <: Batch, OutputData, OutputDelta, From](
 //      implicit view: Lazy[From <:< NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]]])
-//    : IsNeuralNetwork[From, Input, OutputData, OutputDelta] = {
-//    new IsNeuralNetwork[From, Input, OutputData, OutputDelta] {
+//    : ToNeuralNetwork[From, Input, OutputData, OutputDelta] = {
+//    new ToNeuralNetwork[From, Input, OutputData, OutputDelta] {
 //      override def apply(value: From) = view.value(value)
 //    }
 //
@@ -27,22 +27,22 @@ import scala.annotation.elidable
 //
 //  import NeuralNetwork._
 //
-//  implicit def isNeuralNetworkNN[Input <: Batch : Identity, NN[_ <: Batch], OutputPair <: Batch](
+//  implicit def toNeuralNetworkNN[Input <: Batch : Identity, NN[_ <: Batch], OutputPair <: Batch](
 //      implicit nn: Lazy[NN[OutputPair] <:< NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]])
-//    : IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-//    new IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+//    : ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+//    new ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
 //      override def apply(value: NN[OutputPair]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
-//        isNeuralNetworkPair.apply(nn.value(value))
+//        toNeuralNetworkPair.apply(nn.value(value))
 //      }
 //    }
 //  }
 //  //
-//  // implicit def isNeuralNetworkNN2[Input <: Batch, NN[_ <: Batch], OutputPair <: Batch](
+//  // implicit def toNeuralNetworkNN2[Input <: Batch, NN[_ <: Batch], OutputPair <: Batch](
 //  //     implicit nn: Lazy[NN[OutputPair] <:< NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]])
-//  //   : IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-//  //   new IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+//  //   : ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+//  //   new ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
 //  //     override def apply(value: NN[OutputPair]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
-//  //       isNeuralNetworkPair.apply(nn.value(value))
+//  //       toNeuralNetworkPair.apply(nn.value(value))
 //  //     }
 //  //   }
 //  // }
@@ -54,10 +54,10 @@ import scala.annotation.elidable
 //
 //  import NeuralNetwork._
 //
-//  implicit def isNeuralNetworkPair[Input <: Batch, OutputPair <: Batch]
-//    : IsNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] = {
+//  implicit def toNeuralNetworkPair[Input <: Batch, OutputPair <: Batch]
+//    : ToNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] = {
 //    // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
-//    new IsNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] {
+//    new ToNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] {
 //      override def apply(value: NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] =
 //        value.asInstanceOf[NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]]]
 //    }
@@ -74,16 +74,16 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       type Output <: Output0
     }
 
-//  trait IsNeuralNetwork[T, Input <: Batch, OutputData, OutputDelta] {
+//  trait ToNeuralNetwork[T, Input <: Batch, OutputData, OutputDelta] {
 //    def apply(value: T): NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]]
 //  }
 //
-//  implicit def isNeuralNetwork[Input <: Batch, OutputData, OutputDelta]
-//    : IsNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
+//  implicit def toNeuralNetwork[Input <: Batch, OutputData, OutputDelta]
+//    : ToNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
 //            Input,
 //            OutputData,
 //            OutputDelta] = {
-//    new IsNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
+//    new ToNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
 //              Input,
 //              OutputData,
 //              OutputDelta] {

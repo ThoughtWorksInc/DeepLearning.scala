@@ -20,8 +20,8 @@ package object seq2D {
   }
 
   implicit def toSeq2DOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit isNeuralNetwork: IsNeuralNetwork.OfType[A, Input, Seq2D]): Seq2DOps[Input] = {
-    new Seq2DOps(isNeuralNetwork(a))
+      implicit toNeuralNetwork: ToNeuralNetwork.OfType[A, Input, Seq2D]): Seq2DOps[Input] = {
+    new Seq2DOps(toNeuralNetwork(a))
   }
 
 }

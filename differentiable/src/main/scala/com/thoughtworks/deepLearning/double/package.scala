@@ -16,8 +16,8 @@ package object double {
   type Double = utilities.Double
 
   implicit def liftNativeDoubleToNeuralNetwork[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])
-    : IsNeuralNetwork.Aux[scala.Double, Batch.Aux[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =
-    new IsNeuralNetwork[scala.Double, Batch.Aux[InputData, InputDelta]] {
+    : ToNeuralNetwork.Aux[scala.Double, Batch.Aux[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =
+    new ToNeuralNetwork[scala.Double, Batch.Aux[InputData, InputDelta]] {
       override type OutputData = Eval[scala.Double]
       override type OutputDelta = Eval[scala.Double]
       override def apply(nativeDouble: scala.Double) = {
@@ -120,8 +120,8 @@ package object double {
 //
 //  }
 //
-//  implicit def nativeDoubleIsNeuralNetwork[Input <: Batch: Identity] =
-//    new IsNeuralNetwork[scala.Double, Input, Eval[scala.Double], Eval[scala.Double]] {
+//  implicit def nativeDoubleToNeuralNetwork[Input <: Batch: Identity] =
+//    new ToNeuralNetwork[scala.Double, Input, Eval[scala.Double], Eval[scala.Double]] {
 //      override def apply(nativeDouble: scala.Double) = Literal(Eval.now(nativeDouble))
 //    }
 //

@@ -42,9 +42,9 @@ package object array2D {
   }
 
   implicit def toArray2DOps[From, Input <: Batch](from: From)(
-      implicit isNeuralNetwork: IsNeuralNetwork.OfType[From, Input, Array2D]
+      implicit toNeuralNetwork: ToNeuralNetwork.OfType[From, Input, Array2D]
   ): Array2DOps[Input] = {
-    new Array2DOps(isNeuralNetwork(from))
+    new Array2DOps(toNeuralNetwork(from))
   }
 
   ////
@@ -66,8 +66,8 @@ package object array2D {
 //      }
 //    }
 ////  implicit def array2DMaxDouble[Input <: Batch, Left, Right](
-////      implicit leftView: IsNeuralNetwork[Left, Input, Eval[INDArray], Eval[INDArray]],
-////      rightView: IsNeuralNetwork[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
+////      implicit leftView: ToNeuralNetwork[Left, Input, Eval[INDArray], Eval[INDArray]],
+////      rightView: ToNeuralNetwork[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
 ////    max.at[Left, Right].apply[NeuralNetwork.Aux[Input, Array2D#Batch]] { (left, right) =>
 ////      MaxDouble(leftView(left), rightView(right))
 ////    }
