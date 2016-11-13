@@ -5,8 +5,8 @@ import cats._
 import cats.implicits._
 
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -15,12 +15,12 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Exp[Input0 <: Differentiable](operand: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]])
+final case class Exp[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
     extends Cached {
 
   protected final class SharedBatch private[deepLearning] (
       override val input: Input0,
-      upstream: Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]])
+      upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
     type Input >: Input0

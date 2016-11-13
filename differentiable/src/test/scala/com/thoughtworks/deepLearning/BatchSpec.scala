@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
 import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
 import double._
@@ -18,15 +18,15 @@ final class BatchSpec extends FreeSpec with Matchers {
   Batch有两种，一种是Invariant的，一种是covariant/contravariant的（即Widen版）。所有的Ast中应该使用后者
 
    */
-  "Differentiable#Batch" in {
-    "implicitly[Double#Batch <:< Batch[Eval[scala.Double], Eval[scala.Double]]]" should compile
-    "implicitly[Double#Batch =:= Batch[Eval[scala.Double], Eval[scala.Double]]]" should compile
+  "Batch#Batch" in {
+    "implicitly[Double#Batch <:< Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
+    "implicitly[Double#Batch =:= Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
     "implicitly[Double#Batch <:< Any#Batch]" should compile
     "implicitly[Double#Batch =:= Any#Batch]" shouldNot compile
     "implicitly[Any#Batch =:= Double#Batch]" shouldNot compile
     "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Batch <:< HList#Batch]" should compile
-    "implicitly[(Double :: HNil)#Batch =:= Batch[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
+    "implicitly[(Double :: HNil)#Batch =:= Batch.Aux[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
     "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[HList#Batch <:< (Double :: HNil)#Batch]" shouldNot compile
     "implicitly[(Any :: HNil)#Batch <:< HList#Batch]" should compile

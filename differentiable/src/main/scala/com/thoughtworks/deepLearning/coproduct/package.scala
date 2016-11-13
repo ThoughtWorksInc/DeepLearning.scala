@@ -1,8 +1,8 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.boolean.utilities._
-import com.thoughtworks.deepLearning.Differentiable.Batch
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.Batch.Aux
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast._
 import shapeless.Lazy
@@ -17,70 +17,70 @@ import scala.language.implicitConversions
 package object coproduct {
 
   /** @template */
-  type Coproduct = DifferentiableType[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
+  type Coproduct = Type[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
 
   /** @template */
-  type CNil = DifferentiableType[shapeless.CNil, shapeless.CNil]
+  type CNil = Type[shapeless.CNil, shapeless.CNil]
   val CNil: CNil = implicitly
 
   /** @template */
-  type :+:[Head <: DifferentiableType[_, _], Tail <: Coproduct] =
-    DifferentiableType[shapeless.:+:[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
+  type :+:[Head <: Type[_, _], Tail <: Coproduct] =
+    Type[shapeless.:+:[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
       val head: Head
       val tail: Tail
     }
 
   implicit final class RichCoproductType[TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-      tail: DifferentiableType[TailData, TailDelta]) {
-    def :+:[HeadData, HeadDelta](head: DifferentiableType[HeadData, HeadDelta]) =
-      new DifferentiableType[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+      tail: Type[TailData, TailDelta]) {
+    def :+:[HeadData, HeadDelta](head: Type[HeadData, HeadDelta]) =
+      new Type[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
   }
 
   final class CConsOps[
-      Input <: Differentiable,
+      Input <: Batch,
       HeadData,
       HeadDelta,
       TailData <: shapeless.Coproduct,
       TailDelta <: shapeless.Coproduct
   ](
-      ccons: Ast[
+      ccons: NeuralNetwork.Aux[
         Input,
-        Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+        Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
       ]
   ) {
 
-    def head: Ast[Input, DifferentiableType[HeadData, HeadDelta]#Batch] =
+    def head: NeuralNetwork.Aux[Input, Type[HeadData, HeadDelta]#Batch] =
       Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
-    def tail: Ast[Input, DifferentiableType[TailData, TailDelta]#Batch] =
+    def tail: NeuralNetwork.Aux[Input, Type[TailData, TailDelta]#Batch] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
     def choice[HeadCase, TailCase, OutputData, OutputDelta](
-        caseHead: Ast[Input, DifferentiableType[HeadData, HeadDelta]#Batch] => HeadCase)(
-        caseTail: Ast[Input, DifferentiableType[TailData, TailDelta]#Batch] => TailCase)(
-        implicit headToAst: ToAst.Aux[HeadCase, Input, OutputData, OutputDelta],
-        tailToAst: ToAst.Aux[TailCase, Input, OutputData, OutputDelta])
-      : DifferentiableFunction.Ast[Input, DifferentiableType[OutputData, OutputDelta]#Batch] = {
-      If[Input, Batch[OutputData, OutputDelta]](isInl, caseHead(head), caseTail(tail))
+        caseHead: NeuralNetwork.Aux[Input, Type[HeadData, HeadDelta]#Batch] => HeadCase)(
+        caseTail: NeuralNetwork.Aux[Input, Type[TailData, TailDelta]#Batch] => TailCase)(
+                                                             implicit headIsNeuralNetwork: IsNeuralNetwork.Aux[HeadCase, Input, OutputData, OutputDelta],
+                                                             tailIsNeuralNetwork: IsNeuralNetwork.Aux[TailCase, Input, OutputData, OutputDelta])
+      : NeuralNetwork.Aux[Input, Type[OutputData, OutputDelta]#Batch] = {
+      If[Input, Batch.Aux[OutputData, OutputDelta]](isInl, caseHead(head), caseTail(tail))
     }
 
-    def isInl: Ast[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+    def isInl: NeuralNetwork.Aux[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 
   implicit def toCConsOps[From,
-                          Input <: Differentiable,
+                          Input <: Batch,
                           OutputData,
                           OutputDelta,
                           HeadData,
                           HeadDelta,
                           TailData <: shapeless.Coproduct,
                           TailDelta <: shapeless.Coproduct](from: From)(
-      implicit toAst: ToAst.Aux[From, Input, OutputData, OutputDelta],
-      toCoproductAst: Ast[Input, Batch[OutputData, OutputDelta]] <:< Ast[
+    implicit isNeuralNetwork: IsNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
+    toCoproductAst: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
         Input,
-        Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+        Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ): CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
-    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductAst(toAst(from)))
+    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductAst(isNeuralNetwork(from)))
   }
 }

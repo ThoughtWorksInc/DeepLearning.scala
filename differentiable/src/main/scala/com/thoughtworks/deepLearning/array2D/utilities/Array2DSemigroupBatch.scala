@@ -10,7 +10,7 @@ import org.nd4s.Implicits._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-private[deepLearning] trait Array2DSemigroupBatch extends Differentiable {
+private[deepLearning] trait Array2DSemigroupBatch extends Batch {
 
   override type Data = Eval[INDArray]
 

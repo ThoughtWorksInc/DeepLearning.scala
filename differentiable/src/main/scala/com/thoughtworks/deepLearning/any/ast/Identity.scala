@@ -1,13 +1,13 @@
 package com.thoughtworks.deepLearning.any.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Identity[Input0 <: Differentiable]() extends DifferentiableFunction {
+final case class Identity[Input0 <: Batch]() extends NeuralNetwork {
   type Input = Input0
   type Output = Input0
 

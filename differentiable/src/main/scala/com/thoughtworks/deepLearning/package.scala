@@ -1,7 +1,7 @@
 package com.thoughtworks
-import com.thoughtworks.deepLearning.Differentiable.Batch
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.ToAst.{AstPoly1, AstPoly2}
+import com.thoughtworks.deepLearning.Batch.Aux
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import com.thoughtworks.deepLearning.IsNeuralNetwork.{AstPoly1, AstPoly2}
 
 import scala.language.implicitConversions
 
@@ -26,15 +26,15 @@ package object deepLearning {
 
   }
 
-  implicit def autoToLiteral[A, Input <: Differentiable, OutputData, OutputDelta](a: A)(
-      implicit toAst: ToAst.Aux[A, Input, OutputData, OutputDelta]): Ast[Input, Batch[OutputData, OutputDelta]] = {
-    toAst(a)
+  implicit def autoToLiteral[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+      implicit isNeuralNetwork: IsNeuralNetwork.Aux[A, Input, OutputData, OutputDelta]): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+    isNeuralNetwork(a)
   }
 
   implicit final class ToLiteralOps[A](a: A) {
-    def toLiteral[Input <: Differentiable, OutputData, OutputDelta](
-        implicit toAst: ToAst.Aux[A, Input, OutputData, OutputDelta]): Ast[Input, Batch[OutputData, OutputDelta]] = {
-      toAst(a)
+    def toLiteral[Input <: Batch, OutputData, OutputDelta](
+        implicit isNeuralNetwork: IsNeuralNetwork.Aux[A, Input, OutputData, OutputDelta]): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+      isNeuralNetwork(a)
     }
   }
 

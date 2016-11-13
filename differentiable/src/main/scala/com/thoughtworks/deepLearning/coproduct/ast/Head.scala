@@ -1,21 +1,21 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.Differentiable.Batch
-import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import com.thoughtworks.deepLearning.Batch.Aux
+import com.thoughtworks.deepLearning.{NeuralNetwork, Batch}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Head[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: DifferentiableFunction.Ast[Input0, Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-) extends DifferentiableFunction {
+    ccons: NeuralNetwork.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+) extends NeuralNetwork {
 
   final class Output private[Head] (
-      upstream: Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends Differentiable {
+      upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      extends Batch {
     override type Data = HeadData
     override type Delta = HeadDelta
     type Input >: Input0

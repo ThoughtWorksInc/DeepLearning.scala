@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
 import com.thoughtworks.deepLearning.array2D.ast.{MaxDouble, ToSeq}
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
@@ -17,35 +17,35 @@ package object array2D {
   type Array2D = utilities.Array2D
   val Array2D: Array2D = implicitly
 
-  implicit def `max(Array2D,Double)`[Left, Right, Input <: Differentiable]
-    : max.Case.Aux[Ast[Input, Array2D#Batch], Ast[Input, Double#Batch], Ast[Input, Array2D#Batch]] =
+  implicit def `max(Array2D,Double)`[Left, Right, Input <: Batch]
+    : max.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Array2D#Batch]] =
     max.at { MaxDouble(_, _) }
 
-  final class Array2DOps[Input <: Differentiable](differentiable: DifferentiableFunction.Ast[Input, Array2D#Batch]) {
+  final class Array2DOps[Input <: Batch](differentiable: NeuralNetwork.Aux[Input, Array2D#Batch]) {
 //
-//    def dot(right: DifferentiableFunction.Ast[Input, Array2D#Batch])
-//      : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
+//    def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch])
+//      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
 //      Dot(differentiable, right)
 //    }
-//    def +(right: DifferentiableFunction.Ast[Input, Array2D#Batch])
-//      : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
+//    def +(right: NeuralNetwork.Aux[Input, Array2D#Batch])
+//      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
 //      AddArray2D(differentiable, right)
 //    }
 //
-//    def unary_- : DifferentiableFunction.Ast[Input, Array2D#Batch] = {
+//    def unary_- : NeuralNetwork.Aux[Input, Array2D#Batch] = {
 //      Negative(differentiable)
 //    }
 //
-    def toSeq: Ast[Input, Seq2D#Batch] = {
+    def toSeq: NeuralNetwork.Aux[Input, Seq2D#Batch] = {
       ToSeq(differentiable)
     }
 
   }
 
-  implicit def toArray2DOps[From, Input <: Differentiable](from: From)(
-      implicit toAst: ToAst.OfType[From, Input, Array2D]
+  implicit def toArray2DOps[From, Input <: Batch](from: From)(
+      implicit isNeuralNetwork: IsNeuralNetwork.OfType[From, Input, Array2D]
   ): Array2DOps[Input] = {
-    new Array2DOps(toAst(from))
+    new Array2DOps(isNeuralNetwork(from))
   }
 
   ////
@@ -58,50 +58,50 @@ package object array2D {
 ////    override type OutputDelta = Eval[INDArray]
 ////  }
 //
-//  implicit def maxArray2DDouble[Input <: Differentiable] =
+//  implicit def maxArray2DDouble[Input <: Batch] =
 //    new max.Case[Input, Eval[INDArray], Eval[INDArray], Eval[scala.Double], Eval[scala.Double]] {
-//      override type Out = Ast[Input, Array2D#Batch]
-//      override def apply(leftOperand: Ast[Input, Batch[Eval[INDArray], Eval[INDArray]]],
-//                         rightOperand: Ast[Input, Batch[Eval[scala.Double], Eval[scala.Double]]]) = {
+//      override type Out = NeuralNetwork.Aux[Input, Array2D#Batch]
+//      override def apply(leftOperand: NeuralNetwork.Aux[Input, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
+//                         rightOperand: NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) = {
 //        MaxDouble(leftOperand, rightOperand)
 //      }
 //    }
-////  implicit def array2DMaxDouble[Input <: Differentiable, Left, Right](
-////      implicit leftView: ToAst[Left, Input, Eval[INDArray], Eval[INDArray]],
-////      rightView: ToAst[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
-////    max.at[Left, Right].apply[DifferentiableFunction.Ast[Input, Array2D#Batch]] { (left, right) =>
+////  implicit def array2DMaxDouble[Input <: Batch, Left, Right](
+////      implicit leftView: IsNeuralNetwork[Left, Input, Eval[INDArray], Eval[INDArray]],
+////      rightView: IsNeuralNetwork[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
+////    max.at[Left, Right].apply[NeuralNetwork.Aux[Input, Array2D#Batch]] { (left, right) =>
 ////      MaxDouble(leftView(left), rightView(right))
 ////    }
 //
 //  implicit final class INDArrayOps(ndarray: INDArray) {
-//    def toWeight[Input <: Differentiable: Identity](
-//        implicit learningRate: LearningRate): DifferentiableFunction.Ast[Input, Array2D#Batch] =
+//    def toWeight[Input <: Batch: Identity](
+//        implicit learningRate: LearningRate): NeuralNetwork.Aux[Input, Array2D#Batch] =
 //      Weight(ndarray)
-//    def toLiteral[Input <: Differentiable: Identity] = ndarrayLiteral(ndarray)
+//    def toLiteral[Input <: Batch: Identity] = ndarrayLiteral(ndarray)
 //    def toBatch = ndarrayBatch(ndarray)
 //  }
 //
 //  implicit def nativeArrayToINDArrayOps(nativeArray: Array[Array[scala.Double]]): INDArrayOps =
 //    new INDArrayOps(nativeArray.toNDArray)
 //
-//  implicit def ndarrayLiteral[Input <: Differentiable: Identity](
-//      ndarray: INDArray): DifferentiableFunction.Ast[Input, Array2D#Batch] =
+//  implicit def ndarrayLiteral[Input <: Batch: Identity](
+//      ndarray: INDArray): NeuralNetwork.Aux[Input, Array2D#Batch] =
 //    Literal(Eval.now(ndarray))
 //
 //  implicit def ndarrayBatch(ndarray: INDArray): Array2D#Batch =
 //    Literal(Eval.now(ndarray))
 //
-//  implicit def nativeArrayLiteral[Input <: Differentiable: Identity](
-//      nativeArray: Array[Array[scala.Double]]): DifferentiableFunction.Ast[Input, Array2D#Batch] =
+//  implicit def nativeArrayLiteral[Input <: Batch: Identity](
+//      nativeArray: Array[Array[scala.Double]]): NeuralNetwork.Aux[Input, Array2D#Batch] =
 //    ndarrayLiteral(nativeArray.toNDArray)
 //
 //  implicit def nativeArrayBatch(nativeArray: Array[Array[scala.Double]]): Array2D#Batch =
 //    ndarrayBatch(nativeArray.toNDArray)
 //
 //  // TODO: Support scala.Array for better performance.
-//  implicit final class AstVectorOps[Input <: Differentiable](
+//  implicit final class AstVectorOps[Input <: Batch](
 //      astVector: Vector[
-//        Vector[DifferentiableFunction.Ast[Input, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]]]]) {
+//        Vector[NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]]) {
 //    def toArray2D = FromAstVector(astVector)
 //  }
 

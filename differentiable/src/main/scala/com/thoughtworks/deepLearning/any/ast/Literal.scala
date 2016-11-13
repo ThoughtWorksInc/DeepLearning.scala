@@ -1,17 +1,17 @@
 package com.thoughtworks.deepLearning.any.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
+import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Literal[Data0](value0: Data0) extends DifferentiableFunction with Differentiable {
+final case class Literal[Data0](value0: Data0) extends NeuralNetwork with Batch {
   override type Data = Data0
   override type Delta = scala.Any
-  override type Input = Differentiable
-  override type Output = Batch[Data, Delta]
+  override type Input = Batch
+  override type Output = Batch.Aux[Data, Delta]
 
   override def value: Data = value0
 

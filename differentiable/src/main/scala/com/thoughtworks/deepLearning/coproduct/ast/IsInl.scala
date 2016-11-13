@@ -2,18 +2,18 @@ package com.thoughtworks.deepLearning
 package coproduct.ast
 
 import cats.Eval
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deepLearning.{DifferentiableFunction, Differentiable}
+import com.thoughtworks.deepLearning.{NeuralNetwork, Batch}
 
-final case class IsInl[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: DifferentiableFunction.Ast[Input0, Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-) extends DifferentiableFunction {
+    ccons: NeuralNetwork.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+) extends NeuralNetwork {
 
   final class Output private[IsInl] (
-      upstream: Differentiable.Batch[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends BooleanMonoidBatch {
 
     type Input >: Input0

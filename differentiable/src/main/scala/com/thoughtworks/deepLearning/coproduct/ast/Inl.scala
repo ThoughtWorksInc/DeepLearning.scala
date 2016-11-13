@@ -1,18 +1,18 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import com.thoughtworks.deepLearning.Batch.Aux
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Inl[Input0 <: Differentiable, HeadData, HeadDelta](head: DifferentiableFunction.Ast[Input0, Differentiable.Batch[HeadData, HeadDelta]])
-    extends DifferentiableFunction {
+final case class Inl[Input0 <: Batch, HeadData, HeadDelta](head: NeuralNetwork.Aux[Input0, Batch.Aux[HeadData, HeadDelta]])
+    extends NeuralNetwork {
 
   type Input = Input0
 
-  final class Output private[Inl] (headBatch: Differentiable.Batch[HeadData, HeadDelta]) extends Differentiable {
+  final class Output private[Inl] (headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch {
     def value = shapeless.Inl(headBatch.value: HeadData)
 
     type Data = shapeless.Inl[HeadData, Nothing]

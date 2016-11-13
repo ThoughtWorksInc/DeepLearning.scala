@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.boolean._
 import com.thoughtworks.deepLearning.seq2D._
@@ -41,14 +41,14 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       override def apply() = 0.0003
     }
 
-    def probabilityLoss(implicit x: Double): x.Ast[Double] = {
+    def probabilityLoss(implicit x: Double): x.To[Double] = {
       1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
     }
     val probabilityLossNetwork = probabilityLoss
-    def loss(implicit rowAndExpectedLabel: RowAndExpectedLabel.type): rowAndExpectedLabel.Ast[Double] = {
-      val row: rowAndExpectedLabel.Ast[Array2D] = rowAndExpectedLabel.head
-      val expectedLabel: rowAndExpectedLabel.Ast[ExpectedLabel.type] = rowAndExpectedLabel.tail.head
-      val rowSeq: rowAndExpectedLabel.Ast[Seq2D] = row.toSeq
+    def loss(implicit rowAndExpectedLabel: RowAndExpectedLabel.type): rowAndExpectedLabel.To[Double] = {
+      val row: rowAndExpectedLabel.To[Array2D] = rowAndExpectedLabel.head
+      val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel.type] = rowAndExpectedLabel.tail.head
+      val rowSeq: rowAndExpectedLabel.To[Seq2D] = row.toSeq
 
       // 暂时先在CPU上计算
 
@@ -67,71 +67,69 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           probabilityLossNetwork.compose(max(1.0 - rowSeq(0, 0), 0.0))
         } { inr =>
           val expectedValue = inr.head
-          (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.Ast[Double]
+          (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.To[Double]
 
         }
       }
 
-//      val loss1 = expectedLabelField1.choice { _ =>
-//        0.0 // Drop out
-//      } { expectedEnum =>
-//        val score0 = rowSeq(0, 2)
-//        val score1 = rowSeq(0, 3)
-//        val sum = score0 + score1
-//        val probability0 = score0 / sum
-//        val probability1 = score1 / sum
-//        expectedEnum.head.choice { _ =>
-//          1.0 - probability0
-//        } { _ =>
-//          1.0 - probability1
-//        }
-//      }
-//
-//      val loss2 = expectedLabelField2.choice { _ =>
-//        0.0 // Drop out
-//      } { expectedDouble =>
-//        abs(expectedDouble.head - rowSeq(0, 4))
-//      }
-//
-//      val loss3 = expectedLabelField3.choice { _ =>
-//        0.0 // Drop out
-//      } { expectedEnum =>
-//        val score0 = rowSeq(0, 5)
-//        val score1 = rowSeq(0, 6)
-//        val score2 = rowSeq(0, 7)
-//        val sum = score0 + score1 + score2
-//        val probability0 = score0 / sum
-//        val probability1 = score1 / sum
-//        val probability2 = score2 / sum
-//        expectedEnum.head.choice { _ =>
-//          1.0 - probability0
-//        } {
-//          _.choice { _ =>
-//            1.0 - probability1
-//          } { _ =>
-//            1.0 - probability2
-//          }
-//        }
-//      }
-//
-//      loss0 + loss1 + loss2 + loss3
-      ???
+      val loss1 = expectedLabelField1.choice { _ =>
+        0.0 // Drop out
+      } { expectedEnum =>
+        val score0 = rowSeq(0, 2)
+        val score1 = rowSeq(0, 3)
+        val sum = score0 + score1
+        val probability0 = score0 / sum
+        val probability1 = score1 / sum
+        expectedEnum.head.choice { _ =>
+          1.0 - probability0
+        } { _ =>
+          1.0 - probability1
+        }
+      }
+
+      val loss2 = expectedLabelField2.choice { _ =>
+        0.0 // Drop out
+      } { expectedDouble =>
+        abs(expectedDouble.head - rowSeq(0, 4))
+      }
+
+      val loss3 = expectedLabelField3.choice { _ =>
+        0.0 // Drop out
+      } { expectedEnum =>
+        val score0 = rowSeq(0, 5)
+        val score1 = rowSeq(0, 6)
+        val score2 = rowSeq(0, 7)
+        val sum = score0 + score1 + score2
+        val probability0 = score0 / sum
+        val probability1 = score1 / sum
+        val probability2 = score2 / sum
+        expectedEnum.head.choice { _ =>
+          1.0 - probability0
+        } {
+          _.choice { _ =>
+            1.0 - probability1
+          } { _ =>
+            1.0 - probability2
+          }
+        }
+      }
+
+      loss0 + loss1 + loss2 + loss3
+
     }
-//
-//    def Array2DToRow(implicit row: InputAst[Array2D]): row.Input#Ast[PredictionResult] = {
-//      type NN[TypePair <: Differentiable] = Ast[Array2D#Batch, TypePair#Batch]
-//      val rowSeq = row.toSeq
-//      val n: Ast[Array2D#Batch, HNil#Batch] = hnil
-//      val n2: NN[HNil] = hnil
-//      val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: n
-//      val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: n2
+
+    def Array2DToRow(implicit row: Array2D): row.To[PredictionResult.type] = {
+      val rowSeq = row.toSeq
+//      val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: hnil
+//      val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: hnil
 //      val field2: NN[Double] = rowSeq(0, 4)
 //      val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
 //      field0 :: field1 :: field2 :: field3 :: hnil
-//    }
+      ???
+    }
 //
-//    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#Ast[Array2D] = {
-//      type NN[OutputTypePair <: Differentiable] = InputTypePair#Ast[OutputTypePair]
+//    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#NeuralNetwork.Aux[Array2D] = {
+//      type NN[OutputTypePair <: Batch] = InputTypePair#NeuralNetwork.Aux[OutputTypePair]
 //      val field0 = row.head
 //      val rest0 = row.tail
 //      val field1 = rest0.head
@@ -296,7 +294,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 //      rowToArray2DNetwork.compose(row)
 //    }
 //    //
-//    //    val train: DifferentiableFunction.Batch[Batch[InputData :: ExpectedLabelData :: HNil, _], Batch[Eval[Double], _]] = ???
+//    //    val train: NeuralNetwork.Aux[Aux[InputData :: ExpectedLabelData :: HNil, _], Aux[Eval[Double], _]] = ???
 //
   }
 
@@ -304,9 +302,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
 object VectorizeSpec {
 
-  def nullable[Data, Delta](a: DifferentiableType[Data, Delta]) = HNil :+: a :+: CNil
-  def inputField[Data, Delta](a: DifferentiableType[Data, Delta]) = HNil :+: a :+: CNil
-  def labelField[Data, Delta](a: DifferentiableType[Data, Delta]) = HNil :+: a :+: CNil
+  def nullable[Data, Delta](a: Type[Data, Delta]) = HNil :+: a :+: CNil
+  def inputField[Data, Delta](a: Type[Data, Delta]) = HNil :+: a :+: CNil
+  def labelField[Data, Delta](a: Type[Data, Delta]) = HNil :+: a :+: CNil
 
   val Enum0 = HNil :+: HNil :+: CNil
   val Enum1 = HNil :+: HNil :+: HNil :+: CNil
@@ -320,7 +318,7 @@ object VectorizeSpec {
     labelField(nullable(Double)) :: labelField(Enum0) :: labelField(Double) :: labelField(Enum1) :: HNil
 
   val UnsetProbability = Double
-  def nullableFieldPrediction[Data, Delta](value: DifferentiableType[Data, Delta]) = UnsetProbability :: value :: HNil
+  def nullableFieldPrediction[Data, Delta](value: Type[Data, Delta]) = UnsetProbability :: value :: HNil
 
   val Enum0Prediction = Double :: Double :: HNil
   val Enum1Prediction = Double :: Double :: Double :: HNil

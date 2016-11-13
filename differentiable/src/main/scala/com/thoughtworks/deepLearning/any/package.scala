@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
 import scala.language.implicitConversions
 
@@ -11,13 +11,13 @@ import scala.language.implicitConversions
 package object any {
 
   /** @template */
-  type Any = DifferentiableType[_, _]
+  type Any = Type[_, _]
 
 //
 //  /** @template */
 //  type InputAst[InputTypePair <: Any] = Identity[InputTypePair#ConcreteBatch]
 //
-//  implicit def input[Input <: Differentiable] = {
+//  implicit def input[Input <: Batch] = {
 //    Identity[Input]()
 //  }
 //
@@ -27,23 +27,23 @@ package object any {
 //
 //  implicit final class NativeAnyOps[Data](data: Data) {
 //
-//    def toLiteral[Input <: Differentiable: Identity]: DifferentiableFunction.Ast[Input, Differentiable.ConcreteBatch[Data, scala.Any]] = Literal[Data](data)
-//    def toBatch: Differentiable.ConcreteBatch[Data, scala.Any] = Literal[Data](data)
+//    def toLiteral[Input <: Batch: Identity]: NeuralNetwork.Aux[Input, Batch.ConcreteBatch[Data, scala.Any]] = Literal[Data](data)
+//    def toBatch: Batch.ConcreteBatch[Data, scala.Any] = Literal[Data](data)
 //
 //  }
 //
-  final class AnyOps[Input <: Differentiable, OutputData, OutputDelta, NewInputData, NewInputDelta](
-      val f: Ast[Input, Batch[OutputData, OutputDelta]]) {
+  final class AnyOps[Input <: Batch, OutputData, OutputDelta, NewInputData, NewInputDelta](
+      val f: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
-    def compose(g: Ast[Batch[NewInputData, NewInputDelta], Input])
-      : Ast[Batch[NewInputData, NewInputDelta], Batch[OutputData, OutputDelta]] = {
+    def compose(g: NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Input])
+      : NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Batch.Aux[OutputData, OutputDelta]] = {
       Compose(f, g)
     }
 
   }
 
-  implicit def toAnyOps[F, NewInputData, NewInputDelta, Input <: Differentiable, OutputData, OutputDelta](f: F)(
-      implicit toAst: ToAst.Aux[F, Input, OutputData, OutputDelta],
-      differentiableType: DifferentiableType[NewInputData, NewInputDelta])
-    : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(toAst(f))
+  implicit def toAnyOps[F, NewInputData, NewInputDelta, Input <: Batch, OutputData, OutputDelta](f: F)(
+    implicit isNeuralNetwork: IsNeuralNetwork.Aux[F, Input, OutputData, OutputDelta],
+    differentiableType: Type[NewInputData, NewInputDelta])
+    : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(isNeuralNetwork(f))
 }

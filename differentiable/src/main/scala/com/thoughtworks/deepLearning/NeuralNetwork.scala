@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
 
 import scala.language.existentials
@@ -13,10 +13,10 @@ import scala.annotation.elidable
 //import scala.annotation.elidable
 //sealed trait LowLowLowPriortyDifferentiableFunction {
 //
-//  implicit def subtypingToAst[Input <: Differentiable, OutputData, OutputDelta, From](
-//      implicit view: Lazy[From <:< DifferentiableFunction.Ast[Input, ConcreteBatch[OutputData, OutputDelta]]])
-//    : ToAst[From, Input, OutputData, OutputDelta] = {
-//    new ToAst[From, Input, OutputData, OutputDelta] {
+//  implicit def subtypingIsNeuralNetwork[Input <: Batch, OutputData, OutputDelta, From](
+//      implicit view: Lazy[From <:< NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]]])
+//    : IsNeuralNetwork[From, Input, OutputData, OutputDelta] = {
+//    new IsNeuralNetwork[From, Input, OutputData, OutputDelta] {
 //      override def apply(value: From) = view.value(value)
 //    }
 //
@@ -25,24 +25,24 @@ import scala.annotation.elidable
 //sealed trait LowLowPriortyDifferentiableFunction extends LowLowLowPriortyDifferentiableFunction {
 //  this: LowPriortyDifferentiableFunction =>
 //
-//  import DifferentiableFunction._
+//  import NeuralNetwork._
 //
-//  implicit def toAstNN[Input <: Differentiable : Identity, NN[_ <: Differentiable], OutputPair <: Differentiable](
-//      implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch]])
-//    : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-//    new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
-//      override def apply(value: NN[OutputPair]): Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
-//        toAstPair.apply(nn.value(value))
+//  implicit def isNeuralNetworkNN[Input <: Batch : Identity, NN[_ <: Batch], OutputPair <: Batch](
+//      implicit nn: Lazy[NN[OutputPair] <:< NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]])
+//    : IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+//    new IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+//      override def apply(value: NN[OutputPair]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
+//        isNeuralNetworkPair.apply(nn.value(value))
 //      }
 //    }
 //  }
 //  //
-//  // implicit def toAstNN2[Input <: Differentiable, NN[_ <: Differentiable], OutputPair <: Differentiable](
-//  //     implicit nn: Lazy[NN[OutputPair] <:< DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch]])
-//  //   : ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-//  //   new ToAst[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
-//  //     override def apply(value: NN[OutputPair]): Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
-//  //       toAstPair.apply(nn.value(value))
+//  // implicit def isNeuralNetworkNN2[Input <: Batch, NN[_ <: Batch], OutputPair <: Batch](
+//  //     implicit nn: Lazy[NN[OutputPair] <:< NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]])
+//  //   : IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
+//  //   new IsNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
+//  //     override def apply(value: NN[OutputPair]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
+//  //       isNeuralNetworkPair.apply(nn.value(value))
 //  //     }
 //  //   }
 //  // }
@@ -52,63 +52,63 @@ import scala.annotation.elidable
 //
 //sealed trait LowPriortyDifferentiableFunction extends LowLowPriortyDifferentiableFunction {
 //
-//  import DifferentiableFunction._
+//  import NeuralNetwork._
 //
-//  implicit def toAstPair[Input <: Differentiable, OutputPair <: Differentiable]
-//    : ToAst[DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] = {
+//  implicit def isNeuralNetworkPair[Input <: Batch, OutputPair <: Batch]
+//    : IsNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] = {
 //    // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
-//    new ToAst[DifferentiableFunction.Ast[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] {
-//      override def apply(value: Ast[Input, OutputPair#ConcreteBatch]): Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] =
-//        value.asInstanceOf[Ast[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]]]
+//    new IsNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] {
+//      override def apply(value: NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] =
+//        value.asInstanceOf[NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]]]
 //    }
 //  }
 //
 //}
 
-object DifferentiableFunction /*extends LowPriortyDifferentiableFunction*/ {
+object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
 
   /** @template */
-  type Ast[-Input0 <: Differentiable, +Output0 <: Differentiable] =
-    DifferentiableFunction {
+  type Aux[-Input0 <: Batch, +Output0 <: Batch] =
+    NeuralNetwork {
       type Input >: Input0
       type Output <: Output0
     }
 
-//  trait ToAst[T, Input <: Differentiable, OutputData, OutputDelta] {
-//    def apply(value: T): Ast[Input, Differentiable.ConcreteBatch[OutputData, OutputDelta]]
+//  trait IsNeuralNetwork[T, Input <: Batch, OutputData, OutputDelta] {
+//    def apply(value: T): NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]]
 //  }
 //
-//  implicit def toAst[Input <: Differentiable, OutputData, OutputDelta]
-//    : ToAst[DifferentiableFunction.Ast[Input, Differentiable.ConcreteBatch[OutputData, OutputDelta]],
+//  implicit def isNeuralNetwork[Input <: Batch, OutputData, OutputDelta]
+//    : IsNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
 //            Input,
 //            OutputData,
 //            OutputDelta] = {
-//    new ToAst[DifferentiableFunction.Ast[Input, Differentiable.ConcreteBatch[OutputData, OutputDelta]],
+//    new IsNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
 //              Input,
 //              OutputData,
 //              OutputDelta] {
 //      override def apply(
-//          value: Ast[Input, ConcreteBatch[OutputData, OutputDelta]]): Ast[Input, ConcreteBatch[OutputData, OutputDelta]] = value
+//          value: NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]] = value
 //    }
 //
 //  }
 
-  trait Cached extends DifferentiableFunction {
+  trait Cached extends NeuralNetwork {
 
     private val cache =
       java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, SharedBatch](1))
 
-    protected trait ReferenceCount extends Differentiable { this: SharedBatch =>
+    protected trait ReferenceCount extends Batch { this: SharedBatch =>
 
       /**
-        * Returns a wrapped [[Differentiable]] able to detect error of closing more than once if ASSERTION is enabled,
+        * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
-      private[Cached] def maybeCheckIfCloseOnlyOnce: Batch = {
+      private[Cached] def maybeCheckIfCloseOnlyOnce: Self = {
 
-        // Returns a [[Differentiable]] able to detect error of closing more than once.
+        // Returns a [[Batch]] able to detect error of closing more than once.
         @elidable(elidable.ASSERTION)
-        def checkIfCloseOnlyOnce = new Differentiable {
+        def checkIfCloseOnlyOnce = new Batch {
           type Delta = ReferenceCount.this.Delta
           type Data = ReferenceCount.this.Data
 
@@ -133,9 +133,9 @@ object DifferentiableFunction /*extends LowPriortyDifferentiableFunction*/ {
         Option(checkIfCloseOnlyOnce).getOrElse(ReferenceCount.this.toBatch)
       }
 
-      type Batch >: Differentiable.Batch[Data, Delta] <: Differentiable.Batch[Data, Delta]
+      type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
 
-      private final def toBatch: Batch = this: Differentiable.Batch[Data, Delta]
+      private final def toBatch: Self = this: Batch.Aux[Data, Delta]
 
       private[Cached] var count: Int = 1
 
@@ -211,14 +211,14 @@ object DifferentiableFunction /*extends LowPriortyDifferentiableFunction*/ {
       }
     }
 
-    type Output = SharedBatch#Batch
+    type Output = SharedBatch#Self
 
     protected type SharedBatch <: ReferenceCount
 
     /**
       * Performs the underlying forward pass.
       *
-      * @return a [[Differentiable]] that will be cached for subsequent [[#forward]]
+      * @return a [[Batch]] that will be cached for subsequent [[#forward]]
       */
     protected def rawForward(input: Input): SharedBatch
 
@@ -240,13 +240,13 @@ object DifferentiableFunction /*extends LowPriortyDifferentiableFunction*/ {
 
 }
 
-trait DifferentiableFunction {
+trait NeuralNetwork {
 
-  import DifferentiableFunction._
+  import NeuralNetwork._
 
-  type Input <: Differentiable
+  type Input <: Batch
 
-  type Output <: Differentiable
+  type Output <: Batch
 
   def forward(input: Input): Output
 

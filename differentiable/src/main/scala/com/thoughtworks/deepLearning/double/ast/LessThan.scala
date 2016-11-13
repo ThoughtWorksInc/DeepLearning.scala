@@ -3,21 +3,21 @@ package double.ast
 
 import cats._
 import cats.implicits._
-import com.thoughtworks.deepLearning.DifferentiableFunction.Cached
+import com.thoughtworks.deepLearning.NeuralNetwork.Cached
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class LessThan[Input0 <: Differentiable](
-    leftOperand: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]],
-    rightOperand: DifferentiableFunction.Ast[Input0, Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]]]
+final case class LessThan[Input0 <: Batch](
+                                            leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+                                            rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
 ) extends Cached {
 
   protected final class SharedBatch private[deepLearning] (
-      override val input: Input0,
-      upstream1: Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]],
-      upstream2: Differentiable.Batch[Eval[scala.Double], Eval[scala.Double]])
+                                                            override val input: Input0,
+                                                            upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
+                                                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with BooleanMonoidBatch {
     type Input >: Input0

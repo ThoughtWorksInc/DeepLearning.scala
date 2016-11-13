@@ -1,15 +1,15 @@
 package com.thoughtworks.deepLearning.any.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Throw(throwable: () => Throwable) extends DifferentiableFunction with Differentiable {
-  type Input = Differentiable
+final case class Throw(throwable: () => Throwable) extends NeuralNetwork with Batch {
+  type Input = Batch
   type Output = this.type
   type Data = scala.Nothing
   type Delta = scala.Any

@@ -1,14 +1,14 @@
 package com.thoughtworks.deepLearning.boolean.ast
 
 import cats._
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
-import com.thoughtworks.deepLearning.DifferentiableFunction.Cached
+import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
+import com.thoughtworks.deepLearning.NeuralNetwork.Cached
 import com.thoughtworks.deepLearning.boolean.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Not[Input0 <: Differentiable](differentiableBoolean: DifferentiableFunction.Ast[Input0, Boolean#ConcreteBatch]) extends Cached {
+final case class Not[Input0 <: Batch](differentiableBoolean: NeuralNetwork.Aux[Input0, Boolean#ConcreteBatch]) extends Cached {
 
   protected final class SharedBatch private[deepLearning] (override val input: Input0, upstream: Boolean#ConcreteBatch)
       extends MonoidBatch

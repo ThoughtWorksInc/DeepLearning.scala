@@ -1,12 +1,12 @@
 package com.thoughtworks.deepLearning.double.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction._
-import com.thoughtworks.deepLearning.Differentiable._
+import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Batch._
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction, LearningRate}
-import com.thoughtworks.deepLearning.DifferentiableFunction._
+import com.thoughtworks.deepLearning.{Batch, NeuralNetwork, LearningRate}
+import com.thoughtworks.deepLearning.NeuralNetwork._
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -16,10 +16,10 @@ import org.nd4j.linalg.ops.transforms.Transforms
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Weight(var rawValue: scala.Double)(implicit learningRate: LearningRate)
-    extends DifferentiableFunction
+    extends NeuralNetwork
     with DoubleMonoidBatch {
-  override type Input = Differentiable
-  override type Output = Differentiable.Batch[Data, Delta]
+  override type Input = Batch
+  override type Output = Batch.Aux[Data, Delta]
 
   override def forward(any: Input) = this
 

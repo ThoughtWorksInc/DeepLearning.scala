@@ -1,19 +1,19 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
-import com.thoughtworks.deepLearning.Differentiable.Batch
+import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import com.thoughtworks.deepLearning.Batch.Aux
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Inr[Input0 <: Differentiable, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-    tail: DifferentiableFunction.Ast[Input0, Differentiable.Batch[TailData, TailDelta]])
-    extends DifferentiableFunction {
+final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
+    tail: NeuralNetwork.Aux[Input0, Batch.Aux[TailData, TailDelta]])
+    extends NeuralNetwork {
 
   type Input = Input0
 
-  final class Output private[Inr] (tailBatch: Differentiable.Batch[TailData, TailDelta]) extends Differentiable {
+  final class Output private[Inr] (tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
     def value = shapeless.Inr(tailBatch.value: TailData)
 
     type Data = shapeless.Inr[Nothing, TailData]

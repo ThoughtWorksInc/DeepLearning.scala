@@ -1,21 +1,21 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.{Differentiable, DifferentiableFunction}
+import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Head[Input0 <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
+final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
 TailDelta <: shapeless.Coproduct](
-    differentiableHCons: DifferentiableFunction.Ast[
+    differentiableHCons: NeuralNetwork.Aux[
       Input0,
-      Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-) extends DifferentiableFunction {
+      Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+) extends NeuralNetwork {
   override type Input = Input0
 
   final class Output private[Head] (
-      upstream: Differentiable.Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends Differentiable {
+      upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      extends Batch {
     override def backward(delta: Delta): Unit = {
       upstream.backward(shapeless.Inl(delta))
     }

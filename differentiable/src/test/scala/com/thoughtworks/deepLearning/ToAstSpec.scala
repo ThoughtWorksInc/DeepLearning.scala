@@ -14,11 +14,11 @@ import double._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class ToAstSpec extends FreeSpec with Matchers {
-  "ToAst" in {
+  "IsNeuralNetwork" in {
     implicitly[
-      ToAst.OfType[Int, Double#Batch, Double] =:= ToAst.Aux[Int, Double#Batch, Eval[scala.Double], Eval[scala.Double]]]
+      IsNeuralNetwork.OfType[Int, Double#Batch, Double] =:= IsNeuralNetwork.Aux[Int, Double#Batch, Eval[scala.Double], Eval[scala.Double]]]
 
     implicitly[
-      ToAst.Aux[Int, Double#Batch, Eval[scala.Double], Eval[scala.Double]] =:= ToAst.OfType[Int, Double#Batch, Double]]
+      IsNeuralNetwork.Aux[Int, Double#Batch, Eval[scala.Double], Eval[scala.Double]] =:= IsNeuralNetwork.OfType[Int, Double#Batch, Double]]
   }
 }
