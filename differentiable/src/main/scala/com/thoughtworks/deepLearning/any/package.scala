@@ -2,8 +2,8 @@ package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.DifferentiableFunction._
 import com.thoughtworks.deepLearning.Differentiable._
-import cats.Eval
 import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
+import scala.language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -32,12 +32,18 @@ package object any {
 //
 //  }
 //
-//  implicit final class AnyOps[Input <: Differentiable, Output <: Differentiable](f: DifferentiableFunction.Ast[Input, Output]) {
-//
-//    def compose[NewInput <: Differentiable](g: DifferentiableFunction.Ast[NewInput, Input]): DifferentiableFunction.Ast[NewInput, Output] = {
-//      Compose[NewInput, Input, Output](f, g)
-//    }
-//
-//  }
-//
+  final class AnyOps[Input <: Differentiable, OutputData, OutputDelta, NewInputData, NewInputDelta](
+      val f: Ast[Input, Batch[OutputData, OutputDelta]]) {
+
+    def compose(g: Ast[Batch[NewInputData, NewInputDelta], Input])
+      : Ast[Batch[NewInputData, NewInputDelta], Batch[OutputData, OutputDelta]] = {
+      Compose(f, g)
+    }
+
+  }
+
+  implicit def toAnyOps[F, NewInputData, NewInputDelta, Input <: Differentiable, OutputData, OutputDelta](f: F)(
+      implicit toAst: ToAst.Aux[F, Input, OutputData, OutputDelta],
+      differentiableType: DifferentiableType[NewInputData, NewInputDelta])
+    : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(toAst(f))
 }

@@ -64,9 +64,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         0.0 // Drop out
       } {
         _.head.choice { _ =>
-//          probabilityLossNetwork(max(1.0 - rowSeq(0, 0), 0.0))
-          ???
-          0.0
+          probabilityLossNetwork.compose(max(1.0 - rowSeq(0, 0), 0.0))
         } { inr =>
           val expectedValue = inr.head
           (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.Ast[Double]
