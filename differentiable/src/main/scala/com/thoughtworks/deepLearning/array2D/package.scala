@@ -15,6 +15,7 @@ package object array2D {
 
   /** @template */
   type Array2D = utilities.Array2D
+  val Array2D: Array2D = implicitly
 
   implicit def `max(Array2D,Double)`[Left, Right, Input <: Differentiable]
     : max.Case.Aux[Ast[Input, Array2D#Batch], Ast[Input, Double#Batch], Ast[Input, Array2D#Batch]] =

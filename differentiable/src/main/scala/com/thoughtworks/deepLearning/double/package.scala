@@ -14,6 +14,7 @@ package object double {
 
   /** @template */
   type Double = utilities.Double
+  val Double: Double = implicitly
 
   implicit def liftNativeDoubleToAst[InputData, InputDelta](
       implicit inputType: DifferentiableType[InputData, InputDelta])

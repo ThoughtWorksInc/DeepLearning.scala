@@ -5,10 +5,11 @@ import com.thoughtworks.deepLearning.Differentiable.Batch
 import com.thoughtworks.deepLearning.DifferentiableFunction.Ast
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast._
+import shapeless.Lazy
+import shapeless.ops.coproduct.IsCCons
 
 import scala.language.existentials
 import scala.language.implicitConversions
-
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -20,6 +21,7 @@ package object coproduct {
 
   /** @template */
   type CNil = DifferentiableType[shapeless.CNil, shapeless.CNil]
+  val CNil: CNil = implicitly
 
   /** @template */
   type :+:[Head <: DifferentiableType[_, _], Tail <: Coproduct] =
@@ -27,6 +29,12 @@ package object coproduct {
       val head: Head
       val tail: Tail
     }
+
+  implicit final class RichCoproductType[TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
+      tail: DifferentiableType[TailData, TailDelta]) {
+    def :+:[HeadData, HeadDelta](head: DifferentiableType[HeadData, HeadDelta]) =
+      new DifferentiableType[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+  }
 
   final class CConsOps[
       Input <: Differentiable,

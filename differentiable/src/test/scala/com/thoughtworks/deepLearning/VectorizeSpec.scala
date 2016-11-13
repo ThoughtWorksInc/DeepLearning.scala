@@ -45,14 +45,14 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
     }
     val probabilityLossNetwork = probabilityLoss
-    def loss(implicit rowAndExpectedLabel: Array2D :: ExpectedLabel :: HNil): rowAndExpectedLabel.Ast[Double] = {
+    def loss(implicit rowAndExpectedLabel: RowAndExpectedLabel.type): rowAndExpectedLabel.Ast[Double] = {
       val row: rowAndExpectedLabel.Ast[Array2D] = rowAndExpectedLabel.head
-      val expectedLabel = rowAndExpectedLabel.tail.head
-      val rowSeq = row.toSeq
+      val expectedLabel: rowAndExpectedLabel.Ast[ExpectedLabel.type] = rowAndExpectedLabel.tail.head
+      val rowSeq: rowAndExpectedLabel.Ast[Seq2D] = row.toSeq
 
       // 暂时先在CPU上计算
 
-      val expectedLabelField0: rowAndExpectedLabel.Ast[LabelField[Nullable[Double]]] = expectedLabel.head
+      val expectedLabelField0 = expectedLabel.head
       val expectedLabelRest1 = expectedLabel.tail
       val expectedLabelField1 = expectedLabelRest1.head
       val expectedLabelRest2 = expectedLabelRest1.tail
@@ -66,8 +66,11 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         _.head.choice { _ =>
 //          probabilityLossNetwork(max(1.0 - rowSeq(0, 0), 0.0))
           ???
-        } { expectedValue =>
-          rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue.head)
+          0.0
+        } { inr =>
+          val expectedValue = inr.head
+          (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.Ast[Double]
+
         }
       }
 
@@ -303,29 +306,53 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
 object VectorizeSpec {
 
-  type Nullable[A <: Any] = HNil :+: A :+: CNil
+  def nullable[Data, Delta](a: DifferentiableType[Data, Delta]) = HNil :+: a :+: CNil
+  def inputField[Data, Delta](a: DifferentiableType[Data, Delta]) = HNil :+: a :+: CNil
+  def labelField[Data, Delta](a: DifferentiableType[Data, Delta]) = HNil :+: a :+: CNil
 
-  type InputField[A <: Any] = HNil :+: A :+: CNil
+  val Enum0 = HNil :+: HNil :+: CNil
+  val Enum1 = HNil :+: HNil :+: HNil :+: CNil
 
-  type LabelField[A <: Any] = HNil :+: A :+: CNil
+  val Row = nullable(Double) :: Enum0 :: Double :: Enum1 :: HNil
 
-  type Enum0 = HNil :+: HNil :+: CNil
-  type Enum1 = HNil :+: HNil :+: HNil :+: CNil
+  val InputTypePair =
+    inputField(nullable(Double)) :: inputField(Enum0) :: inputField(Double) :: inputField(Enum1) :: HNil
 
-  type Row = Nullable[Double] :: Enum0 :: Double :: Enum1 :: HNil
+  val ExpectedLabel =
+    labelField(nullable(Double)) :: labelField(Enum0) :: labelField(Double) :: labelField(Enum1) :: HNil
 
-  type InputTypePair =
-    InputField[Nullable[Double]] :: InputField[Enum0] :: InputField[Double] :: InputField[Enum1] :: HNil
+  val UnsetProbability = Double
+  def nullableFieldPrediction[Data, Delta](value: DifferentiableType[Data, Delta]) = UnsetProbability :: value :: HNil
 
-  type ExpectedLabel =
-    LabelField[Nullable[Double]] :: LabelField[Enum0] :: LabelField[Double] :: LabelField[Enum1] :: HNil
+  val Enum0Prediction = Double :: Double :: HNil
+  val Enum1Prediction = Double :: Double :: Double :: HNil
 
-  type UnsetProbability = Double
-  type NullableFieldPrediction[Value <: Any] = UnsetProbability :: Value :: HNil
+  val PredictionResult = nullableFieldPrediction(Double) :: Enum0Prediction :: Double :: Enum1Prediction :: HNil
 
-  type Enum0Prediction = Double :: Double :: HNil
-  type Enum1Prediction = Double :: Double :: Double :: HNil
+  val RowAndExpectedLabel = Array2D :: ExpectedLabel :: HNil
+//  type Nullable[A <: Any] = HNil :+: A :+: CNil
 
-  type PredictionResult = NullableFieldPrediction[Double] :: Enum0Prediction :: Double :: Enum1Prediction :: HNil
+//  type InputField[A <: Any] = HNil :+: A :+: CNil
+//
+//  type LabelField[A <: Any] = HNil :+: A :+: CNil
+
+//  type Enum0 = HNil :+: HNil :+: CNil
+//  type Enum1 = HNil :+: HNil :+: HNil :+: CNil
+//
+//  type Row = Nullable[Double.type] :: Enum0 :: Double.type :: Enum1 :: HNil
+//
+//  type InputTypePair =
+//    InputField[Nullable[Double.type]] :: InputField[Enum0] :: InputField[Double.type] :: InputField[Enum1] :: HNil
+//
+//  type ExpectedLabel =
+//    LabelField[Nullable[Double.type]] :: LabelField[Enum0] :: LabelField[Double.type] :: LabelField[Enum1] :: HNil
+//
+//  type UnsetProbability = Double.type
+//  type NullableFieldPrediction[Value <: Any] = UnsetProbability :: Value :: HNil
+//
+//  type Enum0Prediction = Double.type :: Double.type :: HNil
+//  type Enum1Prediction = Double.type :: Double.type :: Double.type :: HNil
+//
+//  type PredictionResult = NullableFieldPrediction[Double.type] :: Enum0Prediction :: Double.type :: Enum1Prediction :: HNil
 
 }

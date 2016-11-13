@@ -22,6 +22,7 @@ package object hlist {
 
   /** @template */
   type HNil = DifferentiableType[shapeless.HNil, shapeless.CNil]
+  val HNil: HNil = implicitly
 
   /** @template */
   type ::[Head <: DifferentiableType[_, _], Tail <: HList] =
@@ -29,6 +30,12 @@ package object hlist {
       val head: Head
       val tail: Tail
     }
+
+  implicit final class RichHListType[TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
+      tail: DifferentiableType[TailData, TailDelta]) {
+    def ::[HeadData, HeadDelta](head: DifferentiableType[HeadData, HeadDelta]) =
+      new DifferentiableType[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+  }
 //
 //  implicit final class HListOps[TailAst](val tail: TailAst) {
 //
@@ -45,7 +52,6 @@ package object hlist {
 //    }
 //
 //  }
-  val HNil = ast.HNil
 
   final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
