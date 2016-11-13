@@ -50,9 +50,11 @@ package object hlist {
   final class HConsOps[Input <: Differentiable, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](
       hcons: Ast[Input, Batch[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
-    def head: Ast[Input, Batch[HeadData, HeadDelta]] = Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
+    def head: Ast[Input, DifferentiableType[HeadData, HeadDelta]#Batch] =
+      Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
 
-    def tail: Ast[Input, Batch[TailData, TailDelta]] = Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
+    def tail: Ast[Input, DifferentiableType[TailData, TailDelta]#Batch] =
+      Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
   }
 
   implicit def toHConsOps[From,
