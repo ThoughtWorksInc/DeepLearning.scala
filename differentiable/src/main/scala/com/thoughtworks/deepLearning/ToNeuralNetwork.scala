@@ -1,17 +1,9 @@
 package com.thoughtworks.deepLearning
 
-import cats._
-import cats.implicits._
-import shapeless.PolyDefns._
 import shapeless.{Lazy, Poly1, Poly2}
 
 import shapeless.DepFn1
-import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning._
 import com.thoughtworks.deepLearning.any.ast.Identity
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
 
 import scala.language.existentials
 
@@ -29,8 +21,8 @@ private[deepLearning] sealed trait ToNeuralNetworkLowPriorityImplicits {
 object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
   trait AstPoly1 extends Poly1 {
     implicit def toNeuralNetworkCase[Operand, Input <: Batch, OperandData, OperandDelta](
-                                                                                          implicit toNeuralNetwork: ToNeuralNetwork.Aux[Operand, Input, OperandData, OperandDelta],
-                                                                                          astCase: Lazy[Case[NeuralNetwork.Aux[Input, Batch.Aux[OperandData, OperandDelta]]]]
+        implicit toNeuralNetwork: ToNeuralNetwork.Aux[Operand, Input, OperandData, OperandDelta],
+        astCase: Lazy[Case[NeuralNetwork.Aux[Input, Batch.Aux[OperandData, OperandDelta]]]]
     ): Case.Aux[Operand, astCase.value.Result] = {
       at { operand =>
         astCase.value(toNeuralNetwork(operand))
@@ -39,10 +31,16 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
   }
 
   trait AstPoly2 extends Poly2 {
-    implicit def toNeuralNetworkCase[LeftOperand, RightOperand, Input <: Batch, LeftData, LeftDelta, RightData, RightDelta](
-                                                                                                                             implicit leftToNeuralNetwork: ToNeuralNetwork.Aux[LeftOperand, Input, LeftData, LeftDelta],
-                                                                                                                             rightToNeuralNetwork: ToNeuralNetwork.Aux[RightOperand, Input, RightData, RightDelta],
-                                                                                                                             astCase: Lazy[Case[NeuralNetwork.Aux[Input, Batch.Aux[LeftData, LeftDelta]],
+    implicit def toNeuralNetworkCase[LeftOperand,
+                                     RightOperand,
+                                     Input <: Batch,
+                                     LeftData,
+                                     LeftDelta,
+                                     RightData,
+                                     RightDelta](
+        implicit leftToNeuralNetwork: ToNeuralNetwork.Aux[LeftOperand, Input, LeftData, LeftDelta],
+        rightToNeuralNetwork: ToNeuralNetwork.Aux[RightOperand, Input, RightData, RightDelta],
+        astCase: Lazy[Case[NeuralNetwork.Aux[Input, Batch.Aux[LeftData, LeftDelta]],
                            NeuralNetwork.Aux[Input, Batch.Aux[RightData, RightDelta]]]]
     ): Case.Aux[LeftOperand, RightOperand, astCase.value.Result] = {
       at { (left, right) =>
@@ -83,10 +81,7 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
     }
 
   implicit def inputTypeToNeuralNetwork[InputData, InputDelta]
-    : ToNeuralNetwork.Aux[Type[InputData, InputDelta],
-                          Batch.Aux[InputData, InputDelta],
-                          InputData,
-                          InputDelta] =
+    : ToNeuralNetwork.Aux[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
     new ToNeuralNetwork[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
       override type OutputData = InputData
       override type OutputDelta = InputDelta
