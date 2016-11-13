@@ -15,8 +15,7 @@ package object double {
   /** @template */
   type Double = utilities.Double
 
-  implicit def liftNativeDoubleIsNeuralNetwork[InputData, InputDelta](
-      implicit inputType: Type[InputData, InputDelta])
+  implicit def liftNativeDoubleToNeuralNetwork[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])
     : IsNeuralNetwork.Aux[scala.Double, Batch.Aux[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =
     new IsNeuralNetwork[scala.Double, Batch.Aux[InputData, InputDelta]] {
       override type OutputData = Eval[scala.Double]
@@ -26,36 +25,48 @@ package object double {
       }
     }
 
-  implicit def `max(Double,Double)`[Input <: Batch]
-    : max.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
+  implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                                  NeuralNetwork.Aux[Input, Double#Batch],
+                                                                  NeuralNetwork.Aux[Input, Double#Batch]] = {
+    min.at { (leftAst, rightAst) =>
+      If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), leftAst, rightAst)
+    }
+  }
+  implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                                  NeuralNetwork.Aux[Input, Double#Batch],
+                                                                  NeuralNetwork.Aux[Input, Double#Batch]] = {
     max.at { (leftAst, rightAst) =>
       If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
     }
   }
 
-  implicit def `Double-Double`[Input <: Batch]
-    : -.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
+  implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch]] = {
     AstMethods.-.at { (leftAst, rightAst) =>
       Plus(leftAst, Negative(rightAst))
     }
   }
 
-  implicit def `Double+Double`[Input <: Batch]
-    : +.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
+  implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch]] = {
     AstMethods.+.at { (leftAst, rightAst) =>
       Plus(leftAst, Negative(rightAst))
     }
   }
 
-  implicit def `Double/Double`[Input <: Batch]
-    : /.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
+  implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch]] = {
     /.at { (leftAst, rightAst) =>
       Times(leftAst, Reciprocal(rightAst))
     }
   }
 
-  implicit def `Double*Double`[Input <: Batch]
-    : *.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
+  implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch],
+                                                           NeuralNetwork.Aux[Input, Double#Batch]] = {
     *.at(Times(_, _))
   }
 

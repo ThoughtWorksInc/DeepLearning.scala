@@ -44,7 +44,37 @@ package object hlist {
 //    }
 //
 //  }
-  val HNil = ast.HNil
+  val HNil: ast.HNil.type = ast.HNil
+
+  implicit def hnilToNeuralNetwork[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])
+    : IsNeuralNetwork.Aux[ast.HNil.type, Batch.Aux[InputData, InputDelta], shapeless.HNil, shapeless.CNil] =
+    new IsNeuralNetwork[ast.HNil.type, Batch.Aux[InputData, InputDelta]] {
+      override type OutputData = shapeless.HNil
+      override type OutputDelta = shapeless.CNil
+
+      override def apply(hnil: ast.HNil.type) = hnil
+    }
+
+  final class HListOps[Input <: Batch, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
+      tail: NeuralNetwork.Aux[Input, Batch.Aux[TailData, TailDelta]]) {
+
+    def ::[Head](head: Head)(implicit headIsNeuralNetwork: IsNeuralNetwork[Head, Input])
+      : NeuralNetwork.Aux[Input,
+                          Type[shapeless.::[headIsNeuralNetwork.OutputData, TailData],
+                               shapeless.:+:[headIsNeuralNetwork.OutputDelta, TailDelta]]#Batch] = {
+      HCons[Input, headIsNeuralNetwork.OutputData, headIsNeuralNetwork.OutputDelta, TailData, TailDelta](
+        headIsNeuralNetwork(head),
+        tail)
+    }
+
+  }
+
+  implicit def toHListOps[From, Input <: Batch, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
+      from: From)(
+      implicit isNeuralNetwork: IsNeuralNetwork.Aux[From, Input, TailData, TailDelta]
+  ): HListOps[Input, TailData, TailDelta] = {
+    new HListOps[Input, TailData, TailDelta](isNeuralNetwork(from))
+  }
 
   final class HConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
   TailDelta <: shapeless.Coproduct](

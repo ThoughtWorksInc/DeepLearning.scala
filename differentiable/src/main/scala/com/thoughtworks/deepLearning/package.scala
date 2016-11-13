@@ -42,6 +42,7 @@ package object deepLearning {
   object exp extends AstPoly1
   object abs extends AstPoly1
   object max extends AstPoly2
+  object min extends AstPoly2
 
 }
 

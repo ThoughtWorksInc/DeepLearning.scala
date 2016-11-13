@@ -119,12 +119,11 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     def Array2DToRow(implicit row: Array2D): row.To[PredictionResult] = {
       val rowSeq = row.toSeq
-//      val field0: NN[Double :: Double :: HNil] = (rowSeq(0, 0) min 1.0) :: rowSeq(0, 1) :: hnil
-//      val field1: NN[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: hnil
-//      val field2: NN[Double] = rowSeq(0, 4)
-//      val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: hnil
-//      field0 :: field1 :: field2 :: field3 :: hnil
-      ???
+      val field0: row.To[Double :: Double :: HNil] = min(rowSeq(0, 0), 1.0) :: rowSeq(0, 1) :: HNil
+      val field1: row.To[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: HNil
+      val field2: row.To[Double] = rowSeq(0, 4)
+      val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: HNil
+      field0 :: field1 :: field2 :: field3 :: HNil
     }
 //
 //    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#NeuralNetwork.Aux[Array2D] = {
