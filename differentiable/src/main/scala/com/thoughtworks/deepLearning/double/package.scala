@@ -159,12 +159,11 @@ package object double {
 //    Literal(Eval.now(nativeDouble))
 //  }
 //
-//  implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
-//    def toLiteral[Input <: Batch: Identity] = doubleLiteral(nativeDouble)
-//
-//    def toWeight[Input <: Batch: Identity](implicit learningRate: LearningRate): NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Weight(nativeDouble)
-//    }
-//  }
-//
+  implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
+    def toWeight[InputData, InputDelta](implicit  inputType: Type[InputData, InputDelta],learningRate: LearningRate)
+      : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Double#Batch] = {
+      Weight(nativeDouble)
+    }
+  }
+
 }

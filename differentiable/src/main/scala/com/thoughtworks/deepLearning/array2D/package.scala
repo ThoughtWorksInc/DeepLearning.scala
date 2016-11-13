@@ -24,15 +24,15 @@ package object array2D {
 //
 //    def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch])
 //      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
-//      Dot(differentiable, right)
+//      Dot(boolean, right)
 //    }
 //    def +(right: NeuralNetwork.Aux[Input, Array2D#Batch])
 //      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
-//      AddArray2D(differentiable, right)
+//      AddArray2D(boolean, right)
 //    }
 //
 //    def unary_- : NeuralNetwork.Aux[Input, Array2D#Batch] = {
-//      Negative(differentiable)
+//      Negative(boolean)
 //    }
 //
     def toSeq: NeuralNetwork.Aux[Input, Seq2D#Batch] = {

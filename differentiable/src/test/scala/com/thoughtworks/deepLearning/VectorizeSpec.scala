@@ -125,144 +125,143 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: HNil
       field0 :: field1 :: field2 :: field3 :: HNil
     }
-//
-//    def rowToArray2D(implicit row: InputAst[InputTypePair]): InputTypePair#NeuralNetwork.Aux[Array2D] = {
-//      type NN[OutputTypePair <: Batch] = InputTypePair#NeuralNetwork.Aux[OutputTypePair]
-//      val field0 = row.head
-//      val rest0 = row.tail
-//      val field1 = rest0.head
-//      val rest1 = rest0.tail
-//      val field2 = rest1.head
-//      val rest2 = rest1.tail
-//      val field3 = rest2.head
-//      val rest3 = rest2.tail
-//
-//      val field0Flag0: NN[Double] = field0.choice { _ =>
-//        1.0
-//      } { _ =>
-//        0.0
-//      }
-//
-//      val field0Flag1 = field0.choice { unknown =>
-//        0.5.toWeight
-//      } {
-//        _.choice { knownField0 =>
-//          knownField0.choice { unset =>
-//            1.0
-//          } { someValue =>
-//            0.0
-//          }
-//        } { cnil =>
-//          `throw`(new IllegalArgumentException)
-//        }
-//      }
-//
-//      val field0Value0: NN[Double] = field0.choice { unknown: NN[HNil] =>
-//        0.5.toWeight: NN[Double]
-//      } {
-//        _.choice { knownField0 =>
-//          knownField0.choice { unset: NN[HNil] =>
-//            0.5.toWeight: NN[Double]
-//          } {
-//            _.choice { nativeDouble: NN[Double] =>
-//              nativeDouble: NN[Double]
-//            } { cnil: NN[CNil] =>
-//              `throw`(new IllegalArgumentException): NN[Double]
-//            }: NN[Double]
-//          }: NN[Double]
-//        } { cnil: NN[CNil] =>
-//          `throw`(new IllegalArgumentException): NN[Double]
-//        }: NN[Double]
-//
-//      }
-//
-//      val isField1Unknown = field1.isInl
-//      val field1Enum = field1.tail.head
-//      val isField1Case0 = field1Enum.isInl
-//      val isField1Case1 = field1Enum.tail.isInl
-//
-//      val field1Flag0 = isField1Unknown.`if` {
-//        1.0
-//      } {
-//        0.0
-//      }
-//
-//      val field1Value0: NN[Double] = isField1Unknown.`if` {
-//        0.5.toWeight
-//      } {
-//        isField1Case0.`if` {
-//          1.0
-//        } {
-//          0.0
-//        }
-//      }
-//
-//      val field1Value1 = isField1Unknown.`if` {
-//        0.5.toWeight: NN[Double]
-//      } {
-//        isField1Case0.`if` {
-//          0.0: NN[Double]
-//        } {
-//          1.0: NN[Double]
-//        }: NN[Double]
-//      }
-//
-//      val isField2Unknown = field2.isInl
-//      val field2Flag0 = isField2Unknown.`if` {
-//        1.0
-//      } {
-//        0.0
-//      }
-//
-//      val field2Value0 = isField2Unknown.`if` {
-//        0.5.toWeight
-//      } {
-//        field2.tail.head
-//      }
-//
-//      val isField3Unknown = field3.isInl
-//      val field3Enum = field3.tail.head
-//      val isField3Case0 = field3Enum.isInl
-//      val isField3Case1 = field3Enum.tail.isInl
-//      val field3Flag0 = isField3Unknown.`if` {
-//        1.0
-//      } {
-//        0.0
-//      }
-//
-//      val field3Value0 = isField3Unknown.`if` {
-//        0.5.toWeight
-//      } {
-//        isField3Case0.`if` {
-//          1.0
-//        } {
-//          0.0
-//        }
-//      }
-//
-//      val field3Value1 = isField3Unknown.`if` {
-//        0.5.toWeight
-//      } {
-//        isField3Case0.`if` {
-//          0.0
-//        } {
-//          1.0
-//        }
-//      }
-//
-//      val field3Value2 = isField3Unknown.`if` {
-//        0.5.toWeight
-//      } {
-//        isField3Case0.`if` {
-//          0.0
-//        } {
-//          isField3Case1.`if` {
-//            0.0
-//          } {
-//            1.0
-//          }
-//        }
-//      }
+
+    def rowToArray2D(implicit row: InputTypePair): row.To[Array2D] = {
+      val field0 = row.head
+      val rest0 = row.tail
+      val field1 = rest0.head
+      val rest1 = rest0.tail
+      val field2 = rest1.head
+      val rest2 = rest1.tail
+      val field3 = rest2.head
+      val rest3 = rest2.tail
+
+      val field0Flag0: row.To[Double] = field0.choice { _ =>
+        1.0
+      } { _ =>
+        0.0
+      }
+
+      val field0Flag1 = field0.choice { unknown =>
+        0.5.toWeight
+      } {
+        _.choice { knownField0 =>
+          knownField0.choice { unset =>
+            1.0
+          } { someValue =>
+            0.0
+          }
+        } { cnil =>
+          `throw`(new IllegalArgumentException): row.To[Double]
+        }
+      }
+
+      val field0Value0: row.To[Double] = field0.choice { unknown: row.To[HNil] =>
+        0.5.toWeight: row.To[Double]
+      } {
+        _.choice { knownField0 =>
+          knownField0.choice { unset: row.To[HNil] =>
+            0.5.toWeight: row.To[Double]
+          } {
+            _.choice { nativeDouble: row.To[Double] =>
+              nativeDouble: row.To[Double]
+            } { cnil: row.To[CNil] =>
+              `throw`(new IllegalArgumentException): row.To[Double]
+            }: row.To[Double]
+          }: row.To[Double]
+        } { cnil: row.To[CNil] =>
+          `throw`(new IllegalArgumentException): row.To[Double]
+        }: row.To[Double]
+
+      }
+
+      val isField1Unknown = field1.isInl
+      val field1Enum = field1.tail.head
+      val isField1Case0 = field1Enum.isInl
+      val isField1Case1 = field1Enum.tail.isInl
+
+      val field1Flag0 = isField1Unknown.`if` {
+        1.0
+      } {
+        0.0
+      }
+
+      val field1Value0: row.To[Double] = isField1Unknown.`if` {
+        0.5.toWeight
+      } {
+        isField1Case0.`if` {
+          1.0
+        } {
+          0.0
+        }
+      }
+
+      val field1Value1 = isField1Unknown.`if` {
+        0.5.toWeight: row.To[Double]
+      } {
+        isField1Case0.`if` {
+          0.0: row.To[Double]
+        } {
+          1.0: row.To[Double]
+        }: row.To[Double]
+      }
+
+      val isField2Unknown = field2.isInl
+      val field2Flag0 = isField2Unknown.`if` {
+        1.0
+      } {
+        0.0
+      }
+
+      val field2Value0 = isField2Unknown.`if` {
+        0.5.toWeight
+      } {
+        field2.tail.head
+      }
+
+      val isField3Unknown = field3.isInl
+      val field3Enum = field3.tail.head
+      val isField3Case0 = field3Enum.isInl
+      val isField3Case1 = field3Enum.tail.isInl
+      val field3Flag0 = isField3Unknown.`if` {
+        1.0
+      } {
+        0.0
+      }
+
+      val field3Value0 = isField3Unknown.`if` {
+        0.5.toWeight
+      } {
+        isField3Case0.`if` {
+          1.0
+        } {
+          0.0
+        }
+      }
+
+      val field3Value1 = isField3Unknown.`if` {
+        0.5.toWeight
+      } {
+        isField3Case0.`if` {
+          0.0
+        } {
+          1.0
+        }
+      }
+
+      val field3Value2 = isField3Unknown.`if` {
+        0.5.toWeight
+      } {
+        isField3Case0.`if` {
+          0.0
+        } {
+          isField3Case1.`if` {
+            0.0
+          } {
+            1.0
+          }
+        }
+      }
 //
 //      val encodedAstRow0 = Vector(field0Flag0,
 //                                  field0Flag1,
@@ -278,8 +277,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 //                                  field3Value2)
 //
 //      Vector(encodedAstRow0).toArray2D
-//    }
-//
+      ???
+    }
+
 //    val rowToArray2DNetwork = rowToArray2D
 //
 //    def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {

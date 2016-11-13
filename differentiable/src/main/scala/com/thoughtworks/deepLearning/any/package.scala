@@ -20,11 +20,13 @@ package object any {
 //  implicit def input[Input <: Batch] = {
 //    Identity[Input]()
 //  }
-//
-//  def `throw`(throwable: => Throwable) = {
-//    Throw(throwable _)
-//  }
-//
+
+  def `throw`[InputData, InputDelta, OutputData, OutputDelta](throwable: => Throwable)(
+      implicit inputType: Type[InputData, InputDelta])
+    : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]] = {
+    Throw(throwable _)
+  }
+
 //  implicit final class NativeAnyOps[Data](data: Data) {
 //
 //    def toLiteral[Input <: Batch: Identity]: NeuralNetwork.Aux[Input, Batch.ConcreteBatch[Data, scala.Any]] = Literal[Data](data)
@@ -43,7 +45,7 @@ package object any {
   }
 
   implicit def toAnyOps[F, NewInputData, NewInputDelta, Input <: Batch, OutputData, OutputDelta](f: F)(
-    implicit toNeuralNetwork: ToNeuralNetwork.Aux[F, Input, OutputData, OutputDelta],
-    differentiableType: Type[NewInputData, NewInputDelta])
+      implicit toNeuralNetwork: ToNeuralNetwork.Aux[F, Input, OutputData, OutputDelta],
+      differentiableType: Type[NewInputData, NewInputDelta])
     : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(toNeuralNetwork(f))
 }

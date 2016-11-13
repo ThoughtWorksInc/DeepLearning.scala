@@ -1,4 +1,7 @@
 package com.thoughtworks.deepLearning
+
+import com.thoughtworks.deepLearning.boolean.ast.If
+
 //
 //import com.thoughtworks.deepLearning.NeuralNetwork._
 //import com.thoughtworks.deepLearning.any.Any
@@ -13,14 +16,19 @@ package object boolean {
 
   /** @template */
   type Boolean = utilities.Boolean
-//
-//  implicit final class BooleanOps[Input <: Batch](differentiable: NeuralNetwork.Aux[Input, Boolean#Batch]) {
-//
-//    def `if`[ThatInput <: Input, Output <: Batch](`then`: NeuralNetwork.Aux[ThatInput, Output])(
-//        `else`: NeuralNetwork.Aux[ThatInput, Output]): NeuralNetwork.Aux[ThatInput, Output] = {
-//      If[ThatInput, Output](differentiable, `then`, `else`)
-//    }
-//
-//  }
+
+  final class BooleanOps[Input <: Batch](boolean: NeuralNetwork.Aux[Input, Boolean#Batch]) {
+
+    def `if`[ThatInput <: Input, Output <: Batch](`then`: NeuralNetwork.Aux[ThatInput, Output])(
+        `else`: NeuralNetwork.Aux[ThatInput, Output]): NeuralNetwork.Aux[ThatInput, Output] = {
+      If[ThatInput, Output](boolean, `then`, `else`)
+    }
+
+  }
+
+  implicit def toBooleanOps[From, Input <: Batch](from: From)(
+      implicit toNeuralNetwork: ToNeuralNetwork.OfType[From, Input, Boolean]): BooleanOps[Input] = {
+    new BooleanOps[Input](toNeuralNetwork(from))
+  }
 
 }
