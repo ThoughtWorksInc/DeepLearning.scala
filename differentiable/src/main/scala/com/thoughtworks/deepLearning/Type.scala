@@ -23,4 +23,7 @@ object Type {
 
   implicit def apply[Data, Delta]: Type[Data, Delta] = new Type
 
+  type DataOf[T <: Type[_, _]] = t.Data forSome { val t: T }
+  type DeltaOf[T <: Type[_, _]] = t.Delta forSome { val t: T }
+
 }

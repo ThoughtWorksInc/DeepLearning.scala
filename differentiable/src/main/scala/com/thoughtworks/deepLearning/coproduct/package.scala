@@ -3,6 +3,7 @@ package com.thoughtworks.deepLearning
 import com.thoughtworks.deepLearning.boolean.utilities._
 import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import com.thoughtworks.deepLearning.Type.{DataOf, DeltaOf}
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast._
 import shapeless.Lazy
@@ -25,10 +26,7 @@ package object coproduct {
 
   /** @template */
   type :+:[Head <: Type[_, _], Tail <: Coproduct] =
-    Type[shapeless.:+:[head.Data, tail.Data], shapeless.:+:[head.Delta, tail.Delta]] forSome {
-      val head: Head
-      val tail: Tail
-    }
+    Type[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
   implicit final class RichCoproductType[TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
       tail: Type[TailData, TailDelta]) {
@@ -58,8 +56,8 @@ package object coproduct {
     def choice[HeadCase, TailCase, OutputData, OutputDelta](
         caseHead: NeuralNetwork.Aux[Input, Type[HeadData, HeadDelta]#Batch] => HeadCase)(
         caseTail: NeuralNetwork.Aux[Input, Type[TailData, TailDelta]#Batch] => TailCase)(
-                                                             implicit headIsNeuralNetwork: IsNeuralNetwork.Aux[HeadCase, Input, OutputData, OutputDelta],
-                                                             tailIsNeuralNetwork: IsNeuralNetwork.Aux[TailCase, Input, OutputData, OutputDelta])
+        implicit headIsNeuralNetwork: IsNeuralNetwork.Aux[HeadCase, Input, OutputData, OutputDelta],
+        tailIsNeuralNetwork: IsNeuralNetwork.Aux[TailCase, Input, OutputData, OutputDelta])
       : NeuralNetwork.Aux[Input, Type[OutputData, OutputDelta]#Batch] = {
       If[Input, Batch.Aux[OutputData, OutputDelta]](isInl, caseHead(head), caseTail(tail))
     }
@@ -76,8 +74,8 @@ package object coproduct {
                           HeadDelta,
                           TailData <: shapeless.Coproduct,
                           TailDelta <: shapeless.Coproduct](from: From)(
-    implicit isNeuralNetwork: IsNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
-    toCoproductAst: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
+      implicit isNeuralNetwork: IsNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
+      toCoproductAst: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ): CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
