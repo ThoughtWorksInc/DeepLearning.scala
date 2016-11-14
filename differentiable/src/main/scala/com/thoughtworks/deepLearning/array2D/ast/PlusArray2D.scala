@@ -14,9 +14,9 @@ import SumAs._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class AddArray2D[Input0 <: Batch](
-                                                       leftOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch],
-                                                       rightOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch]
+final case class PlusArray2D[Input0 <: Batch](
+    leftOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch],
+    rightOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch]
 ) extends NeuralNetwork
     with Cached {
 

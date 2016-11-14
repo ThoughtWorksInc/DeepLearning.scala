@@ -25,17 +25,96 @@ package object array2D {
                    NeuralNetwork.Aux[Input, Array2D#Batch]] =
     max.at { MaxDouble(_, _) }
 
+  implicit def `Array2D/Array2D`[Input <: Batch]: AstMethods./.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods./.at { (leftAst, rightAst) =>
+      MultiplyArray2D(leftAst, Reciprocal(rightAst))
+    }
+  }
+  implicit def `Double/Array2D`[Input <: Batch]: AstMethods./.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods./.at { (leftAst, rightAst) =>
+      MultiplyDouble(Reciprocal(rightAst), leftAst)
+    }
+  }
+  implicit def `Array2D/Double`[Input <: Batch]: AstMethods./.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods./.at { (leftAst, rightAst) =>
+      MultiplyDouble(leftAst, double.ast.Reciprocal(rightAst))
+    }
+  }
+  implicit def `Array2D*Array2D`[Input <: Batch]: AstMethods.*.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.*.at { (leftAst, rightAst) =>
+      MultiplyArray2D(leftAst, rightAst)
+    }
+  }
+  implicit def `Array2D*Double`[Input <: Batch]: AstMethods.*.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.*.at { (leftAst, rightAst) =>
+      MultiplyDouble(leftAst, rightAst)
+    }
+  }
+  implicit def `Double*Array2D`[Input <: Batch]: AstMethods.*.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.*.at { (leftAst, rightAst) =>
+      MultiplyDouble(rightAst, leftAst)
+    }
+  }
+  implicit def `Array2D-Array2D`[Input <: Batch]: AstMethods.-.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.-.at { (leftAst, rightAst) =>
+      PlusArray2D(leftAst, Negative(rightAst))
+    }
+  }
+  implicit def `Double-Array2D`[Input <: Batch]: AstMethods.-.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.-.at { (leftAst, rightAst) =>
+      PlusDouble(Negative(rightAst), leftAst)
+    }
+  }
+  implicit def `Array2D-Double`[Input <: Batch]: AstMethods.-.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.-.at { (leftAst, rightAst) =>
+      PlusDouble(leftAst, double.ast.Negative(rightAst))
+    }
+  }
+  implicit def `Array2D+Array2D`[Input <: Batch]: AstMethods.+.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                        NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.+.at { (leftAst, rightAst) =>
+      PlusArray2D(leftAst, rightAst)
+    }
+  }
+  implicit def `Array2D+Double`[Input <: Batch]: AstMethods.+.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.+.at { (leftAst, rightAst) =>
+      PlusDouble(leftAst, rightAst)
+    }
+  }
+  implicit def `Double+Array2D`[Input <: Batch]: AstMethods.+.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch],
+                                                                       NeuralNetwork.Aux[Input, Array2D#Batch]] = {
+    AstMethods.+.at { (leftAst, rightAst) =>
+      PlusDouble(rightAst, leftAst)
+    }
+  }
+
   final class Array2DOps[Input <: Batch](differentiable: NeuralNetwork.Aux[Input, Array2D#Batch]) {
 
-    def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch])
-      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
+    def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch]): NeuralNetwork.Aux[Input, Array2D#Batch] = {
       Dot(differentiable, right)
     }
-//    def +(right: NeuralNetwork.Aux[Input, Array2D#Batch])
-//      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
-//      AddArray2D(boolean, right)
-//    }
-//
 //    def unary_- : NeuralNetwork.Aux[Input, Array2D#Batch] = {
 //      Negative(boolean)
 //    }

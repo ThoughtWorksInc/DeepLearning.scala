@@ -30,10 +30,11 @@ package object any {
   final class AnyOps[Input <: Batch, OutputData, OutputDelta](
       val toLiteral: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
-    def compose[NewInputData, NewInputDelta](g: NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Input])(
-        implicit differentiableType: Type[NewInputData, NewInputDelta])
-      : NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Batch.Aux[OutputData, OutputDelta]] = {
-      Compose(toLiteral, g)
+    def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
+        implicit differentiableType: ToNeuralNetwork.Aux[G, NewInput, InputData, InputDelta],
+        toInput: NeuralNetwork.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< NeuralNetwork.Aux[NewInput, Input]
+    ): NeuralNetwork.Aux[NewInput, Batch.Aux[OutputData, OutputDelta]] = {
+      Compose(toLiteral, toInput(differentiableType(g)))
     }
 
   }

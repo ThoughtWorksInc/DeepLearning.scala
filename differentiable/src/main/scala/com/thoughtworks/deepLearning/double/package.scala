@@ -52,7 +52,7 @@ package object double {
                                                            NeuralNetwork.Aux[Input, Double#Batch],
                                                            NeuralNetwork.Aux[Input, Double#Batch]] = {
     AstMethods.+.at { (leftAst, rightAst) =>
-      Plus(leftAst, Negative(rightAst))
+      Plus(leftAst, rightAst)
     }
   }
 
@@ -160,8 +160,9 @@ package object double {
 //  }
 //
   implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
-    def toWeight[InputData, InputDelta](implicit  inputType: Type[InputData, InputDelta],learningRate: LearningRate)
-      : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Double#Batch] = {
+    def toWeight[InputData, InputDelta](
+        implicit inputType: Type[InputData, InputDelta],
+        learningRate: LearningRate): NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Double#Batch] = {
       Weight(nativeDouble)
     }
   }

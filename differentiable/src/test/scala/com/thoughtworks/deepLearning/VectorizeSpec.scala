@@ -279,20 +279,21 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       Vector(encodedAstRow0).toArray2D
     }
 
-//    val rowToArray2DNetwork = rowToArray2D
-//
-//    def fullyConnectedThenRelu(implicit row: InputAst[Array2D]) = {
-//      val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
-//      val b = Nd4j.zeros(50).toWeight
-//      max((row dot w) + b, 0.0)
-//    }
-//
-//    def predict(implicit row: InputAst[InputTypePair]) = {
-//      rowToArray2DNetwork.compose(row)
-//    }
-//    //
-//    //    val train: NeuralNetwork.Aux[Aux[InputData :: ExpectedLabelData :: HNil, _], Aux[Eval[Double], _]] = ???
-//
+    val rowToArray2DNetwork = rowToArray2D
+
+    def fullyConnectedThenRelu(implicit row: Array2D) = {
+      val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
+      val b = Nd4j.zeros(50).toWeight
+      max((row dot w) + b, 0.0)
+    }
+
+    def predict(implicit row: InputTypePair) = {
+      val encodedRow = rowToArray2DNetwork.compose(row)
+      fullyConnectedThenRelu.compose(encodedRow)
+    }
+
+    //    val train: NeuralNetwork.Aux[Aux[InputData :: ExpectedLabelData :: HNil, _], Aux[Eval[Double], _]] = ???
+
   }
 
 }
