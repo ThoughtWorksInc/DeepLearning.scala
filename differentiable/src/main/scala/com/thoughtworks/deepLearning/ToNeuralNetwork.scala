@@ -76,15 +76,6 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
       override def apply(ast: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = ast
     }
 
-  implicit def inputTypeToNeuralNetwork[InputData, InputDelta]
-    : ToNeuralNetwork.Aux[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
-    new ToNeuralNetwork[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
-      override type OutputData = InputData
-      override type OutputDelta = InputDelta
-
-      override def apply(input: Type[InputData, InputDelta]) =
-        Identity[Batch.Aux[InputData, InputDelta]]()
-    }
 }
 
 /**

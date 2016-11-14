@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import com.thoughtworks.deepLearning.any.ast.Identity
+
 import scala.language.existentials
 
 /**
@@ -25,5 +27,15 @@ object Type {
 
   type DataOf[T <: Type[_, _]] = t.Data forSome { val t: T }
   type DeltaOf[T <: Type[_, _]] = t.Delta forSome { val t: T }
+
+  implicit def inputTypeToNeuralNetwork[InputData, InputDelta]
+    : ToNeuralNetwork.Aux[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
+    new ToNeuralNetwork[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
+      override type OutputData = InputData
+      override type OutputDelta = InputDelta
+
+      override def apply(input: Type[InputData, InputDelta]) =
+        Identity[Batch.Aux[InputData, InputDelta]]()
+    }
 
 }
