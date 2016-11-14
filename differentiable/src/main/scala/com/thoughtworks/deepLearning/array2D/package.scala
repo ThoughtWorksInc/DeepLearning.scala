@@ -2,9 +2,10 @@ package com.thoughtworks.deepLearning
 
 import cats.Eval
 import com.thoughtworks.deepLearning.NeuralNetwork.Aux
-import com.thoughtworks.deepLearning.array2D.ast.{ToArray2D, MaxDouble, ToSeq}
+import com.thoughtworks.deepLearning.array2D.ast._
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
+import org.nd4j.linalg.api.ndarray.INDArray
 import shapeless.PolyDefns._
 import shapeless.{Lazy, Poly2}
 
@@ -25,11 +26,11 @@ package object array2D {
     max.at { MaxDouble(_, _) }
 
   final class Array2DOps[Input <: Batch](differentiable: NeuralNetwork.Aux[Input, Array2D#Batch]) {
-//
-//    def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch])
-//      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
-//      Dot(boolean, right)
-//    }
+
+    def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch])
+      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
+      Dot(differentiable, right)
+    }
 //    def +(right: NeuralNetwork.Aux[Input, Array2D#Batch])
 //      : NeuralNetwork.Aux[Input, Array2D#Batch] = {
 //      AddArray2D(boolean, right)
@@ -111,6 +112,14 @@ package object array2D {
   implicit def toToArray2DOps[Element, Input <: Batch](astVector: Seq[Seq[Element]])(
       implicit toNeuralNetwork: ToNeuralNetwork.OfType[Element, Input, Double]): ToArray2DOps[Input] = {
     new ToArray2DOps(astVector.view.map(_.view.map(toNeuralNetwork(_))))
+  }
+
+  implicit final class INDArrayOps(nativeDouble: INDArray) {
+    def toWeight[InputData, InputDelta](
+        implicit inputType: Type[InputData, InputDelta],
+        learningRate: LearningRate): NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Array2D#Batch] = {
+      Weight(nativeDouble)
+    }
   }
 
 }
