@@ -79,11 +79,11 @@ package object coproduct {
                           HeadDelta,
                           TailData <: shapeless.Coproduct,
                           TailDelta <: shapeless.Coproduct](from: From)(
-      implicit toNeuralNetwork: ToNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
-      toCoproductAst: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
+    implicit toNeuralNetwork: ToNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
+    toCoproductNeuralNetwork: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ): CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
-    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductAst(toNeuralNetwork(from)))
+    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductNeuralNetwork(toNeuralNetwork(from)))
   }
 }
