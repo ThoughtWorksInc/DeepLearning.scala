@@ -13,38 +13,35 @@ package object any {
   /** @template */
   type Any = Type[_, _]
 
-//
-//  /** @template */
-//  type InputAst[InputTypePair <: Any] = Identity[InputTypePair#ConcreteBatch]
-//
-//  implicit def input[Input <: Batch] = {
-//    Identity[Input]()
-//  }
+  /** @template */
+  type Nothing = Type[scala.Nothing, scala.Any]
 
   def `throw`[InputData, InputDelta](throwable: => Throwable)(implicit inputType: Type[InputData, InputDelta])
-    : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Type[scala.Nothing, scala.Any]#Batch] = {
+    : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Nothing#Batch] = {
     Throw(throwable _)
   }
 
-//  implicit final class NativeAnyOps[Data](data: Data) {
-//
-//    def toLiteral[Input <: Batch: Identity]: NeuralNetwork.Aux[Input, Batch.ConcreteBatch[Data, scala.Any]] = Literal[Data](data)
-//    def toBatch: Batch.ConcreteBatch[Data, scala.Any] = Literal[Data](data)
-//
-//  }
-//
-  final class AnyOps[Input <: Batch, OutputData, OutputDelta, NewInputData, NewInputDelta](
-      val f: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
+  implicit def autoToLiteral[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+      implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta])
+    : NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+    toNeuralNetwork(a)
+  }
 
-    def compose(g: NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Input])
+  final class AnyOps[Input <: Batch, OutputData, OutputDelta](
+      val toLiteral: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
+
+    def compose[NewInputData, NewInputDelta](g: NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Input])(
+        implicit differentiableType: Type[NewInputData, NewInputDelta])
       : NeuralNetwork.Aux[Batch.Aux[NewInputData, NewInputDelta], Batch.Aux[OutputData, OutputDelta]] = {
-      Compose(f, g)
+      Compose(toLiteral, g)
     }
 
   }
 
-  implicit def toAnyOps[F, NewInputData, NewInputDelta, Input <: Batch, OutputData, OutputDelta](f: F)(
-      implicit toNeuralNetwork: ToNeuralNetwork.Aux[F, Input, OutputData, OutputDelta],
-      differentiableType: Type[NewInputData, NewInputDelta])
-    : AnyOps[Input, OutputData, OutputDelta, NewInputData, NewInputDelta] = new AnyOps(toNeuralNetwork(f))
+  implicit def toAnyOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+      implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta])
+    : AnyOps[Input, OutputData, OutputDelta] = {
+    new AnyOps(toNeuralNetwork(a))
+  }
+
 }

@@ -26,18 +26,6 @@ package object deepLearning {
 
   }
 
-  implicit def autoToLiteral[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta]): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-    toNeuralNetwork(a)
-  }
-
-  implicit final class ToLiteralOps[A](a: A) {
-    def toLiteral[Input <: Batch, OutputData, OutputDelta](
-        implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta]): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-      toNeuralNetwork(a)
-    }
-  }
-
   object log extends AstPoly1
   object exp extends AstPoly1
   object abs extends AstPoly1

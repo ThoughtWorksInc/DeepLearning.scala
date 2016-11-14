@@ -56,10 +56,6 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
     type OutputDelta = OutputDelta0
   }
 
-  type OfBatch[From, Input <: Batch, Output0 <: Batch] = ToNeuralNetwork[From, Input] {
-    type Output = Output0
-  }
-
   type OfType[From, Input <: Batch, OutputType <: Type[_, _]] =
     ToNeuralNetwork.Aux[From, Input, differentiableType.Data, differentiableType.Delta] forSome {
       val differentiableType: OutputType

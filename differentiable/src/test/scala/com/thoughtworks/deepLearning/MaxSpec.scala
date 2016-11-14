@@ -1,6 +1,7 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.array2D._
+import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.double._
 import org.scalatest.{FreeSpec, Matchers}

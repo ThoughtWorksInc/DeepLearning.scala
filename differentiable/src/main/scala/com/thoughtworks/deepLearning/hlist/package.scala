@@ -58,13 +58,10 @@ package object hlist {
   final class HListOps[Input <: Batch, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](
       tail: NeuralNetwork.Aux[Input, Batch.Aux[TailData, TailDelta]]) {
 
-    def ::[Head](head: Head)(implicit headToNeuralNetwork: ToNeuralNetwork[Head, Input])
-      : NeuralNetwork.Aux[Input,
-                          Type[shapeless.::[headToNeuralNetwork.OutputData, TailData],
-                               shapeless.:+:[headToNeuralNetwork.OutputDelta, TailDelta]]#Batch] = {
-      HCons[Input, headToNeuralNetwork.OutputData, headToNeuralNetwork.OutputDelta, TailData, TailDelta](
-        headToNeuralNetwork(head),
-        tail)
+    def ::[Head, HeadData, HeadDelta](head: Head)(
+        implicit headToNeuralNetwork: ToNeuralNetwork.Aux[Head, Input, HeadData, HeadDelta])
+      : NeuralNetwork.Aux[Input, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
+      HCons[Input, HeadData, HeadDelta, TailData, TailDelta](headToNeuralNetwork(head), tail)
     }
 
   }
@@ -80,10 +77,10 @@ package object hlist {
   TailDelta <: shapeless.Coproduct](
       hcons: NeuralNetwork.Aux[Input,
                                Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]) {
-    def head: NeuralNetwork.Aux[Input, Type[HeadData, HeadDelta]#Batch] =
+    def head: NeuralNetwork.Aux[Input, Batch.Aux[HeadData, HeadDelta]] =
       Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
 
-    def tail: NeuralNetwork.Aux[Input, Type[TailData, TailDelta]#Batch] =
+    def tail: NeuralNetwork.Aux[Input, Batch.Aux[TailData, TailDelta]] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
   }
 
@@ -95,8 +92,8 @@ package object hlist {
                           HeadDelta,
                           TailData <: shapeless.HList,
                           TailDelta <: shapeless.Coproduct](from: From)(
-    implicit toNeuralNetwork: ToNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
-    toHListAst: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
+      implicit toNeuralNetwork: ToNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
+      toHListAst: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
         Input,
         Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ): HConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
