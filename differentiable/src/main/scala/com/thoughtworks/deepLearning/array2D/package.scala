@@ -1,11 +1,13 @@
 package com.thoughtworks.deepLearning
 
+import cats.Eval
 import com.thoughtworks.deepLearning.NeuralNetwork.Aux
-import com.thoughtworks.deepLearning.array2D.ast.{MaxDouble, ToSeq}
+import com.thoughtworks.deepLearning.array2D.ast.{ToArray2D, MaxDouble, ToSeq}
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 import shapeless.PolyDefns._
 import shapeless.{Lazy, Poly2}
+
 import scala.language.implicitConversions
 
 /**
@@ -17,7 +19,9 @@ package object array2D {
   type Array2D = utilities.Array2D
 
   implicit def `max(Array2D,Double)`[Left, Right, Input <: Batch]
-    : max.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch], NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Array2D#Batch]] =
+    : max.Case.Aux[NeuralNetwork.Aux[Input, Array2D#Batch],
+                   NeuralNetwork.Aux[Input, Double#Batch],
+                   NeuralNetwork.Aux[Input, Array2D#Batch]] =
     max.at { MaxDouble(_, _) }
 
   final class Array2DOps[Input <: Batch](differentiable: NeuralNetwork.Aux[Input, Array2D#Batch]) {
@@ -98,10 +102,15 @@ package object array2D {
 //    ndarrayBatch(nativeArray.toNDArray)
 //
 //  // TODO: Support scala.Array for better performance.
-//  implicit final class AstVectorOps[Input <: Batch](
-//      astVector: Vector[
-//        Vector[NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]]) {
-//    def toArray2D = FromAstVector(astVector)
-//  }
+
+  final class ToArray2DOps[Input <: Batch](
+      astVector: Seq[Seq[NeuralNetwork.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]]) {
+    def toArray2D: NeuralNetwork.Aux[Input, Array2D#Batch] = ToArray2D(astVector)
+  }
+
+  implicit def toToArray2DOps[Element, Input <: Batch](astVector: Seq[Seq[Element]])(
+      implicit toNeuralNetwork: ToNeuralNetwork.OfType[Element, Input, Double]): ToArray2DOps[Input] = {
+    new ToArray2DOps(astVector.view.map(_.view.map(toNeuralNetwork(_))))
+  }
 
 }

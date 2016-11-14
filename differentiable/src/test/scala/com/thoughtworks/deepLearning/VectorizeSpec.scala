@@ -152,7 +152,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
             0.0
           }
         } { cnil =>
-          `throw`(new IllegalArgumentException) //: row.To[Double]
+          `throw`(new IllegalArgumentException)
         }
       }
 
@@ -262,22 +262,21 @@ final class VectorizeSpec extends FreeSpec with Matchers {
           }
         }
       }
-//
-//      val encodedAstRow0 = Vector(field0Flag0,
-//                                  field0Flag1,
-//                                  field0Value0,
-//                                  field1Flag0,
-//                                  field1Value0,
-//                                  field1Value1,
-//                                  field2Flag0,
-//                                  field2Value0,
-//                                  field3Flag0,
-//                                  field3Value0,
-//                                  field3Value1,
-//                                  field3Value2)
-//
-//      Vector(encodedAstRow0).toArray2D
-      ???
+
+      val encodedAstRow0 = Vector(field0Flag0,
+                                  field0Flag1,
+                                  field0Value0,
+                                  field1Flag0,
+                                  field1Value0,
+                                  field1Value1,
+                                  field2Flag0,
+                                  field2Value0,
+                                  field3Flag0,
+                                  field3Value0,
+                                  field3Value1,
+                                  field3Value2)
+
+      Vector(encodedAstRow0).toArray2D
     }
 
 //    val rowToArray2DNetwork = rowToArray2D
