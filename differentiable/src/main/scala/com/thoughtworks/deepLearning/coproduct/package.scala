@@ -6,6 +6,7 @@ import com.thoughtworks.deepLearning.NeuralNetwork.Aux
 import com.thoughtworks.deepLearning.Type.{DataOf, DeltaOf}
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.coproduct.ast._
+import shapeless.Lub
 
 import scala.language.existentials
 import scala.language.implicitConversions
@@ -44,13 +45,26 @@ package object coproduct {
     def tail: NeuralNetwork.Aux[Input, Type[TailData, TailDelta]#Batch] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
-    def choice[HeadCase, TailCase, OutputData, OutputDelta](
-        caseHead: NeuralNetwork.Aux[Input, Type[HeadData, HeadDelta]#Batch] => HeadCase)(
+    def choice[HeadCase,
+               TailCase,
+               HeadOutputData,
+               HeadOutputDelta,
+               TailOutputData,
+               TailOutputDelta,
+               NN,
+               OutputData,
+               OutputDelta](caseHead: NeuralNetwork.Aux[Input, Type[HeadData, HeadDelta]#Batch] => HeadCase)(
         caseTail: NeuralNetwork.Aux[Input, Type[TailData, TailDelta]#Batch] => TailCase)(
-        implicit headToNeuralNetwork: ToNeuralNetwork.Aux[HeadCase, Input, OutputData, OutputDelta],
-        tailToNeuralNetwork: ToNeuralNetwork.Aux[TailCase, Input, OutputData, OutputDelta])
-      : NeuralNetwork.Aux[Input, Type[OutputData, OutputDelta]#Batch] = {
-      If[Input, Batch.Aux[OutputData, OutputDelta]](isInl, caseHead(head), caseTail(tail))
+        implicit headToNeuralNetwork: ToNeuralNetwork.Aux[HeadCase, Input, HeadOutputData, HeadOutputDelta],
+        tailToNeuralNetwork: ToNeuralNetwork.Aux[TailCase, Input, TailOutputData, TailOutputDelta],
+        lub: Lub[NeuralNetwork.Aux[Input, Batch.Aux[HeadOutputData, HeadOutputDelta]],
+                 NeuralNetwork.Aux[Input, Batch.Aux[TailOutputData, TailOutputDelta]],
+                 NN],
+        commonToNeuralNetwork: ToNeuralNetwork.Aux[NN, Input, OutputData, OutputDelta]
+    ): NeuralNetwork.Aux[Input, Type[OutputData, OutputDelta]#Batch] = {
+      If[Input, Type[OutputData, OutputDelta]#Batch](isInl,
+                                                     commonToNeuralNetwork(lub.left(caseHead(head))),
+                                                     commonToNeuralNetwork(lub.right(caseTail(tail))))
     }
 
     def isInl: NeuralNetwork.Aux[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)

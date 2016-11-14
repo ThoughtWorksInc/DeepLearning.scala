@@ -21,9 +21,8 @@ package object any {
 //    Identity[Input]()
 //  }
 
-  def `throw`[InputData, InputDelta, OutputData, OutputDelta](throwable: => Throwable)(
-      implicit inputType: Type[InputData, InputDelta])
-    : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]] = {
+  def `throw`[InputData, InputDelta](throwable: => Throwable)(implicit inputType: Type[InputData, InputDelta])
+    : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Type[scala.Nothing, scala.Any]#Batch] = {
     Throw(throwable _)
   }
 

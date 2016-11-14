@@ -152,7 +152,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
             0.0
           }
         } { cnil =>
-          `throw`(new IllegalArgumentException): row.To[Double]
+          `throw`(new IllegalArgumentException) //: row.To[Double]
         }
       }
 
@@ -170,7 +170,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
             }: row.To[Double]
           }: row.To[Double]
         } { cnil: row.To[CNil] =>
-          `throw`(new IllegalArgumentException): row.To[Double]
+          `throw`(new IllegalArgumentException)
         }: row.To[Double]
 
       }
