@@ -1,5 +1,6 @@
 package com.thoughtworks.deepLearning
 
+import cats.Eval
 import com.thoughtworks.deepLearning.NeuralNetwork._
 import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.hlist._
@@ -310,10 +311,11 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     val trainingData = {
       import shapeless._
+      import shapeless.ops.coproduct._
       IndexedSeq(
-        Coproduct[Field0](HNil) :: Inl(HNil) :: 3.5 :: Inl(HNil) :: HNil,
-        Coproduct[Field0](5.1) :: Inr(Inl(HNil)) :: 8.3 :: Inr(Inl(HNil)) :: HNil,
-        Coproduct[Field0](HNil) :: Inl(HNil) :: 91.3 :: Inr(Inr(Inl(HNil))) :: HNil
+        Coproduct[Field0#Data](HNil: HNil) :: Inl(HNil) :: Eval.now(3.5) :: Inl(HNil) :: HNil,
+        Coproduct[Field0#Data](Eval.now(5.1)) :: Inr(Inl(HNil)) :: Eval.now(8.3) :: Inr(Inl(HNil)) :: HNil,
+        Coproduct[Field0#Data](HNil: HNil) :: Inl(HNil) :: Eval.now(91.3) :: Inr(Inr(Inl(HNil))) :: HNil
       )
     }
 
@@ -321,13 +323,19 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       import shapeless._
       val field0 :: field1 :: field2 :: field3 :: HNil = trainingData(Random.nextInt(trainingData.length))
 
-      if (Random.nextBoolean) {
-
-      } else {
-
+      def fieldPair[A](field: A) = {
+        if (Random.nextBoolean) {
+          (Inl(HNil), Inr(Inl(field)))
+        } else {
+          (Inr(Inl(field)), Inl(HNil))
+        }
       }
-      //    val field0 =
-      ???
+      val (input0, label0) = fieldPair(field0)
+      val (input1, label1) = fieldPair(field1)
+      val (input2, label2) = fieldPair(field2)
+      val (input3, label3) = fieldPair(field3)
+
+      (input0 :: input1 :: input2 :: input3 :: HNil) :: (label0 :: label1 :: label2 :: label3 :: HNil) :: HNil
     }
     /*
      TODO: 最终目标是生成一个预测神经网络和一个训练神经网络
