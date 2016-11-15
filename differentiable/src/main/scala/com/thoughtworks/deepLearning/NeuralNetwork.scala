@@ -130,12 +130,12 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
           }
         }
 
-        Option(checkIfCloseOnlyOnce).getOrElse(ReferenceCount.this.toBatch)
+        Option(checkIfCloseOnlyOnce).getOrElse(ReferenceCount.this.self)
       }
 
       type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
 
-      private final def toBatch: Self = this: Batch.Aux[Data, Delta]
+      private final def self: Self = this: Batch.Aux[Data, Delta]
 
       private[Cached] var count: Int = 1
 
@@ -153,8 +153,10 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
           count -= 1
           count
         }
+        assert(newCount >= 0)
         if (newCount == 0) {
-          cache.remove(input)
+          val batch = cache.remove(input)
+          assert(batch == this)
           flush()
           closeUpstreams()
         }
@@ -226,11 +228,14 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       val sharedBatch: SharedBatch = cache.get(input) match {
         case null =>
           val sharedBatch = rawForward(input)
-          cache.put(input, sharedBatch)
+          val oldBatch = cache.put(input, sharedBatch)
+          assert(oldBatch == null)
           sharedBatch
         case sharedBatch =>
           sharedBatch.synchronized {
-            sharedBatch.count += 1
+            val count = sharedBatch.count
+            assert(count >= 0)
+            sharedBatch.count += count + 1
           }
           sharedBatch
       }
