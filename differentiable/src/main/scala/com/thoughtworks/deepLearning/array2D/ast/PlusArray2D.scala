@@ -26,8 +26,8 @@ final case class PlusArray2D[Input0 <: Batch](
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = {
-      Applicative[Eval]
-        .map2(upstream1.value, upstream2.value) { (aValue, bValue) =>
+      upstream1.value
+        .map2(upstream2.value) { (aValue, bValue) =>
           val Array(aRows, aColumns) = aValue.shape()
           val Array(bRows, bColumns) = bValue.shape()
           val newShape =
