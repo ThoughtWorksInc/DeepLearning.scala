@@ -37,12 +37,31 @@ package object any {
       Compose(toLiteral, toInput(differentiableType(g)))
     }
 
+    def train[InputData, InputDelta](inputData: InputData)(
+        implicit ev: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
+          Batch.Aux[InputData, InputDelta],
+          Batch.Aux[OutputData, OutputDelta]],
+        outputDataIsOutputDelta: OutputData <:< OutputDelta
+    ): Unit = {
+      val outputBatch = toLiteral.forward(Literal[InputData](inputData))
+      try {
+        outputBatch.backward(outputDataIsOutputDelta(outputBatch.value))
+      } finally {
+        outputBatch.close()
+      }
+
+    }
+
   }
 
   implicit def toAnyOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
       implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta])
     : AnyOps[Input, OutputData, OutputDelta] = {
     new AnyOps(toNeuralNetwork(a))
+  }
+
+  implicit final class ToBatch[Data](a: Data) {
+    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
   }
 
 }

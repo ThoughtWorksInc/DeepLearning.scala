@@ -9,7 +9,7 @@ import com.thoughtworks.deepLearning.seq2D._
 import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
-import com.thoughtworks.deepLearning.any.ast.Identity
+import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
 import com.thoughtworks.deepLearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
@@ -56,7 +56,12 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         0.0 // Drop out
       } {
         _.head.choice { _ =>
-          probabilityLossNetwork.compose(max(1.0 - rowSeq(0, 0), 0.0))
+          def probabilityLoss(implicit x: rowAndExpectedLabel.To[Double]): rowAndExpectedLabel.To[Double] = {
+            1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
+          }
+          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0))
+//          probabilityLoss.compose(max(1.0 - rowSeq(0, 0), 0.0))
+//          probabilityLossNetwork.compose(max(1.0 - rowSeq(0, 0), 0.0))
         } { inr =>
           val expectedValue = inr.head
           (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.To[Double]
@@ -337,6 +342,11 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
       (input0 :: input1 :: input2 :: input3 :: HNil) :: (label0 :: label1 :: label2 :: label3 :: HNil) :: HNil
     }
+
+    for (i <- 0 until 1000) {
+      trainNetwork.train(makeMinibatch)
+    }
+
     /*
      TODO: 最终目标是生成一个预测神经网络和一个训练神经网络
      为了生成这两个网络，需要生成若干处理Array2D的全连接层、InputData到Array2D的转换、Array2D到Row的转换、Array2D到Double loss的转换
