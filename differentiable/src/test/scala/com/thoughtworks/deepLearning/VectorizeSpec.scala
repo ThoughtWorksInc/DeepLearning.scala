@@ -16,8 +16,8 @@ import org.scalatest._
 
 import scala.language.implicitConversions
 import scala.language.existentials
-
 import Predef.{any2stringadd => _, _}
+import scala.util.Random
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -27,15 +27,6 @@ final class VectorizeSpec extends FreeSpec with Matchers {
   import VectorizeSpec._
 
   "Convert HMatrix to Array2D" in {
-    /*
-     TODO: 最终目标是生成一个预测神经网络和一个训练神经网络
-     为了生成这两个网络，需要生成若干处理Array2D的全连接层、InputData到Array2D的转换、Array2D到Row的转换、Array2D到Double loss的转换
-
-     InputData到Array2D的转换可以从InputData到若干Double的转换做起
-
-     目前可以暂时使用HList而不是直接用case class的神经网络，将来可以直接使用case class
-
-     */
 
     implicit val learningRate = new LearningRate {
       override def apply() = 0.0003
@@ -317,6 +308,37 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     val trainNetwork = train
 
+    val trainingData = {
+      import shapeless._
+      IndexedSeq(
+        Coproduct[Field0](HNil) :: Inl(HNil) :: 3.5 :: Inl(HNil) :: HNil,
+        Coproduct[Field0](5.1) :: Inr(Inl(HNil)) :: 8.3 :: Inr(Inl(HNil)) :: HNil,
+        Coproduct[Field0](HNil) :: Inl(HNil) :: 91.3 :: Inr(Inr(Inl(HNil))) :: HNil
+      )
+    }
+
+    def makeMinibatch: (InputTypePair :: ExpectedLabel :: HNil)#Data = {
+      import shapeless._
+      val field0 :: field1 :: field2 :: field3 :: HNil = trainingData(Random.nextInt(trainingData.length))
+
+      if (Random.nextBoolean) {
+
+      } else {
+
+      }
+      //    val field0 =
+      ???
+    }
+    /*
+     TODO: 最终目标是生成一个预测神经网络和一个训练神经网络
+     为了生成这两个网络，需要生成若干处理Array2D的全连接层、InputData到Array2D的转换、Array2D到Row的转换、Array2D到Double loss的转换
+
+     InputData到Array2D的转换可以从InputData到若干Double的转换做起
+
+     目前可以暂时使用HList而不是直接用case class的神经网络，将来可以直接使用case class
+
+   */
+
   }
 
 }
@@ -332,7 +354,10 @@ object VectorizeSpec {
   type Enum0 = HNil :+: HNil :+: CNil
   type Enum1 = HNil :+: HNil :+: HNil :+: CNil
 
-  type Row = Nullable[Double] :: Enum0 :: Double :: Enum1 :: HNil
+  type Field0 = Nullable[Double]
+  type Field1 = Enum0
+  type Field2 = Double
+  type Field3 = Enum1
 
   type InputTypePair =
     InputField[Nullable[Double]] :: InputField[Enum0] :: InputField[Double] :: InputField[Enum1] :: HNil
