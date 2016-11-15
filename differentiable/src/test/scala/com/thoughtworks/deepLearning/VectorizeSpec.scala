@@ -45,7 +45,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
     }
     val probabilityLossNetwork = probabilityLoss
-    def loss(implicit rowAndExpectedLabel: RowAndExpectedLabel): rowAndExpectedLabel.To[Double] = {
+    def loss(implicit rowAndExpectedLabel: Array2D :: ExpectedLabel :: HNil): rowAndExpectedLabel.To[Double] = {
       val row: rowAndExpectedLabel.To[Array2D] = rowAndExpectedLabel.head
       val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
       val rowSeq: rowAndExpectedLabel.To[Seq2D] = row.toSeq
@@ -117,14 +117,17 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     }
 
-    def Array2DToRow(implicit row: Array2D): row.To[PredictionResult] = {
-      val rowSeq = row.toSeq
-      val field0: row.To[Double :: Double :: HNil] = min(rowSeq(0, 0), 1.0) :: rowSeq(0, 1) :: HNil
-      val field1: row.To[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: HNil
-      val field2: row.To[Double] = rowSeq(0, 4)
+    val lossNetwork = loss
+
+    def array2DToRow(implicit input: Array2D): input.To[PredictionResult] = {
+      val rowSeq = input.toSeq
+      val field0: input.To[Double :: Double :: HNil] = min(rowSeq(0, 0), 1.0) :: rowSeq(0, 1) :: HNil
+      val field1: input.To[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: HNil
+      val field2: input.To[Double] = rowSeq(0, 4)
       val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: HNil
       field0 :: field1 :: field2 :: field3 :: HNil
     }
+    val array2DToRowNetwork = array2DToRow
 
     def rowToArray2D(implicit row: InputTypePair): row.To[Array2D] = {
       val field0 = row.head
@@ -281,18 +284,38 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     val rowToArray2DNetwork = rowToArray2D
 
-    def fullyConnectedThenRelu(implicit row: Array2D) = {
-      val w = (Nd4j.randn(12, 50) / math.sqrt(12 / 2.0)).toWeight
-      val b = Nd4j.zeros(50).toWeight
+    def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Array2D) = {
+      val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
+      val b = Nd4j.zeros(outputSize).toWeight
       max((row dot w) + b, 0.0)
     }
 
-    def predict(implicit row: InputTypePair) = {
-      val encodedRow = rowToArray2DNetwork.compose(row)
-      fullyConnectedThenRelu.compose(encodedRow)
+    def hiddenLayers(implicit encodedInput: Array2D) = {
+      fullyConnectedThenRelu(50, 8).compose(
+        fullyConnectedThenRelu(50, 50).compose(
+          fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(12, 50).compose(encodedInput))))
     }
 
-    //    val train: NeuralNetwork.Aux[Aux[InputData :: ExpectedLabelData :: HNil, _], Aux[Eval[Double], _]] = ???
+    val hiddenLayersNetwork = hiddenLayers
+
+    def predict(implicit input: InputTypePair): input.To[PredictionResult] = {
+      val encodedInput = rowToArray2DNetwork.compose(input)
+      val encodedResult = hiddenLayersNetwork.compose(encodedInput)
+      array2DToRowNetwork.compose(encodedResult)
+    }
+
+    val predictNetwork = predict
+
+    def train(implicit input: InputTypePair :: ExpectedLabel :: HNil) = {
+      val inputRow = input.head
+      val expectedLabel = input.tail.head
+      val encodedInput = rowToArray2DNetwork.compose(inputRow)
+      val encodedResult = hiddenLayersNetwork.compose(encodedInput)
+
+      lossNetwork.compose(encodedResult :: expectedLabel :: HNil)
+    }
+
+    val trainNetwork = train
 
   }
 
@@ -324,7 +347,5 @@ object VectorizeSpec {
   type Enum1Prediction = Double :: Double :: Double :: HNil
 
   type PredictionResult = NullableFieldPrediction[Double] :: Enum0Prediction :: Double :: Enum1Prediction :: HNil
-
-  type RowAndExpectedLabel = Array2D :: ExpectedLabel :: HNil
 
 }
