@@ -10,61 +10,6 @@ import cats.implicits._
 
 import scala.annotation.elidable
 
-//import scala.annotation.elidable
-//sealed trait LowLowLowPriortyDifferentiableFunction {
-//
-//  implicit def subtypingToNeuralNetwork[Input <: Batch, OutputData, OutputDelta, From](
-//      implicit view: Lazy[From <:< NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]]])
-//    : ToNeuralNetwork[From, Input, OutputData, OutputDelta] = {
-//    new ToNeuralNetwork[From, Input, OutputData, OutputDelta] {
-//      override def apply(value: From) = view.value(value)
-//    }
-//
-//  }
-//}
-//sealed trait LowLowPriortyDifferentiableFunction extends LowLowLowPriortyDifferentiableFunction {
-//  this: LowPriortyDifferentiableFunction =>
-//
-//  import NeuralNetwork._
-//
-//  implicit def toNeuralNetworkNN[Input <: Batch : Identity, NN[_ <: Batch], OutputPair <: Batch](
-//      implicit nn: Lazy[NN[OutputPair] <:< NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]])
-//    : ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-//    new ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
-//      override def apply(value: NN[OutputPair]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
-//        toNeuralNetworkPair.apply(nn.value(value))
-//      }
-//    }
-//  }
-//  //
-//  // implicit def toNeuralNetworkNN2[Input <: Batch, NN[_ <: Batch], OutputPair <: Batch](
-//  //     implicit nn: Lazy[NN[OutputPair] <:< NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]])
-//  //   : ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] = {
-//  //   new ToNeuralNetwork[NN[OutputPair], Input, OutputPair#Data, OutputPair#Delta] {
-//  //     override def apply(value: NN[OutputPair]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] = {
-//  //       toNeuralNetworkPair.apply(nn.value(value))
-//  //     }
-//  //   }
-//  // }
-//
-//
-//}
-//
-//sealed trait LowPriortyDifferentiableFunction extends LowLowPriortyDifferentiableFunction {
-//
-//  import NeuralNetwork._
-//
-//  implicit def toNeuralNetworkPair[Input <: Batch, OutputPair <: Batch]
-//    : ToNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] = {
-//    // I can't prove this because the lack of for-all type in Scala language. Force it as a workaround.
-//    new ToNeuralNetwork[NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch], Input, OutputPair#Data, OutputPair#Delta] {
-//      override def apply(value: NeuralNetwork.Aux[Input, OutputPair#ConcreteBatch]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]] =
-//        value.asInstanceOf[NeuralNetwork.Aux[Input, ConcreteBatch[OutputPair#Data, OutputPair#Delta]]]
-//    }
-//  }
-//
-//}
-
 object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
 
   /** @template */
@@ -73,25 +18,6 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       type Input >: Input0
       type Output <: Output0
     }
-
-//  trait ToNeuralNetwork[T, Input <: Batch, OutputData, OutputDelta] {
-//    def apply(value: T): NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]]
-//  }
-//
-//  implicit def toNeuralNetwork[Input <: Batch, OutputData, OutputDelta]
-//    : ToNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
-//            Input,
-//            OutputData,
-//            OutputDelta] = {
-//    new ToNeuralNetwork[NeuralNetwork.Aux[Input, Batch.ConcreteBatch[OutputData, OutputDelta]],
-//              Input,
-//              OutputData,
-//              OutputDelta] {
-//      override def apply(
-//          value: NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]]): NeuralNetwork.Aux[Input, ConcreteBatch[OutputData, OutputDelta]] = value
-//    }
-//
-//  }
 
   trait Cached extends NeuralNetwork {
 
@@ -156,7 +82,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         assert(newCount >= 0)
         if (newCount == 0) {
           val batch = cache.remove(input)
-          assert(batch == this)
+          assert(batch eq this)
           flush()
           closeUpstreams()
         }
@@ -229,7 +155,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         case null =>
           val sharedBatch = rawForward(input)
           val oldBatch = cache.put(input, sharedBatch)
-          assert(oldBatch == null)
+          assert(oldBatch eq null)
           sharedBatch
         case sharedBatch =>
           sharedBatch.synchronized {
