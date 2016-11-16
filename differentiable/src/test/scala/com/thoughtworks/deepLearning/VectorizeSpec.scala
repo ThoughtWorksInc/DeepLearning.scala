@@ -56,12 +56,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         0.0 // Drop out
       } {
         _.head.choice { _ =>
-          def probabilityLoss(implicit x: rowAndExpectedLabel.To[Double]): rowAndExpectedLabel.To[Double] = {
-            1.0 - 0.5 / (1.0 - log(1.0 - x)) + 0.5 / (1.0 - log(x))
-          }
-          probabilityLoss(max(1.0 - rowSeq(0, 0), 0.0))
-//          probabilityLoss.compose(max(1.0 - rowSeq(0, 0), 0.0))
-//          probabilityLossNetwork.compose(max(1.0 - rowSeq(0, 0), 0.0))
+          probabilityLossNetwork.compose(max(1.0 - rowSeq(0, 0), 0.0))
         } { inr =>
           val expectedValue = inr.head
           (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.To[Double]
