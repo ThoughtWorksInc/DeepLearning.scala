@@ -115,10 +115,11 @@ package object array2D {
     def dot(right: NeuralNetwork.Aux[Input, Array2D#Batch]): NeuralNetwork.Aux[Input, Array2D#Batch] = {
       Dot(differentiable, right)
     }
-//    def unary_- : NeuralNetwork.Aux[Input, Array2D#Batch] = {
-//      Negative(boolean)
-//    }
-//
+
+    def unary_- : NeuralNetwork.Aux[Input, Array2D#Batch] = {
+      Negative(differentiable)
+    }
+
     def toSeq: NeuralNetwork.Aux[Input, Seq2D#Batch] = {
       ToSeq(differentiable)
     }
