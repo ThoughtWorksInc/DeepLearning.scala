@@ -5,6 +5,7 @@ import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
 
 /**
+  * FIXME: Use smart pointer instead
   * This [[Identity]] must be a singleton to count number of [[forward]] calls for same [[Input]] instance.
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
