@@ -1,9 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import shapeless.{Lazy, Poly1, Poly2}
-
-import shapeless.DepFn1
-import com.thoughtworks.deepLearning.any.ast.Identity
+import shapeless._
 
 import scala.language.existentials
 
@@ -12,7 +9,7 @@ private[deepLearning] sealed trait ToNeuralNetworkLowPriorityImplicits {
   implicit def toNeuralNetworkOfType[Input0 <: Batch, OutputType <: Type[_, _]]
     : ToNeuralNetwork.OfType[NeuralNetwork.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
     ToNeuralNetwork
-      .astToNeuralNetwork[Input0, OutputType#Data, OutputType#Delta]
+      .neuralNetworkToNeuralNetwork[Input0, OutputType#Data, OutputType#Delta]
       .asInstanceOf[ToNeuralNetwork.OfType[NeuralNetwork.Aux[Input0, OutputType#Batch], Input0, OutputType]]
   }
 
@@ -64,7 +61,7 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
   // FIXME: I don't know if invariance is required, please remove this line if NeuralNetwork.Aux is enough
   //  type NeuralNetwork.Aux[Input <: Batch, Output <: Batch] = NeuralNetwork.Aux[Input, Output]
 
-  implicit def astToNeuralNetwork[Input <: Batch, OutputData0, OutputDelta0]
+  implicit def neuralNetworkToNeuralNetwork[Input <: Batch, OutputData0, OutputDelta0]
     : ToNeuralNetwork.Aux[NeuralNetwork.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]],
                           Input,
                           OutputData0,
@@ -75,6 +72,17 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
 
       override def apply(ast: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = ast
     }
+
+  implicit def literalToNeuralNetwork[From, InputData, InputDelta, OutputData0, OutputDelta0](
+      implicit inputType: Type[InputData, InputDelta],
+      toLiteral: ToLiteral.Aux[From, OutputData0, OutputDelta0])
+    : ToNeuralNetwork.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
+    new ToNeuralNetwork[From, Batch.Aux[InputData, InputDelta]] {
+      override type OutputData = OutputData0
+      override type OutputDelta = OutputDelta0
+      override def apply(from: From) = toLiteral(from)
+    }
+  }
 
 }
 
