@@ -16,6 +16,7 @@ final case class If[Input0 <: Batch, Output0 <: Batch](condition: NeuralNetwork.
 
   override def forward(input: Input0): Output0 = {
     val conditionForwardPass = condition.forward(input)
+    conditionForwardPass.close()
     if (conditionForwardPass.value.value) {
       `then`.forward(input)
     } else {
