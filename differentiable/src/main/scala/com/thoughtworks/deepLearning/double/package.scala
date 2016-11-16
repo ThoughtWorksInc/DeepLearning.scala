@@ -6,6 +6,7 @@ import AstMethods._
 import com.thoughtworks.deepLearning.any.ast.Literal
 import com.thoughtworks.deepLearning.boolean.ast.If
 import com.thoughtworks.deepLearning.double.ast._
+import scala.language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -74,91 +75,19 @@ package object double {
     : log.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
     log.at(Log(_))
   }
+
+  implicit def `exp(Double)`[Input <: Batch]
+    : exp.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
+    exp.at(Exp(_))
+  }
+
   implicit def `abs(Double)`[Input <: Batch]
     : abs.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
     abs.at { operand =>
       If(LessThan(operand, Literal(Eval.now(0.0))), Negative(operand), operand)
     }
   }
-//
-//  implicit final class DoubleOps[Input <: Batch](double: NeuralNetwork.Aux[Input, Double#ConcreteBatch]) {
-//    def +(right: NeuralNetwork.Aux[Input, Double#ConcreteBatch]): NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Plus(double, right)
-//    }
-//
-//    def -(right: NeuralNetwork.Aux[Input, Double#ConcreteBatch]): NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Plus(double, Negative(right))
-//    }
-//
-//    def /(right: NeuralNetwork.Aux[Input, Double#ConcreteBatch]): NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Times(double, Reciprocal(right))
-//    }
-//
-//    def *(right: NeuralNetwork.Aux[Input, Double#ConcreteBatch]): NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Times(double, right)
-//    }
-//
-//    def <(right: NeuralNetwork.Aux[Input, Double#ConcreteBatch]): NeuralNetwork.Aux[Input, Boolean#ConcreteBatch] = {
-//      LessThan(double, right)
-//    }
-//
-//    def unary_- : NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Negative(double)
-//    }
-//
-//    def exp: NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Exp(double)
-//    }
-//
-//    def log: NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      Log(double)
-//    }
-//
-//    def min(rightAst: NeuralNetwork.Aux[Input, Double#ConcreteBatch]): NeuralNetwork.Aux[Input, Double#ConcreteBatch] = {
-//      If(LessThan(double, rightAst), double, rightAst)
-//    }
-//
-//  }
-//
-//  implicit def nativeDoubleToNeuralNetwork[Input <: Batch: Identity] =
-//    new ToNeuralNetwork[scala.Double, Input, Eval[scala.Double], Eval[scala.Double]] {
-//      override def apply(nativeDouble: scala.Double) = Literal(Eval.now(nativeDouble))
-//    }
-//
-//  implicit def maxDoubleDouble[Input <: Batch,
-//                               LeftData <: Eval[scala.Double],
-//                               LeftDelta >: Eval[scala.Double],
-//                               RightData <: Eval[scala.Double],
-//                               RightDelta >: Eval[scala.Double]]
-//    : max.Case.Aux[Input, LeftData, LeftDelta, RightData, RightDelta, NeuralNetwork.Aux[Input, Double#ConcreteBatch]] =
-//    new max.Case[Input, LeftData, LeftDelta, RightData, RightDelta] {
-//      override type Out = NeuralNetwork.Aux[Input, Double#ConcreteBatch]
-//      override def apply(leftOperand: NeuralNetwork.Aux[Input, ConcreteBatch[LeftData, LeftDelta]],
-//                         rightOperand: NeuralNetwork.Aux[Input, ConcreteBatch[RightData, RightDelta]]) = {
-//        If(LessThan(leftOperand, rightOperand), rightOperand, leftOperand)
-//      }
-//    }
-//
-//  implicit def absDouble[Input <: Batch, Data <: Eval[scala.Double], Delta >: Eval[scala.Double]]
-//    : abs.Case[Input, Data, Delta] {
-//      type Out = NeuralNetwork.Aux[Input, Double#ConcreteBatch]
-//    } =
-//    new abs.Case[Input, Data, Delta] {
-//      override type Out = NeuralNetwork.Aux[Input, Double#ConcreteBatch]
-//      override def apply(operand: NeuralNetwork.Aux[Input, ConcreteBatch[Data, Delta]]) = {
-//        If(LessThan(operand, 0.0), Negative(operand), operand)
-//      }
-//    }
-//
-//  implicit def nativeDoubleToDoubleOps(nativeDouble: scala.Double): DoubleOps[Batch] = {
-//    DoubleOps(Literal(Eval.now(nativeDouble)))
-//  }
-//
-//  implicit def doubleLiteral[Input <: Batch: Identity](
-//      nativeDouble: scala.Double): NeuralNetwork.Aux[Input, ConcreteBatch[Double#Data, Double#Delta]] = {
-//    Literal(Eval.now(nativeDouble))
-//  }
-//
+
   implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Type[InputData, InputDelta],
@@ -167,4 +96,17 @@ package object double {
     }
   }
 
+  final class DoubleOps[Input <: Batch](differentiable: NeuralNetwork.Aux[Input, Double#Batch]) {
+
+    def unary_- : NeuralNetwork.Aux[Input, Double#Batch] = {
+      Negative(differentiable)
+    }
+
+  }
+
+  implicit def toDoubleOps[From, Input <: Batch](from: From)(
+      implicit toNeuralNetwork: ToNeuralNetwork.OfType[From, Input, Double]
+  ): DoubleOps[Input] = {
+    new DoubleOps(toNeuralNetwork(from))
+  }
 }
