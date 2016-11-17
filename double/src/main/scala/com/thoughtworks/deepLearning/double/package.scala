@@ -32,14 +32,14 @@ package object double {
                                                                   NeuralNetwork.Aux[Input, Double#Batch],
                                                                   NeuralNetwork.Aux[Input, Double#Batch]] = {
     min.at { (leftAst, rightAst) =>
-      If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), leftAst, rightAst)
+      If[Input, Double#Data, Double#Delta](LessThan[Input](leftAst, rightAst), leftAst, rightAst)
     }
   }
   implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch],
                                                                   NeuralNetwork.Aux[Input, Double#Batch],
                                                                   NeuralNetwork.Aux[Input, Double#Batch]] = {
     max.at { (leftAst, rightAst) =>
-      If[Input, Double#Batch](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
+      If[Input, Double#Data, Double#Delta](LessThan[Input](leftAst, rightAst), rightAst, leftAst)
     }
   }
 
@@ -86,7 +86,7 @@ package object double {
   implicit def `abs(Double)`[Input <: Batch]
     : abs.Case.Aux[NeuralNetwork.Aux[Input, Double#Batch], NeuralNetwork.Aux[Input, Double#Batch]] = {
     abs.at { operand =>
-      If(LessThan(operand, Literal(Eval.now(0.0))), Negative(operand), operand)
+      If[Input, Double#Data, Double#Delta](LessThan(operand, Literal(Eval.now(0.0))), Negative(operand), operand)
     }
   }
 

@@ -2,6 +2,7 @@ package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.any.ToNeuralNetwork
 import com.thoughtworks.deepLearning.boolean.ast.If
+import shapeless.Lub
 
 import scala.language.implicitConversions
 
@@ -15,9 +16,25 @@ package object boolean {
 
   final class BooleanOps[Input <: Batch](boolean: NeuralNetwork.Aux[Input, Boolean#Batch]) {
 
-    def `if`[ThatInput <: Input, Output <: Batch](`then`: NeuralNetwork.Aux[ThatInput, Output])(
-        `else`: NeuralNetwork.Aux[ThatInput, Output]): NeuralNetwork.Aux[ThatInput, Output] = {
-      If[ThatInput, Output](boolean, `then`, `else`)
+    def `if`[Then,
+             Else,
+             ThenOutputData,
+             ThenOutputDelta,
+             ElseOutputData,
+             ElseOutputDelta,
+             NN,
+             OutputData,
+             OutputDelta](`then`: Then)(`else`: Else)(
+        implicit thenToNeuralNetwork: ToNeuralNetwork.Aux[Then, Input, ThenOutputData, ThenOutputDelta],
+        elseToNeuralNetwork: ToNeuralNetwork.Aux[Else, Input, ElseOutputData, ElseOutputDelta],
+        lub: Lub[NeuralNetwork.Aux[Input, Batch.Aux[ThenOutputData, ThenOutputDelta]],
+                 NeuralNetwork.Aux[Input, Batch.Aux[ElseOutputData, ElseOutputDelta]],
+                 NN],
+        commonToNeuralNetwork: ToNeuralNetwork.Aux[NN, Input, OutputData, OutputDelta]
+    ): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+      If[Input, OutputData, OutputDelta](boolean,
+                                         commonToNeuralNetwork(lub.left(thenToNeuralNetwork(`then`))),
+                                         commonToNeuralNetwork(lub.right(elseToNeuralNetwork(`else`))))
     }
 
   }
