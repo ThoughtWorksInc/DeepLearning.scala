@@ -161,7 +161,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
           sharedBatch.synchronized {
             val count = sharedBatch.count
             assert(count >= 0)
-            sharedBatch.count += count + 1
+            sharedBatch.count = count + 1
           }
           sharedBatch
       }
