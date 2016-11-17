@@ -33,7 +33,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         */
       override final def open(): Open = {
         // TODO: reopen
-        assert(!closed)
+        assert(!closingFlag.closed)
         val newCount = synchronized {
           val newCount = count + 1
           count = newCount
@@ -86,8 +86,17 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
 
       def input: BatchId.Aux[Input]
 
+      private[Cached] final class ClosingFlag {
+        var closed = false
+        @elidable(elidable.ASSERTION)
+        def assertNotClosed() = {
+          assert(!closed)
+          closed = true
+        }
+      }
+
       @elidable(elidable.ASSERTION)
-      var closed = false
+      private val closingFlag = new ClosingFlag
 
       /**
         * FIXME: rename to release
@@ -100,8 +109,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         }
         assert(newCount >= 0)
         if (newCount == 0) {
-          assert(!closed)
-          closed = true
+          closingFlag.assertNotClosed()
           val batch: SharedBatch = cache.remove(input)
           assert(batch eq (this: SharedBatch))
           flush()
