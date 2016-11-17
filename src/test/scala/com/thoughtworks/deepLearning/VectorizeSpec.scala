@@ -338,8 +338,23 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       (input0 :: input1 :: input2 :: input3 :: HNil) :: (label0 :: label1 :: label2 :: label3 :: HNil) :: HNil
     }
 
-    for (i <- 0 until 1000) {
+    for (i <- 0 until 100) {
       trainNetwork.train(makeMinibatch)
+      def assertClear(ast: scala.Any): Unit = {
+        ast match {
+          case cached: Cached =>
+            cached.cache shouldBe empty
+          case _ =>
+        }
+        ast match {
+          case parent: Product =>
+            for (upstreamAst <- parent.productIterator) {
+              assertClear(upstreamAst)
+            }
+          case _ =>
+        }
+      }
+      assertClear(trainNetwork)
     }
 
     /*

@@ -22,7 +22,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
   // TODO: Rename this trait to Layer and move to a separate library
   trait Cached extends NeuralNetwork {
 
-    private val cache =
+    private[deepLearning] val cache =
       java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[BatchId.Aux[Input], SharedBatch](1))
 
     protected trait ReferenceCount extends BatchId with Batch { this: SharedBatch =>
