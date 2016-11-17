@@ -12,13 +12,17 @@ import org.nd4s.Implicits._
   */
 final case class Weight(var rawValue: INDArray)(implicit learningRate: LearningRate)
     extends NeuralNetwork
-    with Array2DSemigroupBatch {
+    with Array2DSemigroupBatch
+    with BatchId {
   override type Input = Batch
   override type Output = Batch.Aux[Data, Delta]
+  override type Open = Output
+
+  override def open() = this
 
   override def value = Eval.now(rawValue)
 
-  override def forward(any: Input) = this
+  override def forward(any: BatchId.Aux[Input]) = this
 
   override def backward(delta: Delta): Unit = {
     rawValue -= delta.value * learningRate()

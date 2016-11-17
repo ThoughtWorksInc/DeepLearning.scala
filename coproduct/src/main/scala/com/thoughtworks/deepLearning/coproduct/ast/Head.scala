@@ -35,8 +35,9 @@ TailDelta <: shapeless.Coproduct](
 
   type Input = Input0
 
-  override def forward(input: Input): Output = {
-    new Output(ccons.forward(input))
+  override def forward(input: BatchId.Aux[Input]) = new BatchId {
+    override type Open = Output
+    override def open() = new Output(ccons.forward(input).open())
   }
 
 }

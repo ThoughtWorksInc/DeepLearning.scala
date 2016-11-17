@@ -37,7 +37,7 @@ final case class ToArray2D[Input0 <: Batch](
 
   type Input = Input0
 
-  final class Output private[ToArray2D](upstreams: Seq[Seq[Batch.Aux[Eval[Double], Eval[Double]]]])
+  final class Output private[ToArray2D] (upstreams: Seq[Seq[Batch.Aux[Eval[Double], Eval[Double]]]])
       extends Array2DSemigroupBatch {
     override def backward(delta: Eval[INDArray]): Unit = {
       for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
@@ -53,9 +53,13 @@ final case class ToArray2D[Input0 <: Batch](
     override def close(): Unit = {
       upstreams.foreach(_.foreach(_.close()))
     }
+
   }
 
-  override def forward(input: Input): Output = {
-    new Output(operands.map(_.map(_.forward(input))))
+  override def forward(input: BatchId.Aux[Input]) = new BatchId {
+    override type Open = Output
+    override def open() = {
+      new Output(operands.map(_.map(_.forward(input).open())))
+    }
   }
 }

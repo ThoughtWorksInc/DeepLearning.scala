@@ -1,13 +1,12 @@
 package com.thoughtworks.deepLearning
 
-import cats._
 import com.thoughtworks.deepLearning.boolean._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.hlist._
+import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.double._
 import org.scalatest.{FreeSpec, Matchers}
-import Batch.Aux
-import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+import cats._
 
 import scala.language.existentials
 

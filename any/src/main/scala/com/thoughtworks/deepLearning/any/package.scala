@@ -62,8 +62,8 @@ package object any {
     new AnyOps(toNeuralNetwork(a))
   }
 
-  implicit final class ToBatch[Data](a: Data) {
-    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
+  implicit final class ToBatchId[Data](a: Data) {
+    def toBatchId[Delta]: BatchId.Aux[Batch.Aux[Data, Delta]] = Literal[Data](a)
   }
 
   implicit final class ScalaAnyOps[Left](left: Left) {

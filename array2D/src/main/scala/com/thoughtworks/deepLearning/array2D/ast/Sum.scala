@@ -15,7 +15,7 @@ final case class Sum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D
                                       dimensions: Seq[Int])
     extends Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0, upstream: Array2D#ConcreteBatch)
+  protected final class SharedBatch private[deepLearning](override val input: BatchId.Aux[Input0], upstream: Array2D#ConcreteBatch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream.value.map(_.sum(dimensions: _*)).memoize
@@ -39,8 +39,8 @@ final case class Sum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D
 
   type Input = Input0
 
-  override protected def rawForward(input: Input): SharedBatch = {
-    val upstream = operand.forward(input)
+  override protected def rawForward(input: BatchId.Aux[Input]): SharedBatch = {
+    val upstream = operand.forward(input).open()
     new SharedBatch(input, upstream)
   }
 }

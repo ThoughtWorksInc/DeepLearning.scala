@@ -19,6 +19,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       type Output <: Output0
     }
 
+  // TODO: Rename this trait to Layer and move to a separate library
   trait Cached extends NeuralNetwork {
 
     private val cache =

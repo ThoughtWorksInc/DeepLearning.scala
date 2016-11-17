@@ -15,7 +15,7 @@ final case class Plus[Input0 <: Batch](
 ) extends Cached {
 
   protected final class SharedBatch private[deepLearning] (
-                                                            override val input: Input0,
+                                                            override val input: BatchId.Aux[Input0],
                                                             upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
                                                             upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
@@ -36,8 +36,8 @@ final case class Plus[Input0 <: Batch](
 
   type Input = Input0
 
-  override protected def rawForward(input: Input): SharedBatch = {
-    new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
+  override protected def rawForward(input: BatchId.Aux[Input]): SharedBatch = {
+    new SharedBatch(input, leftOperand.forward(input).open(), rightOperand.forward(input).open())
   }
 
 }

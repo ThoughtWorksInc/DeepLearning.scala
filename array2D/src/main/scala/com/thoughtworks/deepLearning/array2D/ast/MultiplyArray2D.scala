@@ -19,7 +19,7 @@ final case class MultiplyArray2D[Input0 <: Batch](
 ) extends NeuralNetwork
     with Cached {
 
-  protected final class SharedBatch private[deepLearning](override val input: Input0,
+  protected final class SharedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
                                                           upstream1: Array2D#ConcreteBatch,
                                                           upstream2: Array2D#ConcreteBatch)
       extends Array2DSemigroupBatch
@@ -63,7 +63,7 @@ final case class MultiplyArray2D[Input0 <: Batch](
 
   type Input = Input0
 
-  override protected def rawForward(input: Input): SharedBatch = {
-    new SharedBatch(input, leftOperand.forward(input), rightOperand.forward(input))
+  override protected def rawForward(input: BatchId.Aux[Input]): SharedBatch = {
+    new SharedBatch(input, leftOperand.forward(input).open(), rightOperand.forward(input).open())
   }
 }

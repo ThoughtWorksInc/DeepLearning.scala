@@ -5,6 +5,7 @@ import shapeless._
 
 import scala.language.existentials
 
+// TODO: Move to dsl library
 private[deepLearning] sealed trait ToNeuralNetworkLowPriorityImplicits {
 
   implicit def toNeuralNetworkOfType[Input0 <: Batch, OutputType <: Type[_, _]]

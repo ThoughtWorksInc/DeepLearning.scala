@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -32,7 +32,8 @@ TailDelta <: shapeless.Coproduct](
     override type Delta = TailDelta
   }
 
-  override def forward(input: Input) = {
-    new Output(differentiableHCons.forward(input))
+  override def forward(input: BatchId.Aux[Input]) = new BatchId {
+    override type Open = Output
+    override def open() = new Output(differentiableHCons.forward(input).open())
   }
 }

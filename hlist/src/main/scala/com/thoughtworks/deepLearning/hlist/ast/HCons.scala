@@ -1,14 +1,14 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
 
 final case class HCons[Input0 <: Batch,
                        HeadData,
                        HeadDelta,
                        TailData <: shapeless.HList,
                        TailDelta <: shapeless.Coproduct](
-                                                          head: NeuralNetwork.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
-                                                          tail: NeuralNetwork.Aux[Input0, Batch.Aux[TailData, TailDelta]]
+    head: NeuralNetwork.Aux[Input0, Batch.Aux[HeadData, HeadDelta]],
+    tail: NeuralNetwork.Aux[Input0, Batch.Aux[TailData, TailDelta]]
 ) extends NeuralNetwork {
   override type Input = Input0
 
@@ -37,8 +37,9 @@ final case class HCons[Input0 <: Batch,
     override type Delta = shapeless.:+:[HeadDelta, TailDelta]
   }
 
-  override def forward(input: Input) = {
-    new Output(head.forward(input), tail.forward(input))
+  override def forward(input: BatchId.Aux[Input]) = new BatchId {
+    override type Open = Output
+    override def open() = new Output(head.forward(input).open(), tail.forward(input).open())
   }
 
 }

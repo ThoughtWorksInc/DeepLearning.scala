@@ -2,7 +2,7 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.NeuralNetwork.Aux
-import com.thoughtworks.deepLearning.any.{AstMethods, ToNeuralNetwork, Type}
+import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.any.AstMethods._
 import com.thoughtworks.deepLearning.any.ast.Literal
 import com.thoughtworks.deepLearning.boolean.ast.If

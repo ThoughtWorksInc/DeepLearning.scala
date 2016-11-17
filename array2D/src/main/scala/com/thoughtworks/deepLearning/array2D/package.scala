@@ -1,14 +1,11 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.NeuralNetwork.Aux
-import com.thoughtworks.deepLearning.any.{AstMethods, ToNeuralNetwork, Type}
+import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.array2D.ast._
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 import org.nd4j.linalg.api.ndarray.INDArray
-import shapeless.PolyDefns._
-import shapeless.{Lazy, Poly2}
 
 import scala.language.implicitConversions
 
@@ -163,7 +160,7 @@ package object array2D {
 //        implicit learningRate: LearningRate): NeuralNetwork.Aux[Input, Array2D#Batch] =
 //      Weight(ndarray)
 //    def toLiteral[Input <: Batch: Identity] = ndarrayLiteral(ndarray)
-//    def toBatch = ndarrayBatch(ndarray)
+//    def toBatchId = ndarrayBatch(ndarray)
 //  }
 //
 //  implicit def nativeArrayToINDArrayOps(nativeArray: Array[Array[scala.Double]]): INDArrayOps =

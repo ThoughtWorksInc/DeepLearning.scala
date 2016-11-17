@@ -31,8 +31,9 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
     }
   }
 
-  override def forward(input: Input0): Output = {
-    new Output(tail.forward(input))
+  override def forward(input: BatchId.Aux[Input]) = new BatchId {
+    override type Open = Output
+    override def open() = new Output(tail.forward(input).open())
   }
 
 }

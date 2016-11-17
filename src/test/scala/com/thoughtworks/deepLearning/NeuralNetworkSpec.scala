@@ -30,7 +30,7 @@ final class NeuralNetworkSpec extends FreeSpec with Matchers {
     val inputData = Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5))
 
     def train() = {
-      val outputBatch = network.forward(Eval.now(inputData.toNDArray).toBatch)
+      val outputBatch = network.forward(Eval.now(inputData.toNDArray).toBatchId).open()
       try {
         val loss = outputBatch.value.map(_.sumT)
         outputBatch.backward(outputBatch.value)

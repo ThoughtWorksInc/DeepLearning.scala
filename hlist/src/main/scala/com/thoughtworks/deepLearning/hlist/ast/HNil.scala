@@ -1,12 +1,12 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
 import com.thoughtworks.deepLearning.Batch.Aux
-import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-case object HNil extends NeuralNetwork with Batch {
+case object HNil extends NeuralNetwork with Batch with BatchId {
   override type Input = Batch
 
   override type Data = shapeless.HNil
@@ -14,8 +14,11 @@ case object HNil extends NeuralNetwork with Batch {
   override type Delta = shapeless.CNil
 
   override type Output = Batch.Aux[Data, Delta]
+  override type Open = Output
 
-  override def forward(input: Input): Output = this
+  override def open() = this
+
+  override def forward(input: BatchId.Aux[Input]) = this
 
   override def backward(delta: Delta): Unit = {}
 

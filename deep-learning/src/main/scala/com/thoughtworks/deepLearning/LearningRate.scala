@@ -1,7 +1,6 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.NeuralNetwork._
-import com.thoughtworks.deepLearning.Batch._
+// TODO: Move to double library
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
