@@ -15,14 +15,14 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch]) extends Cached {
+final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch]) extends Cached {
   override type Input = Input0
 
-  final class SharedBatch private[ToSeq] (override val input: BatchId.Aux[Input], upstream: Array2D#ConcreteBatch)
+  final class SharedBatch private[ToSeq] (override val input: BatchId.Aux[Input], upstream: Array2D#Batch)
       extends ReferenceCount
       with Seq2DBatch {
 
-    def zeroDelta =
+    private def zeroDelta =
       upstream.value.map { upstreamData =>
         Nd4j.zeros(upstreamData.shape: _*)
       }.memoize
