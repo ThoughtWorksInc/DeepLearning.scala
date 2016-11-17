@@ -13,7 +13,7 @@ final case class Inl[Input0 <: Batch, HeadData, HeadDelta](
 
   type Input = Input0
 
-  final class Output private[Inl] (headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch {
+  final class Output private[Inl] (headBatch: Batch.Aux[HeadData, HeadDelta]) extends Batch.Unshared {
     def value = shapeless.Inl(headBatch.value: HeadData)
 
     type Data = shapeless.Inl[HeadData, Nothing]
@@ -26,7 +26,7 @@ final case class Inl[Input0 <: Batch, HeadData, HeadDelta](
       }
     }
 
-    override def close(): Unit = {
+    override protected def closeUpstreams(): Unit = {
       headBatch.close()
     }
   }

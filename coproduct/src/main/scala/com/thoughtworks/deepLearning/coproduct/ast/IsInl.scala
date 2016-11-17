@@ -14,7 +14,7 @@ TailDelta <: shapeless.Coproduct](
 
   final class Output private[IsInl] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends BooleanMonoidBatch {
+      extends BooleanMonoidBatch with Batch.Unshared {
 
     type Input >: Input0
     val value = upstream.value match {
@@ -24,7 +24,7 @@ TailDelta <: shapeless.Coproduct](
 
     override def backward(delta: Eval[scala.Boolean]): Unit = {}
 
-    override def close(): Unit = {
+    override protected def closeUpstreams(): Unit = {
       upstream.close()
     }
   }

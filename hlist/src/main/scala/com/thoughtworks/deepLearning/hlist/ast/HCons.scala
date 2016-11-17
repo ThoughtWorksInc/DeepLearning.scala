@@ -14,7 +14,7 @@ final case class HCons[Input0 <: Batch,
 
   final class Output private[HCons] (headBatch: Batch.Aux[HeadData, HeadDelta],
                                      tailBatch: Batch.Aux[TailData, TailDelta])
-      extends Batch {
+      extends Batch.Unshared {
     override def backward(delta: Delta): Unit = {
       delta match {
         case shapeless.Inl(headDelta) =>
@@ -28,7 +28,7 @@ final case class HCons[Input0 <: Batch,
       headBatch.value :: tailBatch.value
     }
 
-    override def close(): Unit = {
+    override protected def closeUpstreams(): Unit = {
       headBatch.close()
       tailBatch.close()
     }

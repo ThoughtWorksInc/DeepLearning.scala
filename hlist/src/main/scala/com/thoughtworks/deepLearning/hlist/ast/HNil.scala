@@ -24,5 +24,5 @@ case object HNil extends NeuralNetwork with Batch with BatchId {
 
   override def value = shapeless.HNil
 
-  override def close(): Unit = {}
+  override protected def close(): Unit = {}
 }

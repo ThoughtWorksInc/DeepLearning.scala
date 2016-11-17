@@ -32,9 +32,16 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
       override final def open(): Open = {
-
-        synchronized {
-          count += 1
+        // TODO: reopen
+        assert(!closed)
+        val newCount = synchronized {
+          val newCount = count + 1
+          count = newCount
+          newCount
+        }
+        assert(newCount >= 1)
+        if (newCount == 1) {
+          cache.put(input, this)
         }
 
         // Returns a [[Batch]] able to detect error of closing more than once.
@@ -79,18 +86,24 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
 
       def input: BatchId.Aux[Input]
 
+      @elidable(elidable.ASSERTION)
+      var closed = false
+
       /**
         * FIXME: rename to release
         */
       override final def close(): Unit = {
         val newCount = synchronized {
-          count -= 1
-          count
+          val newCount = count - 1
+          count = newCount
+          newCount
         }
         assert(newCount >= 0)
         if (newCount == 0) {
-          val batch = cache.remove(input)
-          assert(batch eq this)
+          assert(!closed)
+          closed = true
+          val batch: SharedBatch = cache.remove(input)
+          assert(batch eq (this: SharedBatch))
           flush()
           closeUpstreams()
         }
@@ -159,21 +172,12 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
     protected def rawForward(input: BatchId.Aux[Input]): SharedBatch
 
     override final def forward(input: BatchId.Aux[Input]): BatchId.Aux[Output] = {
-      val sharedBatch = cache.get(input) match {
+      cache.get(input) match {
         case null =>
-          val sharedBatch = rawForward(input)
-          val oldBatch = cache.put(input, sharedBatch)
-          assert(oldBatch eq null)
-          sharedBatch
+          rawForward(input)
         case sharedBatch =>
-          sharedBatch.synchronized {
-            val count = sharedBatch.count
-            assert(count >= 0)
-            sharedBatch.count = count + 1
-          }
           sharedBatch
       }
-      sharedBatch
     }
   }
 

@@ -13,7 +13,7 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
 
   type Input = Input0
 
-  final class Output private[Inr] (tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch {
+  final class Output private[Inr] (tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch.Unshared {
     def value = shapeless.Inr(tailBatch.value: TailData)
 
     type Data = shapeless.Inr[Nothing, TailData]
@@ -26,7 +26,7 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
       }
     }
 
-    override def close(): Unit = {
+    override protected def closeUpstreams(): Unit = {
       tailBatch.close()
     }
   }

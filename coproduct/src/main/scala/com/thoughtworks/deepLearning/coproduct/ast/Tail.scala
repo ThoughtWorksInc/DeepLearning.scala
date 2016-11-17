@@ -14,7 +14,7 @@ TailDelta <: shapeless.Coproduct](
 
   final class Output private[Tail] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends Batch {
+      extends Batch.Unshared {
     override type Data = TailData
     override type Delta = TailDelta
     type Input >: Input0
@@ -26,7 +26,7 @@ TailDelta <: shapeless.Coproduct](
       upstream.backward(shapeless.Inr(delta))
     }
 
-    override def close(): Unit = {
+    override protected def closeUpstreams(): Unit = {
       upstream.close()
     }
   }

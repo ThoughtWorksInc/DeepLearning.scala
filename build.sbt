@@ -17,6 +17,8 @@ lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(any)
 
 lazy val coproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(boolean)
 
+lazy val `buffered-network` = project
+
 lazy val `sbt-nd4j` = project
 
 SbtNd4J.addNd4jRuntime(Test)

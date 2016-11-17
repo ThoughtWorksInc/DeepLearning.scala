@@ -1,5 +1,7 @@
 package com.thoughtworks.deepLearning
 
+import scala.annotation.elidable
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -9,6 +11,19 @@ object Batch {
   type Aux[+Data0, -Delta0] = Batch {
     type Data <: Data0
     type Delta >: Delta0
+  }
+
+  trait Unshared extends Batch {
+    @elidable(elidable.ASSERTION)
+    var closed = false
+
+    protected def closeUpstreams(): Unit
+
+    override final def close() = {
+      assert(!closed)
+      closed = true
+      closeUpstreams()
+    }
   }
 
 }
