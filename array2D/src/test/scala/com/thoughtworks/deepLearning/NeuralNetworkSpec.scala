@@ -1,13 +1,10 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.NeuralNetwork._
-import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.double._
-import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
-import org.scalatest._
+import com.thoughtworks.deepLearning.array2D._
 import org.nd4s.Implicits._
+import org.scalatest._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

@@ -1,7 +1,5 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.NeuralNetwork._
-import com.thoughtworks.deepLearning.Batch._
 import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
 import double._

@@ -1,0 +1,1 @@
+(unmanagedSourceDirectories in Compile) += baseDirectory.value.getParentFile / "sbt-nd4j" / "src" / "main" / "scala"
