@@ -29,7 +29,7 @@ object SbtNd4J extends AutoPlugin {
   def nd4jRuntime = osClassifier("org.nd4j" % "nd4j-native" % "0.4-rc3.9" classifier "")
 
   def addNd4jRuntime(configuration: Configuration) = Seq(
-    classpathTypes in Test += "maven-plugin",
+    classpathTypes += "maven-plugin",
     libraryDependencies += nd4jRuntime % Test
   )
 
