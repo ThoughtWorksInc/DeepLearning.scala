@@ -22,15 +22,19 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
   trait Cached extends NeuralNetwork {
 
     private val cache =
-      java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[Input, SharedBatch](1))
+      java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[BatchId.Aux[Input], SharedBatch](1))
 
-    protected trait ReferenceCount extends Batch { this: SharedBatch =>
+    protected trait ReferenceCount extends BatchId with Batch { this: SharedBatch =>
 
       /**
         * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
-      private[Cached] def maybeCheckIfCloseOnlyOnce: Self = {
+      override final def open(): Open = {
+
+        synchronized {
+          count += 1
+        }
 
         // Returns a [[Batch]] able to detect error of closing more than once.
         @elidable(elidable.ASSERTION)
@@ -59,11 +63,11 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         Option(checkIfCloseOnlyOnce).getOrElse(ReferenceCount.this.self)
       }
 
-      type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
+      override type Open >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
 
-      private final def self: Self = this: Batch.Aux[Data, Delta]
+      private final def self: Open = this: Batch.Aux[Data, Delta]
 
-      private[Cached] var count: Int = 1
+      private[Cached] var count: Int = 0
 
       protected def flush(): Unit
 
@@ -72,8 +76,11 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         */
       protected def closeUpstreams(): Unit
 
-      def input: Input
+      def input: BatchId.Aux[Input]
 
+      /**
+        * FIXME: rename to release
+        */
       override final def close(): Unit = {
         val newCount = synchronized {
           count -= 1
@@ -139,7 +146,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       }
     }
 
-    type Output = SharedBatch#Self
+    type Output = SharedBatch#Open
 
     protected type SharedBatch <: ReferenceCount
 
@@ -148,10 +155,10 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       *
       * @return a [[Batch]] that will be cached for subsequent [[#forward]]
       */
-    protected def rawForward(input: Input): SharedBatch
+    protected def rawForward(input: BatchId.Aux[Input]): SharedBatch
 
-    override final def forward(input: Input): Output = {
-      val sharedBatch: SharedBatch = cache.get(input) match {
+    override final def forward(input: BatchId.Aux[Input]): BatchId.Aux[Output] = {
+      val sharedBatch = cache.get(input) match {
         case null =>
           val sharedBatch = rawForward(input)
           val oldBatch = cache.put(input, sharedBatch)
@@ -165,7 +172,7 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
           }
           sharedBatch
       }
-      sharedBatch.maybeCheckIfCloseOnlyOnce
+      sharedBatch
     }
   }
 
@@ -179,6 +186,6 @@ trait NeuralNetwork {
 
   type Output <: Batch
 
-  def forward(input: Input): Output
+  def forward(input: BatchId.Aux[Input]): BatchId.Aux[Output]
 
 }

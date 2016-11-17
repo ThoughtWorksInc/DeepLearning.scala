@@ -1,9 +1,5 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.NeuralNetwork._
-import com.thoughtworks.deepLearning.Batch._
-import shapeless.DepFn1
-
 import scala.language.higherKinds
 
 /**
@@ -19,7 +15,7 @@ object Batch {
 
 }
 
-trait Batch extends AutoCloseable { outer =>
+trait Batch extends AutoCloseable {
   type Data
   type Delta
 
