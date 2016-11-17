@@ -3,13 +3,13 @@ package com.thoughtworks.deepLearning.double.ast
 import com.thoughtworks.deepLearning.NeuralNetwork._
 import cats._
 import cats.implicits._
-import org.nd4s.Implicits._
+
 import com.thoughtworks.deepLearning.{Batch, BatchId, LearningRate, NeuralNetwork}
 import com.thoughtworks.deepLearning.NeuralNetwork._
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
+
+
+
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

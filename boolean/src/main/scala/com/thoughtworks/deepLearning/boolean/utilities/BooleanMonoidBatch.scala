@@ -3,12 +3,7 @@ package utilities
 
 import cats._
 import cats.implicits._
-import org.nd4s.Implicits._
-import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
-import com.thoughtworks.deepLearning.NeuralNetwork._
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
+import com.thoughtworks.deepLearning.Batch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
