@@ -9,7 +9,7 @@ import com.thoughtworks.deepLearning.seq2D._
 import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
-import com.thoughtworks.deepLearning.any.layer.{Identity, Literal}
+import com.thoughtworks.deepLearning.any.layers.{Identity, Literal}
 import com.thoughtworks.deepLearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._

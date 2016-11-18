@@ -4,8 +4,8 @@ import com.thoughtworks.deepLearning.boolean.utilities._
 
 import com.thoughtworks.deepLearning.any.{ToLayer, Type}
 import com.thoughtworks.deepLearning.any.Type.{DataOf, DeltaOf}
-import com.thoughtworks.deepLearning.boolean.layer.If
-import com.thoughtworks.deepLearning.coproduct.layer._
+import com.thoughtworks.deepLearning.boolean.layers.If
+import com.thoughtworks.deepLearning.coproduct.layers._
 import shapeless.Lub
 
 import scala.language.existentials

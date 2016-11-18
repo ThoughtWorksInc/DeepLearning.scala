@@ -3,9 +3,9 @@ import cats.Eval
 
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.any.PolyMethods._
-import com.thoughtworks.deepLearning.any.layer.Literal
-import com.thoughtworks.deepLearning.boolean.layer.If
-import com.thoughtworks.deepLearning.double.layer._
+import com.thoughtworks.deepLearning.any.layers.Literal
+import com.thoughtworks.deepLearning.boolean.layers.If
+import com.thoughtworks.deepLearning.double.layers._
 
 import scala.language.implicitConversions
 

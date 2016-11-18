@@ -2,7 +2,7 @@ package com.thoughtworks.deepLearning
 
 import cats.Eval
 import com.thoughtworks.deepLearning.any._
-import com.thoughtworks.deepLearning.array2D.layer._
+import com.thoughtworks.deepLearning.array2D.layers._
 import com.thoughtworks.deepLearning.double.LearningRate
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
@@ -40,7 +40,7 @@ package object array2D {
                                                                         Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods./.at { (leftLayer, rightLayer) =>
-      MultiplyDouble(leftLayer, double.layer.Reciprocal(rightLayer))
+      MultiplyDouble(leftLayer, double.layers.Reciprocal(rightLayer))
     }
   }
   implicit def `Array2D*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
@@ -82,7 +82,7 @@ package object array2D {
                                                                         Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.-.at { (leftLayer, rightLayer) =>
-      PlusDouble(leftLayer, double.layer.Negative(rightLayer))
+      PlusDouble(leftLayer, double.layers.Negative(rightLayer))
     }
   }
   implicit def `Array2D+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],

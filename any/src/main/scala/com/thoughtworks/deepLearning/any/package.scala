@@ -3,7 +3,7 @@ package com.thoughtworks.deepLearning
 import com.thoughtworks.deepLearning.Layer._
 import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.any.ToLayer.{LayerPoly1, LayerPoly2}
-import com.thoughtworks.deepLearning.any.layer.{Compose, Identity, Literal, Throw}
+import com.thoughtworks.deepLearning.any.layers.{Compose, Identity, Literal, Throw}
 
 import scala.language.implicitConversions
 

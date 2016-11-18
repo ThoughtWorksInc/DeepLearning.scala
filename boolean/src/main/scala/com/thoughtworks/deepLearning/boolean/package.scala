@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.any.ToLayer
-import com.thoughtworks.deepLearning.boolean.layer.If
+import com.thoughtworks.deepLearning.boolean.layers.If
 import shapeless.Lub
 
 import scala.language.implicitConversions

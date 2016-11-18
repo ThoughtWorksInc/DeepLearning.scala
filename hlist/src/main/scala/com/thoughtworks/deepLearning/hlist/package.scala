@@ -2,7 +2,7 @@ package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.any.{ToLayer, Type}
 import com.thoughtworks.deepLearning.any.Type.{DataOf, DeltaOf}
-import com.thoughtworks.deepLearning.hlist.layer._
+import com.thoughtworks.deepLearning.hlist.layers._
 
 import scala.language.implicitConversions
 import scala.language.existentials
@@ -22,15 +22,15 @@ package object hlist {
   type ::[Head <: Type[_, _], Tail <: HList] =
     Type[shapeless.::[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  val HNil: layer.HNil.type = layer.HNil
+  val HNil: layers.HNil.type = layers.HNil
 
   implicit def hnilToLayer[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])
-    : ToLayer.Aux[layer.HNil.type, Batch.Aux[InputData, InputDelta], shapeless.HNil, shapeless.CNil] =
-    new ToLayer[layer.HNil.type, Batch.Aux[InputData, InputDelta]] {
+    : ToLayer.Aux[layers.HNil.type, Batch.Aux[InputData, InputDelta], shapeless.HNil, shapeless.CNil] =
+    new ToLayer[layers.HNil.type, Batch.Aux[InputData, InputDelta]] {
       override type OutputData = shapeless.HNil
       override type OutputDelta = shapeless.CNil
 
-      override def apply(hnil: layer.HNil.type) = hnil
+      override def apply(hnil: layers.HNil.type) = hnil
     }
 
   final class HListOps[Input <: Batch, TailData <: shapeless.HList, TailDelta <: shapeless.Coproduct](

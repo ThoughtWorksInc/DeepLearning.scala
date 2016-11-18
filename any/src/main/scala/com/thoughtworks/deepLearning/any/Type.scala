@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning.any
 
-import com.thoughtworks.deepLearning.any.layer.Identity
+import com.thoughtworks.deepLearning.any.layers.Identity
 import com.thoughtworks.deepLearning.{Batch, Layer}
 
 import scala.language.existentials
