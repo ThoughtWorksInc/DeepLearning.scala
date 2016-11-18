@@ -39,6 +39,20 @@ package object any {
       Compose(toLiteral, toInput(differentiableType(g)))
     }
 
+    def predict[InputData, InputDelta](inputData: InputData)(
+        implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
+          Batch.Aux[InputData, InputDelta],
+          Batch.Aux[OutputData, OutputDelta]]
+    ): OutputData = {
+      val outputBatch = toLiteral.forward(Literal[InputData](inputData)).open()
+      try {
+        outputBatch.value
+      } finally {
+        outputBatch.close()
+      }
+
+    }
+
     def train[InputData, InputDelta](inputData: InputData)(
         implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
           Batch.Aux[InputData, InputDelta],
