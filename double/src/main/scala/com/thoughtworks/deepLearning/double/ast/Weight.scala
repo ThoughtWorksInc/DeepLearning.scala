@@ -3,13 +3,10 @@ package com.thoughtworks.deepLearning.double.ast
 import com.thoughtworks.deepLearning.NeuralNetwork._
 import cats._
 import cats.implicits._
-
-import com.thoughtworks.deepLearning.{Batch, BatchId, LearningRate, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
 import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.double.LearningRate
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
-
-
-
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

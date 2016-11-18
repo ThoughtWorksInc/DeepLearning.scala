@@ -3,6 +3,7 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.array2D._
+import com.thoughtworks.deepLearning.double._
 import org.nd4s.Implicits._
 import org.scalatest._
 

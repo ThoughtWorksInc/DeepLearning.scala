@@ -3,6 +3,7 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.array2D.ast._
+import com.thoughtworks.deepLearning.double.LearningRate
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 import org.nd4j.linalg.api.ndarray.INDArray

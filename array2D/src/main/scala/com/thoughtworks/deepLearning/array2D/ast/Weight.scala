@@ -2,8 +2,8 @@ package com.thoughtworks.deepLearning
 package array2D.ast
 
 import cats._
-import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.array2D.utilities._
+import com.thoughtworks.deepLearning.double.LearningRate
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 

@@ -1,4 +1,4 @@
-package com.thoughtworks.deepLearning
+package com.thoughtworks.deepLearning.double
 
 // TODO: Move to double library
 /**
