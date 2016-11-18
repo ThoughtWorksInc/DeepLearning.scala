@@ -16,7 +16,7 @@ TailDelta <: shapeless.Coproduct](
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends BooleanMonoidBatch with Batch.Unshared {
 
-    type Input >: Input0
+
     val value = upstream.value match {
       case shapeless.Inl(_) => Eval.now(true)
       case shapeless.Inr(_) => Eval.now(false)

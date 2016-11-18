@@ -2,20 +2,20 @@ package com.thoughtworks.deepLearning.boolean.ast
 
 import cats._
 import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
-import com.thoughtworks.deepLearning.NeuralNetwork.Cached
+import com.thoughtworks.deepLearning.BufferedNetwork
 import com.thoughtworks.deepLearning.boolean.utilities._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Not[Input0 <: Batch](differentiableBoolean: NeuralNetwork.Aux[Input0, Boolean#Batch])
-    extends Cached {
+    extends BufferedNetwork {
 
-  protected final class SharedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
-                                                           upstream: Boolean#Batch)
+  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
+                                                            upstream: Boolean#Batch)
       extends MonoidBatch
       with BooleanMonoidBatch {
-    type Input >: Input0
+
     val value = upstream.value.map(!_)
 
     override protected def rawBackward(delta: Eval[scala.Boolean]): Unit = {
@@ -29,8 +29,8 @@ final case class Not[Input0 <: Batch](differentiableBoolean: NeuralNetwork.Aux[I
 
   type Input = Input0
 
-  override protected def rawForward(input: BatchId.Aux[Input0]): SharedBatch = {
+  override protected def rawForward(input: BatchId.Aux[Input0]): BufferedBatch = {
     val upstream = differentiableBoolean.forward(input)
-    new SharedBatch(input, upstream.open())
+    new BufferedBatch(input, upstream.open())
   }
 }

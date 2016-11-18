@@ -17,13 +17,13 @@ import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
   */
 final case class Exp[Input0 <: Batch](
     operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
-    extends Cached {
+    extends BufferedNetwork {
 
-  protected final class SharedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
-                                                           upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
+                                                            upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
-    type Input >: Input0
+
     val value = upstream.value.map(math.exp).memoize
 
     override protected def closeUpstreams(): Unit = {
@@ -38,6 +38,6 @@ final case class Exp[Input0 <: Batch](
   type Input = Input0
 
   override protected def rawForward(input: BatchId.Aux[Input]) = {
-    new SharedBatch(input, operand.forward(input).open())
+    new BufferedBatch(input, operand.forward(input).open())
   }
 }

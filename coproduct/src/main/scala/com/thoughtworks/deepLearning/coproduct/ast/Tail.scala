@@ -17,7 +17,7 @@ TailDelta <: shapeless.Coproduct](
       extends Batch.Unshared {
     override type Data = TailData
     override type Delta = TailDelta
-    type Input >: Input0
+
 
     val value =
       upstream.value.asInstanceOf[shapeless.Inr[TailData, TailData]].tail

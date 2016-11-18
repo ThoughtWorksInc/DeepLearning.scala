@@ -15,12 +15,12 @@ import org.nd4s.Implicits._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class ReduceSum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch])
-    extends Cached {
+    extends BufferedNetwork {
 
-  protected final class SharedBatch private[deepLearning](override val input: BatchId.Aux[Input0], upstream: Array2D#Batch)
+  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0], upstream: Array2D#Batch)
       extends MonoidBatch
       with DoubleMonoidBatch {
-    type Input >: Input0
+
     val value = upstream.value.map(_.sumT).memoize
 
     override protected def closeUpstreams(): Unit = {
@@ -39,8 +39,8 @@ final case class ReduceSum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, A
 
   type Input = Input0
 
-  override protected def rawForward(input: BatchId.Aux[Input]): SharedBatch = {
+  override protected def rawForward(input: BatchId.Aux[Input]): BufferedBatch = {
     val upstream = operand.forward(input).open()
-    new SharedBatch(input, upstream)
+    new BufferedBatch(input, upstream)
   }
 }

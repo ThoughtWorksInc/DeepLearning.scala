@@ -6,7 +6,7 @@ import cats._
 import cats.implicits._
 
 import com.thoughtworks.deepLearning._
-import com.thoughtworks.deepLearning.NeuralNetwork.Cached
+import com.thoughtworks.deepLearning.BufferedNetwork
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 
 
@@ -17,13 +17,13 @@ import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
   */
 final case class Negative[Input0 <: Batch](
     operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
-    extends Cached {
+    extends BufferedNetwork {
 
-  protected final class SharedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
-                                    upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
+                                                            upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
-    type Input >: Input0
+
     val value = upstream.value.map(-_)
 
     override protected def closeUpstreams(): Unit = {
@@ -37,8 +37,8 @@ final case class Negative[Input0 <: Batch](
 
   type Input = Input0
 
-  override protected def rawForward(input: BatchId.Aux[Input]): SharedBatch = {
+  override protected def rawForward(input: BatchId.Aux[Input]): BufferedBatch = {
     val upstream = operand.forward(input).open()
-    new SharedBatch(input, upstream)
+    new BufferedBatch(input, upstream)
   }
 }

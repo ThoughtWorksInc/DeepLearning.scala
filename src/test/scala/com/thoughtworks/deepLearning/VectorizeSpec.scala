@@ -342,7 +342,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       trainNetwork.train(makeMinibatch)
       def assertClear(ast: scala.Any): Unit = {
         ast match {
-          case cached: Cached =>
+          case cached: BufferedNetwork =>
             cached.cache shouldBe empty
           case _ =>
         }

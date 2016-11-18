@@ -6,7 +6,7 @@ import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.NeuralNetwork._
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, BatchId, BufferedNetwork, NeuralNetwork}
 import com.thoughtworks.deepLearning.seq2D.utilities.{Seq2D, Seq2DBatch}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -15,10 +15,10 @@ import org.nd4j.linalg.ops.transforms.Transforms
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch]) extends Cached {
+final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch]) extends BufferedNetwork {
   override type Input = Input0
 
-  final class SharedBatch private[ToSeq] (override val input: BatchId.Aux[Input], upstream: Array2D#Batch)
+  final class BufferedBatch private[ToSeq](override val input: BatchId.Aux[Input], upstream: Array2D#Batch)
       extends ReferenceCount
       with Seq2DBatch {
 
@@ -65,7 +65,7 @@ final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array
     *
     * @return a [[Batch]] that will be cached for subsequent [[#forward]]
     */
-  override protected def rawForward(input: BatchId.Aux[Input]): SharedBatch = {
-    new SharedBatch(input, operand.forward(input).open())
+  override protected def rawForward(input: BatchId.Aux[Input]): BufferedBatch = {
+    new BufferedBatch(input, operand.forward(input).open())
   }
 }
