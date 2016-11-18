@@ -2,10 +2,10 @@ package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.boolean.utilities._
 
-import com.thoughtworks.deepLearning.any.{ToNeuralNetwork, Type}
+import com.thoughtworks.deepLearning.any.{ToLayer, Type}
 import com.thoughtworks.deepLearning.any.Type.{DataOf, DeltaOf}
-import com.thoughtworks.deepLearning.boolean.ast.If
-import com.thoughtworks.deepLearning.coproduct.ast._
+import com.thoughtworks.deepLearning.boolean.layer.If
+import com.thoughtworks.deepLearning.coproduct.layer._
 import shapeless.Lub
 
 import scala.language.existentials
@@ -33,16 +33,16 @@ package object coproduct {
       TailData <: shapeless.Coproduct,
       TailDelta <: shapeless.Coproduct
   ](
-      ccons: NeuralNetwork.Aux[
+      ccons: Layer.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
       ]
   ) {
 
-    def head: NeuralNetwork.Aux[Input, Batch.Aux[HeadData, HeadDelta]] =
+    def head: Layer.Aux[Input, Batch.Aux[HeadData, HeadDelta]] =
       Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
-    def tail: NeuralNetwork.Aux[Input, Batch.Aux[TailData, TailDelta]] =
+    def tail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
     def choice[HeadCase,
@@ -53,21 +53,21 @@ package object coproduct {
                TailOutputDelta,
                NN,
                OutputData,
-               OutputDelta](caseHead: NeuralNetwork.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => HeadCase)(
-        caseTail: NeuralNetwork.Aux[Input, Batch.Aux[TailData, TailDelta]] => TailCase)(
-        implicit headToNeuralNetwork: ToNeuralNetwork.Aux[HeadCase, Input, HeadOutputData, HeadOutputDelta],
-        tailToNeuralNetwork: ToNeuralNetwork.Aux[TailCase, Input, TailOutputData, TailOutputDelta],
-        lub: Lub[NeuralNetwork.Aux[Input, Batch.Aux[HeadOutputData, HeadOutputDelta]],
-                 NeuralNetwork.Aux[Input, Batch.Aux[TailOutputData, TailOutputDelta]],
+               OutputDelta](caseHead: Layer.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => HeadCase)(
+        caseTail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]] => TailCase)(
+        implicit headToLayer: ToLayer.Aux[HeadCase, Input, HeadOutputData, HeadOutputDelta],
+        tailToLayer: ToLayer.Aux[TailCase, Input, TailOutputData, TailOutputDelta],
+        lub: Lub[Layer.Aux[Input, Batch.Aux[HeadOutputData, HeadOutputDelta]],
+                 Layer.Aux[Input, Batch.Aux[TailOutputData, TailOutputDelta]],
                  NN],
-        commonToNeuralNetwork: ToNeuralNetwork.Aux[NN, Input, OutputData, OutputDelta]
-    ): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+        commonToLayer: ToLayer.Aux[NN, Input, OutputData, OutputDelta]
+    ): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
       If[Input, OutputData, OutputDelta](isInl,
-                                         commonToNeuralNetwork(lub.left(headToNeuralNetwork(caseHead(head)))),
-                                         commonToNeuralNetwork(lub.right(tailToNeuralNetwork(caseTail(tail)))))
+                                         commonToLayer(lub.left(headToLayer(caseHead(head)))),
+                                         commonToLayer(lub.right(tailToLayer(caseTail(tail)))))
     }
 
-    def isInl: NeuralNetwork.Aux[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+    def isInl: Layer.Aux[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 
@@ -79,11 +79,11 @@ package object coproduct {
                           HeadDelta,
                           TailData <: shapeless.Coproduct,
                           TailDelta <: shapeless.Coproduct](from: From)(
-      implicit toNeuralNetwork: ToNeuralNetwork.Aux[From, Input, OutputData, OutputDelta],
-      toCoproductNeuralNetwork: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
+      implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
+      toCoproductLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ): CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
-    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductNeuralNetwork(toNeuralNetwork(from)))
+    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
 }

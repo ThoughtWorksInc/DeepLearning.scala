@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
 import cats.Eval
-import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Layer._
 import com.thoughtworks.deepLearning.Batch._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.boolean._
@@ -9,7 +9,7 @@ import com.thoughtworks.deepLearning.seq2D._
 import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
-import com.thoughtworks.deepLearning.any.ast.{Identity, Literal}
+import com.thoughtworks.deepLearning.any.layer.{Identity, Literal}
 import com.thoughtworks.deepLearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
@@ -258,7 +258,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         }
       }
 
-      val encodedAstRow0 = Vector(field0Flag0,
+      val encodedLayerRow0 = Vector(field0Flag0,
                                   field0Flag1,
                                   field0Value0,
                                   field1Flag0,
@@ -271,7 +271,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
                                   field3Value1,
                                   field3Value2)
 
-      Vector(encodedAstRow0).toArray2D
+      Vector(encodedLayerRow0).toArray2D
     }
 
     val rowToArray2DNetwork = rowToArray2D
@@ -340,16 +340,16 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
     for (i <- 0 until 100) {
       trainNetwork.train(makeMinibatch)
-      def assertClear(ast: scala.Any): Unit = {
-        ast match {
-          case cached: BufferedNetwork =>
+      def assertClear(layer: scala.Any): Unit = {
+        layer match {
+          case cached: BufferedLayer =>
             cached.cache shouldBe empty
           case _ =>
         }
-        ast match {
+        layer match {
           case parent: Product =>
-            for (upstreamAst <- parent.productIterator) {
-              assertClear(upstreamAst)
+            for (upstreamLayer <- parent.productIterator) {
+              assertClear(upstreamLayer)
             }
           case _ =>
         }

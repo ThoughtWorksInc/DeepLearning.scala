@@ -10,7 +10,7 @@ import org.scalatest._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class NeuralNetworkSpec extends FreeSpec with Matchers {
+final class LayerSpec extends FreeSpec with Matchers {
 
   implicit val learningRate = new LearningRate {
     override def apply() = 0.0003

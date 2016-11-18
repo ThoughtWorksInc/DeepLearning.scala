@@ -13,7 +13,7 @@ final class BatchSpec extends FreeSpec with Matchers {
 
   /*
 
-  Batch有两种，一种是Invariant的，一种是covariant/contravariant的（即Widen版）。所有的Ast中应该使用后者
+  Batch有两种，一种是Invariant的，一种是covariant/contravariant的（即Widen版）。所有的Layer中应该使用后者
 
    */
   "Batch#Batch" in {

@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.any.ToNeuralNetwork
-import com.thoughtworks.deepLearning.boolean.ast.If
+import com.thoughtworks.deepLearning.any.ToLayer
+import com.thoughtworks.deepLearning.boolean.layer.If
 import shapeless.Lub
 
 import scala.language.implicitConversions
@@ -14,7 +14,7 @@ package object boolean {
   /** @template */
   type Boolean = utilities.Boolean
 
-  final class BooleanOps[Input <: Batch](boolean: NeuralNetwork.Aux[Input, Boolean#Batch]) {
+  final class BooleanOps[Input <: Batch](boolean: Layer.Aux[Input, Boolean#Batch]) {
 
     def `if`[Then,
              Else,
@@ -25,23 +25,23 @@ package object boolean {
              NN,
              OutputData,
              OutputDelta](`then`: Then)(`else`: Else)(
-        implicit thenToNeuralNetwork: ToNeuralNetwork.Aux[Then, Input, ThenOutputData, ThenOutputDelta],
-        elseToNeuralNetwork: ToNeuralNetwork.Aux[Else, Input, ElseOutputData, ElseOutputDelta],
-        lub: Lub[NeuralNetwork.Aux[Input, Batch.Aux[ThenOutputData, ThenOutputDelta]],
-                 NeuralNetwork.Aux[Input, Batch.Aux[ElseOutputData, ElseOutputDelta]],
+        implicit thenToLayer: ToLayer.Aux[Then, Input, ThenOutputData, ThenOutputDelta],
+        elseToLayer: ToLayer.Aux[Else, Input, ElseOutputData, ElseOutputDelta],
+        lub: Lub[Layer.Aux[Input, Batch.Aux[ThenOutputData, ThenOutputDelta]],
+                 Layer.Aux[Input, Batch.Aux[ElseOutputData, ElseOutputDelta]],
                  NN],
-        commonToNeuralNetwork: ToNeuralNetwork.Aux[NN, Input, OutputData, OutputDelta]
-    ): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+        commonToLayer: ToLayer.Aux[NN, Input, OutputData, OutputDelta]
+    ): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
       If[Input, OutputData, OutputDelta](boolean,
-                                         commonToNeuralNetwork(lub.left(thenToNeuralNetwork(`then`))),
-                                         commonToNeuralNetwork(lub.right(elseToNeuralNetwork(`else`))))
+                                         commonToLayer(lub.left(thenToLayer(`then`))),
+                                         commonToLayer(lub.right(elseToLayer(`else`))))
     }
 
   }
 
   implicit def toBooleanOps[From, Input <: Batch](from: From)(
-      implicit toNeuralNetwork: ToNeuralNetwork.OfType[From, Input, Boolean]): BooleanOps[Input] = {
-    new BooleanOps[Input](toNeuralNetwork(from))
+      implicit toLayer: ToLayer.OfType[From, Input, Boolean]): BooleanOps[Input] = {
+    new BooleanOps[Input](toLayer(from))
   }
 
 }

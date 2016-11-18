@@ -5,7 +5,7 @@ import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.hlist._
 import com.thoughtworks.deepLearning.double._
 import org.scalatest.{FreeSpec, Matchers}
-import ToNeuralNetwork._
+import ToLayer._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

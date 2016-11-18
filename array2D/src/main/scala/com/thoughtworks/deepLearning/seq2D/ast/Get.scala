@@ -1,15 +1,15 @@
-package com.thoughtworks.deepLearning.seq2D.ast
+package com.thoughtworks.deepLearning.seq2D.layer
 
 import cats._
-import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, BatchId, Layer}
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Get[Input0 <: Batch](operand0: NeuralNetwork.Aux[Input0, Seq2D#Batch], i: Int, j: Int)
-    extends NeuralNetwork { this: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] =>
+final case class Get[Input0 <: Batch](operand0: Layer.Aux[Input0, Seq2D#Batch], i: Int, j: Int) extends Layer {
+  this: Layer.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]] =>
 
   final class Output private[Get] (upstream: Seq2D#Batch) extends DoubleMonoidBatch {
 

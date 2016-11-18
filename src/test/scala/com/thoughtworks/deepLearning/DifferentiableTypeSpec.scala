@@ -24,7 +24,7 @@ class DifferentiableTypeSpec extends FreeSpec with Matchers {
     val inputSymbol: Double :: HNil = implicitly
 
     implicitly[inputSymbol.Batch =:= (Double :: HNil)#Batch]
-    implicitly[NeuralNetwork.Aux[(Double :: HNil)#Batch, (Boolean :: HNil)#Batch] =:= inputSymbol.To[Boolean :: HNil]]
+    implicitly[Layer.Aux[(Double :: HNil)#Batch, (Boolean :: HNil)#Batch] =:= inputSymbol.To[Boolean :: HNil]]
 
   }
 }

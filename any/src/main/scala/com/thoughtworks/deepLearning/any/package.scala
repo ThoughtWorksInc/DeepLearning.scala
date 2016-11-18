@@ -1,9 +1,9 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Layer._
 import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.any.ToNeuralNetwork.{AstPoly1, AstPoly2}
-import com.thoughtworks.deepLearning.any.ast.{Compose, Identity, Literal, Throw}
+import com.thoughtworks.deepLearning.any.ToLayer.{LayerPoly1, LayerPoly2}
+import com.thoughtworks.deepLearning.any.layer.{Compose, Identity, Literal, Throw}
 
 import scala.language.implicitConversions
 
@@ -18,29 +18,29 @@ package object any {
   /** @template */
   type Nothing = Type[scala.Nothing, scala.Any]
 
-  def `throw`[InputData, InputDelta](throwable: => Throwable)(implicit inputType: Type[InputData, InputDelta])
-    : NeuralNetwork.Aux[Batch.Aux[InputData, InputDelta], Nothing#Batch] = {
+  def `throw`[InputData, InputDelta](throwable: => Throwable)(
+      implicit inputType: Type[InputData, InputDelta]): Layer.Aux[Batch.Aux[InputData, InputDelta], Nothing#Batch] = {
     Throw(throwable _)
   }
 
   implicit def autoToLiteral[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta])
-    : NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-    toNeuralNetwork(a)
+      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
+    : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+    toLayer(a)
   }
 
   final class AnyOps[Input <: Batch, OutputData, OutputDelta](
-      val toLiteral: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
+      val toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
-        implicit differentiableType: ToNeuralNetwork.Aux[G, NewInput, InputData, InputDelta],
-        toInput: NeuralNetwork.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< NeuralNetwork.Aux[NewInput, Input]
-    ): NeuralNetwork.Aux[NewInput, Batch.Aux[OutputData, OutputDelta]] = {
+        implicit differentiableType: ToLayer.Aux[G, NewInput, InputData, InputDelta],
+        toInput: Layer.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< Layer.Aux[NewInput, Input]
+    ): Layer.Aux[NewInput, Batch.Aux[OutputData, OutputDelta]] = {
       Compose(toLiteral, toInput(differentiableType(g)))
     }
 
     def train[InputData, InputDelta](inputData: InputData)(
-        implicit ev: NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< NeuralNetwork.Aux[
+        implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
           Batch.Aux[InputData, InputDelta],
           Batch.Aux[OutputData, OutputDelta]],
         outputDataIsOutputDelta: OutputData <:< OutputDelta
@@ -57,9 +57,8 @@ package object any {
   }
 
   implicit def toAnyOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toNeuralNetwork: ToNeuralNetwork.Aux[A, Input, OutputData, OutputDelta])
-    : AnyOps[Input, OutputData, OutputDelta] = {
-    new AnyOps(toNeuralNetwork(a))
+      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): AnyOps[Input, OutputData, OutputDelta] = {
+    new AnyOps(toLayer(a))
   }
 
   implicit final class ToBatchId[Data](a: Data) {
@@ -68,23 +67,23 @@ package object any {
 
   implicit final class ScalaAnyOps[Left](left: Left) {
 
-    def -[Right](right: Right)(implicit methodCase: AstMethods.-.Case[Left, Right]): methodCase.Result =
-      AstMethods.-(left, right)
+    def -[Right](right: Right)(implicit methodCase: PolyMethods.-.Case[Left, Right]): methodCase.Result =
+      PolyMethods.-(left, right)
 
-    def +[Right](right: Right)(implicit methodCase: AstMethods.+.Case[Left, Right]): methodCase.Result =
-      AstMethods.+(left, right)
+    def +[Right](right: Right)(implicit methodCase: PolyMethods.+.Case[Left, Right]): methodCase.Result =
+      PolyMethods.+(left, right)
 
-    def *[Right](right: Right)(implicit methodCase: AstMethods.*.Case[Left, Right]): methodCase.Result =
-      AstMethods.*(left, right)
+    def *[Right](right: Right)(implicit methodCase: PolyMethods.*.Case[Left, Right]): methodCase.Result =
+      PolyMethods.*(left, right)
 
-    def /[Right](right: Right)(implicit methodCase: AstMethods./.Case[Left, Right]): methodCase.Result =
-      AstMethods./(left, right)
+    def /[Right](right: Right)(implicit methodCase: PolyMethods./.Case[Left, Right]): methodCase.Result =
+      PolyMethods./(left, right)
 
   }
 
-  object log extends AstPoly1
-  object exp extends AstPoly1
-  object abs extends AstPoly1
-  object max extends AstPoly2
-  object min extends AstPoly2
+  object log extends LayerPoly1
+  object exp extends LayerPoly1
+  object abs extends LayerPoly1
+  object max extends LayerPoly2
+  object min extends LayerPoly2
 }

@@ -10,11 +10,11 @@ import org.scalatest.{FreeSpec, Matchers}
 final class OperatorSpec extends FreeSpec with Matchers {
 
   "double input" in {
-    def buildNeuralNetwork(implicit input: Double) = {
+    def buildLayer(implicit input: Double) = {
       val m0 = 0.0 - max(1.0, 2.0)
     }
 
-    buildNeuralNetwork
+    buildLayer
   }
 
 }

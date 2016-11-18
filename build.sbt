@@ -5,9 +5,9 @@ lazy val root =
 
 lazy val `deep-learning` = project.disablePlugins(SparkPackagePlugin)
 
-lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(`deep-learning`, `buffered-network`, any)
+lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(`deep-learning`, `buffered-layer`, any)
 
-lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(any, boolean, `buffered-network`)
+lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(any, boolean, `buffered-layer`)
 
 lazy val any = project.disablePlugins(SparkPackagePlugin).dependsOn(`deep-learning`)
 
@@ -17,7 +17,7 @@ lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(any)
 
 lazy val coproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(boolean)
 
-lazy val `buffered-network` = project.disablePlugins(SparkPackagePlugin).dependsOn(`deep-learning`)
+lazy val `buffered-layer` = project.disablePlugins(SparkPackagePlugin).dependsOn(`deep-learning`)
 
 lazy val `sbt-nd4j` = project
 

@@ -1,7 +1,7 @@
 package com.thoughtworks.deepLearning.any
 
-import com.thoughtworks.deepLearning.any.ast.Identity
-import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
+import com.thoughtworks.deepLearning.any.layer.Identity
+import com.thoughtworks.deepLearning.{Batch, Layer}
 
 import scala.language.existentials
 
@@ -17,9 +17,9 @@ final class Type[Data0, Delta0] {
   // Workaround for https://issues.scala-lang.org/browse/SI-10008
   type Batch >: ConcreteBatch <: ConcreteBatch
 
-  type To[OutputSymbol <: Type[_, _]] = NeuralNetwork.Aux[Batch, OutputSymbol#Batch]
-  //  type NeuralNetwork.Aux[OutputType <: Type] =
-  //    NeuralNetwork.Aux[ConcreteBatch, outputType.ConcreteBatch forSome { val outputType: OutputType }]
+  type To[OutputSymbol <: Type[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
+  //  type Layer.Aux[OutputType <: Type] =
+  //    Layer.Aux[ConcreteBatch, outputType.ConcreteBatch forSome { val outputType: OutputType }]
 }
 
 object Type {
@@ -29,9 +29,9 @@ object Type {
   type DataOf[T <: Type[_, _]] = t.Data forSome { val t: T }
   type DeltaOf[T <: Type[_, _]] = t.Delta forSome { val t: T }
 
-  implicit def inputTypeToNeuralNetwork[InputData, InputDelta]
-    : ToNeuralNetwork.Aux[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
-    new ToNeuralNetwork[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
+  implicit def inputTypeToLayer[InputData, InputDelta]
+    : ToLayer.Aux[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
+    new ToLayer[Type[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
       override type OutputData = InputData
       override type OutputDelta = InputDelta
 

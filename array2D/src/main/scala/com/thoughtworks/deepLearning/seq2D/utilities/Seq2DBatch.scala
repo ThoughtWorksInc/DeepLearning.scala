@@ -4,7 +4,7 @@ import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.Batch._
-import com.thoughtworks.deepLearning.NeuralNetwork._
+import com.thoughtworks.deepLearning.Layer._
 import com.thoughtworks.deepLearning.Batch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j

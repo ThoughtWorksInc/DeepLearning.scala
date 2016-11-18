@@ -13,7 +13,10 @@ object Batch {
     type Delta >: Delta0
   }
 
-  trait Unshared extends Batch {
+  /**
+    * For debugging purpose only
+    */
+  private[deepLearning] trait Unshared extends Batch {
 
     private[Unshared] final class ClosingFlag {
       var closed = false

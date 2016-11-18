@@ -1,6 +1,6 @@
 package com.thoughtworks.deepLearning.any
 
-import com.thoughtworks.deepLearning.{Batch, NeuralNetwork}
+import com.thoughtworks.deepLearning.{Batch, Layer}
 import shapeless.DepFn1
 
 /**
@@ -11,7 +11,7 @@ trait ToLiteral[From] extends DepFn1[From] {
   type OutputData
   type OutputDelta
 
-  type Out = Batch.Aux[OutputData, OutputDelta] with NeuralNetwork.Aux[Batch, Batch.Aux[OutputData, OutputDelta]]
+  type Out = Batch.Aux[OutputData, OutputDelta] with Layer.Aux[Batch, Batch.Aux[OutputData, OutputDelta]]
 
 }
 
