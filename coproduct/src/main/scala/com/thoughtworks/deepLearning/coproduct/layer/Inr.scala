@@ -10,7 +10,9 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
 
   type Input = Input0
 
-  final class Output private[Inr] (tailBatch: Batch.Aux[TailData, TailDelta]) extends Batch.Unshared {
+  final class Output private[Inr] (tailBatch: Batch.Aux[TailData, TailDelta])
+      extends Batch
+      with com.thoughtworks.deepLearning.utilities.CloseableOnce {
     def value = shapeless.Inr(tailBatch.value: TailData)
 
     type Data = shapeless.Inr[Nothing, TailData]
@@ -23,7 +25,8 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
       }
     }
 
-    override protected def closeUpstreams(): Unit = {
+    override def close(): Unit = {
+      super.close()
       tailBatch.close()
     }
   }

@@ -2,9 +2,8 @@ package com.thoughtworks.deepLearning
 package coproduct.layer
 
 import cats.Eval
-
 import com.thoughtworks.deepLearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deepLearning.{Layer, Batch}
+import com.thoughtworks.deepLearning.utilities.CloseableOnce
 
 final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
@@ -14,7 +13,8 @@ TailDelta <: shapeless.Coproduct](
   final class Output private[IsInl] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends BooleanMonoidBatch
-      with Batch.Unshared {
+      with Batch
+      with CloseableOnce {
 
     val value = upstream.value match {
       case shapeless.Inl(_) => Eval.now(true)
@@ -23,7 +23,8 @@ TailDelta <: shapeless.Coproduct](
 
     override def backward(delta: Eval[scala.Boolean]): Unit = {}
 
-    override protected def closeUpstreams(): Unit = {
+    override def close(): Unit = {
+      super.close()
       upstream.close()
     }
   }

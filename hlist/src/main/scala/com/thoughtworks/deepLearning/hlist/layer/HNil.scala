@@ -23,5 +23,5 @@ case object HNil extends Layer with Batch with BatchId {
 
   override def value = shapeless.HNil
 
-  override protected def close(): Unit = {}
+  override def close(): Unit = {}
 }

@@ -11,7 +11,8 @@ TailDelta <: shapeless.Coproduct](
 
   final class Output private[Tail] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends Batch.Unshared {
+      extends Batch
+      with com.thoughtworks.deepLearning.utilities.CloseableOnce {
     override type Data = TailData
     override type Delta = TailDelta
 
@@ -22,7 +23,8 @@ TailDelta <: shapeless.Coproduct](
       upstream.backward(shapeless.Inr(delta))
     }
 
-    override protected def closeUpstreams(): Unit = {
+    override def close(): Unit = {
+      super.close()
       upstream.close()
     }
   }

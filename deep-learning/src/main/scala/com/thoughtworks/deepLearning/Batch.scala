@@ -13,31 +13,6 @@ object Batch {
     type Delta >: Delta0
   }
 
-  /**
-    * For debugging purpose only
-    */
-  private[deepLearning] trait Unshared extends Batch {
-
-    private[Unshared] final class ClosingFlag {
-      var closed = false
-      @elidable(elidable.ASSERTION)
-      def assertNotClosed() = {
-        assert(!closed)
-        closed = true
-      }
-    }
-
-    @elidable(elidable.ASSERTION)
-    private val closingFlag = new ClosingFlag
-
-    protected def closeUpstreams(): Unit
-
-    override final def close() = {
-      closingFlag.assertNotClosed()
-      closeUpstreams()
-    }
-  }
-
 }
 
 trait Batch extends AutoCloseable {

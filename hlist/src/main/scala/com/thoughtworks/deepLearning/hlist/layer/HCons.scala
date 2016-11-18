@@ -1,6 +1,7 @@
 package com.thoughtworks.deepLearning.hlist.layer
 
-import com.thoughtworks.deepLearning.{Batch, BatchId, Layer}
+import com.thoughtworks.deepLearning.utilities.CloseableOnce
+import com.thoughtworks.deepLearning.{Batch, BatchId, Layer, utilities}
 
 final case class HCons[Input0 <: Batch,
                        HeadData,
@@ -14,7 +15,8 @@ final case class HCons[Input0 <: Batch,
 
   final class Output private[HCons] (headBatch: Batch.Aux[HeadData, HeadDelta],
                                      tailBatch: Batch.Aux[TailData, TailDelta])
-      extends Batch.Unshared {
+      extends Batch
+      with com.thoughtworks.deepLearning.utilities.CloseableOnce {
     override def backward(delta: Delta): Unit = {
       delta match {
         case shapeless.Inl(headDelta) =>
@@ -28,7 +30,8 @@ final case class HCons[Input0 <: Batch,
       headBatch.value :: tailBatch.value
     }
 
-    override protected def closeUpstreams(): Unit = {
+    override def close(): Unit = {
+      super.close()
       headBatch.close()
       tailBatch.close()
     }

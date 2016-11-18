@@ -6,6 +6,7 @@ import cats.implicits._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deepLearning.array2D.utilities._
+import com.thoughtworks.deepLearning.utilities.CloseableOnce
 
 import scala.language.higherKinds
 
@@ -38,7 +39,8 @@ final case class ToArray2D[Input0 <: Batch](
   type Input = Input0
 
   final class Output private[ToArray2D] (upstreams: Seq[Seq[Batch.Aux[Eval[Double], Eval[Double]]]])
-      extends Array2DSemigroupBatch {
+      extends Array2DSemigroupBatch
+      with CloseableOnce {
     override def backward(delta: Eval[INDArray]): Unit = {
       for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
         upstream.backward(delta.map(_(i, j)))
@@ -51,6 +53,7 @@ final case class ToArray2D[Input0 <: Batch](
     }
 
     override def close(): Unit = {
+      super.close()
       upstreams.foreach(_.foreach(_.close()))
     }
 

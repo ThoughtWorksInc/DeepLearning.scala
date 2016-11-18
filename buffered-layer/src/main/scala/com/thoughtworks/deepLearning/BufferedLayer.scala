@@ -9,7 +9,6 @@ import scala.annotation.elidable
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-
 // TODO: Rename this trait to Layer and move to a separate library
 trait BufferedLayer extends Layer {
 
@@ -23,7 +22,6 @@ trait BufferedLayer extends Layer {
       * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
       */
     override final def open(): Open = {
-      assert(!closingFlag.closed)
       val newCount = synchronized {
         val newCount = count + 1
         count = newCount
@@ -37,16 +35,20 @@ trait BufferedLayer extends Layer {
       // Returns a [[Batch]] able to detect error of closing more than once.
       @elidable(elidable.ASSERTION)
       def checkIfCloseOnlyOnce = new Batch {
-        type Delta = ReferenceCount.this.Delta
-        type Data = ReferenceCount.this.Data
+        override type Delta = ReferenceCount.this.Delta
+        override type Data = ReferenceCount.this.Data
 
-        override final def backward(delta: Delta) = ReferenceCount.this.backward(delta)
+        override def backward(delta: Delta) = ReferenceCount.this.backward(delta)
 
-        def value = ReferenceCount.this.value
+        override def value = ReferenceCount.this.value
 
         private var closed = false
 
-        override final def close(): Unit = {
+        override protected def finalize(): Unit = {
+          assert(closed)
+        }
+
+        override def close(): Unit = {
           ReferenceCount.this.synchronized {
             if (closed) {
               throw new IllegalStateException("close() method must be called once and only once.")
@@ -69,24 +71,9 @@ trait BufferedLayer extends Layer {
 
     protected def flush(): Unit
 
-    /**
-      * Closes upstream batch of this [[BufferedBatch]]
-      */
-    protected def closeUpstreams(): Unit
-
     def input: BatchId.Aux[Input]
 
-    private[BufferedLayer] final class ClosingFlag {
-      var closed = false
-      @elidable(elidable.ASSERTION)
-      def assertNotClosed() = {
-        assert(!closed)
-        closed = true
-      }
-    }
-
-    @elidable(elidable.ASSERTION)
-    private val closingFlag = new ClosingFlag
+    protected def closeUpstreams(): Unit
 
     override final def close(): Unit = {
       val newCount = synchronized {
@@ -96,7 +83,6 @@ trait BufferedLayer extends Layer {
       }
       assert(newCount >= 0)
       if (newCount == 0) {
-        closingFlag.assertNotClosed()
         val batch: BufferedBatch = cache.remove(input)
         assert(batch eq (this: BufferedBatch))
         flush()
