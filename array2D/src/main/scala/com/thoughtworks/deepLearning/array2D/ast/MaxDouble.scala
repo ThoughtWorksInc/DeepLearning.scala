@@ -16,14 +16,14 @@ import com.thoughtworks.deepLearning.double.utilities._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class MaxDouble[Input0 <: Batch](
-                                                      leftOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch],
-                                                      rightOperand: NeuralNetwork.Aux[Input0, Double#ConcreteBatch]
+                                                      leftOperand: NeuralNetwork.Aux[Input0, Array2D#Batch],
+                                                      rightOperand: NeuralNetwork.Aux[Input0, Double#Batch]
 ) extends NeuralNetwork
     with Cached {
 
   protected final class SharedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
-                                                           upstream1: Array2D#ConcreteBatch,
-                                                           upstream2: Double#ConcreteBatch)
+                                                           upstream1: Array2D#Batch,
+                                                           upstream2: Double#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream1.value.map2(upstream2.value)(Transforms.max).memoize

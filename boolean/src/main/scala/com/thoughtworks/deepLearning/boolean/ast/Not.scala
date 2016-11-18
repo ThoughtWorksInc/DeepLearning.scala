@@ -8,7 +8,7 @@ import com.thoughtworks.deepLearning.boolean.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Not[Input0 <: Batch](differentiableBoolean: NeuralNetwork.Aux[Input0, Boolean#ConcreteBatch])
+final case class Not[Input0 <: Batch](differentiableBoolean: NeuralNetwork.Aux[Input0, Boolean#Batch])
     extends Cached {
 
   protected final class SharedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],

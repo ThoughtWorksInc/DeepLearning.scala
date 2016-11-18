@@ -14,14 +14,14 @@ import SumAs._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class MultiplyArray2D[Input0 <: Batch](
-                                                            leftOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch],
-                                                            rightOperand: NeuralNetwork.Aux[Input0, Array2D#ConcreteBatch]
+                                                            leftOperand: NeuralNetwork.Aux[Input0, Array2D#Batch],
+                                                            rightOperand: NeuralNetwork.Aux[Input0, Array2D#Batch]
 ) extends NeuralNetwork
     with Cached {
 
   protected final class SharedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
-                                                          upstream1: Array2D#ConcreteBatch,
-                                                          upstream2: Array2D#ConcreteBatch)
+                                                          upstream1: Array2D#Batch,
+                                                          upstream2: Array2D#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = {
