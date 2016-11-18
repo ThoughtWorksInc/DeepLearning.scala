@@ -60,9 +60,6 @@ object ToNeuralNetwork extends ToNeuralNetworkLowPriorityImplicits {
       val differentiableType: OutputType
     }
 
-  // FIXME: I don't know if invariance is required, please remove this line if NeuralNetwork.Aux is enough
-  //  type NeuralNetwork.Aux[Input <: Batch, Output <: Batch] = NeuralNetwork.Aux[Input, Output]
-
   implicit def neuralNetworkToNeuralNetwork[Input <: Batch, OutputData0, OutputDelta0]
     : ToNeuralNetwork.Aux[NeuralNetwork.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]],
                           Input,

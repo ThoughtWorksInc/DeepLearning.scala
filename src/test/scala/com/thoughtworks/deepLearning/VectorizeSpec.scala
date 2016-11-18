@@ -358,7 +358,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     }
 
     /*
-     TODO: 最终目标是生成一个预测神经网络和一个训练神经网络
+     最终目标是生成一个预测神经网络和一个训练神经网络
      为了生成这两个网络，需要生成若干处理Array2D的全连接层、InputData到Array2D的转换、Array2D到Row的转换、Array2D到Double loss的转换
 
      InputData到Array2D的转换可以从InputData到若干Double的转换做起

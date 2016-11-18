@@ -32,7 +32,6 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
         * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
         */
       override final def open(): Open = {
-        // TODO: reopen
         assert(!closingFlag.closed)
         val newCount = synchronized {
           val newCount = count + 1
@@ -98,9 +97,6 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       @elidable(elidable.ASSERTION)
       private val closingFlag = new ClosingFlag
 
-      /**
-        * FIXME: rename to release
-        */
       override final def close(): Unit = {
         val newCount = synchronized {
           val newCount = count - 1
