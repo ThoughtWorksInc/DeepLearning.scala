@@ -25,7 +25,7 @@ final case class Dot[Input0 <: Batch](
       with SemigroupBatch {
     override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
 
-    
+
 
     override protected def closeUpstreams(): Unit = {
       upstream1.close()

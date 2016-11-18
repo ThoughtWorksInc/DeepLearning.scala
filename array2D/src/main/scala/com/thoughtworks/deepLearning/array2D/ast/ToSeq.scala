@@ -60,11 +60,6 @@ final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array
     }
   }
 
-  /**
-    * Performs the underlying forward pass.
-    *
-    * @return a [[Batch]] that will be cached for subsequent [[#forward]]
-    */
   override protected def rawForward(input: BatchId.Aux[Input]): BufferedBatch = {
     new BufferedBatch(input, operand.forward(input).open())
   }
