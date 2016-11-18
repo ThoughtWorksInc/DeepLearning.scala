@@ -3,6 +3,7 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.array2D._
+import com.thoughtworks.deepLearning.array2D.LearningRate
 import com.thoughtworks.deepLearning.double._
 import org.nd4s.Implicits._
 import org.scalatest._
@@ -13,7 +14,7 @@ import org.scalatest._
 final class LayerSpec extends FreeSpec with Matchers {
 
   implicit val learningRate = new LearningRate {
-    override def apply() = 0.0003
+    override def learningRate() = 0.0003
   }
 
   "Array2D dot Array2D" in {

@@ -3,7 +3,6 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.array2D.layers._
-import com.thoughtworks.deepLearning.double.LearningRate
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -194,7 +193,7 @@ package object array2D {
   implicit final class INDArrayOps(nativeDouble: INDArray) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Type[InputData, InputDelta],
-        learningRate: LearningRate): Layer.Aux[Batch.Aux[InputData, InputDelta], Array2D#Batch] = {
+        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Array2D#Batch] = {
       Weight(nativeDouble)
     }
   }

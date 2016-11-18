@@ -1,17 +1,15 @@
 package com.thoughtworks.deepLearning.double.layers
 
-import com.thoughtworks.deepLearning.Layer._
 import cats._
 import cats.implicits._
+import com.thoughtworks.deepLearning.double.optimizers.Optimizer
 import com.thoughtworks.deepLearning.{Batch, BatchId, Layer}
-import com.thoughtworks.deepLearning.Layer._
-import com.thoughtworks.deepLearning.double.LearningRate
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Weight(var rawValue: scala.Double)(implicit learningRate: LearningRate)
+final case class Weight(var rawValue: scala.Double)(implicit optimizer: Optimizer)
     extends Layer
     with DoubleMonoidBatch
     with BatchId {
@@ -24,7 +22,9 @@ final case class Weight(var rawValue: scala.Double)(implicit learningRate: Learn
   override def forward(any: BatchId.Aux[Input]) = this
 
   override def backward(delta: Delta): Unit = {
-    rawValue -= delta.value * learningRate()
+    synchronized {
+      rawValue = optimizer.updateDouble(rawValue, delta.value)
+    }
   }
 
   override def value = Eval.now(rawValue)

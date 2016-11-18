@@ -2,15 +2,15 @@ package com.thoughtworks.deepLearning
 package array2D.layers
 
 import cats._
+import com.thoughtworks.deepLearning.array2D.Optimizer
 import com.thoughtworks.deepLearning.array2D.utilities._
-import com.thoughtworks.deepLearning.double.LearningRate
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Weight(var rawValue: INDArray)(implicit learningRate: LearningRate)
+final case class Weight(var rawValue: INDArray)(implicit optimizer: Optimizer)
     extends Layer
     with Array2DSemigroupBatch
     with BatchId {
@@ -25,7 +25,9 @@ final case class Weight(var rawValue: INDArray)(implicit learningRate: LearningR
   override def forward(any: BatchId.Aux[Input]) = this
 
   override def backward(delta: Delta): Unit = {
-    rawValue -= delta.value * learningRate()
+    synchronized {
+      rawValue = optimizer.updateNDArray(rawValue, delta.value)
+    }
   }
 
   override def close(): Unit = {}

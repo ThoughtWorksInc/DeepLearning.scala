@@ -1,11 +1,11 @@
 package com.thoughtworks.deepLearning
 import cats.Eval
-
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.any.PolyMethods._
 import com.thoughtworks.deepLearning.any.layers.Literal
 import com.thoughtworks.deepLearning.boolean.layers.If
 import com.thoughtworks.deepLearning.double.layers._
+import com.thoughtworks.deepLearning.double.optimizers.Optimizer
 
 import scala.language.implicitConversions
 
@@ -86,7 +86,7 @@ package object double {
   implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Type[InputData, InputDelta],
-        learningRate: LearningRate): Layer.Aux[Batch.Aux[InputData, InputDelta], Double#Batch] = {
+        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Double#Batch] = {
       Weight(nativeDouble)
     }
   }
