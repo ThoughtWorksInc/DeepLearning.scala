@@ -9,9 +9,6 @@ import com.thoughtworks.deepLearning._
 import com.thoughtworks.deepLearning.BufferedNetwork
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 
-
-
-
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -19,8 +16,9 @@ final case class Negative[Input0 <: Batch](
     operand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
     extends BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
-                                                            upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+  protected final class BufferedBatch private[deepLearning] (
+      override val input: BatchId.Aux[Input0],
+      upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
 

@@ -14,15 +14,13 @@ import org.nd4s.Implicits._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Exp[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch])
-    extends BufferedNetwork {
+final case class Exp[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch]) extends BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0], upstream: Array2D#Batch)
+  protected final class BufferedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
+                                                             upstream: Array2D#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream.value.map(Transforms.exp).memoize
-
-
 
     override protected def closeUpstreams(): Unit = {
       upstream.close()

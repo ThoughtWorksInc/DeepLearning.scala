@@ -11,16 +11,14 @@ import com.thoughtworks.deepLearning.array2D.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Sum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch],
-                                      dimensions: Seq[Int])
+final case class Sum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch], dimensions: Seq[Int])
     extends BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0], upstream: Array2D#Batch)
+  protected final class BufferedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
+                                                             upstream: Array2D#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream.value.map(_.sum(dimensions: _*)).memoize
-
-
 
     override protected def closeUpstreams(): Unit = {
       upstream.close()

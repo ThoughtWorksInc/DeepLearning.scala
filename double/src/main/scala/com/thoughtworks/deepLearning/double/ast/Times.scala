@@ -10,14 +10,14 @@ import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Times[Input0 <: Batch](
-                                         leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-                                         rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+    leftOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
+    rightOperand: NeuralNetwork.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
 ) extends BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](
-                                                            override val input: BatchId.Aux[Input0],
-                                                            upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
-                                                            upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
+  protected final class BufferedBatch private[deepLearning] (
+      override val input: BatchId.Aux[Input0],
+      upstream1: Batch.Aux[Eval[scala.Double], Eval[scala.Double]],
+      upstream2: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
       extends MonoidBatch
       with DoubleMonoidBatch {
 

@@ -63,10 +63,9 @@ package object coproduct {
                  NN],
         commonToNeuralNetwork: ToNeuralNetwork.Aux[NN, Input, OutputData, OutputDelta]
     ): NeuralNetwork.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-      If[Input, OutputData, OutputDelta](
-        isInl,
-        commonToNeuralNetwork(lub.left(headToNeuralNetwork(caseHead(head)))),
-        commonToNeuralNetwork(lub.right(tailToNeuralNetwork(caseTail(tail)))))
+      If[Input, OutputData, OutputDelta](isInl,
+                                         commonToNeuralNetwork(lub.left(headToNeuralNetwork(caseHead(head)))),
+                                         commonToNeuralNetwork(lub.right(tailToNeuralNetwork(caseTail(tail)))))
     }
 
     def isInl: NeuralNetwork.Aux[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)

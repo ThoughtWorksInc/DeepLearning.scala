@@ -19,7 +19,6 @@ object NeuralNetwork /*extends LowPriortyDifferentiableFunction*/ {
       type Output <: Output0
     }
 
-
 }
 
 trait NeuralNetwork {

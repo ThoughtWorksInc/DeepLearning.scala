@@ -11,8 +11,8 @@ import com.thoughtworks.deepLearning.boolean.utilities._
 final case class Not[Input0 <: Batch](differentiableBoolean: NeuralNetwork.Aux[Input0, Boolean#Batch])
     extends BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
-                                                            upstream: Boolean#Batch)
+  protected final class BufferedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
+                                                             upstream: Boolean#Batch)
       extends MonoidBatch
       with BooleanMonoidBatch {
 

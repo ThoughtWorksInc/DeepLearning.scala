@@ -18,7 +18,7 @@ import org.nd4j.linalg.ops.transforms.Transforms
 final case class ToSeq[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch]) extends BufferedNetwork {
   override type Input = Input0
 
-  final class BufferedBatch private[ToSeq](override val input: BatchId.Aux[Input], upstream: Array2D#Batch)
+  final class BufferedBatch private[ToSeq] (override val input: BatchId.Aux[Input], upstream: Array2D#Batch)
       extends ReferenceCount
       with Seq2DBatch {
 

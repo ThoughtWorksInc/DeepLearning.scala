@@ -14,8 +14,8 @@ TailDelta <: shapeless.Coproduct](
 
   final class Output private[IsInl] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-      extends BooleanMonoidBatch with Batch.Unshared {
-
+      extends BooleanMonoidBatch
+      with Batch.Unshared {
 
     val value = upstream.value match {
       case shapeless.Inl(_) => Eval.now(true)

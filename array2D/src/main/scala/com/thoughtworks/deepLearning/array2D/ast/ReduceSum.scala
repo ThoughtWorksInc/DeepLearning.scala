@@ -17,7 +17,8 @@ import org.nd4s.Implicits._
 final case class ReduceSum[Input0 <: Batch](operand: NeuralNetwork.Aux[Input0, Array2D#Batch])
     extends BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0], upstream: Array2D#Batch)
+  protected final class BufferedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
+                                                             upstream: Array2D#Batch)
       extends MonoidBatch
       with DoubleMonoidBatch {
 

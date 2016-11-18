@@ -20,14 +20,12 @@ final case class PlusDouble[Input0 <: Batch](
 ) extends NeuralNetwork
     with BufferedNetwork {
 
-  protected final class BufferedBatch private[deepLearning](override val input: BatchId.Aux[Input0],
-                                                            upstream1: Array2D#Batch,
-                                                            upstream2: Double#Batch)
+  protected final class BufferedBatch private[deepLearning] (override val input: BatchId.Aux[Input0],
+                                                             upstream1: Array2D#Batch,
+                                                             upstream2: Double#Batch)
       extends Array2DSemigroupBatch
       with SemigroupBatch {
     val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
-
-
 
     override protected def closeUpstreams(): Unit = {
       upstream1.close()

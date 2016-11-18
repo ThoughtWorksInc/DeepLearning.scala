@@ -18,7 +18,6 @@ TailDelta <: shapeless.Coproduct](
     override type Data = TailData
     override type Delta = TailDelta
 
-
     val value =
       upstream.value.asInstanceOf[shapeless.Inr[TailData, TailData]].tail
 
