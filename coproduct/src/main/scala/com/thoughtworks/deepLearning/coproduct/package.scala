@@ -1,8 +1,7 @@
 package com.thoughtworks.deepLearning
 
 import com.thoughtworks.deepLearning.boolean.utilities._
-import com.thoughtworks.deepLearning.Batch.Aux
-import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+
 import com.thoughtworks.deepLearning.any.{ToNeuralNetwork, Type}
 import com.thoughtworks.deepLearning.any.Type.{DataOf, DeltaOf}
 import com.thoughtworks.deepLearning.boolean.ast.If

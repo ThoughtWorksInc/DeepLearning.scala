@@ -1,6 +1,5 @@
 package com.thoughtworks.deepLearning.hlist.ast
 
-import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.{Batch, BatchId, NeuralNetwork}
 
 /**

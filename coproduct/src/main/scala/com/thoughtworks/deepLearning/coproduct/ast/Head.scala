@@ -1,8 +1,6 @@
 package com.thoughtworks.deepLearning
 package coproduct.ast
 
-import com.thoughtworks.deepLearning.NeuralNetwork.Aux
-import com.thoughtworks.deepLearning.Batch.Aux
 import com.thoughtworks.deepLearning.{NeuralNetwork, Batch}
 
 /**

@@ -1,7 +1,5 @@
 package com.thoughtworks.deepLearning
 
-import com.thoughtworks.deepLearning.Batch.Aux
-import com.thoughtworks.deepLearning.NeuralNetwork.Aux
 import com.thoughtworks.deepLearning.any.ToNeuralNetwork
 import com.thoughtworks.deepLearning.seq2D.ast.Get
 import com.thoughtworks.deepLearning.double.utilities.Double

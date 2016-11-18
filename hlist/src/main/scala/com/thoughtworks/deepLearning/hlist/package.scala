@@ -1,12 +1,5 @@
 package com.thoughtworks.deepLearning
-//
-//import com.thoughtworks.deepLearning.NeuralNetwork.{NeuralNetwork.Aux, ToNeuralNetwork}
-//import hlist.ast._
-//import any._
-//import com.thoughtworks.deepLearning.any.ast.Identity
-//
-import com.thoughtworks.deepLearning.Batch.Aux
-import com.thoughtworks.deepLearning.NeuralNetwork.Aux
+
 import com.thoughtworks.deepLearning.any.{ToNeuralNetwork, Type}
 import com.thoughtworks.deepLearning.any.Type.{DataOf, DeltaOf}
 import com.thoughtworks.deepLearning.hlist.ast._
@@ -29,22 +22,6 @@ package object hlist {
   type ::[Head <: Type[_, _], Tail <: HList] =
     Type[shapeless.::[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-//
-//  implicit final class HListOps[TailAst](val tail: TailAst) {
-//
-//    def ::[Input0 <: Batch,
-//           HeadAst,
-//           HeadData,
-//           HeadDelta,
-//           TailData <: shapeless.HList,
-//           TailDelta <: shapeless.Coproduct](head: HeadAst)(
-//        implicit unapplyHead: ToNeuralNetwork[HeadAst, Input0, HeadData, HeadDelta],
-//        unapplyTail: ToNeuralNetwork[TailAst, Input0, TailData, TailDelta]
-//    ): NeuralNetwork.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
-//      HCons[Input0, HeadData, HeadDelta, TailData, TailDelta](unapplyHead(head), unapplyTail(tail))
-//    }
-//
-//  }
   val HNil: ast.HNil.type = ast.HNil
 
   implicit def hnilToNeuralNetwork[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])

@@ -5,7 +5,7 @@ import cats._
 import cats.implicits._
 
 import com.thoughtworks.deepLearning.NeuralNetwork._
-import com.thoughtworks.deepLearning.Batch.Aux
+
 import com.thoughtworks.deepLearning.double.utilities.DoubleMonoidBatch
 
 /**
