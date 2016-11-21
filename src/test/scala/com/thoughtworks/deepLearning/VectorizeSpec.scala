@@ -7,7 +7,7 @@ import org.scalatest._
 import scala.language.implicitConversions
 import scala.language.existentials
 import Predef.{any2stringadd => _, _}
-import shapeless._
+import shapeless.{::, HNil, _}
 
 import scala.util.Random
 
@@ -48,16 +48,21 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
       (input0 :: input1 :: input2 :: input3 :: HNil) :: (label0 :: label1 :: label2 :: label3 :: HNil) :: HNil
     }
-    val predictionData0 = {
+    val predictionData0: InputTypePair#Data = {
       import shapeless._
-      Inr(Inl(Coproduct[Field0#Data](HNil: HNil))) :: Inl(HNil) :: Inr(Inl(Eval.now(85.9))) :: Inl(HNil) :: HNil
+      Inl(HNil: HNil) :: Inl(HNil: HNil) :: Inl(HNil: HNil) :: Inr(Inl(Inl(HNil: HNil))) :: HNil
     }
-
-    for (i <- 0 until 100) {
-
+    val predictionData1: InputTypePair#Data = {
+      import shapeless._
+      Inl(HNil: HNil) :: Inl(HNil: HNil) :: Inl(HNil: HNil) :: Inr(Inl(Inr(Inl(HNil: HNil)))) :: HNil
+    }
+    val predictionData2: InputTypePair#Data = {
+      import shapeless._
+      Inl(HNil: HNil) :: Inl(HNil: HNil) :: Inl(HNil: HNil) :: Inr(Inl(Inr(Inr(Inl(HNil: HNil))))) :: HNil
+    }
+    def predictAndPrint(data: InputTypePair#Data) = {
       val (result0NullProbability :: result0Value :: HNil) :: (result1Case0Probability :: result1Case1Probability :: HNil) :: result2 :: (result3Case0Probability :: result3Case1Probability :: result3Case2Probability :: HNil) :: HNil =
-        predictNetwork.predict(predictionData0)
-//      println(predictNetwork)
+        predictNetwork.predict(data)
 
       println(s"result0NullProbability: ${result0NullProbability.value}")
       println(s"result0Value: ${result0Value.value}")
@@ -68,6 +73,17 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       println(s"result3Case1Probability: ${result3Case1Probability.value}")
       println(s"result3Case2Probability: ${result3Case2Probability.value}")
       println()
+    }
+
+    def predictField2(data: InputTypePair#Data): scala.Double = {
+      val (result0NullProbability :: result0Value :: HNil) :: (result1Case0Probability :: result1Case1Probability :: HNil) :: result2 :: (result3Case0Probability :: result3Case1Probability :: result3Case2Probability :: HNil) :: HNil =
+        predictNetwork.predict(data)
+      result2.value
+    }
+    for (i <- 0 until 1000) {
+//      println(predictNetwork)
+
+      predictAndPrint(predictionData0)
 
       trainNetwork.train(makeMinibatch)
       def assertClear(layer: scala.Any): Unit = {
@@ -87,6 +103,12 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       assertClear(trainNetwork)
     }
 
+    println("---")
+    val sample0Field2 = predictField2(predictionData0)
+    val sample1Field2 = predictField2(predictionData1)
+    val sample2Field2 = predictField2(predictionData2)
+//    sample0Field2 should be < sample1Field2
+//    sample1Field2 should be < sample2Field2
     /*
      最终目标是生成一个预测神经网络和一个训练神经网络
      为了生成这两个网络，需要生成若干处理Array2D的全连接层、InputData到Array2D的转换、Array2D到Row的转换、Array2D到Double loss的转换

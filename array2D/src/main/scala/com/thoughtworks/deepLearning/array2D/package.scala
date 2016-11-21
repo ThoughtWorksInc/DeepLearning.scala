@@ -3,6 +3,7 @@ package com.thoughtworks.deepLearning
 import cats.Eval
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.array2D.layers._
+import com.thoughtworks.deepLearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deepLearning.double.utilities.Double
 import com.thoughtworks.deepLearning.seq2D.utilities.Seq2D
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -128,58 +129,7 @@ package object array2D {
     new Array2DOps(toLayer(from))
   }
 
-  ////
-////  private[array2D] trait Case2Double { this: Poly2#Case =>
-////    override type LeftOperandData = Eval[INDArray]
-////    override type LeftOperandDelta = Eval[INDArray]
-////    override type RightOperandData = Eval[scala.Double]
-////    override type RightOperandDelta = Eval[scala.Double]
-////    override type OutputData = Eval[INDArray]
-////    override type OutputDelta = Eval[INDArray]
-////  }
-//
-//  implicit def maxArray2DDouble[Input <: Batch] =
-//    new max.Case[Input, Eval[INDArray], Eval[INDArray], Eval[scala.Double], Eval[scala.Double]] {
-//      override type Out = Layer.Aux[Input, Array2D#Batch]
-//      override def apply(leftOperand: Layer.Aux[Input, Batch.Aux[Eval[INDArray], Eval[INDArray]]],
-//                         rightOperand: Layer.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]) = {
-//        MaxDouble(leftOperand, rightOperand)
-//      }
-//    }
-////  implicit def array2DMaxDouble[Input <: Batch, Left, Right](
-////      implicit leftView: ToLayer[Left, Input, Eval[INDArray], Eval[INDArray]],
-////      rightView: ToLayer[Right, Input, Eval[scala.Double], Eval[scala.Double]]) =
-////    max.at[Left, Right].apply[Layer.Aux[Input, Array2D#Batch]] { (left, right) =>
-////      MaxDouble(leftView(left), rightView(right))
-////    }
-//
-//  implicit final class INDArrayOps(ndarray: INDArray) {
-//    def toWeight[Input <: Batch: Identity](
-//        implicit learningRate: LearningRate): Layer.Aux[Input, Array2D#Batch] =
-//      Weight(ndarray)
-//    def toLiteral[Input <: Batch: Identity] = ndarrayLiteral(ndarray)
-//    def toBatchId = ndarrayBatch(ndarray)
-//  }
-//
-//  implicit def nativeArrayToINDArrayOps(nativeArray: Array[Array[scala.Double]]): INDArrayOps =
-//    new INDArrayOps(nativeArray.toNDArray)
-//
-//  implicit def ndarrayLiteral[Input <: Batch: Identity](
-//      ndarray: INDArray): Layer.Aux[Input, Array2D#Batch] =
-//    Literal(Eval.now(ndarray))
-//
-//  implicit def ndarrayBatch(ndarray: INDArray): Array2D#Batch =
-//    Literal(Eval.now(ndarray))
-//
-//  implicit def nativeArrayLiteral[Input <: Batch: Identity](
-//      nativeArray: Array[Array[scala.Double]]): Layer.Aux[Input, Array2D#Batch] =
-//    ndarrayLiteral(nativeArray.toNDArray)
-//
-//  implicit def nativeArrayBatch(nativeArray: Array[Array[scala.Double]]): Array2D#Batch =
-//    ndarrayBatch(nativeArray.toNDArray)
-//
-//  // TODO: Support scala.Array for better performance.
-
+  // TODO: Support scala.Array for better performance.
   final class ToArray2DOps[Input <: Batch](
       layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]]) {
     def toArray2D: Layer.Aux[Input, Array2D#Batch] = ToArray2D(layerVector)

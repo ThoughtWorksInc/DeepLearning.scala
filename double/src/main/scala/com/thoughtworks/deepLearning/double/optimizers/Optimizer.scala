@@ -6,30 +6,3 @@ package com.thoughtworks.deepLearning.double.optimizers
 trait Optimizer {
   def updateDouble(oldValue: Double, delta: Double): Double
 }
-
-trait LearningRate extends Optimizer {
-
-  protected def learningRate(): scala.Double
-
-  override def updateDouble(oldValue: Double, delta: Double): Double = {
-    oldValue - delta * learningRate()
-  }
-}
-
-trait L1Regularization extends LearningRate {
-  protected def l1Regularization: scala.Double
-
-  override def updateDouble(oldValue: Double, delta: Double): Double = {
-    super.updateDouble(oldValue, delta) - l1Regularization * learningRate()
-  }
-
-}
-
-trait L2Regularization extends LearningRate {
-  protected def l2Regularization: scala.Double
-
-  override def updateDouble(oldValue: Double, delta: Double): Double = {
-    super.updateDouble(oldValue, delta) - l2Regularization * oldValue * learningRate()
-  }
-
-}

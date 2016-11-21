@@ -2,7 +2,7 @@ package com.thoughtworks.deepLearning
 package array2D.layers
 
 import cats._
-import com.thoughtworks.deepLearning.array2D.Optimizer
+import com.thoughtworks.deepLearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deepLearning.array2D.utilities._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._

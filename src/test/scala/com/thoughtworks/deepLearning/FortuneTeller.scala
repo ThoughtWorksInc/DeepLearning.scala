@@ -10,6 +10,7 @@ import com.thoughtworks.deepLearning.double._
 import com.thoughtworks.deepLearning.array2D._
 import com.thoughtworks.deepLearning.any._
 import com.thoughtworks.deepLearning.any.layers.{Identity, Literal}
+import com.thoughtworks.deepLearning.array2D.optimizers.LearningRate
 import com.thoughtworks.deepLearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
@@ -53,8 +54,10 @@ object FortuneTeller {
 
   type PredictionResult = NullableFieldPrediction[Double] :: Enum0Prediction :: Double :: Enum1Prediction :: HNil
 
-  implicit val learningRate = new array2D.LearningRate with double.optimizers.LearningRate{
-    override def learningRate() = 0.0003
+  implicit val optimizer = new array2D.optimizers.L2Regularization with double.optimizers.L2Regularization {
+    override def currentLearningRate() = 0.0003
+
+    override protected def l2Regularization = 0.1
   }
 
   def probabilityLoss(implicit x: Double): x.To[Double] = {
@@ -80,7 +83,8 @@ object FortuneTeller {
       0.0 // Drop out
     } {
       _.head.choice { _ =>
-        probabilityLossNetwork.compose(min(max(1.0 - rowSeq(0, 0), 0.0), 0.0))
+//        probabilityLossNetwork.compose()
+        probabilityLossNetwork.compose(min(exp(-rowSeq(0, 0)), 1.0))
 //        max(1.0 - rowSeq(0, 0), 0.0)
       } { inr =>
         val expectedValue = inr.head
@@ -106,7 +110,7 @@ object FortuneTeller {
     val loss2 = expectedLabelField2.choice { _ =>
       0.0 // Drop out
     } { expectedDouble =>
-      abs(expectedDouble.head - rowSeq(0, 4))
+      abs(expectedDouble.head - rowSeq(0, 4) + 1.0)
     }
 
     val loss3 = expectedLabelField3.choice { _ =>
@@ -303,6 +307,7 @@ object FortuneTeller {
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Array2D) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
+//    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
