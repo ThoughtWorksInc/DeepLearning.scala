@@ -20,7 +20,7 @@ package object array2D {
 
   implicit def `max(Array2D,Double)`[Left, Right, Input <: Batch]
     : max.Case.Aux[Layer.Aux[Input, Array2D#Batch], Layer.Aux[Input, Double#Batch], Layer.Aux[Input, Array2D#Batch]] =
-    max.at { MaxDouble(_, _) }
+    max.at(MaxDouble(_, _))
 
   implicit def `Array2D/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
@@ -29,6 +29,7 @@ package object array2D {
       MultiplyArray2D(leftLayer, Reciprocal(rightLayer))
     }
   }
+
   implicit def `Double/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -36,6 +37,7 @@ package object array2D {
       MultiplyDouble(Reciprocal(rightLayer), leftLayer)
     }
   }
+
   implicit def `Array2D/Double`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -43,6 +45,7 @@ package object array2D {
       MultiplyDouble(leftLayer, double.layers.Reciprocal(rightLayer))
     }
   }
+
   implicit def `Array2D*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
@@ -50,6 +53,7 @@ package object array2D {
       MultiplyArray2D(leftLayer, rightLayer)
     }
   }
+
   implicit def `Array2D*Double`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -57,6 +61,7 @@ package object array2D {
       MultiplyDouble(leftLayer, rightLayer)
     }
   }
+
   implicit def `Double*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -64,6 +69,7 @@ package object array2D {
       MultiplyDouble(rightLayer, leftLayer)
     }
   }
+
   implicit def `Array2D-Array2D`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
@@ -71,6 +77,7 @@ package object array2D {
       PlusArray2D(leftLayer, Negative(rightLayer))
     }
   }
+
   implicit def `Double-Array2D`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -78,6 +85,7 @@ package object array2D {
       PlusDouble(Negative(rightLayer), leftLayer)
     }
   }
+
   implicit def `Array2D-Double`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -85,6 +93,7 @@ package object array2D {
       PlusDouble(leftLayer, double.layers.Negative(rightLayer))
     }
   }
+
   implicit def `Array2D+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
@@ -92,6 +101,7 @@ package object array2D {
       PlusArray2D(leftLayer, rightLayer)
     }
   }
+
   implicit def `Array2D+Double`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
@@ -99,6 +109,7 @@ package object array2D {
       PlusDouble(leftLayer, rightLayer)
     }
   }
+
   implicit def `Double+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Double#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
