@@ -107,6 +107,11 @@ package object array2D {
     }
   }
 
+  implicit def `exp(Array2D)`[Input <: Batch]
+    : exp.Case.Aux[Layer.Aux[Input, Array2D#Batch], Layer.Aux[Input, Array2D#Batch]] = {
+    exp.at(Exp(_))
+  }
+
   final class Array2DOps[Input <: Batch](differentiable: Layer.Aux[Input, Array2D#Batch]) {
 
     def dot(right: Layer.Aux[Input, Array2D#Batch]): Layer.Aux[Input, Array2D#Batch] = {
