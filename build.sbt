@@ -1,7 +1,6 @@
-lazy val root =
-  (project in file("."))
-    .dependsOn(any, boolean, double, array2D, hlist, coproduct)
-    .aggregate(deeplearning, any, boolean, double, array2D, hlist, coproduct)
+dependsOn(any, boolean, double, array2D, hlist, coproduct)
+
+DslEntries.autoImport.aggregate(deeplearning, any, boolean, double, array2D, hlist, coproduct)
 
 lazy val deeplearning = project.disablePlugins(SparkPackagePlugin)
 
