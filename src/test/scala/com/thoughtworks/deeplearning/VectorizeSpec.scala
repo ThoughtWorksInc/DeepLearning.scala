@@ -64,15 +64,15 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       val (result0NullProbability :: result0Value :: HNil) :: (result1Case0Probability :: result1Case1Probability :: HNil) :: result2 :: (result3Case0Probability :: result3Case1Probability :: result3Case2Probability :: HNil) :: HNil =
         predictNetwork.predict(data)
 
-      println(s"result0NullProbability: ${result0NullProbability.value}")
-      println(s"result0Value: ${result0Value.value}")
-      println(s"result1Case0Probability: ${result1Case0Probability.value}")
-      println(s"result1Case1Probability: ${result1Case1Probability.value}")
-      println(s"result2: ${result2.value}")
-      println(s"result3Case0Probability: ${result3Case0Probability.value}")
-      println(s"result3Case1Probability: ${result3Case1Probability.value}")
-      println(s"result3Case2Probability: ${result3Case2Probability.value}")
-      println()
+//      println(s"result0NullProbability: ${result0NullProbability.value}")
+//      println(s"result0Value: ${result0Value.value}")
+//      println(s"result1Case0Probability: ${result1Case0Probability.value}")
+//      println(s"result1Case1Probability: ${result1Case1Probability.value}")
+//      println(s"result2: ${result2.value}")
+//      println(s"result3Case0Probability: ${result3Case0Probability.value}")
+//      println(s"result3Case1Probability: ${result3Case1Probability.value}")
+//      println(s"result3Case2Probability: ${result3Case2Probability.value}")
+//      println()
     }
 
     def predictField2(data: InputTypePair#Data): scala.Double = {
@@ -80,7 +80,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
         predictNetwork.predict(data)
       result2.value
     }
-    for (i <- 0 until 1000) {
+    for (i <- 0 until 20) {
 //      println(predictNetwork)
 
       predictAndPrint(predictionData0)
