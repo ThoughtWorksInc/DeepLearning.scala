@@ -1,4 +1,4 @@
-package com.thoughtworks.deepLearning
+package com.thoughtworks.deeplearning
 
 import org.apache.commons.lang3.SystemUtils
 import sbt.Keys._
