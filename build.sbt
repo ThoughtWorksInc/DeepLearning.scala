@@ -23,3 +23,13 @@ SbtNd4J.addNd4jRuntime(Test)
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
+
+crossScalaVersions := Seq("2.10.6", "2.11.8")
+
+publishArtifact := false
+
+lazy val unidoc = project
+  .enablePlugins(TravisUnidocTitle)
+  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+
+organization in ThisBuild := "com.thoughtworks.deeplearning"
