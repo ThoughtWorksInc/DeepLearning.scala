@@ -7,7 +7,7 @@ trait L1Regularization extends LearningRate {
   protected def l1Regularization: scala.Double
 
   override def updateDouble(oldValue: Double, delta: Double): Double = {
-    super.updateDouble(oldValue, delta) - l1Regularization * currentLearningRate()
+    super.updateDouble(oldValue, delta) - math.signum(oldValue) * l1Regularization * currentLearningRate()
   }
 
 }
