@@ -1,0 +1,33 @@
+sudo: false
+
+addons:
+ apt:
+   packages:
+     - graphviz
+
+language: scala
+
+jdk:
+  - oraclejdk8
+
+before_cache:
+  - find $HOME/.sbt -name '*.lock' -delete
+  - find $HOME/.ivy2 -name 'ivydata-*.properties' -delete
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
+script:
+  - sbt +test
+
+before_deploy:
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: sbt "release with-defaults"
+  on:
+    condition: -e ./deploy.sbt
+    all_branches: true
