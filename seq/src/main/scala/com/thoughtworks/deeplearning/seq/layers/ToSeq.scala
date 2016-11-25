@@ -8,39 +8,17 @@ import com.thoughtworks.deeplearning.utilities.CloseableOnce
 
 import scala.language.higherKinds
 
-object ToSeq {
-
-  private[ToSeq] implicit object SeqInstances extends Traverse[Seq] {
-    override def traverse[G[_]: Applicative, A, B](fa: Seq[A])(f: (A) => G[B]): G[Seq[B]] = {
-      fa.foldRight((Vector.empty[B]: Seq[B]).pure[G]) { (a: A, accumulation: G[Seq[B]]) =>
-        f(a).map2(accumulation)(_ +: _)
-      }
-    }
-
-    override def foldLeft[A, B](fa: Seq[A], b: B)(f: (B, A) => B): B = {
-      fa.foldLeft(b)(f)
-    }
-
-    override def foldRight[A, B](fa: Seq[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
-      fa.foldRight(lb)(f)
-    }
-  }
-
-}
-
 final case class ToSeq[Input0 <: Batch, ElementData, ElementDelta](
-    operands: Seq[Layer.Aux[Input0, Batch.Aux[ElementData, ElementDelta]]])
+    operands: scala.Seq[Layer.Aux[Input0, Batch.Aux[ElementData, ElementDelta]]])
     extends Layer {
-
-  import ToSeq.SeqInstances
 
   type Input = Input0
 
-  final class Output private[ToSeq] (upstreams: Seq[Batch.Aux[ElementData, ElementDelta]])
+  final class Output private[ToSeq] (upstreams: scala.Seq[Batch.Aux[ElementData, ElementDelta]])
       extends Batch
       with CloseableOnce {
 
-    override type Data = Seq[ElementData]
+    override type Data = scala.Seq[ElementData]
     override type Delta = (Int, ElementDelta)
 
     override def backward(pair: (Int, ElementDelta)): Unit = {
