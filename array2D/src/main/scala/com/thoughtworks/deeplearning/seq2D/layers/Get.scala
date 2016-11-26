@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning.seq2D.layer
+package com.thoughtworks.deeplearning.seq2D.layers
 
 import cats._
 import com.thoughtworks.deeplearning.{Batch, BatchId, Layer}

@@ -8,6 +8,8 @@ lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(any, bool
 
 lazy val any = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning)
 
+lazy val seq = project.disablePlugins(SparkPackagePlugin).dependsOn(any)
+
 lazy val array2D = project.disablePlugins(SparkPackagePlugin).dependsOn(double)
 
 lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(any)
