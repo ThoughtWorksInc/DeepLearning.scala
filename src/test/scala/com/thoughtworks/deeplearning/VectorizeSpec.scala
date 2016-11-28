@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.any._
+import com.thoughtworks.deeplearning.dsl._
 import org.scalatest._
 
 import scala.language.implicitConversions
@@ -103,7 +103,6 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       assertClear(trainNetwork)
     }
 
-    println("---")
     val sample0Field2 = predictField2(predictionData0)
     val sample1Field2 = predictField2(predictionData1)
     val sample2Field2 = predictField2(predictionData2)

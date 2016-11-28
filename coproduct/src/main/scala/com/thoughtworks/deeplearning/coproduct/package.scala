@@ -2,8 +2,8 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.boolean.utilities._
 
-import com.thoughtworks.deeplearning.any.{ToLayer, Type}
-import com.thoughtworks.deeplearning.any.Type.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.dsl.{ToLayer, Type}
+import com.thoughtworks.deeplearning.dsl.Type.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.boolean.layers.If
 import com.thoughtworks.deeplearning.coproduct.layers._
 import shapeless.Lub

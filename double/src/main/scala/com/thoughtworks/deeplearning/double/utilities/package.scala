@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.double
 
 import cats._
-import com.thoughtworks.deeplearning.any.Type
+import com.thoughtworks.deeplearning.dsl.Type
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

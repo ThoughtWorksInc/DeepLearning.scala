@@ -3,8 +3,9 @@ package com.thoughtworks.deeplearning
 import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
 import double._
-import any._
+import dsl._
 import hlist._
+import scala.language.existentials
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -19,9 +20,9 @@ final class BatchSpec extends FreeSpec with Matchers {
   "Batch#Batch" in {
     "implicitly[Double#Batch <:< Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
     "implicitly[Double#Batch =:= Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
-    "implicitly[Double#Batch <:< Any#Batch]" should compile
-    "implicitly[Double#Batch =:= Any#Batch]" shouldNot compile
-    "implicitly[Any#Batch =:= Double#Batch]" shouldNot compile
+    "implicitly[Double#Batch <:< Type[_, _]#Batch]" should compile
+    "implicitly[Double#Batch =:= Type[_, _]#Batch]" shouldNot compile
+    "implicitly[Type[_, _]#Batch =:= Double#Batch]" shouldNot compile
     "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[(Boolean :: Double :: HNil)#Batch <:< HList#Batch]" should compile
     "implicitly[(Double :: HNil)#Batch =:= Batch.Aux[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile

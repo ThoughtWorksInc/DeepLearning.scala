@@ -1,24 +1,32 @@
-dependsOn(any, boolean, double, array2D, hlist, coproduct)
+sbt.dsl.dependsOn(`dynamic-cast`, boolean, double, array2D, hlist, coproduct, seqProject)
+
+com.thoughtworks.sbtBestPractice.issue2514.DslEntries.autoImport.aggregate(`sbt-nd4j`)
 
 lazy val deeplearning = project.disablePlugins(SparkPackagePlugin)
 
-lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning, `buffered-layer`, any)
+lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning, `buffered-layer`, dslProject)
 
-lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(any, boolean, `buffered-layer`)
+lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject, boolean, `buffered-layer`)
 
-lazy val any = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning)
+lazy val `dynamic-cast` = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
 
-lazy val seq = project.disablePlugins(SparkPackagePlugin).dependsOn(any)
+lazy val dslProject =
+  Project(id = "dsl", base = file("dsl"), dependencies = Seq(deeplearning)).disablePlugins(SparkPackagePlugin)
+
+lazy val seqProject =
+  Project(id = "seq", base = file("seq"), dependencies = Seq(dslProject)).disablePlugins(SparkPackagePlugin)
 
 lazy val array2D = project.disablePlugins(SparkPackagePlugin).dependsOn(double)
 
-lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(any)
+lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
 
 lazy val coproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(boolean)
 
 lazy val `buffered-layer` = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning)
 
-lazy val `sbt-nd4j` = project
+lazy val `sbt-nd4j` = RootProject(uri("sbt-nd4j"))
+
+version in `sbt-nd4j` := version.value
 
 SbtNd4J.addNd4jRuntime(Test)
 

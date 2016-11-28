@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning.seq2D
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Batch
-import com.thoughtworks.deeplearning.any.Type
+import com.thoughtworks.deeplearning.dsl.Type
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

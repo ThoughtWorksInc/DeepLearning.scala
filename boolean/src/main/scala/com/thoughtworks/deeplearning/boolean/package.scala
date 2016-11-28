@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.any.ToLayer
+import com.thoughtworks.deeplearning.dsl.ToLayer
 import com.thoughtworks.deeplearning.boolean.layers.If
 import shapeless.Lub
 

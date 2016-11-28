@@ -2,21 +2,21 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Batch._
-import com.thoughtworks.deeplearning.any.ToLayer.{LayerPoly1, LayerPoly2}
-import com.thoughtworks.deeplearning.any.layers.{Compose, Identity, Literal, Throw}
+import com.thoughtworks.deeplearning.dsl.ToLayer.{LayerPoly1, LayerPoly2}
+import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal, Throw}
 
 import scala.language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object any {
-
-  /** @template */
-  type Any = Type[_, _]
+package object dsl {
 
   /** @template */
   type Nothing = Type[scala.Nothing, scala.Any]
+
+  /** @template */
+  type Any = Type[scala.Any, _]
 
   def `throw`[InputData, InputDelta](throwable: => Throwable)(
       implicit inputType: Type[InputData, InputDelta]): Layer.Aux[Batch.Aux[InputData, InputDelta], Nothing#Batch] = {

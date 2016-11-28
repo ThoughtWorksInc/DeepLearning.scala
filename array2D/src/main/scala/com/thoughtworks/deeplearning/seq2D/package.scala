@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.any.ToLayer
+import com.thoughtworks.deeplearning.dsl.ToLayer
 import com.thoughtworks.deeplearning.seq2D.layers.Get
 import com.thoughtworks.deeplearning.double.utilities.Double
 
