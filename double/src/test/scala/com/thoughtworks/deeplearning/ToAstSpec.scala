@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats._
-import com.thoughtworks.deeplearning.any.ToLayer
+import com.thoughtworks.deeplearning.dsl.ToLayer
 import com.thoughtworks.deeplearning.double._
 import org.scalatest.{FreeSpec, Matchers}
 

@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning.any.layers
+package com.thoughtworks.deeplearning.dsl.layers
 
 import com.thoughtworks.deeplearning.{Batch, BatchId, Layer}
 

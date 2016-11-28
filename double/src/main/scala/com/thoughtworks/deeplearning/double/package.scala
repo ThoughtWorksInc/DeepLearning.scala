@@ -1,8 +1,8 @@
 package com.thoughtworks.deeplearning
 import cats.Eval
-import com.thoughtworks.deeplearning.any._
-import com.thoughtworks.deeplearning.any.PolyMethods._
-import com.thoughtworks.deeplearning.any.layers.Literal
+import com.thoughtworks.deeplearning.dsl._
+import com.thoughtworks.deeplearning.dsl.PolyMethods._
+import com.thoughtworks.deeplearning.dsl.layers.Literal
 import com.thoughtworks.deeplearning.boolean.layers.If
 import com.thoughtworks.deeplearning.double.layers._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer

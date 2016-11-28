@@ -8,8 +8,8 @@ import com.thoughtworks.deeplearning.boolean._
 import com.thoughtworks.deeplearning.seq2D._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.array2D._
-import com.thoughtworks.deeplearning.any._
-import com.thoughtworks.deeplearning.any.layers.{Identity, Literal}
+import com.thoughtworks.deeplearning.dsl._
+import com.thoughtworks.deeplearning.dsl.layers.{Identity, Literal}
 import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
 import com.thoughtworks.deeplearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
@@ -26,11 +26,11 @@ import scala.util.Random
   */
 object FortuneTeller {
 
-  type Nullable[A <: Any] = HNil :+: A :+: CNil
+  type Nullable[A <: Type[_, _]] = HNil :+: A :+: CNil
 
-  type InputField[A <: Any] = HNil :+: A :+: CNil
+  type InputField[A <: Type[_, _]] = HNil :+: A :+: CNil
 
-  type LabelField[A <: Any] = HNil :+: A :+: CNil
+  type LabelField[A <: Type[_, _]] = HNil :+: A :+: CNil
 
   type Enum0 = HNil :+: HNil :+: CNil
   type Enum1 = HNil :+: HNil :+: HNil :+: CNil
@@ -47,7 +47,7 @@ object FortuneTeller {
     LabelField[Nullable[Double]] :: LabelField[Enum0] :: LabelField[Double] :: LabelField[Enum1] :: HNil
 
   type UnsetProbability = Double
-  type NullableFieldPrediction[Value <: Any] = UnsetProbability :: Value :: HNil
+  type NullableFieldPrediction[Value <: Type[_, _]] = UnsetProbability :: Value :: HNil
 
   type Enum0Prediction = Double :: Double :: HNil
   type Enum1Prediction = Double :: Double :: Double :: HNil

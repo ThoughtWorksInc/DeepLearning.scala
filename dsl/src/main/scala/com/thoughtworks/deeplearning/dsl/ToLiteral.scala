@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning.any
+package com.thoughtworks.deeplearning.dsl
 
 import com.thoughtworks.deeplearning.{Batch, Layer}
 import shapeless.DepFn1

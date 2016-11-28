@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.any._
+import com.thoughtworks.deeplearning.dsl._
 import org.scalatest._
 
 import scala.language.implicitConversions

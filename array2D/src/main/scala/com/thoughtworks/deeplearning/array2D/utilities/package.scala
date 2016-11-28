@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning.array2D
 import cats._
 import com.thoughtworks.deeplearning.Batch
 import com.thoughtworks.deeplearning.Batch._
-import com.thoughtworks.deeplearning.any.Type
+import com.thoughtworks.deeplearning.dsl.Type
 import org.nd4j.linalg.api.ndarray.INDArray
 
 /**

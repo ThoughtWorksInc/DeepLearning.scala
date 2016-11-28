@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.boolean
 
 import cats.Eval
-import com.thoughtworks.deeplearning.any._
+import com.thoughtworks.deeplearning.dsl._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

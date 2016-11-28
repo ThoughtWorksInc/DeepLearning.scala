@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import cats._
 import com.thoughtworks.deeplearning.double._
-import com.thoughtworks.deeplearning.any._
+import com.thoughtworks.deeplearning.dsl._
 import org.scalatest.{FreeSpec, Matchers}
 
 /**
