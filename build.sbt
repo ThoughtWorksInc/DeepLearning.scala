@@ -26,6 +26,8 @@ lazy val `buffered-layer` = project.disablePlugins(SparkPackagePlugin).dependsOn
 
 lazy val `sbt-nd4j` = RootProject(uri("sbt-nd4j"))
 
+version in `sbt-nd4j` := version.value
+
 SbtNd4J.addNd4jRuntime(Test)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
