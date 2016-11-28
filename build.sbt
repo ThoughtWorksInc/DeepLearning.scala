@@ -22,7 +22,7 @@ lazy val coproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(boolea
 
 lazy val `buffered-layer` = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning)
 
-lazy val `sbt-nd4j` = project
+lazy val `sbt-nd4j` = RootProject(uri("sbt-nd4j"))
 
 SbtNd4J.addNd4jRuntime(Test)
 
