@@ -1,5 +1,7 @@
 sbt.dsl.dependsOn(`dynamic-cast`, boolean, double, array2D, hlist, coproduct, seqProject)
 
+com.thoughtworks.sbtBestPractice.issue2514.DslEntries.autoImport.aggregate(`sbt-nd4j`)
+
 lazy val deeplearning = project.disablePlugins(SparkPackagePlugin)
 
 lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning, `buffered-layer`, dslProject)
