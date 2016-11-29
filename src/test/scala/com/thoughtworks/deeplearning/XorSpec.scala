@@ -251,7 +251,7 @@ ${left11.value}^${right11.value}=${result11.value}
   }
 
   "xor" in {
-    for (i <- 0 until 300) {
+    for (i <- 0 until 500) {
 //      predictAndPrint()
       trainNetwork.train(makeTrainingData())
     }
