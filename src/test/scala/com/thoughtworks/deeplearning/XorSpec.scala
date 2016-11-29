@@ -36,7 +36,7 @@ final class XorSpec extends FreeSpec with Matchers {
   import XorSpec._
 
   implicit val optimizer = new array2D.optimizers.L2Regularization with double.optimizers.L2Regularization {
-    override protected def currentLearningRate() = 0.01
+    override protected def currentLearningRate() = 0.006
 
     override protected def l2Regularization = 0.01
   }
