@@ -58,10 +58,12 @@ package object dsl {
           Batch.Aux[InputData, InputDelta],
           Batch.Aux[OutputData, OutputDelta]],
         outputDataIsOutputDelta: OutputData <:< OutputDelta
-    ): Unit = {
+    ): OutputData = {
       val outputBatch = toLiteral.forward(Literal[InputData](inputData)).open()
       try {
-        outputBatch.backward(outputDataIsOutputDelta(outputBatch.value))
+        val loss = outputBatch.value
+        outputBatch.backward(outputDataIsOutputDelta(loss))
+        loss
       } finally {
         outputBatch.close()
       }
