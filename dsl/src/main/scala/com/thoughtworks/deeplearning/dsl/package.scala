@@ -23,7 +23,7 @@ package object dsl {
     Throw(throwable _)
   }
 
-  implicit def autoToLiteral[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+  implicit def autoToLayer[A, Input <: Batch, OutputData, OutputDelta](a: A)(
       implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
     : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
     toLayer(a)
