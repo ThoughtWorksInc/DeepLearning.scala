@@ -1,7 +1,8 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.dsl.{ToLayer, Type}
-import com.thoughtworks.deeplearning.seq.layers.Get
+import com.thoughtworks.deeplearning.seq.layers.{Get, ToSeq}
+
 import scala.language.implicitConversions
 
 // TODO: rename to sized
@@ -12,6 +13,12 @@ import scala.language.implicitConversions
 package object seq {
 
   type Seq[A <: Type[_, _]] = Type[scala.Seq[Type.DataOf[A]], (Int, Type.DeltaOf[A])]
+
+  def Seq[From, Input <: Batch](layers: From*)(
+      implicit elementToLayer: ToLayer[From, Input]
+  ): Layer.Aux[Input, Batch.Aux[scala.Seq[elementToLayer.OutputData], (Int, elementToLayer.OutputDelta)]] = {
+    ToSeq[Input, elementToLayer.OutputData, elementToLayer.OutputDelta](layers.map(elementToLayer(_)))
+  }
 
   final class SeqLayerOps[Input <: Batch, ElementData, ElementDelta](
       seqLayer: Layer.Aux[Input, Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]]) {
@@ -29,6 +36,30 @@ package object seq {
         Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]]
   ): SeqLayerOps[Input, ElementData, ElementDelta] = {
     new SeqLayerOps[Input, ElementData, ElementDelta](toSeqLayer(toLayer(from)))
+  }
+
+  implicit def seqToLayer[Input0 <: Batch, ElementData, ElementDelta]
+    : ToLayer.Aux[Layer.Aux[
+                    Input0,
+                    Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]
+                  ],
+                  Input0,
+                  scala.Seq[ElementData],
+                  (Int, ElementDelta)] = {
+    new ToLayer[com.thoughtworks.deeplearning.Layer.Aux[
+                  Input0,
+                  Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]
+                ],
+                Input0] {
+      type OutputData = scala.Seq[ElementData]
+      type OutputDelta = (Int, ElementDelta)
+
+      override def apply(
+          layer: Layer.Aux[
+            Input0,
+            Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]
+          ]) = layer
+    }
   }
 
 }
