@@ -5,7 +5,6 @@ import com.thoughtworks.deeplearning.dsl._
 import com.thoughtworks.deeplearning.array2D.layers._
 import com.thoughtworks.deeplearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deeplearning.double.utilities.Double
-import com.thoughtworks.deeplearning.seq2D.utilities.Seq2D
 import org.nd4j.linalg.api.ndarray.INDArray
 
 import scala.language.implicitConversions
@@ -16,7 +15,7 @@ import scala.language.implicitConversions
 package object array2D {
 
   /** @template */
-  type Array2D = utilities.Array2D
+  type Array2D = com.thoughtworks.deeplearning.array2D.utilities.Array2D
 
   implicit def `max(Array2D,Double)`[Left, Right, Input <: Batch]
     : max.Case.Aux[Layer.Aux[Input, Array2D#Batch], Layer.Aux[Input, Double#Batch], Layer.Aux[Input, Array2D#Batch]] =
@@ -133,7 +132,9 @@ package object array2D {
       Negative(differentiable)
     }
 
-    def toSeq: Layer.Aux[Input, Seq2D#Batch] = {
+    def toSeq: Layer.Aux[
+      Input,
+      Batch.Aux[scala.Seq[scala.Seq[Eval[scala.Double]]], (scala.Int, (scala.Int, Eval[scala.Double]))]] = {
       ToSeq(differentiable)
     }
 

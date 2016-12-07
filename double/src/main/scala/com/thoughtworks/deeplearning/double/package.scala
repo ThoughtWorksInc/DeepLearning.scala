@@ -15,7 +15,7 @@ import scala.language.implicitConversions
 package object double {
 
   /** @template */
-  type Double = utilities.Double
+  type Double = com.thoughtworks.deeplearning.double.utilities.Double
 
   implicit def liftNativeDoubleToLayer[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])
     : ToLayer.Aux[scala.Double, Batch.Aux[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =

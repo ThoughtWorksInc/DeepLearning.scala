@@ -11,7 +11,7 @@ import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Batch._
 import com.thoughtworks.deeplearning.hlist._
 import com.thoughtworks.deeplearning.boolean._
-import com.thoughtworks.deeplearning.seq2D._
+import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.array2D._
 import com.thoughtworks.deeplearning.dsl._
@@ -123,7 +123,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   def decode(implicit row: Array2D): row.To[XorSpec.Output] = {
     val rowSeq = row.toSeq
-    rowSeq(0, 0) :: rowSeq(0, 1) :: rowSeq(0, 2) :: HNil
+    rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: HNil
   }
 
   val decodeNetwork = decode
@@ -150,7 +150,7 @@ final class XorSpec extends FreeSpec with Matchers {
       0.0
     } {
       _.choice { expectedValue =>
-        val value = predictionResult(0, 0)
+        val value = predictionResult(0)(0)
         -expectedValue * log(value) - (1.0 - expectedValue) * log(1.0 - value)
       } { _ =>
         `throw`(new IllegalArgumentException)
@@ -161,7 +161,7 @@ final class XorSpec extends FreeSpec with Matchers {
       0.0
     } {
       _.choice { expectedValue =>
-        val value = predictionResult(0, 1)
+        val value = predictionResult(0)(1)
         -expectedValue * log(value) - (1.0 - expectedValue) * log(1.0 - value)
       } { _ =>
         `throw`(new IllegalArgumentException)
@@ -172,7 +172,7 @@ final class XorSpec extends FreeSpec with Matchers {
       0.0
     } {
       _.choice { expectedValue =>
-        val value = predictionResult(0, 2)
+        val value = predictionResult(0)(2)
         -expectedValue * log(value) - (1.0 - expectedValue) * log(1.0 - value)
       } { _ =>
         `throw`(new IllegalArgumentException)
@@ -195,7 +195,7 @@ final class XorSpec extends FreeSpec with Matchers {
     val field0 = Random.nextBoolean()
     val field1 = Random.nextBoolean()
     val field2 = field0 ^ field1
-    val Seq(dropout0, dropout1, dropout2) = Seq.fill(3)(false).updated(Random.nextInt(3), true)
+    val scala.Seq(dropout0, dropout1, dropout2) = scala.Seq.fill(3)(false).updated(Random.nextInt(3), true)
     def input(isDropout: scala.Boolean, value: scala.Boolean) = {
       if (isDropout) {
         Inl(HNil)
