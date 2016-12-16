@@ -5,8 +5,8 @@ import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Batch._
 import com.thoughtworks.deeplearning.hlist._
 import com.thoughtworks.deeplearning.boolean._
-import com.thoughtworks.deeplearning.seq2D._
 import com.thoughtworks.deeplearning.double._
+import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.array2D._
 import com.thoughtworks.deeplearning.dsl._
 import com.thoughtworks.deeplearning.dsl.layers.{Identity, Literal}
@@ -25,6 +25,8 @@ import scala.util.Random
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object FortuneTeller {
+
+  type Seq2D = Seq[Seq[Double]]
 
   type Nullable[A <: Type[_, _]] = HNil :+: A :+: CNil
 
@@ -84,19 +86,19 @@ object FortuneTeller {
     } {
       _.head.choice { _ =>
 //        probabilityLossNetwork.compose()
-        probabilityLossNetwork.compose(min(exp(-rowSeq(0, 0)), 1.0))
-//        max(1.0 - rowSeq(0, 0), 0.0)
+        probabilityLossNetwork.compose(min(exp(-rowSeq(0)(0)), 1.0))
+//        max(1.0 - rowSeq(0)(0), 0.0)
       } { inr =>
         val expectedValue = inr.head
-        (rowSeq(0, 0) + abs(rowSeq(0, 1) - expectedValue)): rowAndExpectedLabel.To[Double]
+        (rowSeq(0)(0) + abs(rowSeq(0)(1) - expectedValue)): rowAndExpectedLabel.To[Double]
       }
     }
 
     val loss1 = expectedLabelField1.choice { _ =>
       0.0 // Drop out
     } { expectedEnum =>
-      val score0 = rowSeq(0, 2)
-      val score1 = rowSeq(0, 3)
+      val score0 = rowSeq(0)(2)
+      val score1 = rowSeq(0)(3)
       val sum = score0 + score1 + 0.00000001
       val probability0 = score0 / sum
       val probability1 = score1 / sum
@@ -110,15 +112,15 @@ object FortuneTeller {
     val loss2 = expectedLabelField2.choice { _ =>
       0.0 // Drop out
     } { expectedDouble =>
-      abs(expectedDouble.head - rowSeq(0, 4) + 1.0)
+      abs(expectedDouble.head - rowSeq(0)(4) + 1.0)
     }
 
     val loss3 = expectedLabelField3.choice { _ =>
       0.0 // Drop out
     } { expectedEnum =>
-      val score0 = rowSeq(0, 5)
-      val score1 = rowSeq(0, 6)
-      val score2 = rowSeq(0, 7)
+      val score0 = rowSeq(0)(5)
+      val score1 = rowSeq(0)(6)
+      val score2 = rowSeq(0)(7)
       val sum = score0 + score1 + score2 + 0.00000001
       val probability0 = score0 / sum
       val probability1 = score1 / sum
@@ -142,10 +144,10 @@ object FortuneTeller {
 
   def array2DToRow(implicit input: Array2D): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[Double :: Double :: HNil] = min(rowSeq(0, 0), 1.0) :: rowSeq(0, 1) :: HNil
-    val field1: input.To[Enum0Prediction] = rowSeq(0, 2) :: rowSeq(0, 3) :: HNil
-    val field2: input.To[Double] = rowSeq(0, 4)
-    val field3 = rowSeq(0, 5) :: rowSeq(0, 6) :: rowSeq(0, 7) :: HNil
+    val field0: input.To[Double :: Double :: HNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(0)(1) :: HNil
+    val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :: rowSeq(0)(3) :: HNil
+    val field2: input.To[Double] = rowSeq(0)(4)
+    val field3 = rowSeq(0)(5) :: rowSeq(0)(6) :: rowSeq(0)(7) :: HNil
     field0 :: field1 :: field2 :: field3 :: HNil
   }
   val array2DToRowNetwork = array2DToRow

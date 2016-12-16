@@ -11,7 +11,7 @@ private[deeplearning] sealed trait ToLayerLowPriorityImplicits {
   implicit def toLayerOfType[Input0 <: Batch, OutputType <: Type[_, _]]
     : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
     ToLayer
-      .layerToLayer[Input0, OutputType#Data, OutputType#Delta]
+      .layerToLayer[Input0, Type.DataOf[OutputType], Type.DeltaOf[OutputType]]
       .asInstanceOf[ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType]]
   }
 
