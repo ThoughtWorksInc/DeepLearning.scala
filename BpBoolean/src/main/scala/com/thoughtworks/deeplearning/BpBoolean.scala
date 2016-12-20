@@ -92,7 +92,7 @@ object BpBoolean {
   /** @template */
   type BpBoolean = BackPropagationType[Eval[Boolean], Eval[Boolean]]
 
-  final class BpBooleanOps[Input <: Batch](boolean: Layer.Aux[Input, BpBoolean#Batch]) {
+  final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BpBoolean#Batch]) {
 
     def `if`[Then,
              Else,
@@ -117,9 +117,9 @@ object BpBoolean {
 
   }
 
-  implicit def toBpBooleanOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, BpBoolean]): BpBooleanOps[Input] = {
-    new BpBooleanOps[Input](toLayer(from))
+  implicit def toBooleanLayerOps[From, Input <: Batch](from: From)(
+      implicit toLayer: ToLayer.OfType[From, Input, BpBoolean]): BooleanLayerOps[Input] = {
+    new BooleanLayerOps[Input](toLayer(from))
   }
 
 }

@@ -363,7 +363,7 @@ object BpDouble {
     }
   }
 
-  final class DoubleOps[Input <: Batch](differentiable: Layer.Aux[Input, BpDouble#Batch]) {
+  final class DoubleLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, BpDouble#Batch]) {
 
     def unary_- : Layer.Aux[Input, BpDouble#Batch] = {
       Negative(differentiable)
@@ -371,9 +371,9 @@ object BpDouble {
 
   }
 
-  implicit def toDoubleOps[From, Input <: Batch](from: From)(
+  implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
       implicit toLayer: ToLayer.OfType[From, Input, BpDouble]
-  ): DoubleOps[Input] = {
-    new DoubleOps(toLayer(from))
+  ): DoubleLayerOps[Input] = {
+    new DoubleLayerOps(toLayer(from))
   }
 }

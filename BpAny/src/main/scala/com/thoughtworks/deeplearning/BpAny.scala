@@ -36,7 +36,7 @@ object BpAny {
 
   }
 
-  final class BpAnyOps[Input <: Batch, OutputData, OutputDelta](
+  final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
       val toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
@@ -73,9 +73,9 @@ object BpAny {
 
   }
 
-  implicit def toBpAnyOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): BpAnyOps[Input, OutputData, OutputDelta] = {
-    new BpAnyOps(toLayer(a))
+  implicit def toAnyLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): AnyLayerOps[Input, OutputData, OutputDelta] = {
+    new AnyLayerOps(toLayer(a))
   }
 
 }

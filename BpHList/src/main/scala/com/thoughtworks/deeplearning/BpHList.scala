@@ -169,7 +169,7 @@ object BpHList {
       override def apply(hnil: Layers.HNil.type) = hnil
     }
 
-  final class HListOps[Input <: Batch, TailData <: HList, TailDelta <: Coproduct](
+  final class HListLayerOps[Input <: Batch, TailData <: HList, TailDelta <: Coproduct](
       tail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]]) {
 
     def ::[Head, HeadData, HeadDelta](head: Head)(implicit headToLayer: ToLayer.Aux[Head, Input, HeadData, HeadDelta])
@@ -185,13 +185,13 @@ object BpHList {
 
   }
 
-  implicit def toHListOps[From, Input <: Batch, TailData <: HList, TailDelta <: Coproduct](from: From)(
+  implicit def toHListLayerOps[From, Input <: Batch, TailData <: HList, TailDelta <: Coproduct](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, TailData, TailDelta]
-  ): HListOps[Input, TailData, TailDelta] = {
-    new HListOps[Input, TailData, TailDelta](toLayer(from))
+  ): HListLayerOps[Input, TailData, TailDelta] = {
+    new HListLayerOps[Input, TailData, TailDelta](toLayer(from))
   }
 
-  final class HConsOps[Input <: Batch, HeadData, HeadDelta, TailData <: HList, TailDelta <: Coproduct](
+  final class HConsLayerOps[Input <: Batch, HeadData, HeadDelta, TailData <: HList, TailDelta <: Coproduct](
       hcons: Layer.Aux[Input, Batch.Aux[::[HeadData, TailData], :+:[HeadDelta, TailDelta]]]) {
     def head: Layer.Aux[Input, Batch.Aux[HeadData, HeadDelta]] =
       Head[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
@@ -200,7 +200,7 @@ object BpHList {
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](hcons)
   }
 
-  implicit def toHConsOps[From,
+  implicit def toHConsLayerOps[From,
                           Input <: Batch,
                           OutputData,
                           OutputDelta,
@@ -212,8 +212,8 @@ object BpHList {
       toHListLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
         Input,
         Batch.Aux[::[HeadData, TailData], :+:[HeadDelta, TailDelta]]]
-  ): HConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
-    new HConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListLayer(toLayer(from)))
+  ): HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
+    new HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListLayer(toLayer(from)))
   }
 
 }

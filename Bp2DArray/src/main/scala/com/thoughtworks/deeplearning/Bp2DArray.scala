@@ -23,7 +23,7 @@ import language.implicitConversions
   */
 object Bp2DArray {
 
-  private[deeplearning] trait Bp2DArraySemigroupBatch extends Batch {
+  private[deeplearning] trait TwoDArraySemigroupBatch extends Batch {
 
     override type Data = Eval[INDArray]
 
@@ -91,14 +91,14 @@ object Bp2DArray {
         operand2: Layer.Aux[Input0, Bp2DArray#Batch]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override final val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           val value = {
             upstream1.value
@@ -137,14 +137,14 @@ object Bp2DArray {
         operand2: Layer.Aux[Input0, BpDouble#Batch]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override final val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           val value = upstream1.value.map2(upstream2.value)(Transforms.max).memoize
 
@@ -171,14 +171,14 @@ object Bp2DArray {
         operand2: Layer.Aux[Input0, Bp2DArray#Batch]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override final val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           val value = {
             upstream1.value
@@ -284,7 +284,7 @@ object Bp2DArray {
 
     final case class Weight(var rawValue: INDArray)(implicit optimizer: Optimizer)
         extends Layer
-        with Bp2DArraySemigroupBatch {
+        with TwoDArraySemigroupBatch {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
@@ -313,7 +313,7 @@ object Bp2DArray {
       type Input = Input0
 
       final class Output private[ToBp2DArray] (upstreams: Seq[Seq[Batch.Aux[Eval[Double], Eval[Double]]]])
-          extends Bp2DArraySemigroupBatch
+          extends TwoDArraySemigroupBatch
           with CloseableOnce {
         override def backward(delta: Eval[INDArray]): Unit = {
           for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
@@ -343,14 +343,14 @@ object Bp2DArray {
 
     final case class Sum[Input0 <: Batch](operand: Layer.Aux[Input0, Bp2DArray#Batch], dimensions: Seq[Int])
         extends BufferedLayer.Unary {
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
           val value = upstream.value.map(_.sum(dimensions: _*)).memoize
 
@@ -394,14 +394,14 @@ object Bp2DArray {
 
     final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, Bp2DArray#Batch])
         extends BufferedLayer.Unary {
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
           val value = upstream.value.map(_ rdiv 1.0).memoize
 
@@ -424,14 +424,14 @@ object Bp2DArray {
         operand2: Layer.Aux[Input0, BpDouble#Batch]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override final val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
           val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
 
           override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
@@ -444,14 +444,14 @@ object Bp2DArray {
 
     final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, Bp2DArray#Batch])
         extends BufferedLayer.Unary {
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
           val value = upstream.value.map(-_).memoize
 
@@ -463,14 +463,14 @@ object Bp2DArray {
     }
 
     final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Bp2DArray#Batch]) extends BufferedLayer.Unary {
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
           val value = upstream.value.map(Transforms.exp).memoize
 
           override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
@@ -481,14 +481,14 @@ object Bp2DArray {
     }
 
     final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, Bp2DArray#Batch]) extends BufferedLayer.Unary {
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
           val value = upstream.value.map(Transforms.log).memoize
 
@@ -504,14 +504,14 @@ object Bp2DArray {
         operand2: Layer.Aux[Input0, BpDouble#Batch]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override final val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
 
@@ -537,14 +537,14 @@ object Bp2DArray {
         operand2: Layer.Aux[Input0, Bp2DArray#Batch]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
       type Input = Input0
 
       override protected def rawForward(input0: Input): BufferedBatch = {
         new {
           override final val input = input0
-        } with Bp2DArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
 
@@ -681,7 +681,7 @@ object Bp2DArray {
     exp.at(Exp(_))
   }
 
-  final class Bp2DArrayOps[Input <: Batch](differentiable: Layer.Aux[Input, Bp2DArray#Batch]) {
+  final class TwoDArrayLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, Bp2DArray#Batch]) {
 
     def dot(right: Layer.Aux[Input, Bp2DArray#Batch]): Layer.Aux[Input, Bp2DArray#Batch] = {
       Dot(differentiable, right)
@@ -697,21 +697,21 @@ object Bp2DArray {
 
   }
 
-  implicit def toBp2DArrayOps[From, Input <: Batch](from: From)(
+  implicit def to2DArrayLayerOps[From, Input <: Batch](from: From)(
       implicit toLayer: ToLayer.OfType[From, Input, Bp2DArray]
-  ): Bp2DArrayOps[Input] = {
-    new Bp2DArrayOps(toLayer(from))
+  ): TwoDArrayLayerOps[Input] = {
+    new TwoDArrayLayerOps(toLayer(from))
   }
 
   // TODO: Support Array for better performance.
-  final class ToBp2DArrayOps[Input <: Batch](
+  final class To2DArrayLayerOps[Input <: Batch](
       layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Eval[Double], Eval[Double]]]]]) {
     def toBp2DArray: Layer.Aux[Input, Bp2DArray#Batch] = ToBp2DArray(layerVector)
   }
 
-  implicit def toToBp2DArrayOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
-      implicit toLayer: ToLayer.OfType[Element, Input, BpDouble]): ToBp2DArrayOps[Input] = {
-    new ToBp2DArrayOps(layerVector.view.map(_.view.map(toLayer(_))))
+  implicit def toTo2DArrayLayerOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
+      implicit toLayer: ToLayer.OfType[Element, Input, BpDouble]): To2DArrayLayerOps[Input] = {
+    new To2DArrayLayerOps(layerVector.view.map(_.view.map(toLayer(_))))
   }
 
   implicit final class INDArrayOps(nativeBpDouble: INDArray) {

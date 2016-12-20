@@ -204,7 +204,7 @@ object BpCoproduct {
 
   }
 
-  final class CConsOps[
+  final class CConsLayerOps[
       Input <: Batch,
       HeadData,
       HeadDelta,
@@ -249,7 +249,7 @@ object BpCoproduct {
 
   }
 
-  implicit def toCConsOps[From,
+  implicit def toCConsLayerOps[From,
                           Input <: Batch,
                           OutputData,
                           OutputDelta,
@@ -261,7 +261,7 @@ object BpCoproduct {
       toCoproductLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
         Input,
         Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
-  ): CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
-    new CConsOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
+  ): CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
+    new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
 }
