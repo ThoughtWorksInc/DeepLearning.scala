@@ -36,7 +36,7 @@ object BackPropagationType {
       override type OutputDelta = InputDelta
 
       override def apply(input: BackPropagationType[InputData, InputDelta]) =
-        Identity[Batch.Aux[InputData, InputDelta]]()
+        Identity[InputData, InputDelta]()
     }
 
 }
