@@ -19,31 +19,6 @@ private[deeplearning] sealed trait ToLayerLowPriorityImplicits {
 }
 
 object ToLayer extends ToLayerLowPriorityImplicits {
-  trait LayerPoly1 extends Poly1 {
-    implicit def toLayerCase[Operand, Input <: Batch, OperandData, OperandDelta](
-        implicit toLayer: ToLayer.Aux[Operand, Input, OperandData, OperandDelta],
-        layerCase: Lazy[Case[Layer.Aux[Input, Batch.Aux[OperandData, OperandDelta]]]]
-    ): Case.Aux[Operand, layerCase.value.Result] = {
-      at { operand =>
-        layerCase.value(toLayer(operand))
-      }
-    }
-  }
-
-  trait LayerPoly2 extends Poly2 {
-    implicit def toLayerCase[LeftOperand, RightOperand, Input <: Batch, LeftData, LeftDelta, RightData, RightDelta](
-        implicit leftToLayer: ToLayer.Aux[LeftOperand, Input, LeftData, LeftDelta],
-        rightToLayer: ToLayer.Aux[RightOperand, Input, RightData, RightDelta],
-        layerCase: Lazy[
-          Case[Layer.Aux[Input, Batch.Aux[LeftData, LeftDelta]], Layer.Aux[Input, Batch.Aux[RightData, RightDelta]]]]
-    ): Case.Aux[LeftOperand, RightOperand, layerCase.value.Result] = {
-      at { (left, right) =>
-        val leftLayer = leftToLayer(left)
-        val rightLayer = rightToLayer(right)
-        layerCase.value(leftLayer, rightLayer)
-      }
-    }
-  }
 
   type Aux[From, Input <: Batch, OutputData0, OutputDelta0] = ToLayer[From, Input] {
     type OutputData = OutputData0

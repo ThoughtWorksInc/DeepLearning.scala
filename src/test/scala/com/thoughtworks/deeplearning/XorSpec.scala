@@ -10,6 +10,9 @@ import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
 import com.thoughtworks.deeplearning.hlist._
+
+import com.thoughtworks.deeplearning.Poly.LayerPolyOps
+import com.thoughtworks.deeplearning.Poly.PolyFunctions._
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.double._

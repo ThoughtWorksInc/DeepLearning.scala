@@ -2,21 +2,23 @@ sbt.dsl.dependsOn(`dynamic-cast`, boolean, double, array2D, hlist, coproduct, se
 
 lazy val deeplearning = project.disablePlugins(SparkPackagePlugin)
 
-lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning, `buffered-layer`, dslProject)
+lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning, `buffered-layer`, Poly)
 
-lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject, boolean, `buffered-layer`)
+lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, boolean, `buffered-layer`)
 
-lazy val `dynamic-cast` = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+lazy val `dynamic-cast` = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
 
 lazy val dslProject =
   Project(id = "dsl", base = file("dsl"), dependencies = Seq(deeplearning)).disablePlugins(SparkPackagePlugin)
+
+lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
 
 lazy val seqProject =
   Project(id = "seq", base = file("seq"), dependencies = Seq(dslProject)).disablePlugins(SparkPackagePlugin)
 
 lazy val array2D = project.disablePlugins(SparkPackagePlugin).dependsOn(double)
 
-lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
 
 lazy val coproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(boolean)
 

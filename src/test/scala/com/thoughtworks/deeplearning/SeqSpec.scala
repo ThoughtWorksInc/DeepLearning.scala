@@ -7,6 +7,9 @@ import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.double.optimizers.LearningRate
 import org.scalatest._
 
+import com.thoughtworks.deeplearning.Poly.LayerPolyOps
+import com.thoughtworks.deeplearning.Poly.PolyFunctions._
+
 import language.existentials
 
 /**

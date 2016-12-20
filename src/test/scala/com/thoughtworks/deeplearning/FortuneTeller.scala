@@ -9,12 +9,13 @@ import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.array2D._
 import com.thoughtworks.deeplearning.dsl._
-import com.thoughtworks.deeplearning.dsl.layers.{Identity, Literal}
 import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
 import com.thoughtworks.deeplearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
+import com.thoughtworks.deeplearning.Poly.LayerPolyOps
+import com.thoughtworks.deeplearning.Poly.PolyFunctions._
 
 import language.implicitConversions
 import language.existentials

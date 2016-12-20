@@ -1,10 +1,12 @@
 package com.thoughtworks.deeplearning
 import cats.Eval
 import com.thoughtworks.deeplearning.dsl._
-import com.thoughtworks.deeplearning.dsl.PolyMethods._
+import com.thoughtworks.deeplearning.Poly.PolyMethods._
+import com.thoughtworks.deeplearning.Poly.PolyFunctions._
 import com.thoughtworks.deeplearning.dsl.layers.Literal
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Poly.PolyMethods
 import com.thoughtworks.deeplearning.double.layers._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer
 

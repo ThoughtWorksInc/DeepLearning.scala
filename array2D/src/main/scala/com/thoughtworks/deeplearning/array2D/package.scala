@@ -7,6 +7,8 @@ import com.thoughtworks.deeplearning.array2D.layers._
 import com.thoughtworks.deeplearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deeplearning.double.utilities.BpDouble
 import org.nd4j.linalg.api.ndarray.INDArray
+import com.thoughtworks.deeplearning.Poly.PolyFunctions._
+import com.thoughtworks.deeplearning.Poly.PolyMethods
 
 import language.implicitConversions
 

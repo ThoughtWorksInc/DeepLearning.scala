@@ -2,7 +2,6 @@ package com.thoughtworks.deeplearning
 
 import resource._
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.dsl.ToLayer.{LayerPoly1, LayerPoly2}
 import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal, Throw}
 
 import language.implicitConversions
@@ -75,25 +74,4 @@ package object dsl {
     def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
   }
 
-  implicit final class ScalaAnyOps[Left](left: Left) {
-
-    def -[Right](right: Right)(implicit methodCase: PolyMethods.-.Case[Left, Right]): methodCase.Result =
-      PolyMethods.-(left, right)
-
-    def +[Right](right: Right)(implicit methodCase: PolyMethods.+.Case[Left, Right]): methodCase.Result =
-      PolyMethods.+(left, right)
-
-    def *[Right](right: Right)(implicit methodCase: PolyMethods.*.Case[Left, Right]): methodCase.Result =
-      PolyMethods.*(left, right)
-
-    def /[Right](right: Right)(implicit methodCase: PolyMethods./.Case[Left, Right]): methodCase.Result =
-      PolyMethods./(left, right)
-
-  }
-
-  object log extends LayerPoly1
-  object exp extends LayerPoly1
-  object abs extends LayerPoly1
-  object max extends LayerPoly2
-  object min extends LayerPoly2
 }

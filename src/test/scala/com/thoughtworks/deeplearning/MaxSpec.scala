@@ -6,6 +6,8 @@ import com.thoughtworks.deeplearning.hlist._
 import com.thoughtworks.deeplearning.double._
 import org.scalatest.{FreeSpec, Matchers}
 import ToLayer._
+import com.thoughtworks.deeplearning.Poly.LayerPolyOps
+import com.thoughtworks.deeplearning.Poly.PolyFunctions._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
