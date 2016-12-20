@@ -1,7 +1,8 @@
-package com.thoughtworks.deeplearning.dsl
+package com.thoughtworks.deeplearning
+package dsl
 
 import com.thoughtworks.deeplearning.dsl.layers.Identity
-import com.thoughtworks.deeplearning.{Batch, Layer}
+import com.thoughtworks.deeplearning.Layer.Batch
 
 import language.existentials
 
@@ -29,8 +30,10 @@ object BackPropagationType {
   type DataOf[T <: BackPropagationType[_, _]] = t.Data forSome { val t: T }
   type DeltaOf[T <: BackPropagationType[_, _]] = t.Delta forSome { val t: T }
 
-  implicit def inputTypeToLayer[InputData, InputDelta]
-    : ToLayer.Aux[BackPropagationType[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
+  implicit def inputTypeToLayer[InputData, InputDelta]: ToLayer.Aux[BackPropagationType[InputData, InputDelta],
+                                                                    Batch.Aux[InputData, InputDelta],
+                                                                    InputData,
+                                                                    InputDelta] =
     new ToLayer[BackPropagationType[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
       override type OutputData = InputData
       override type OutputDelta = InputDelta

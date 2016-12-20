@@ -4,6 +4,7 @@ package double.layers
 import cats._
 import cats.implicits._
 import com.thoughtworks.deeplearning.BufferedLayer
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
 
 /**

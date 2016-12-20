@@ -3,7 +3,8 @@ package com.thoughtworks.deeplearning.double.layers
 import cats._
 import cats.implicits._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer
-import com.thoughtworks.deeplearning.{Batch, Layer}
+import com.thoughtworks.deeplearning.Layer
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
 
 /**

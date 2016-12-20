@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning
 package hlist.layers
 
+import com.thoughtworks.deeplearning.Layer._
 import shapeless._
 
 final case class HCons[Input0 <: Batch,
@@ -16,7 +17,7 @@ final case class HCons[Input0 <: Batch,
   final class Output private[HCons] (headBatch: Batch.Aux[HeadData, HeadDelta],
                                      tailBatch: Batch.Aux[TailData, TailDelta])
       extends Batch
-      with com.thoughtworks.deeplearning.utilities.CloseableOnce {
+      with CloseableOnce {
     override def backward(delta: Delta): Unit = {
       delta match {
         case shapeless.Inl(headDelta) =>

@@ -2,6 +2,7 @@ package com.thoughtworks.deeplearning.seq.layers
 
 import cats._
 import cats.implicits._
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning._
 
 /**

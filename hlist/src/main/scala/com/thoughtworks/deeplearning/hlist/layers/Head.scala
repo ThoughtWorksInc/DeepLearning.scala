@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning
 package hlist.layers
 
+import com.thoughtworks.deeplearning.Layer.Batch
 import shapeless._
 
 /**
@@ -15,7 +16,7 @@ TailDelta <: shapeless.Coproduct](
   final class Output private[Head] (
       upstream: Batch.Aux[::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Batch
-      with com.thoughtworks.deeplearning.utilities.CloseableOnce {
+      with com.thoughtworks.deeplearning.Layer.CloseableOnce {
     override def backward(delta: Delta): Unit = {
       upstream.backward(shapeless.Inl(delta))
     }

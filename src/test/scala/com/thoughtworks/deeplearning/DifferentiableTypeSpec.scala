@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import shapeless._
-import com.thoughtworks.deeplearning.boolean._
+import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.array2D._
 import com.thoughtworks.deeplearning.hlist._
 import com.thoughtworks.deeplearning.dsl._

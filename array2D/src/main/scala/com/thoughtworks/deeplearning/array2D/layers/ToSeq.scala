@@ -3,10 +3,10 @@ package com.thoughtworks.deeplearning.array2D.layers
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
-import com.thoughtworks.deeplearning.Batch._
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.array2D.utilities._
-import com.thoughtworks.deeplearning.{Batch, BufferedLayer, Layer}
+import com.thoughtworks.deeplearning.{BufferedLayer, Layer}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms

@@ -1,6 +1,8 @@
 package com.thoughtworks.deeplearning
 package coproduct.layers
 
+import com.thoughtworks.deeplearning.Layer.Batch
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -12,7 +14,7 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
 
   final class Output private[Inr] (upstream: Batch.Aux[TailData, TailDelta])
       extends Batch
-      with com.thoughtworks.deeplearning.utilities.CloseableOnce {
+      with com.thoughtworks.deeplearning.Layer.CloseableOnce {
     def value = shapeless.Inr(upstream.value: TailData)
 
     type Data = shapeless.Inr[Nothing, TailData]

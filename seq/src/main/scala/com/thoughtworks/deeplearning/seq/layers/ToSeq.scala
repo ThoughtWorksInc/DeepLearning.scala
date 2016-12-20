@@ -2,9 +2,8 @@ package com.thoughtworks.deeplearning.seq.layers
 
 import cats._
 import cats.implicits._
+import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning._
-
-import com.thoughtworks.deeplearning.utilities.CloseableOnce
 
 import language.higherKinds
 

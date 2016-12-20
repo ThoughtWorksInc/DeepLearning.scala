@@ -4,7 +4,8 @@ package double.layers
 import cats._
 import cats.implicits._
 import com.thoughtworks.deeplearning.BufferedLayer
-import com.thoughtworks.deeplearning.boolean.utilities.BooleanMonoidBatch
+import com.thoughtworks.deeplearning.BpBoolean.BooleanMonoidBatch
+import com.thoughtworks.deeplearning.Layer.Batch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

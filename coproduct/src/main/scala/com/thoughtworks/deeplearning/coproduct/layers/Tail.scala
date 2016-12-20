@@ -1,6 +1,8 @@
 package com.thoughtworks.deeplearning
 package coproduct.layers
 
+import com.thoughtworks.deeplearning.Layer.Batch
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -12,7 +14,7 @@ TailDelta <: shapeless.Coproduct](
   final class Output private[Tail] (
       upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Batch
-      with com.thoughtworks.deeplearning.utilities.CloseableOnce {
+      with com.thoughtworks.deeplearning.Layer.CloseableOnce {
     override type Data = TailData
     override type Delta = TailDelta
 

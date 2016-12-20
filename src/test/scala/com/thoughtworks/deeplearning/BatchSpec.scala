@@ -2,12 +2,13 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
-import boolean._
+import BpBoolean._
 import double._
 import dsl._
 import hlist._
 import language.existentials
 import shapeless._
+import com.thoughtworks.deeplearning.Layer.Batch
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

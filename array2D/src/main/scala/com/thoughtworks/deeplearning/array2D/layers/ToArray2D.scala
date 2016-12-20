@@ -3,11 +3,10 @@ package array2D.layers
 
 import cats.{Applicative, Eval, Traverse}
 import cats.implicits._
-import com.thoughtworks.deeplearning.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deeplearning.array2D.utilities._
-import com.thoughtworks.deeplearning.utilities.CloseableOnce
+import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
 
 import language.higherKinds
 

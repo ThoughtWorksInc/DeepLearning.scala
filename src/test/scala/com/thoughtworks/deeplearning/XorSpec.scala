@@ -8,9 +8,9 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Batch._
+import com.thoughtworks.deeplearning.Layer.Batch._
 import com.thoughtworks.deeplearning.hlist._
-import com.thoughtworks.deeplearning.boolean._
+import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.array2D._

@@ -1,6 +1,8 @@
 package com.thoughtworks.deeplearning
 package hlist.layers
 
+import com.thoughtworks.deeplearning.Layer.Batch
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */

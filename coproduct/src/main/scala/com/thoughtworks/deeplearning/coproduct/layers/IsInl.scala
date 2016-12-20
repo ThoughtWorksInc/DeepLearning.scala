@@ -2,8 +2,8 @@ package com.thoughtworks.deeplearning
 package coproduct.layers
 
 import cats.Eval
-import com.thoughtworks.deeplearning.boolean.utilities.BooleanMonoidBatch
-import com.thoughtworks.deeplearning.utilities.CloseableOnce
+import com.thoughtworks.deeplearning.BpBoolean.BooleanMonoidBatch
+import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
 
 final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](

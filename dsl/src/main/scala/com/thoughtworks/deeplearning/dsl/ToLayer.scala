@@ -1,6 +1,7 @@
-package com.thoughtworks.deeplearning.dsl
+package com.thoughtworks.deeplearning
+package dsl
 
-import com.thoughtworks.deeplearning.{Batch, Layer}
+import com.thoughtworks.deeplearning.Layer.Batch
 import shapeless._
 
 import language.existentials
@@ -64,8 +65,8 @@ object ToLayer extends ToLayerLowPriorityImplicits {
     }
 
   implicit def literalToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
-                                                                                       implicit inputType: BackPropagationType[InputData, InputDelta],
-                                                                                       toLiteral: ToLiteral.Aux[From, OutputData0, OutputDelta0])
+      implicit inputType: BackPropagationType[InputData, InputDelta],
+      toLiteral: ToLiteral.Aux[From, OutputData0, OutputDelta0])
     : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
     new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
       override type OutputData = OutputData0

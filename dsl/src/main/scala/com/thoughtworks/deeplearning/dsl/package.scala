@@ -2,7 +2,6 @@ package com.thoughtworks.deeplearning
 
 import resource._
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Batch._
 import com.thoughtworks.deeplearning.dsl.ToLayer.{LayerPoly1, LayerPoly2}
 import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal, Throw}
 

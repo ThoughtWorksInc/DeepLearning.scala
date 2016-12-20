@@ -1,7 +1,6 @@
 package com.thoughtworks.deeplearning.double.layers
 
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Batch._
 import cats._
 import cats.implicits._
 

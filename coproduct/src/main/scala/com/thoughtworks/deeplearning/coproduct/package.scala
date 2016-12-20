@@ -1,10 +1,10 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.boolean.utilities._
-
-import com.thoughtworks.deeplearning.dsl.{ToLayer, BackPropagationType}
+import com.thoughtworks.deeplearning.BpBoolean._
+import com.thoughtworks.deeplearning.dsl.{BackPropagationType, ToLayer}
 import com.thoughtworks.deeplearning.dsl.BackPropagationType.{DataOf, DeltaOf}
-import com.thoughtworks.deeplearning.boolean.layers.If
+import com.thoughtworks.deeplearning.BpBoolean.Layers.If
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.coproduct.layers._
 import shapeless.Lub
 

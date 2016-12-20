@@ -3,6 +3,7 @@ package array2D.layers
 
 import cats._
 import cats.implicits._
+import com.thoughtworks.deeplearning.Layer.Batch
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deeplearning.array2D.utilities._

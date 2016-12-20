@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.dsl.{ToLayer, BackPropagationType}
+import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.dsl.{BackPropagationType, ToLayer}
 import com.thoughtworks.deeplearning.seq.layers.{Get, ToSeq}
 
 import language.implicitConversions

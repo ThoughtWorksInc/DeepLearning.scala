@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning.dsl
 
-import com.thoughtworks.deeplearning.{Batch, Layer}
+import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer
 import shapeless.DepFn1
 
 /**
