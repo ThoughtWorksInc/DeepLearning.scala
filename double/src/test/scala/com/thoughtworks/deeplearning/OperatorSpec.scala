@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.dsl._
+import com.thoughtworks.deeplearning.ToLayer._
 import com.thoughtworks.deeplearning.double._
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Poly.MathOps

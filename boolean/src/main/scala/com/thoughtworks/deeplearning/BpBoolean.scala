@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.dsl.{BackPropagationType, ToLayer}
+import com.thoughtworks.deeplearning.ToLayer._
 import shapeless.Lub
 
 import language.implicitConversions

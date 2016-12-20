@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.array2D
 
 import cats._
-import com.thoughtworks.deeplearning.dsl.BackPropagationType
+import com.thoughtworks.deeplearning.ToLayer._
 import org.nd4j.linalg.api.ndarray.INDArray
 
 /**

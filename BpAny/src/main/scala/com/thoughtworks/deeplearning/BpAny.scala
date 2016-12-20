@@ -1,30 +1,42 @@
 package com.thoughtworks.deeplearning
 
-import resource._
-import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal}
-
+import com.thoughtworks.deeplearning.BpAny.Layers.Compose
+import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.ToLayer.Layers.Literal
+import com.thoughtworks.deeplearning.ToLayer._
+import resource.managed
 import language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-package object dsl {
+object BpAny {
 
   /** @template */
   type BpAny = BackPropagationType[Any, _]
 
-  implicit final class ToBatch[Data](a: Data) {
-    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
+  object Layers {
+
+    final case class Compose[Input0 <: Batch, Temporary <: Batch, Output0 <: Batch](
+        leftOperand: Layer.Aux[Temporary, Output0],
+        rightOperand: Layer.Aux[Input0, Temporary])
+        extends Layer {
+      override type Input = Input0
+      override type Output = Output0
+
+      override def forward(input: Input): Output = {
+        val tmpBatch = rightOperand.forward(input)
+        try {
+          leftOperand.forward(tmpBatch)
+        } finally {
+          tmpBatch.close()
+        }
+      }
+    }
+
   }
 
-  implicit def autoToLayer[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
-    : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-    toLayer(a)
-  }
-
-  final class LayerOps[Input <: Batch, OutputData, OutputDelta](
+  final class BpAnyOps[Input <: Batch, OutputData, OutputDelta](
       val toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
@@ -61,9 +73,9 @@ package object dsl {
 
   }
 
-  implicit def toLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): LayerOps[Input, OutputData, OutputDelta] = {
-    new LayerOps(toLayer(a))
+  implicit def toBpAnyOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): BpAnyOps[Input, OutputData, OutputDelta] = {
+    new BpAnyOps(toLayer(a))
   }
 
 }

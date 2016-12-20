@@ -4,7 +4,8 @@ import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
 import BpBoolean._
 import double._
-import dsl._
+import com.thoughtworks.deeplearning.BpAny._
+import com.thoughtworks.deeplearning.ToLayer._
 import hlist._
 import language.existentials
 import shapeless._

@@ -1,9 +1,9 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.dsl._
+import com.thoughtworks.deeplearning.ToLayer._
 import org.scalatest._
-
+import com.thoughtworks.deeplearning.BpAny._
 import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}

@@ -4,12 +4,13 @@ import cats.Eval
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
 import com.thoughtworks.deeplearning.hlist._
+import com.thoughtworks.deeplearning.BpAny._
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.BpNothing._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.array2D._
-import com.thoughtworks.deeplearning.dsl._
+import com.thoughtworks.deeplearning.ToLayer._
 import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
 import com.thoughtworks.deeplearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j

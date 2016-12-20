@@ -1,10 +1,10 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.BpBoolean._
-import com.thoughtworks.deeplearning.dsl.{BackPropagationType, ToLayer}
-import com.thoughtworks.deeplearning.dsl.BackPropagationType.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.ToLayer._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.ToLayer.BackPropagationType.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.coproduct.layers._
 import shapeless.Lub
 

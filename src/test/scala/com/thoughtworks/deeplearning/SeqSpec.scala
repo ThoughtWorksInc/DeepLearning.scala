@@ -1,12 +1,12 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.dsl._
+import com.thoughtworks.deeplearning.ToLayer._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.double.optimizers.LearningRate
 import org.scalatest._
-
+import com.thoughtworks.deeplearning.BpAny._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 
