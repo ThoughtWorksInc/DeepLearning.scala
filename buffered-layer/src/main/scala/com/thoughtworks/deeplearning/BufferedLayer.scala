@@ -156,7 +156,7 @@ trait BufferedLayer extends Layer {
   override final def forward(input: Input): Output = {
     cache.get(input) match {
       case null =>
-        val savedInput = input.addReference().asInstanceOf[Input]
+        val savedInput = input.addReference().asInstanceOf[Input] // FIXME: Add self type in Batch to avoid asInstanceOf
         val batch = rawForward(savedInput)
         cache.put(savedInput, batch).ensuring(_ == null)
         batch.checkedIfCloseOnlyOnce
