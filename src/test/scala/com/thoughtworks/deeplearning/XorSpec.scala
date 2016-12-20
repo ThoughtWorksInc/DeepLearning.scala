@@ -9,17 +9,17 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
-import com.thoughtworks.deeplearning.hlist._
+import com.thoughtworks.deeplearning.BpHList._
 import com.thoughtworks.deeplearning.BpNothing._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.BpBoolean._
-import com.thoughtworks.deeplearning.seq._
-import com.thoughtworks.deeplearning.double._
-import com.thoughtworks.deeplearning.array2D._
+import com.thoughtworks.deeplearning.BpSeq._
+import com.thoughtworks.deeplearning.BpDouble._
+import com.thoughtworks.deeplearning.Bp2DArray._
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
-import com.thoughtworks.deeplearning.coproduct._
+import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
+import com.thoughtworks.deeplearning.BpCoproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
@@ -37,31 +37,31 @@ final class XorSpec extends FreeSpec with Matchers {
 
   import XorSpec._
 
-  implicit val optimizer = new array2D.optimizers.L2Regularization with double.optimizers.L2Regularization {
+  implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
     override protected def currentLearningRate() = 0.006
 
     override protected def l2Regularization = 0.01
   }
 
-  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Array2D) = {
+  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Bp2DArray) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     //    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
 
-  def sigmoid(implicit input: Array2D) = {
+  def sigmoid(implicit input: Bp2DArray) = {
     1.0 / (exp(-input) + 1.0)
   }
 
-  def fullyConnectedThenSigmoid(inputSize: Int, outputSize: Int)(implicit row: Array2D) = {
+  def fullyConnectedThenSigmoid(inputSize: Int, outputSize: Int)(implicit row: Bp2DArray) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     //    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     sigmoid.compose((row dot w) + b)
   }
 
-  def hiddenLayers(implicit encodedInput: Array2D): encodedInput.To[Array2D] = {
+  def hiddenLayers(implicit encodedInput: Bp2DArray): encodedInput.To[Bp2DArray] = {
     fullyConnectedThenSigmoid(50, 3).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(6, 50).compose(encodedInput))))
@@ -69,7 +69,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val hiddenLayersNetwork = hiddenLayers
 
-  def encode(implicit input: XorSpec.Input): input.To[Array2D] = {
+  def encode(implicit input: XorSpec.Input): input.To[Bp2DArray] = {
     val field0 = input.head
     val rest0 = input.tail
     val field1 = rest0.head
@@ -118,12 +118,12 @@ final class XorSpec extends FreeSpec with Matchers {
         `throw`(new IllegalArgumentException)
       }
     }
-    Vector(Vector(encoded0, encoded1, encoded2, encoded3, encoded4, encoded5)).toArray2D
+    Vector(Vector(encoded0, encoded1, encoded2, encoded3, encoded4, encoded5)).toBp2DArray
   }
 
   val encodeNetwork = encode
 
-  def decode(implicit row: Array2D): row.To[XorSpec.Output] = {
+  def decode(implicit row: Bp2DArray): row.To[XorSpec.Output] = {
     val rowSeq = row.toSeq
     rowSeq(0)(0) :**: rowSeq(0)(1) :**: rowSeq(0)(2) :**: BpHNil
   }
@@ -136,7 +136,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val predictNetwork = predict
 
-  def loss(implicit pair: ExpectedLabel :**: Array2D :**: BpHNil): pair.To[BpDouble] = {
+  def loss(implicit pair: ExpectedLabel :**: Bp2DArray :**: BpHNil): pair.To[BpDouble] = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head

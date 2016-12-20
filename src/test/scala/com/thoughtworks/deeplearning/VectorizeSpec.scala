@@ -18,7 +18,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
   import FortuneTeller._
 
-  "Convert HMatrix to Array2D" in {
+  "Convert HMatrix to Bp2DArray" in {
 
     val trainingData = {
       import shapeless._
@@ -110,9 +110,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 //    sample1Field2 should be < sample2Field2
     /*
      最终目标是生成一个预测神经网络和一个训练神经网络
-     为了生成这两个网络，需要生成若干处理Array2D的全连接层、InputData到Array2D的转换、Array2D到Row的转换、Array2D到Double loss的转换
+     为了生成这两个网络，需要生成若干处理Bp2DArray的全连接层、InputData到Bp2DArray的转换、Bp2DArray到Row的转换、Bp2DArray到Double loss的转换
 
-     InputData到Array2D的转换可以从InputData到若干Double的转换做起
+     InputData到Bp2DArray的转换可以从InputData到若干Double的转换做起
 
      目前可以暂时使用HList而不是直接用case class的神经网络，将来可以直接使用case class
 

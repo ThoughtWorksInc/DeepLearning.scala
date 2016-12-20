@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.double._
+import com.thoughtworks.deeplearning.BpDouble._
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -11,7 +11,7 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
   */
 final class OperatorSpec extends FreeSpec with Matchers {
 
-  "double input" in {
+  "BpDouble input" in {
     def buildLayer(implicit input: BpDouble) = {
       val m0 = 0.0 - max(1.0, 2.0)
     }

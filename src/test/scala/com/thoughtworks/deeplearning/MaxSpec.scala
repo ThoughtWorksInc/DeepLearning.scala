@@ -1,9 +1,9 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.array2D._
+import com.thoughtworks.deeplearning.Bp2DArray._
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.hlist._
-import com.thoughtworks.deeplearning.double._
+import com.thoughtworks.deeplearning.BpHList._
+import com.thoughtworks.deeplearning.BpDouble._
 import com.thoughtworks.deeplearning.BpAny._
 import org.scalatest.{FreeSpec, Matchers}
 import ToLayer._
@@ -16,7 +16,7 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 final class MaxSpec extends FreeSpec with Matchers {
 
   "complex input" in {
-    def buildNeuralNetwork(implicit input: BpDouble :**: Array2D :**: BpHNil) = {
+    def buildNeuralNetwork(implicit input: BpDouble :**: Bp2DArray :**: BpHNil) = {
       val m0 = max(1.0, 2.0.toLiteral)
       val m1: input.To[BpDouble] = max(m0, 1.6)
       val m2 = max(m0.toLiteral, m1.toLiteral)
@@ -25,7 +25,7 @@ final class MaxSpec extends FreeSpec with Matchers {
     buildNeuralNetwork
   }
 
-  "double input" in {
+  "BpDouble input" in {
     def buildNeuralNetwork(implicit input: BpDouble) = {
       val m0 = max(1.0, 2.0)
       val m1: input.To[BpDouble] = max(input, 1.6)
@@ -37,10 +37,10 @@ final class MaxSpec extends FreeSpec with Matchers {
     buildNeuralNetwork
   }
 
-  "array2D input" in {
-    def buildNeuralNetwork(implicit input: Array2D) = {
+  "Bp2DArray input" in {
+    def buildNeuralNetwork(implicit input: Bp2DArray) = {
       val m0 = max(1.0, 2.0)
-      val m1: input.To[Array2D] = max(input, 1.6)
+      val m1: input.To[Bp2DArray] = max(input, 1.6)
       val m2 = max(input, m0)
       val m3: input.To[BpDouble] = max(m0, 2.0)
       val m4 = max(max(max(max(m1, 3.0), m3), m0), 7.2)

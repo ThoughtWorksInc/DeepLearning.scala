@@ -3,16 +3,16 @@ package com.thoughtworks.deeplearning
 import cats.Eval
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
-import com.thoughtworks.deeplearning.hlist._
+import com.thoughtworks.deeplearning.BpHList._
 import com.thoughtworks.deeplearning.BpAny._
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.BpNothing._
-import com.thoughtworks.deeplearning.double._
-import com.thoughtworks.deeplearning.seq._
-import com.thoughtworks.deeplearning.array2D._
+import com.thoughtworks.deeplearning.BpDouble._
+import com.thoughtworks.deeplearning.BpSeq._
+import com.thoughtworks.deeplearning.Bp2DArray._
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
-import com.thoughtworks.deeplearning.coproduct._
+import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
+import com.thoughtworks.deeplearning.BpCoproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
@@ -60,7 +60,7 @@ object FortuneTeller {
   type PredictionResult =
     NullableFieldPrediction[BpDouble] :**: Enum0Prediction :**: BpDouble :**: Enum1Prediction :**: BpHNil
 
-  implicit val optimizer = new array2D.optimizers.L2Regularization with double.optimizers.L2Regularization {
+  implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
     override def currentLearningRate() = 0.0003
 
     override protected def l2Regularization = 0.1
@@ -70,8 +70,8 @@ object FortuneTeller {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(implicit rowAndExpectedLabel: Array2D :**: ExpectedLabel :**: BpHNil): rowAndExpectedLabel.To[BpDouble] = {
-    val row: rowAndExpectedLabel.To[Array2D] = rowAndExpectedLabel.head
+  def loss(implicit rowAndExpectedLabel: Bp2DArray :**: ExpectedLabel :**: BpHNil): rowAndExpectedLabel.To[BpDouble] = {
+    val row: rowAndExpectedLabel.To[Bp2DArray] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
     val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[BpDouble]]] = row.toSeq
 
@@ -146,7 +146,7 @@ object FortuneTeller {
 
   val lossNetwork = loss
 
-  def array2DToRow(implicit input: Array2D): input.To[PredictionResult] = {
+  def array2DToRow(implicit input: Bp2DArray): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
     val field0: input.To[BpDouble :**: BpDouble :**: BpHNil] = min(rowSeq(0)(0), 1.0) :**: rowSeq(0)(1) :**: BpHNil
     val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :**: rowSeq(0)(3) :**: BpHNil
@@ -156,7 +156,7 @@ object FortuneTeller {
   }
   val array2DToRowNetwork = array2DToRow
 
-  def rowToArray2D(implicit row: InputTypePair): row.To[Array2D] = {
+  def rowToBp2DArray(implicit row: InputTypePair): row.To[Bp2DArray] = {
     val field0 = row.head
     val rest0 = row.tail
     val field1 = rest0.head
@@ -306,19 +306,19 @@ object FortuneTeller {
                                   field3Value1,
                                   field3Value2)
 
-    Vector(encodedLayerRow0).toArray2D
+    Vector(encodedLayerRow0).toBp2DArray
   }
 
-  val rowToArray2DNetwork = rowToArray2D
+  val rowToBp2DArrayNetwork = rowToBp2DArray
 
-  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Array2D) = {
+  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Bp2DArray) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
 //    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
 
-  def hiddenLayers(implicit encodedInput: Array2D) = {
+  def hiddenLayers(implicit encodedInput: Bp2DArray) = {
     fullyConnectedThenRelu(50, 8).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(12, 50).compose(encodedInput))))
@@ -327,7 +327,7 @@ object FortuneTeller {
   val hiddenLayersNetwork = hiddenLayers
 
   def predict(implicit input: InputTypePair): input.To[PredictionResult] = {
-    val encodedInput = rowToArray2DNetwork.compose(input)
+    val encodedInput = rowToBp2DArrayNetwork.compose(input)
     val encodedResult = hiddenLayersNetwork.compose(encodedInput)
     array2DToRowNetwork.compose(encodedResult)
   }
@@ -337,7 +337,7 @@ object FortuneTeller {
   def train(implicit input: InputTypePair :**: ExpectedLabel :**: BpHNil) = {
     val inputRow = input.head
     val expectedLabel = input.tail.head
-    val encodedInput = rowToArray2DNetwork.compose(inputRow)
+    val encodedInput = rowToBp2DArrayNetwork.compose(inputRow)
     val encodedResult = hiddenLayersNetwork.compose(encodedInput)
 
     lossNetwork.compose(encodedResult :**: expectedLabel :**: BpHNil)

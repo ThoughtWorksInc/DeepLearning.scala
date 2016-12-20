@@ -2,9 +2,9 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.array2D._
-import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
-import com.thoughtworks.deeplearning.double._
+import com.thoughtworks.deeplearning.Bp2DArray._
+import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
+import com.thoughtworks.deeplearning.BpDouble._
 import org.nd4s.Implicits._
 import org.scalatest._
 
@@ -17,9 +17,9 @@ final class LayerSpec extends FreeSpec with Matchers {
     override def currentLearningRate() = 0.0003
   }
 
-  "Array2D dot Array2D" in {
+  "Bp2DArray dot Bp2DArray" in {
 
-    def makeNetwork(implicit x: Array2D) = {
+    def makeNetwork(implicit x: Bp2DArray) = {
       val weightInitialValue = Array(Array(0.0, 5.0))
       -weightInitialValue.toNDArray.toWeight.dot(x)
     }

@@ -2,9 +2,9 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.seq._
-import com.thoughtworks.deeplearning.double._
-import com.thoughtworks.deeplearning.double.optimizers.LearningRate
+import com.thoughtworks.deeplearning.BpSeq._
+import com.thoughtworks.deeplearning.BpDouble._
+import com.thoughtworks.deeplearning.BpDouble.Optimizers.LearningRate
 import org.scalatest._
 import com.thoughtworks.deeplearning.BpAny._
 import com.thoughtworks.deeplearning.Poly.MathOps

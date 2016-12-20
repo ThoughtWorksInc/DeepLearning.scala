@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import cats._
 import com.thoughtworks.deeplearning.BpAny._
-import com.thoughtworks.deeplearning.double._
+import com.thoughtworks.deeplearning.BpDouble._
 import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._

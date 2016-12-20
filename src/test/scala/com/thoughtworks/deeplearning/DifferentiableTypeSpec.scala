@@ -2,10 +2,10 @@ package com.thoughtworks.deeplearning
 
 import shapeless._
 import com.thoughtworks.deeplearning.BpBoolean._
-import com.thoughtworks.deeplearning.array2D._
-import com.thoughtworks.deeplearning.hlist._
+import com.thoughtworks.deeplearning.Bp2DArray._
+import com.thoughtworks.deeplearning.BpHList._
 import com.thoughtworks.deeplearning.Conversion._
-import com.thoughtworks.deeplearning.double._
+import com.thoughtworks.deeplearning.BpDouble._
 import org.scalatest.{FreeSpec, Matchers}
 import cats._
 
