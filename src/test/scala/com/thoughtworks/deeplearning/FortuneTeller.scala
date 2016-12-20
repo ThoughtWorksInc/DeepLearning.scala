@@ -10,7 +10,7 @@ import com.thoughtworks.deeplearning.BpNothing._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.array2D._
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
 import com.thoughtworks.deeplearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
@@ -57,7 +57,8 @@ object FortuneTeller {
   type Enum0Prediction = BpDouble :**: BpDouble :**: BpHNil
   type Enum1Prediction = BpDouble :**: BpDouble :**: BpDouble :**: BpHNil
 
-  type PredictionResult = NullableFieldPrediction[BpDouble] :**: Enum0Prediction :**: BpDouble :**: Enum1Prediction :**: BpHNil
+  type PredictionResult =
+    NullableFieldPrediction[BpDouble] :**: Enum0Prediction :**: BpDouble :**: Enum1Prediction :**: BpHNil
 
   implicit val optimizer = new array2D.optimizers.L2Regularization with double.optimizers.L2Regularization {
     override def currentLearningRate() = 0.0003
@@ -72,7 +73,7 @@ object FortuneTeller {
   def loss(implicit rowAndExpectedLabel: Array2D :**: ExpectedLabel :**: BpHNil): rowAndExpectedLabel.To[BpDouble] = {
     val row: rowAndExpectedLabel.To[Array2D] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
-    val rowSeq: rowAndExpectedLabel.To[Seq2D] = row.toSeq
+    val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[BpDouble]]] = row.toSeq
 
     // 暂时先在CPU上计算
 

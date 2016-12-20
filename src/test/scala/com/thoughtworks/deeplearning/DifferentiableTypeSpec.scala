@@ -4,7 +4,7 @@ import shapeless._
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.array2D._
 import com.thoughtworks.deeplearning.hlist._
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.double._
 import org.scalatest.{FreeSpec, Matchers}
 import cats._

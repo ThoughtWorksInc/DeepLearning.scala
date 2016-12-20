@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

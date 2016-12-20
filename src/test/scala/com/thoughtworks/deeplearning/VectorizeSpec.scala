@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import org.scalatest._
 import com.thoughtworks.deeplearning.BpAny._
 import language.implicitConversions

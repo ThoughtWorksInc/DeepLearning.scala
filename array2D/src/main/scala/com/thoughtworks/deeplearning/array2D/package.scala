@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.array2D.layers._
 import com.thoughtworks.deeplearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deeplearning.double.utilities.BpDouble

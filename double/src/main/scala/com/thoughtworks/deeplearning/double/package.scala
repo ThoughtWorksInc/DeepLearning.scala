@@ -1,12 +1,12 @@
 package com.thoughtworks.deeplearning
 import cats.Eval
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Poly.MathMethods
-import com.thoughtworks.deeplearning.ToLayer.Layers.Literal
+import com.thoughtworks.deeplearning.Conversion.Layers.Literal
 import com.thoughtworks.deeplearning.double.layers._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer
 

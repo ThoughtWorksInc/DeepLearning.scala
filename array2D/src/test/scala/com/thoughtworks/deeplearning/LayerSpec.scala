@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.array2D._
 import com.thoughtworks.deeplearning.array2D.optimizers.LearningRate
 import com.thoughtworks.deeplearning.double._

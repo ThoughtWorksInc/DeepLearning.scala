@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats._
 import com.thoughtworks.deeplearning.BpAny._
 import com.thoughtworks.deeplearning.double._
-import com.thoughtworks.deeplearning.ToLayer._
+import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import org.scalatest.{FreeSpec, Matchers}
