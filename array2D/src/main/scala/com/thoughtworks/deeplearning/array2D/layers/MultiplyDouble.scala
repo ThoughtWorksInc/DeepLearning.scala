@@ -15,7 +15,7 @@ import com.thoughtworks.deeplearning.double.utilities._
   */
 final case class MultiplyDouble[Input0 <: Batch](
     operand1: Layer.Aux[Input0, Array2D#Batch],
-    operand2: Layer.Aux[Input0, Double#Batch]
+    operand2: Layer.Aux[Input0, BpDouble#Batch]
 ) extends BufferedLayer.Binary {
 
   type BufferedBatch = Array2DSemigroupBatch with SemigroupBatch with BinaryBatch

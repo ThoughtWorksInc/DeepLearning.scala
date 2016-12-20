@@ -123,7 +123,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   def decode(implicit row: Array2D): row.To[XorSpec.Output] = {
     val rowSeq = row.toSeq
-    rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: HNil
+    rowSeq(0)(0) :**: rowSeq(0)(1) :**: rowSeq(0)(2) :**: BpHNil
   }
 
   val decodeNetwork = decode
@@ -134,7 +134,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val predictNetwork = predict
 
-  def loss(implicit pair: ExpectedLabel :: Array2D :: HNil): pair.To[Double] = {
+  def loss(implicit pair: ExpectedLabel :**: Array2D :**: BpHNil): pair.To[BpDouble] = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head
@@ -182,15 +182,15 @@ final class XorSpec extends FreeSpec with Matchers {
     loss0 + loss1 + loss2
   }
 
-  def train(implicit pair: ExpectedLabel :: Input :: HNil): pair.To[Double] = {
+  def train(implicit pair: ExpectedLabel :**: Input :**: BpHNil): pair.To[BpDouble] = {
     val expectedLabel = pair.head
     val input = pair.tail.head
-    loss.compose(expectedLabel :: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :: HNil)
+    loss.compose(expectedLabel :**: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :**: BpHNil)
   }
 
   val trainNetwork = train
 
-  def makeTrainingData(): (ExpectedLabel :: Input :: HNil)#Data = {
+  def makeTrainingData(): (ExpectedLabel :**: Input :**: BpHNil)#Data = {
     import shapeless._
     val field0 = Random.nextBoolean()
     val field1 = Random.nextBoolean()
@@ -251,7 +251,7 @@ ${left11.value}^${right11.value}=${result11.value}
   }
 
   "xor" in {
-    for (i <- 0 until 500) {
+    for (i <- 0 until 1000) {
 //      predictAndPrint()
       trainNetwork.train(makeTrainingData())
     }
@@ -288,8 +288,8 @@ ${left11.value}^${right11.value}=${result11.value}
 }
 
 object XorSpec {
-  type OptionalDouble = HNil :+: Double :+: CNil
-  type Input = OptionalDouble :: OptionalDouble :: OptionalDouble :: HNil
-  type ExpectedLabel = OptionalDouble :: OptionalDouble :: OptionalDouble :: HNil
-  type Output = Double :: Double :: Double :: HNil
+  type OptionalDouble = BpHNil :++: BpDouble :++: BpCNil
+  type Input = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
+  type ExpectedLabel = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
+  type Output = BpDouble :**: BpDouble :**: BpDouble :**: BpHNil
 }

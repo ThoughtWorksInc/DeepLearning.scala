@@ -8,10 +8,10 @@ import scala.language.existentials
 // TODO: Move to dsl library
 private[deeplearning] sealed trait ToLayerLowPriorityImplicits {
 
-  implicit def toLayerOfType[Input0 <: Batch, OutputType <: Type[_, _]]
+  implicit def toLayerOfType[Input0 <: Batch, OutputType <: BackPropagationType[_, _]]
     : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
     ToLayer
-      .layerToLayer[Input0, Type.DataOf[OutputType], Type.DeltaOf[OutputType]]
+      .layerToLayer[Input0, BackPropagationType.DataOf[OutputType], BackPropagationType.DeltaOf[OutputType]]
       .asInstanceOf[ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType]]
   }
 
@@ -49,7 +49,7 @@ object ToLayer extends ToLayerLowPriorityImplicits {
     type OutputDelta = OutputDelta0
   }
 
-  type OfType[From, Input <: Batch, OutputType <: Type[_, _]] =
+  type OfType[From, Input <: Batch, OutputType <: BackPropagationType[_, _]] =
     ToLayer.Aux[From, Input, differentiableType.Data, differentiableType.Delta] forSome {
       val differentiableType: OutputType
     }
@@ -64,8 +64,8 @@ object ToLayer extends ToLayerLowPriorityImplicits {
     }
 
   implicit def literalToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
-      implicit inputType: Type[InputData, InputDelta],
-      toLiteral: ToLiteral.Aux[From, OutputData0, OutputDelta0])
+                                                                                       implicit inputType: BackPropagationType[InputData, InputDelta],
+                                                                                       toLiteral: ToLiteral.Aux[From, OutputData0, OutputDelta0])
     : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
     new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
       override type OutputData = OutputData0

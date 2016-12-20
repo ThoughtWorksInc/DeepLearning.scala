@@ -8,7 +8,7 @@ import com.thoughtworks.deeplearning.boolean.utilities._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Not[Input0 <: Batch](operand: Layer.Aux[Input0, Boolean#Batch]) extends BufferedLayer.Unary {
+final case class Not[Input0 <: Batch](operand: Layer.Aux[Input0, BpBoolean#Batch]) extends BufferedLayer.Unary {
 
   type BufferedBatch = MonoidBatch with BooleanMonoidBatch with UnaryBatch
 

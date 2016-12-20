@@ -8,7 +8,7 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import cats.implicits._
 import com.thoughtworks.deeplearning.BufferedLayer
-import com.thoughtworks.deeplearning.double.utilities.Double
+import com.thoughtworks.deeplearning.double.utilities.BpDouble
 import com.thoughtworks.deeplearning.array2D.utilities._
 
 /**
@@ -16,7 +16,7 @@ import com.thoughtworks.deeplearning.array2D.utilities._
   */
 final case class PlusDouble[Input0 <: Batch](
     operand1: Layer.Aux[Input0, Array2D#Batch],
-    operand2: Layer.Aux[Input0, Double#Batch]
+    operand2: Layer.Aux[Input0, BpDouble#Batch]
 ) extends BufferedLayer.Binary {
 
   type BufferedBatch = Array2DSemigroupBatch with SemigroupBatch with BinaryBatch

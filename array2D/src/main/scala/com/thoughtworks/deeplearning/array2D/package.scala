@@ -4,7 +4,7 @@ import cats.Eval
 import com.thoughtworks.deeplearning.dsl._
 import com.thoughtworks.deeplearning.array2D.layers._
 import com.thoughtworks.deeplearning.array2D.optimizers.Optimizer
-import com.thoughtworks.deeplearning.double.utilities.Double
+import com.thoughtworks.deeplearning.double.utilities.BpDouble
 import org.nd4j.linalg.api.ndarray.INDArray
 
 import scala.language.implicitConversions
@@ -18,7 +18,7 @@ package object array2D {
   type Array2D = com.thoughtworks.deeplearning.array2D.utilities.Array2D
 
   implicit def `max(Array2D,Double)`[Left, Right, Input <: Batch]
-    : max.Case.Aux[Layer.Aux[Input, Array2D#Batch], Layer.Aux[Input, Double#Batch], Layer.Aux[Input, Array2D#Batch]] =
+    : max.Case.Aux[Layer.Aux[Input, Array2D#Batch], Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, Array2D#Batch]] =
     max.at(MaxDouble(_, _))
 
   implicit def `Array2D/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
@@ -29,7 +29,7 @@ package object array2D {
     }
   }
 
-  implicit def `Double/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Double#Batch],
+  implicit def `Double/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods./.at { (leftLayer, rightLayer) =>
@@ -38,7 +38,7 @@ package object array2D {
   }
 
   implicit def `Array2D/Double`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
-                                                                        Layer.Aux[Input, Double#Batch],
+                                                                        Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, double.layers.Reciprocal(rightLayer))
@@ -54,14 +54,14 @@ package object array2D {
   }
 
   implicit def `Array2D*Double`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
-                                                                        Layer.Aux[Input, Double#Batch],
+                                                                        Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Double*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Double#Batch],
+  implicit def `Double*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.*.at { (leftLayer, rightLayer) =>
@@ -77,7 +77,7 @@ package object array2D {
     }
   }
 
-  implicit def `Double-Array2D`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Double#Batch],
+  implicit def `Double-Array2D`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.-.at { (leftLayer, rightLayer) =>
@@ -86,7 +86,7 @@ package object array2D {
   }
 
   implicit def `Array2D-Double`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
-                                                                        Layer.Aux[Input, Double#Batch],
+                                                                        Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, double.layers.Negative(rightLayer))
@@ -102,14 +102,14 @@ package object array2D {
   }
 
   implicit def `Array2D+Double`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
-                                                                        Layer.Aux[Input, Double#Batch],
+                                                                        Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Double+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Double#Batch],
+  implicit def `Double+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
     PolyMethods.+.at { (leftLayer, rightLayer) =>
@@ -153,14 +153,14 @@ package object array2D {
   }
 
   implicit def toToArray2DOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
-      implicit toLayer: ToLayer.OfType[Element, Input, Double]): ToArray2DOps[Input] = {
+      implicit toLayer: ToLayer.OfType[Element, Input, BpDouble]): ToArray2DOps[Input] = {
     new ToArray2DOps(layerVector.view.map(_.view.map(toLayer(_))))
   }
 
   implicit final class INDArrayOps(nativeDouble: INDArray) {
     def toWeight[InputData, InputDelta](
-        implicit inputType: Type[InputData, InputDelta],
-        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Array2D#Batch] = {
+                                         implicit inputType: BackPropagationType[InputData, InputDelta],
+                                         optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Array2D#Batch] = {
       Weight(nativeDouble)
     }
   }

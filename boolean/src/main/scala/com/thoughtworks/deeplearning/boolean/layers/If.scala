@@ -8,9 +8,9 @@ import com.thoughtworks.deeplearning.boolean.utilities._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class If[Input0 <: Batch, OutputData0, OutputDelta0](
-    condition: Layer.Aux[Input0, Boolean#Batch],
-    `then`: Layer.Aux[Input0, Batch.Aux[OutputData0, OutputDelta0]],
-    `else`: Layer.Aux[Input0, Batch.Aux[OutputData0, OutputDelta0]])
+                                                                 condition: Layer.Aux[Input0, BpBoolean#Batch],
+                                                                 `then`: Layer.Aux[Input0, Batch.Aux[OutputData0, OutputDelta0]],
+                                                                 `else`: Layer.Aux[Input0, Batch.Aux[OutputData0, OutputDelta0]])
     extends Layer {
   override type Input = Input0
   override type Output = Batch.Aux[OutputData0, OutputDelta0]

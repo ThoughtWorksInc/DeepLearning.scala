@@ -15,16 +15,16 @@ import scala.language.existentials
   */
 class DifferentiableTypeSpec extends FreeSpec with Matchers {
 
-  "Double :: HNil" in {
-    "implicitly[(Double :: HNil) =:= Type[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
-    "implicitly[Array[Double :: HNil] =:= Array[Type[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]]" should compile
+  "BpDouble :**: BpHNil" in {
+    "implicitly[(BpDouble :**: BpHNil) =:= BackPropagationType[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
+    "implicitly[Array[BpDouble :**: BpHNil] =:= Array[BackPropagationType[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]]" should compile
   }
 
   "x" in {
-    val inputSymbol: Double :: HNil = implicitly
+    val inputSymbol: BpDouble :**: BpHNil = implicitly
 
-    implicitly[inputSymbol.Batch =:= (Double :: HNil)#Batch]
-    implicitly[Layer.Aux[(Double :: HNil)#Batch, (Boolean :: HNil)#Batch] =:= inputSymbol.To[Boolean :: HNil]]
+    implicitly[inputSymbol.Batch =:= (BpDouble :**: BpHNil)#Batch]
+    implicitly[Layer.Aux[(BpDouble :**: BpHNil)#Batch, (BpBoolean :**: BpHNil)#Batch] =:= inputSymbol.To[BpBoolean :**: BpHNil]]
 
   }
 }

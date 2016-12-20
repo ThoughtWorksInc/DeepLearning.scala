@@ -10,7 +10,7 @@ import org.scalatest.{FreeSpec, Matchers}
 final class OperatorSpec extends FreeSpec with Matchers {
 
   "double input" in {
-    def buildLayer(implicit input: Double) = {
+    def buildLayer(implicit input: BpDouble) = {
       val m0 = 0.0 - max(1.0, 2.0)
     }
 

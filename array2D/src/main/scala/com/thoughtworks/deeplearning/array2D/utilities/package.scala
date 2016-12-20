@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning.array2D
 import cats._
 import com.thoughtworks.deeplearning.Batch
 import com.thoughtworks.deeplearning.Batch._
-import com.thoughtworks.deeplearning.dsl.Type
+import com.thoughtworks.deeplearning.dsl.BackPropagationType
 import org.nd4j.linalg.api.ndarray.INDArray
 
 /**
@@ -11,6 +11,6 @@ import org.nd4j.linalg.api.ndarray.INDArray
   */
 package object utilities {
 
-  private[array2D] type Array2D = Type[Eval[INDArray], Eval[INDArray]]
+  private[array2D] type Array2D = BackPropagationType[Eval[INDArray], Eval[INDArray]]
 
 }

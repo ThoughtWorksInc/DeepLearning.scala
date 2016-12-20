@@ -10,15 +10,15 @@ import org.scalatest.{FreeSpec, Matchers}
   */
 final class ComposeSpec extends FreeSpec with Matchers {
   "compose" in {
-    def makeNetwork1(implicit x: Double) = {
+    def makeNetwork1(implicit x: BpDouble) = {
       x + x
     }
     val network1 = makeNetwork1
-    def makeNetwork2(implicit x: Double) = {
+    def makeNetwork2(implicit x: BpDouble) = {
       log(x)
     }
     val network2 = makeNetwork2
-    def makeNetwork3(implicit x: Double) = {
+    def makeNetwork3(implicit x: BpDouble) = {
       network1.compose(network2)
     }
     val network3 = makeNetwork3

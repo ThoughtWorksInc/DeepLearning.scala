@@ -12,9 +12,9 @@ import scala.language.implicitConversions
 package object boolean {
 
   /** @template */
-  type Boolean = utilities.Boolean
+  type BpBoolean = com.thoughtworks.deeplearning.boolean.utilities.BpBoolean
 
-  final class BooleanOps[Input <: Batch](boolean: Layer.Aux[Input, Boolean#Batch]) {
+  final class BooleanOps[Input <: Batch](boolean: Layer.Aux[Input, BpBoolean#Batch]) {
 
     def `if`[Then,
              Else,
@@ -40,7 +40,7 @@ package object boolean {
   }
 
   implicit def toBooleanOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, Boolean]): BooleanOps[Input] = {
+      implicit toLayer: ToLayer.OfType[From, Input, BpBoolean]): BooleanOps[Input] = {
     new BooleanOps[Input](toLayer(from))
   }
 

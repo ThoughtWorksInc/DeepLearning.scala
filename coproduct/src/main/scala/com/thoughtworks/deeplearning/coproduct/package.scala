@@ -2,8 +2,8 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.boolean.utilities._
 
-import com.thoughtworks.deeplearning.dsl.{ToLayer, Type}
-import com.thoughtworks.deeplearning.dsl.Type.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.dsl.{ToLayer, BackPropagationType}
+import com.thoughtworks.deeplearning.dsl.BackPropagationType.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.boolean.layers.If
 import com.thoughtworks.deeplearning.coproduct.layers._
 import shapeless.Lub
@@ -17,14 +17,18 @@ import scala.language.implicitConversions
 package object coproduct {
 
   /** @template */
-  type Coproduct = Type[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
+  type BpCoproduct = BackPropagationType[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
 
   /** @template */
-  type CNil = Type[shapeless.CNil, shapeless.CNil]
+  type BpCNil = BackPropagationType[shapeless.CNil, shapeless.CNil]
 
   /** @template */
-  type :+:[Head <: Type[_, _], Tail <: Coproduct] =
-    Type[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
+  type BpCCons[Head <: BackPropagationType[_, _], Tail <: BpCoproduct] =
+    BackPropagationType[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
+
+  /** @template */
+  type :++:[Head <: BackPropagationType[_, _], Tail <: BpCoproduct] =
+    BackPropagationType[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
   final class CConsOps[
       Input <: Batch,
@@ -67,7 +71,7 @@ package object coproduct {
                                          commonToLayer(lub.right(tailToLayer(caseTail(tail)))))
     }
 
-    def isInl: Layer.Aux[Input, Boolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+    def isInl: Layer.Aux[Input, BpBoolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 

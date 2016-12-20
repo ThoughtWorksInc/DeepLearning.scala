@@ -2,6 +2,7 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import org.scalatest.{FreeSpec, Matchers}
+import boolean._
 import double._
 import dsl._
 import hlist._
@@ -18,38 +19,38 @@ final class BatchSpec extends FreeSpec with Matchers {
 
    */
   "Batch#Batch" in {
-    "implicitly[Double#Batch <:< Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
-    "implicitly[Double#Batch =:= Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
-    "implicitly[Double#Batch <:< Type[_, _]#Batch]" should compile
-    "implicitly[Double#Batch =:= Type[_, _]#Batch]" shouldNot compile
-    "implicitly[Type[_, _]#Batch =:= Double#Batch]" shouldNot compile
-    "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Batch <:< HList#Batch]" should compile
-    "implicitly[(Double :: HNil)#Batch =:= Batch.Aux[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
-    "implicitly[(Double :: HNil)#Batch <:< HList#Batch]" should compile
-    "implicitly[HList#Batch <:< (Double :: HNil)#Batch]" shouldNot compile
-    "implicitly[(Any :: HNil)#Batch <:< HList#Batch]" should compile
-    "implicitly[(Any :: HList)#Batch <:< HList#Batch]" should compile
-    "implicitly[(Any :: HList)#Batch <:< (Any :: HList)#Batch]" should compile
-    "implicitly[(Any :: HList)#Batch =:= (Any :: HList)#Batch]" should compile
-    "implicitly[(Any :: HNil)#Batch =:= HList#Batch]" shouldNot compile
-    "implicitly[(Boolean :: Double :: HNil) <:< HList]" should compile
-    "implicitly[(Boolean :: Double :: HNil) <:< (Boolean :: HList)]" shouldNot compile
+    "implicitly[BpDouble#Batch <:< Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
+    "implicitly[BpDouble#Batch =:= Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]" should compile
+    "implicitly[BpDouble#Batch <:< BackPropagationType[_, _]#Batch]" should compile
+    "implicitly[BpDouble#Batch =:= BackPropagationType[_, _]#Batch]" shouldNot compile
+    "implicitly[BackPropagationType[_, _]#Batch =:= BpDouble#Batch]" shouldNot compile
+    "implicitly[(BpDouble :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
+    "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
+    "implicitly[(BpDouble :**: BpHNil)#Batch =:= Batch.Aux[shapeless.::[Eval[scala.Double], shapeless.HNil], shapeless.:+:[Eval[scala.Double], shapeless.CNil]]]" should compile
+    "implicitly[(BpDouble :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
+    "implicitly[BpHList#Batch <:< (BpDouble :**: BpHNil)#Batch]" shouldNot compile
+    "implicitly[(BpAny :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
+    "implicitly[(BpAny :**: BpHList)#Batch <:< BpHList#Batch]" should compile
+    "implicitly[(BpAny :**: BpHList)#Batch <:< (BpAny :**: BpHList)#Batch]" should compile
+    "implicitly[(BpAny :**: BpHList)#Batch =:= (BpAny :**: BpHList)#Batch]" should compile
+    "implicitly[(BpAny :**: BpHNil)#Batch =:= BpHList#Batch]" shouldNot compile
+    "implicitly[(BpBoolean :**: BpDouble :**: BpHNil) <:< BpHList]" should compile
+    "implicitly[(BpBoolean :**: BpDouble :**: BpHNil) <:< (BpBoolean :**: BpHList)]" shouldNot compile
   }
 
-  "(Any :: HList)#Batch" ignore {
+  "(BpAny :**: BpHList)#Batch" ignore {
     /*
       以下几个测试符合逻辑，但Scala编译器不认可
       没有很好的解决办法，只能尽量避免使用抽象类型吧
      */
 
-    "implicitly[(Double :: HNil)#Batch <:< (Double :: HList)#Batch]" should compile
-    "implicitly[(Any :: HNil)#Data <:< HList#Data]" should compile
-    "implicitly[shapeless.::[cats.Eval[Double],shapeless.HNil] <:< HList#Data]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Data <:< (Boolean :: HList)#Data]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Batch <:< (Boolean :: HList)#Batch]" should compile
-    "implicitly[(Double :: HNil)#Batch <:< (Any :: HNil)#Batch]" should compile
-    "implicitly[(Boolean :: Double :: HNil)#Batch <:< (Boolean :: Any :: HNil)#Batch]" should compile
+    "implicitly[(BpDouble :**: BpHNil)#Batch <:< (BpDouble :**: BpHList)#Batch]" should compile
+    "implicitly[(BpAny :**: BpHNil)#Data <:< BpHList#Data]" should compile
+    "implicitly[shapeless.::[cats.Eval[BpDouble],shapeless.HNil] <:< BpHList#Data]" should compile
+    "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Data <:< (BpBoolean :**: BpHList)#Data]" should compile
+    "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Batch <:< (BpBoolean :**: BpHList)#Batch]" should compile
+    "implicitly[(BpDouble :**: BpHNil)#Batch <:< (BpAny :**: BpHNil)#Batch]" should compile
+    "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Batch <:< (BpBoolean :**: BpAny :**: BpHNil)#Batch]" should compile
   }
 
 }

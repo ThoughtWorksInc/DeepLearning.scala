@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.dsl.{ToLayer, Type}
+import com.thoughtworks.deeplearning.dsl.{ToLayer, BackPropagationType}
 import com.thoughtworks.deeplearning.seq.layers.{Get, ToSeq}
 
 import scala.language.implicitConversions
@@ -12,12 +12,15 @@ import scala.language.implicitConversions
   */
 package object seq {
 
-  type Seq[A <: Type[_, _]] = Type[scala.Seq[Type.DataOf[A]], (Int, Type.DeltaOf[A])]
+  type BpSeq[A <: BackPropagationType[_, _]] =
+    BackPropagationType[scala.Seq[BackPropagationType.DataOf[A]], (Int, BackPropagationType.DeltaOf[A])]
 
-  def Seq[From, Input <: Batch](layers: From*)(
+  object BpSeq {
+    def apply[From, Input <: Batch](layers: From*)(
       implicit elementToLayer: ToLayer[From, Input]
-  ): Layer.Aux[Input, Batch.Aux[scala.Seq[elementToLayer.OutputData], (Int, elementToLayer.OutputDelta)]] = {
-    ToSeq[Input, elementToLayer.OutputData, elementToLayer.OutputDelta](layers.map(elementToLayer(_)))
+    ): Layer.Aux[Input, Batch.Aux[scala.Seq[elementToLayer.OutputData], (Int, elementToLayer.OutputDelta)]] = {
+      ToSeq[Input, elementToLayer.OutputData, elementToLayer.OutputDelta](layers.map(elementToLayer(_)))
+    }
   }
 
   final class SeqLayerOps[Input <: Batch, ElementData, ElementDelta](

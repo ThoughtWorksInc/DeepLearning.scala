@@ -18,11 +18,11 @@ final class SeqSpec extends FreeSpec with Matchers {
     override protected def currentLearningRate() = 0.03
   }
 
-  def unsafe(implicit s: Seq[Any]) = {
-    s(0).asInstanceOf[s.To[Double]] - 1.0.toWeight
+  def unsafe(implicit s: BpSeq[BpAny]) = {
+    s(0).asInstanceOf[s.To[BpDouble]] - 1.0.toWeight
   }
 
-  "erased Seq" in {
+  "erased BpSeq" in {
     val unsafeNetwork = unsafe
     unsafeNetwork.train(scala.Seq(Eval.now(2.4)))
   }

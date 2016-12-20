@@ -14,13 +14,13 @@ import scala.language.implicitConversions
 package object dsl {
 
   /** @template */
-  type Nothing = Type[scala.Nothing, scala.Any]
+  type BpNothing = BackPropagationType[scala.Nothing, scala.Any]
 
   /** @template */
-  type Any = Type[scala.Any, _]
+  type BpAny = BackPropagationType[scala.Any, _]
 
   def `throw`[InputData, InputDelta](throwable: => Throwable)(
-      implicit inputType: Type[InputData, InputDelta]): Layer.Aux[Batch.Aux[InputData, InputDelta], Nothing#Batch] = {
+      implicit inputType: BackPropagationType[InputData, InputDelta]): Layer.Aux[Batch.Aux[InputData, InputDelta], BpNothing#Batch] = {
     Throw(throwable _)
   }
 

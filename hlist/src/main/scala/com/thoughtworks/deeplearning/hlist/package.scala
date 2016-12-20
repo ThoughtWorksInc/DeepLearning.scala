@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.dsl.{ToLayer, Type}
-import com.thoughtworks.deeplearning.dsl.Type.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.dsl.{ToLayer, BackPropagationType}
+import com.thoughtworks.deeplearning.dsl.BackPropagationType.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.hlist.layers._
 
 import scala.language.implicitConversions
@@ -13,18 +13,22 @@ import scala.language.existentials
 package object hlist {
 
   /** @template */
-  type HList = Type[_ <: shapeless.HList, _ <: shapeless.Coproduct]
+  type BpHList = BackPropagationType[_ <: shapeless.HList, _ <: shapeless.Coproduct]
 
   /** @template */
-  type HNil = Type[shapeless.HNil, shapeless.CNil]
+  type BpHNil = BackPropagationType[shapeless.HNil, shapeless.CNil]
 
   /** @template */
-  type ::[Head <: Type[_, _], Tail <: HList] =
-    Type[shapeless.::[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
+  type BpHCons[Head <: BackPropagationType[_, _], Tail <: BpHList] =
+    BackPropagationType[shapeless.::[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  val HNil: layers.HNil.type = layers.HNil
+  /** @template */
+  type :**:[Head <: BackPropagationType[_, _], Tail <: BpHList] =
+    BackPropagationType[shapeless.::[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  implicit def hnilToLayer[InputData, InputDelta](implicit inputType: Type[InputData, InputDelta])
+  val BpHNil: layers.HNil.type = layers.HNil
+
+  implicit def hnilToLayer[InputData, InputDelta](implicit inputType: BackPropagationType[InputData, InputDelta])
     : ToLayer.Aux[layers.HNil.type, Batch.Aux[InputData, InputDelta], shapeless.HNil, shapeless.CNil] =
     new ToLayer[layers.HNil.type, Batch.Aux[InputData, InputDelta]] {
       override type OutputData = shapeless.HNil
@@ -37,6 +41,11 @@ package object hlist {
       tail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]]) {
 
     def ::[Head, HeadData, HeadDelta](head: Head)(implicit headToLayer: ToLayer.Aux[Head, Input, HeadData, HeadDelta])
+    : Layer.Aux[Input, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
+      HCons[Input, HeadData, HeadDelta, TailData, TailDelta](headToLayer(head), tail)
+    }
+
+    def :**:[Head, HeadData, HeadDelta](head: Head)(implicit headToLayer: ToLayer.Aux[Head, Input, HeadData, HeadDelta])
       : Layer.Aux[Input, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]] = {
       HCons[Input, HeadData, HeadDelta, TailData, TailDelta](headToLayer(head), tail)
     }
