@@ -1,17 +1,19 @@
 package com.thoughtworks.deeplearning
 package hlist.layers
 
+import shapeless._
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
 TailDelta <: shapeless.Coproduct](
-    operand: Layer.Aux[Input0, Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+    operand: Layer.Aux[Input0, Batch.Aux[::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
 ) extends Layer {
   override type Input = Input0
 
   final class Output private[Head] (
-      upstream: Batch.Aux[shapeless.::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+      upstream: Batch.Aux[::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
       extends Batch
       with com.thoughtworks.deeplearning.utilities.CloseableOnce {
     override def backward(delta: Delta): Unit = {

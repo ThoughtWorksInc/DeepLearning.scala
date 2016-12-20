@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning.utilities
 
-import scala.annotation.elidable
+import annotation.elidable
 
 private[deeplearning] trait CloseableOnce extends AutoCloseable {
 

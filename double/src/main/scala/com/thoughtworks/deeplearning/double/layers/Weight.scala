@@ -9,7 +9,7 @@ import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Weight(var rawValue: scala.Double)(implicit optimizer: Optimizer)
+final case class Weight(var rawValue: Double)(implicit optimizer: Optimizer)
     extends Layer
     with DoubleMonoidBatch {
   override type Input = Batch

@@ -8,5 +8,5 @@ import com.thoughtworks.deeplearning.dsl._
   */
 package object utilities {
 
-  type BpBoolean = BackPropagationType[Eval[scala.Boolean], Eval[scala.Boolean]]
+  type BpBoolean = BackPropagationType[Eval[Boolean], Eval[Boolean]]
 }

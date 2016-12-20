@@ -13,7 +13,7 @@ import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Negative[Input0 <: Batch](
-    operand: Layer.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+    operand: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]])
     extends BufferedLayer.Unary {
 
   type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -26,7 +26,7 @@ final case class Negative[Input0 <: Batch](
 
     val value = upstream.value.map(-_)
 
-    override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
+    override protected def rawBackward(delta: Eval[Double]): Unit = {
       upstream.backward(delta.map(-_))
     }
 

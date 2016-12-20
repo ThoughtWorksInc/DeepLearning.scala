@@ -7,7 +7,7 @@ import com.thoughtworks.deeplearning.boolean.utilities.BooleanMonoidBatch
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Weight[Input0 <: Batch](var rawValue: scala.Boolean) extends Layer with BooleanMonoidBatch {
+final case class Weight[Input0 <: Batch](var rawValue: Boolean) extends Layer with BooleanMonoidBatch {
   override type Input = Input0
   override type Output = Weight[Input0]
 

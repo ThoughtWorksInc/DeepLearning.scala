@@ -7,7 +7,7 @@ import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.double.optimizers.LearningRate
 import org.scalatest._
 
-import scala.language.existentials
+import language.existentials
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -24,6 +24,6 @@ final class SeqSpec extends FreeSpec with Matchers {
 
   "erased BpSeq" in {
     val unsafeNetwork = unsafe
-    unsafeNetwork.train(scala.Seq(Eval.now(2.4)))
+    unsafeNetwork.train(Seq(Eval.now(2.4)))
   }
 }

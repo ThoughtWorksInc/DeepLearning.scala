@@ -10,9 +10,9 @@ import com.thoughtworks.deeplearning.Batch
   */
 private[deeplearning] trait BooleanMonoidBatch extends Batch {
 
-  override type Data = Eval[scala.Boolean]
+  override type Data = Eval[Boolean]
 
-  override type Delta = Eval[scala.Boolean]
+  override type Delta = Eval[Boolean]
 
   protected final def monoid = new Monoid[Delta] {
     override def empty = Eval.now(false)

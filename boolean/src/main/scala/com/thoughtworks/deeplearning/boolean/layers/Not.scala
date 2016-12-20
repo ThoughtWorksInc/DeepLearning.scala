@@ -23,7 +23,7 @@ final case class Not[Input0 <: Batch](operand: Layer.Aux[Input0, BpBoolean#Batch
 
       override val value = upstream.value.map(!_)
 
-      override protected def rawBackward(delta: Eval[scala.Boolean]): Unit = {
+      override protected def rawBackward(delta: Eval[Boolean]): Unit = {
         upstream.backward(delta.map(!_))
       }
 

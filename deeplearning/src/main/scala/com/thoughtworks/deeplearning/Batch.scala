@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import scala.annotation.elidable
+import annotation.elidable
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

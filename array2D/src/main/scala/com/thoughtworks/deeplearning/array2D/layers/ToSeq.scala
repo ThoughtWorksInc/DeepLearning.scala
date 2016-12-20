@@ -13,8 +13,8 @@ import org.nd4j.linalg.ops.transforms.Transforms
 
 object ToSeq {
   private[ToSeq] trait Seq2DBatch extends Batch {
-    override type Data = scala.Seq[scala.Seq[Eval[scala.Double]]]
-    override type Delta = (scala.Int, (scala.Int, Eval[scala.Double]))
+    override type Data = Seq[Seq[Eval[Double]]]
+    override type Delta = (Int, (Int, Eval[Double]))
   }
 }
 

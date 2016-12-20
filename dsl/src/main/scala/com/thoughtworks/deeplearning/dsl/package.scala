@@ -6,7 +6,7 @@ import com.thoughtworks.deeplearning.Batch._
 import com.thoughtworks.deeplearning.dsl.ToLayer.{LayerPoly1, LayerPoly2}
 import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal, Throw}
 
-import scala.language.implicitConversions
+import language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -14,10 +14,10 @@ import scala.language.implicitConversions
 package object dsl {
 
   /** @template */
-  type BpNothing = BackPropagationType[scala.Nothing, scala.Any]
+  type BpNothing = BackPropagationType[Nothing, Any]
 
   /** @template */
-  type BpAny = BackPropagationType[scala.Any, _]
+  type BpAny = BackPropagationType[Any, _]
 
   def `throw`[InputData, InputDelta](throwable: => Throwable)(
       implicit inputType: BackPropagationType[InputData, InputDelta]): Layer.Aux[Batch.Aux[InputData, InputDelta], BpNothing#Batch] = {

@@ -21,7 +21,7 @@ TailDelta <: shapeless.Coproduct](
       case shapeless.Inr(_) => Eval.now(false)
     }
 
-    override def backward(delta: Eval[scala.Boolean]): Unit = {}
+    override def backward(delta: Eval[Boolean]): Unit = {}
 
     override def close(): Unit = {
       super.close()

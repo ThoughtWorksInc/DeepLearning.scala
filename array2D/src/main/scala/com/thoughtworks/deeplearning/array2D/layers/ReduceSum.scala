@@ -26,7 +26,7 @@ final case class ReduceSum[Input0 <: Batch](operand: Layer.Aux[Input0, Array2D#B
 
       val value = upstream.value.map(_.sumT).memoize
 
-      override protected def rawBackward(outputDelta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[Double]): Unit = {
         upstream.backward(
           outputDelta
             .map2(upstream.value) { (outputDeltaValue, aValue) =>

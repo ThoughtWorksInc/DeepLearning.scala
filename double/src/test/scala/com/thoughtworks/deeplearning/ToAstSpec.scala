@@ -11,9 +11,9 @@ import org.scalatest.{FreeSpec, Matchers}
 final class ToLayerSpec extends FreeSpec with Matchers {
   "ToLayer" in {
     implicitly[
-      ToLayer.OfType[Int, BpDouble#Batch, BpDouble] =:= ToLayer.Aux[Int, BpDouble#Batch, Eval[scala.Double], Eval[scala.Double]]]
+      ToLayer.OfType[Int, BpDouble#Batch, BpDouble] =:= ToLayer.Aux[Int, BpDouble#Batch, Eval[Double], Eval[Double]]]
 
     implicitly[
-      ToLayer.Aux[Int, BpDouble#Batch, Eval[scala.Double], Eval[scala.Double]] =:= ToLayer.OfType[Int, BpDouble#Batch, BpDouble]]
+      ToLayer.Aux[Int, BpDouble#Batch, Eval[Double], Eval[Double]] =:= ToLayer.OfType[Int, BpDouble#Batch, BpDouble]]
   }
 }

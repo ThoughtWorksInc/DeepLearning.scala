@@ -7,7 +7,7 @@ import com.thoughtworks.deeplearning.boolean.layers.If
 import com.thoughtworks.deeplearning.double.layers._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer
 
-import scala.language.implicitConversions
+import language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -18,11 +18,11 @@ package object double {
   type BpDouble = com.thoughtworks.deeplearning.double.utilities.BpDouble
 
   implicit def liftNativeDoubleToLayer[InputData, InputDelta](implicit inputType: BackPropagationType[InputData, InputDelta])
-    : ToLayer.Aux[scala.Double, Batch.Aux[InputData, InputDelta], Eval[scala.Double], Eval[scala.Double]] =
-    new ToLayer[scala.Double, Batch.Aux[InputData, InputDelta]] {
-      override type OutputData = Eval[scala.Double]
-      override type OutputDelta = Eval[scala.Double]
-      override def apply(nativeDouble: scala.Double) = {
+    : ToLayer.Aux[Double, Batch.Aux[InputData, InputDelta], Eval[Double], Eval[Double]] =
+    new ToLayer[Double, Batch.Aux[InputData, InputDelta]] {
+      override type OutputData = Eval[Double]
+      override type OutputDelta = Eval[Double]
+      override def apply(nativeDouble: Double) = {
         Literal(Eval.now(nativeDouble))
       }
     }
@@ -83,7 +83,7 @@ package object double {
     }
   }
 
-  implicit final class NativeDoubleOps(nativeDouble: scala.Double) {
+  implicit final class NativeDoubleOps(nativeDouble: Double) {
     def toWeight[InputData, InputDelta](
                                          implicit inputType: BackPropagationType[InputData, InputDelta],
                                          optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], BpDouble#Batch] = {

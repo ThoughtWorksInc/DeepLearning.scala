@@ -4,7 +4,7 @@ import com.thoughtworks.deeplearning.dsl.ToLayer
 import com.thoughtworks.deeplearning.boolean.layers.If
 import shapeless.Lub
 
-import scala.language.implicitConversions
+import language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

@@ -8,11 +8,11 @@ import com.thoughtworks.deeplearning._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Get[Input0 <: Batch, ElementData, ElementDelta](
-    operand0: Layer.Aux[Input0, Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]],
+    operand0: Layer.Aux[Input0, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]],
     i: Int
 ) extends Layer {
 
-  final class Output private[Get] (upstream: Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]) extends Batch {
+  final class Output private[Get] (upstream: Batch.Aux[Seq[ElementData], (Int, ElementDelta)]) extends Batch {
 
     type Delta = ElementDelta
     type Data = ElementData

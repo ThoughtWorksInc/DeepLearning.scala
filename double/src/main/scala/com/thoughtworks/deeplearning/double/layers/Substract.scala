@@ -10,8 +10,8 @@ import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Substract[Input0 <: Batch](
-    operand1: Layer.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]],
-    operand2: Layer.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]
+    operand1: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]],
+    operand2: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]
 ) extends BufferedLayer.Binary {
 
   type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -25,7 +25,7 @@ final case class Substract[Input0 <: Batch](
 
       val value = upstream1.value.map2(upstream2.value)(_ - _)
 
-      override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(delta: Eval[Double]): Unit = {
         upstream1.backward(delta)
         upstream2.backward(delta.map(-_))
       }

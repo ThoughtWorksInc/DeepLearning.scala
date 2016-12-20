@@ -7,7 +7,7 @@ import com.thoughtworks.deeplearning.{Batch, Layer}
   */
 final case class Literal[Data0](value0: Data0) extends Layer with Batch {
   override type Data = Data0
-  override type Delta = scala.Any
+  override type Delta = Any
   override type Input = Batch
   override type Output = Batch.Aux[Data, Delta]
 

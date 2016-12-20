@@ -9,7 +9,7 @@ import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
+final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]])
     extends BufferedLayer.Unary {
 
   type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -23,7 +23,7 @@ final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[
 
       val value = upstream.value.map(math.exp).memoize
 
-      override protected def rawBackward(outputDelta: Eval[scala.Double]): Unit = {
+      override protected def rawBackward(outputDelta: Eval[Double]): Unit = {
         upstream.backward(value.map2(outputDelta)(_ * _).memoize)
       }
 

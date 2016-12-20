@@ -7,7 +7,7 @@ import com.thoughtworks.deeplearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deeplearning.double.utilities.BpDouble
 import org.nd4j.linalg.api.ndarray.INDArray
 
-import scala.language.implicitConversions
+import language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -134,7 +134,7 @@ package object array2D {
 
     def toSeq: Layer.Aux[
       Input,
-      Batch.Aux[scala.Seq[scala.Seq[Eval[scala.Double]]], (scala.Int, (scala.Int, Eval[scala.Double]))]] = {
+      Batch.Aux[Seq[Seq[Eval[Double]]], (Int, (Int, Eval[Double]))]] = {
       ToSeq(differentiable)
     }
 
@@ -146,9 +146,9 @@ package object array2D {
     new Array2DOps(toLayer(from))
   }
 
-  // TODO: Support scala.Array for better performance.
+  // TODO: Support Array for better performance.
   final class ToArray2DOps[Input <: Batch](
-      layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]]]]) {
+      layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Eval[Double], Eval[Double]]]]]) {
     def toArray2D: Layer.Aux[Input, Array2D#Batch] = ToArray2D(layerVector)
   }
 

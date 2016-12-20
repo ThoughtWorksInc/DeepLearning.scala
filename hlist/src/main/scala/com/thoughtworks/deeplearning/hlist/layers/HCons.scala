@@ -1,6 +1,8 @@
 package com.thoughtworks.deeplearning
 package hlist.layers
 
+import shapeless._
+
 final case class HCons[Input0 <: Batch,
                        HeadData,
                        HeadDelta,
@@ -34,8 +36,8 @@ final case class HCons[Input0 <: Batch,
       tailBatch.close()
     }
 
-    override type Data = shapeless.::[HeadData, TailData]
-    override type Delta = shapeless.:+:[HeadDelta, TailDelta]
+    override type Data = HeadData :: TailData
+    override type Delta = HeadDelta :+: TailDelta
 
     override def addReference() = new Output(headBatch.addReference(), tailBatch.addReference())
   }

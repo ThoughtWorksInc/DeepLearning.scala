@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats._
 import cats.implicits._
 
-import scala.annotation.elidable
+import annotation.elidable
 
 // TODO: Review if the reference count works correctly
 /**

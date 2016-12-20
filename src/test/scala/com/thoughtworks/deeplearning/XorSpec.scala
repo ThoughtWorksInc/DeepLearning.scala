@@ -22,10 +22,10 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
 
-import scala.language.implicitConversions
-import scala.language.existentials
+import language.implicitConversions
+import language.existentials
 import Predef.{any2stringadd => _, _}
-import scala.util.Random
+import util.Random
 import com.thoughtworks.{deeplearning => dl}
 
 /**
@@ -195,8 +195,8 @@ final class XorSpec extends FreeSpec with Matchers {
     val field0 = Random.nextBoolean()
     val field1 = Random.nextBoolean()
     val field2 = field0 ^ field1
-    val scala.Seq(dropout0, dropout1, dropout2) = scala.Seq.fill(3)(false).updated(Random.nextInt(3), true)
-    def input(isDropout: scala.Boolean, value: scala.Boolean) = {
+    val Seq(dropout0, dropout1, dropout2) = Seq.fill(3)(false).updated(Random.nextInt(3), true)
+    def input(isDropout: Boolean, value: Boolean) = {
       if (isDropout) {
         Inl(HNil)
       } else {
@@ -207,7 +207,7 @@ final class XorSpec extends FreeSpec with Matchers {
         })))
       }
     }
-    def expectedLabel(isDropout: scala.Boolean, value: scala.Boolean) = {
+    def expectedLabel(isDropout: Boolean, value: Boolean) = {
       if (isDropout) {
         Inr(Inl(Eval.now(if (value) {
           1.0

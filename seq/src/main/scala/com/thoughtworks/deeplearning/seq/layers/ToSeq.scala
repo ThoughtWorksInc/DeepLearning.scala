@@ -6,19 +6,19 @@ import com.thoughtworks.deeplearning._
 
 import com.thoughtworks.deeplearning.utilities.CloseableOnce
 
-import scala.language.higherKinds
+import language.higherKinds
 
 final case class ToSeq[Input0 <: Batch, ElementData, ElementDelta](
-    operands: scala.Seq[Layer.Aux[Input0, Batch.Aux[ElementData, ElementDelta]]])
+    operands: Seq[Layer.Aux[Input0, Batch.Aux[ElementData, ElementDelta]]])
     extends Layer {
 
   type Input = Input0
 
-  final class Output private[ToSeq] (upstreams: scala.Seq[Batch.Aux[ElementData, ElementDelta]])
+  final class Output private[ToSeq] (upstreams: Seq[Batch.Aux[ElementData, ElementDelta]])
       extends Batch
       with CloseableOnce {
 
-    override type Data = scala.Seq[ElementData]
+    override type Data = Seq[ElementData]
     override type Delta = (Int, ElementDelta)
 
     override def backward(pair: (Int, ElementDelta)): Unit = {

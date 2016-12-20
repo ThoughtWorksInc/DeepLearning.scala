@@ -9,7 +9,7 @@ import org.nd4s.Implicits._
 import com.thoughtworks.deeplearning.array2D.utilities._
 import com.thoughtworks.deeplearning.utilities.CloseableOnce
 
-import scala.language.higherKinds
+import language.higherKinds
 
 object ToArray2D {
 

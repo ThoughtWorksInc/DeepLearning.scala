@@ -8,7 +8,7 @@ import org.nd4s.Implicits._
   */
 trait LearningRate extends Optimizer {
 
-  protected def currentLearningRate(): scala.Double
+  protected def currentLearningRate(): Double
 
   override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
     oldValue - delta * currentLearningRate()

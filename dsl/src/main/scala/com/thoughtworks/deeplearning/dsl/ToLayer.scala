@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning.dsl
 import com.thoughtworks.deeplearning.{Batch, Layer}
 import shapeless._
 
-import scala.language.existentials
+import language.existentials
 
 // TODO: Move to dsl library
 private[deeplearning] sealed trait ToLayerLowPriorityImplicits {

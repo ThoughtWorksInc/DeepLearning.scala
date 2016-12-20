@@ -5,7 +5,7 @@ package com.thoughtworks.deeplearning.double.optimizers
   */
 trait LearningRate extends Optimizer {
 
-  protected def currentLearningRate(): scala.Double
+  protected def currentLearningRate(): Double
 
   override def updateDouble(oldValue: Double, delta: Double): Double = {
     oldValue - delta * currentLearningRate()

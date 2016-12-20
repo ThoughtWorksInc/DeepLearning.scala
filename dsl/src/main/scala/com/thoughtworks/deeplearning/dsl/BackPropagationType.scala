@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning.dsl
 import com.thoughtworks.deeplearning.dsl.layers.Identity
 import com.thoughtworks.deeplearning.{Batch, Layer}
 
-import scala.language.existentials
+import language.existentials
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

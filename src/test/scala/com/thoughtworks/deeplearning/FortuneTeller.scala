@@ -16,10 +16,10 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
 
-import scala.language.implicitConversions
-import scala.language.existentials
+import language.implicitConversions
+import language.existentials
 import Predef.{any2stringadd => _, _}
-import scala.util.Random
+import util.Random
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

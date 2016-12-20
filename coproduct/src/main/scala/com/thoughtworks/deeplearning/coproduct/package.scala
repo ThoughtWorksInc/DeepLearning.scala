@@ -8,8 +8,8 @@ import com.thoughtworks.deeplearning.boolean.layers.If
 import com.thoughtworks.deeplearning.coproduct.layers._
 import shapeless.Lub
 
-import scala.language.existentials
-import scala.language.implicitConversions
+import language.existentials
+import language.implicitConversions
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

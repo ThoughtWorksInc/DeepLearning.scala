@@ -1,8 +1,8 @@
 package com.thoughtworks.deeplearning
 
-import scala.language.existentials
-import scala.language.implicitConversions
-import scala.language.higherKinds
+import language.existentials
+import language.implicitConversions
+import language.higherKinds
 
 object Layer {
 

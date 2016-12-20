@@ -7,7 +7,7 @@ import org.nd4s.Implicits._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 trait L2Regularization extends LearningRate {
-  protected def l2Regularization: scala.Double
+  protected def l2Regularization: Double
 
   override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
     super.updateNDArray(oldValue, delta) - oldValue * l2Regularization * currentLearningRate()

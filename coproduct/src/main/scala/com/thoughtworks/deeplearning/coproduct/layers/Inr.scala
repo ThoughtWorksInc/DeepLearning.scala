@@ -16,9 +16,9 @@ final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta
     def value = shapeless.Inr(upstream.value: TailData)
 
     type Data = shapeless.Inr[Nothing, TailData]
-    type Delta = shapeless.:+:[scala.Any, TailDelta]
+    type Delta = shapeless.:+:[Any, TailDelta]
 
-    override def backward(delta: shapeless.:+:[scala.Any, TailDelta]): Unit = {
+    override def backward(delta: shapeless.:+:[Any, TailDelta]): Unit = {
       delta match {
         case shapeless.Inr(tailDelta) => upstream.backward(tailDelta)
         case shapeless.Inl(_) =>

@@ -10,9 +10,9 @@ import com.thoughtworks.deeplearning.Batch
   */
 private[deeplearning] trait DoubleMonoidBatch extends Batch {
 
-  override type Data = Eval[scala.Double]
+  override type Data = Eval[Double]
 
-  override type Delta = Eval[scala.Double]
+  override type Delta = Eval[Double]
 
   protected final def monoid = implicitly[Monoid[Delta]]
 

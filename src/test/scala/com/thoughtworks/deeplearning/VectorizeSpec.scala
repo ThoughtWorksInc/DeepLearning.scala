@@ -4,12 +4,12 @@ import cats.Eval
 import com.thoughtworks.deeplearning.dsl._
 import org.scalatest._
 
-import scala.language.implicitConversions
-import scala.language.existentials
+import language.implicitConversions
+import language.existentials
 import Predef.{any2stringadd => _, _}
 import shapeless.{::, HNil, _}
 
-import scala.util.Random
+import util.Random
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -75,7 +75,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 //      println()
     }
 
-    def predictField2(data: InputTypePair#Data): scala.Double = {
+    def predictField2(data: InputTypePair#Data): Double = {
       val (result0NullProbability :: result0Value :: HNil) :: (result1Case0Probability :: result1Case1Probability :: HNil) :: result2 :: (result3Case0Probability :: result3Case1Probability :: result3Case2Probability :: HNil) :: HNil =
         predictNetwork.predict(data)
       result2.value
@@ -86,7 +86,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       predictAndPrint(predictionData0)
 
       trainNetwork.train(makeMinibatch)
-      def assertClear(layer: scala.Any): Unit = {
+      def assertClear(layer: Any): Unit = {
         layer match {
           case cached: BufferedLayer =>
             cached.cache shouldBe empty

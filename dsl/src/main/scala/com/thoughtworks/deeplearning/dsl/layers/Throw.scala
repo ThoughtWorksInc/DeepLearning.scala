@@ -7,9 +7,9 @@ import com.thoughtworks.deeplearning.{Batch, Layer}
   */
 final case class Throw(throwable: () => Throwable) extends Layer with Batch {
   override type Input = Batch
-  override type Output = Batch.Aux[scala.Nothing, scala.Any]
-  override type Data = scala.Nothing
-  override type Delta = scala.Any
+  override type Output = Batch.Aux[Nothing, Any]
+  override type Data = Nothing
+  override type Delta = Any
 
   override def forward(input: Input) = this
 
