@@ -1,12 +1,12 @@
 package com.thoughtworks.deeplearning
 import cats.Eval
 import com.thoughtworks.deeplearning.dsl._
-import com.thoughtworks.deeplearning.Poly.PolyMethods._
-import com.thoughtworks.deeplearning.Poly.PolyFunctions._
+import com.thoughtworks.deeplearning.Poly.MathMethods._
+import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.dsl.layers.Literal
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Poly.PolyMethods
+import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.double.layers._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer
 
@@ -45,14 +45,14 @@ package object double {
 
   implicit def `Double-Double`[Input <: Batch]
     : -.Case.Aux[Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch]] = {
-    PolyMethods.-.at { (leftLayer, rightLayer) =>
+    MathMethods.-.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, Negative(rightLayer))
     }
   }
 
   implicit def `Double+Double`[Input <: Batch]
     : +.Case.Aux[Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch]] = {
-    PolyMethods.+.at { (leftLayer, rightLayer) =>
+    MathMethods.+.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, rightLayer)
     }
   }

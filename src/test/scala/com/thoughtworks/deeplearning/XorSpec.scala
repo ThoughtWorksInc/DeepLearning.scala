@@ -11,8 +11,8 @@ import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
 import com.thoughtworks.deeplearning.hlist._
 
-import com.thoughtworks.deeplearning.Poly.LayerPolyOps
-import com.thoughtworks.deeplearning.Poly.PolyFunctions._
+import com.thoughtworks.deeplearning.Poly.MathOps
+import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.seq._
 import com.thoughtworks.deeplearning.double._

@@ -3,8 +3,8 @@ package com.thoughtworks.deeplearning
 import cats._
 import com.thoughtworks.deeplearning.double._
 import com.thoughtworks.deeplearning.dsl._
-import com.thoughtworks.deeplearning.Poly.LayerPolyOps
-import com.thoughtworks.deeplearning.Poly.PolyFunctions._
+import com.thoughtworks.deeplearning.Poly.MathOps
+import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import org.scalatest.{FreeSpec, Matchers}
 
 /**

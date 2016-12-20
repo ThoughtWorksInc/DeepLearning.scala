@@ -14,8 +14,8 @@ import com.thoughtworks.deeplearning.coproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
-import com.thoughtworks.deeplearning.Poly.LayerPolyOps
-import com.thoughtworks.deeplearning.Poly.PolyFunctions._
+import com.thoughtworks.deeplearning.Poly.MathOps
+import com.thoughtworks.deeplearning.Poly.MathFunctions._
 
 import language.implicitConversions
 import language.existentials

@@ -7,8 +7,8 @@ import com.thoughtworks.deeplearning.array2D.layers._
 import com.thoughtworks.deeplearning.array2D.optimizers.Optimizer
 import com.thoughtworks.deeplearning.double.utilities.BpDouble
 import org.nd4j.linalg.api.ndarray.INDArray
-import com.thoughtworks.deeplearning.Poly.PolyFunctions._
-import com.thoughtworks.deeplearning.Poly.PolyMethods
+import com.thoughtworks.deeplearning.Poly.MathFunctions._
+import com.thoughtworks.deeplearning.Poly.MathMethods
 
 import language.implicitConversions
 
@@ -24,98 +24,98 @@ package object array2D {
     : max.Case.Aux[Layer.Aux[Input, Array2D#Batch], Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, Array2D#Batch]] =
     max.at(MaxDouble(_, _))
 
-  implicit def `Array2D/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D/Array2D`[Input <: Batch]: MathMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods./.at { (leftLayer, rightLayer) =>
+    MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyArray2D(leftLayer, Reciprocal(rightLayer))
     }
   }
 
-  implicit def `Double/Array2D`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `Double/Array2D`[Input <: Batch]: MathMethods./.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods./.at { (leftLayer, rightLayer) =>
+    MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(Reciprocal(rightLayer), leftLayer)
     }
   }
 
-  implicit def `Array2D/Double`[Input <: Batch]: PolyMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D/Double`[Input <: Batch]: MathMethods./.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods./.at { (leftLayer, rightLayer) =>
+    MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, double.layers.Reciprocal(rightLayer))
     }
   }
 
-  implicit def `Array2D*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D*Array2D`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.*.at { (leftLayer, rightLayer) =>
+    MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyArray2D(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Array2D*Double`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D*Double`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.*.at { (leftLayer, rightLayer) =>
+    MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Double*Array2D`[Input <: Batch]: PolyMethods.*.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `Double*Array2D`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.*.at { (leftLayer, rightLayer) =>
+    MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(rightLayer, leftLayer)
     }
   }
 
-  implicit def `Array2D-Array2D`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D-Array2D`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.-.at { (leftLayer, rightLayer) =>
+    MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusArray2D(leftLayer, Negative(rightLayer))
     }
   }
 
-  implicit def `Double-Array2D`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `Double-Array2D`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.-.at { (leftLayer, rightLayer) =>
+    MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(Negative(rightLayer), leftLayer)
     }
   }
 
-  implicit def `Array2D-Double`[Input <: Batch]: PolyMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D-Double`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.-.at { (leftLayer, rightLayer) =>
+    MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, double.layers.Negative(rightLayer))
     }
   }
 
-  implicit def `Array2D+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D+Array2D`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch],
                                                                          Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.+.at { (leftLayer, rightLayer) =>
+    MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusArray2D(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Array2D+Double`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
+  implicit def `Array2D+Double`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.+.at { (leftLayer, rightLayer) =>
+    MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Double+Array2D`[Input <: Batch]: PolyMethods.+.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `Double+Array2D`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch],
                                                                         Layer.Aux[Input, Array2D#Batch]] = {
-    PolyMethods.+.at { (leftLayer, rightLayer) =>
+    MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(rightLayer, leftLayer)
     }
   }

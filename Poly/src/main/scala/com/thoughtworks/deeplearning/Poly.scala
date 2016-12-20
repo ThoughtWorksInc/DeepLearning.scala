@@ -35,36 +35,37 @@ object Poly {
     }
   }
 
-  object PolyMethods {
+  object MathMethods {
     object - extends LayerPoly2
     object + extends LayerPoly2
     object * extends LayerPoly2
     object / extends LayerPoly2
   }
 
-  implicit final class LayerPolyOps[Left](left: Left) {
+  implicit final class MathOps[Left](left: Left) {
 
-    def -[Right](right: Right)(implicit methodCase: PolyMethods.-.Case[Left, Right]): methodCase.Result =
-      PolyMethods.-(left, right)
+    def -[Right](right: Right)(implicit methodCase: MathMethods.-.Case[Left, Right]): methodCase.Result =
+      MathMethods.-(left, right)
 
-    def +[Right](right: Right)(implicit methodCase: PolyMethods.+.Case[Left, Right]): methodCase.Result =
-      PolyMethods.+(left, right)
+    def +[Right](right: Right)(implicit methodCase: MathMethods.+.Case[Left, Right]): methodCase.Result =
+      MathMethods.+(left, right)
 
-    def *[Right](right: Right)(implicit methodCase: PolyMethods.*.Case[Left, Right]): methodCase.Result =
-      PolyMethods.*(left, right)
+    def *[Right](right: Right)(implicit methodCase: MathMethods.*.Case[Left, Right]): methodCase.Result =
+      MathMethods.*(left, right)
 
-    def /[Right](right: Right)(implicit methodCase: PolyMethods./.Case[Left, Right]): methodCase.Result =
-      PolyMethods./(left, right)
+    def /[Right](right: Right)(implicit methodCase: MathMethods./.Case[Left, Right]): methodCase.Result =
+      MathMethods./(left, right)
 
   }
 
-  object PolyFunctions {
+  object MathFunctions {
 
     object log extends LayerPoly1
     object exp extends LayerPoly1
     object abs extends LayerPoly1
     object max extends LayerPoly2
     object min extends LayerPoly2
+
   }
 
 }
