@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import resource._
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal, Throw}
+import com.thoughtworks.deeplearning.dsl.layers.{Compose, Identity, Literal}
 
 import language.implicitConversions
 
@@ -12,14 +12,10 @@ import language.implicitConversions
 package object dsl {
 
   /** @template */
-  type BpNothing = BackPropagationType[Nothing, Any]
-
-  /** @template */
   type BpAny = BackPropagationType[Any, _]
 
-  def `throw`[InputData, InputDelta](throwable: => Throwable)(
-      implicit inputType: BackPropagationType[InputData, InputDelta]): Layer.Aux[Batch.Aux[InputData, InputDelta], BpNothing#Batch] = {
-    Throw(throwable _)
+  implicit final class ToBatch[Data](a: Data) {
+    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
   }
 
   implicit def autoToLayer[A, Input <: Batch, OutputData, OutputDelta](a: A)(
@@ -28,7 +24,7 @@ package object dsl {
     toLayer(a)
   }
 
-  final class AnyOps[Input <: Batch, OutputData, OutputDelta](
+  final class LayerOps[Input <: Batch, OutputData, OutputDelta](
       val toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
@@ -65,13 +61,9 @@ package object dsl {
 
   }
 
-  implicit def toAnyOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): AnyOps[Input, OutputData, OutputDelta] = {
-    new AnyOps(toLayer(a))
-  }
-
-  implicit final class ToBatch[Data](a: Data) {
-    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
+  implicit def toLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): LayerOps[Input, OutputData, OutputDelta] = {
+    new LayerOps(toLayer(a))
   }
 
 }

@@ -1,4 +1,4 @@
-sbt.dsl.dependsOn(`dynamic-cast`, boolean, double, array2D, hlist, coproduct, seqProject)
+sbt.dsl.dependsOn(`dynamic-cast`, boolean, double, array2D, hlist, coproduct, seqProject, BpAny, BpNothing)
 
 lazy val deeplearning = project.disablePlugins(SparkPackagePlugin)
 
@@ -12,6 +12,10 @@ lazy val dslProject =
   Project(id = "dsl", base = file("dsl"), dependencies = Seq(deeplearning)).disablePlugins(SparkPackagePlugin)
 
 lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+
+lazy val BpAny = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+
+lazy val BpNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
 
 lazy val seqProject =
   Project(id = "seq", base = file("seq"), dependencies = Seq(dslProject)).disablePlugins(SparkPackagePlugin)
