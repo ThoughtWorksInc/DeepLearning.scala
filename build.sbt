@@ -1,32 +1,28 @@
-sbt.dsl.dependsOn(`dynamic-cast`, boolean, double, array2D, hlist, coproduct, seqProject, BpAny, BpNothing)
+sbt.dsl.dependsOn(BpBoolean, BpDouble, Bp2DArray, BpHList, BpCoproduct, BpSeq, BpAny, BpNothing)
 
-lazy val deeplearning = project.disablePlugins(SparkPackagePlugin)
+lazy val Layer = project.disablePlugins(SparkPackagePlugin)
 
-lazy val boolean = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning, `buffered-layer`, Poly)
+lazy val BpBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
 
-lazy val double = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, boolean, `buffered-layer`)
+lazy val BpDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, BpBoolean, BufferedLayer)
 
-lazy val `dynamic-cast` = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
+lazy val Conversion = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
-lazy val dslProject =
-  Project(id = "dsl", base = file("dsl"), dependencies = Seq(deeplearning)).disablePlugins(SparkPackagePlugin)
+lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
 
-lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+lazy val BpAny = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
 
-lazy val BpAny = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+lazy val BpNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
 
-lazy val BpNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(dslProject)
+lazy val BpSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
 
-lazy val seqProject =
-  Project(id = "seq", base = file("seq"), dependencies = Seq(dslProject)).disablePlugins(SparkPackagePlugin)
+lazy val Bp2DArray = project.disablePlugins(SparkPackagePlugin).dependsOn(BpDouble)
 
-lazy val array2D = project.disablePlugins(SparkPackagePlugin).dependsOn(double)
+lazy val BpHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
 
-lazy val hlist = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
+lazy val BpCoproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(BpBoolean)
 
-lazy val coproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(boolean)
-
-lazy val `buffered-layer` = project.disablePlugins(SparkPackagePlugin).dependsOn(deeplearning)
+lazy val BufferedLayer = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
 lazy val `sbt-nd4j` = project.disablePlugins(SparkPackagePlugin)
 
