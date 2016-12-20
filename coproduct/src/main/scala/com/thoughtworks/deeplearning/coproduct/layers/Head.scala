@@ -1,14 +1,12 @@
 package com.thoughtworks.deeplearning
 package coproduct.layers
 
-import com.thoughtworks.deeplearning.{Layer, Batch}
-
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
 TailDelta <: shapeless.Coproduct](
-    ccons: Layer.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+    operand: Layer.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
 ) extends Layer {
 
   final class Output private[Head] (
@@ -30,13 +28,14 @@ TailDelta <: shapeless.Coproduct](
       upstream.close()
     }
 
+    override def addReference() = {
+      new Output(upstream.addReference())
+    }
+
   }
 
   type Input = Input0
 
-  override def forward(input: BatchId.Aux[Input]) = new BatchId {
-    override type Open = Output
-    override def open() = new Output(ccons.forward(input).open())
-  }
+  override def forward(input: Input) = new Output(operand.forward(input))
 
 }

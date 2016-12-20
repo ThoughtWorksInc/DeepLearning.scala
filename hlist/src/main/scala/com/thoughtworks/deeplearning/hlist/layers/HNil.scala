@@ -1,11 +1,10 @@
-package com.thoughtworks.deeplearning.hlist.layers
-
-import com.thoughtworks.deeplearning.{Batch, BatchId, Layer}
+package com.thoughtworks.deeplearning
+package hlist.layers
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-case object HNil extends Layer with Batch with BatchId {
+case object HNil extends Layer with Batch {
   override type Input = Batch
 
   override type Data = shapeless.HNil
@@ -13,11 +12,10 @@ case object HNil extends Layer with Batch with BatchId {
   override type Delta = shapeless.CNil
 
   override type Output = Batch.Aux[Data, Delta]
-  override type Open = Output
 
-  override def open() = this
+  override def addReference() = this
 
-  override def forward(input: BatchId.Aux[Input]) = this
+  override def forward(input: Input) = this
 
   override def backward(delta: Delta): Unit = {}
 

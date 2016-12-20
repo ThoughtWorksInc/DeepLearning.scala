@@ -1,5 +1,6 @@
 package com.thoughtworks.deeplearning
 
+import resource._
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Batch._
 import com.thoughtworks.deeplearning.dsl.ToLayer.{LayerPoly1, LayerPoly2}
@@ -44,13 +45,7 @@ package object dsl {
           Batch.Aux[InputData, InputDelta],
           Batch.Aux[OutputData, OutputDelta]]
     ): OutputData = {
-      val outputBatch = toLiteral.forward(Literal[InputData](inputData)).open()
-      try {
-        outputBatch.value
-      } finally {
-        outputBatch.close()
-      }
-
+      managed(toLiteral.forward(Literal[InputData](inputData))).acquireAndGet(_.value)
     }
 
     def train[InputData, InputDelta](inputData: InputData)(
@@ -59,7 +54,7 @@ package object dsl {
           Batch.Aux[OutputData, OutputDelta]],
         outputDataIsOutputDelta: OutputData <:< OutputDelta
     ): OutputData = {
-      val outputBatch = toLiteral.forward(Literal[InputData](inputData)).open()
+      val outputBatch = toLiteral.forward(Literal[InputData](inputData))
       try {
         val loss = outputBatch.value
         outputBatch.backward(outputDataIsOutputDelta(loss))
@@ -77,8 +72,8 @@ package object dsl {
     new AnyOps(toLayer(a))
   }
 
-  implicit final class ToBatchId[Data](a: Data) {
-    def toBatchId[Delta]: BatchId.Aux[Batch.Aux[Data, Delta]] = Literal[Data](a)
+  implicit final class ToBatch[Data](a: Data) {
+    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
   }
 
   implicit final class ScalaAnyOps[Left](left: Left) {

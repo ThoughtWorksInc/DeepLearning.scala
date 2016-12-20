@@ -21,6 +21,6 @@ trait Layer {
 
   type Output <: Batch
 
-  def forward(input: BatchId.Aux[Input]): BatchId.Aux[Output]
+  def forward(input: Input): Output
 
 }

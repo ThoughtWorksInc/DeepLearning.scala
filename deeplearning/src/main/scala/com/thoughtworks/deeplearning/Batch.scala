@@ -19,6 +19,8 @@ trait Batch extends AutoCloseable {
   type Data
   type Delta
 
+  def addReference(): Batch.Aux[Data, Delta]
+
   def backward(delta: Delta): Unit
 
   def value: Data

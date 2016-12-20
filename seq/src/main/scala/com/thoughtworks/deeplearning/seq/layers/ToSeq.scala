@@ -35,12 +35,10 @@ final case class ToSeq[Input0 <: Batch, ElementData, ElementDelta](
       upstreams.foreach(_.close())
     }
 
+    override def addReference() = new Output(upstreams.map(_.addReference()))
+
   }
 
-  override def forward(input: BatchId.Aux[Input]) = new BatchId {
-    override type Open = Output
-    override def open() = {
-      new Output(operands.map(_.forward(input).open()))
-    }
-  }
+  override def forward(input: Input) = new Output(operands.map(_.forward(input)))
+
 }

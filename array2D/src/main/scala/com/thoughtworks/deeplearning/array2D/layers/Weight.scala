@@ -12,17 +12,15 @@ import org.nd4s.Implicits._
   */
 final case class Weight(var rawValue: INDArray)(implicit optimizer: Optimizer)
     extends Layer
-    with Array2DSemigroupBatch
-    with BatchId {
+    with Array2DSemigroupBatch {
   override type Input = Batch
   override type Output = Batch.Aux[Data, Delta]
-  override type Open = Output
 
-  override def open() = this
+  override def addReference() = this
 
   override def value = Eval.now(rawValue)
 
-  override def forward(any: BatchId.Aux[Input]) = this
+  override def forward(any: Input) = this
 
   override def backward(delta: Delta): Unit = {
     synchronized {

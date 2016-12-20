@@ -5,72 +5,74 @@ import cats.implicits._
 
 import scala.annotation.elidable
 
+// TODO: Review if the reference count works correctly
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-// TODO: Rename this trait to Layer and move to a separate library
 trait BufferedLayer extends Layer {
 
   private[deeplearning] val cache =
-    java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[BatchId.Aux[Input], BufferedBatch](1))
+    java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[AnyRef, BufferedBatch](1))
 
-  protected trait ReferenceCount extends BatchId with Batch { this: BufferedBatch =>
+  protected trait ReferenceCount extends Batch { this: BufferedBatch =>
+
+    // Returns a [[Batch]] able to detect error of closing more than once.
+    @elidable(elidable.ASSERTION)
+    private def checked = new Batch {
+      override type Delta = ReferenceCount.this.Delta
+      override type Data = ReferenceCount.this.Data
+
+      override final def addReference() = ReferenceCount.this.addReference()
+
+      override final def backward(delta: Delta) = ReferenceCount.this.backward(delta)
+
+      override final def value = ReferenceCount.this.value
+
+      private var closed = false
+
+      override protected final def finalize(): Unit = {
+        assert(closed)
+      }
+
+      override final def close(): Unit = {
+        ReferenceCount.this.synchronized {
+          if (closed) {
+            throw new IllegalStateException("close() method must be called once and only once.")
+          } else {
+            closed = true
+          }
+        }
+        ReferenceCount.this.close()
+      }
+    }
+
+    private[BufferedLayer] final def checkedIfCloseOnlyOnce: Open = {
+      Option(checked).getOrElse(ReferenceCount.this.self)
+    }
 
     /**
       * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
       * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
       */
-    override final def open(): Open = {
+    override final def addReference(): Open = {
       val newCount = synchronized {
         val newCount = count + 1
         count = newCount
         newCount
       }
       assert(newCount >= 1)
-      if (newCount == 1) {
-        cache.put(input, this)
-      }
-
-      // Returns a [[Batch]] able to detect error of closing more than once.
-      @elidable(elidable.ASSERTION)
-      def checkIfCloseOnlyOnce = new Batch {
-        override type Delta = ReferenceCount.this.Delta
-        override type Data = ReferenceCount.this.Data
-
-        override def backward(delta: Delta) = ReferenceCount.this.backward(delta)
-
-        override def value = ReferenceCount.this.value
-
-        private var closed = false
-
-        override protected def finalize(): Unit = {
-          assert(closed)
-        }
-
-        override def close(): Unit = {
-          ReferenceCount.this.synchronized {
-            if (closed) {
-              throw new IllegalStateException("close() method must be called once and only once.")
-            } else {
-              closed = true
-            }
-          }
-          ReferenceCount.this.close()
-        }
-      }
-
-      Option(checkIfCloseOnlyOnce).getOrElse(ReferenceCount.this.self)
+      checkedIfCloseOnlyOnce
     }
 
-    override type Open >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
+    type Open >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
 
     private final def self: Open = this: Batch.Aux[Data, Delta]
 
-    private[BufferedLayer] var count: Int = 0
+    private[BufferedLayer] var count: Int = 1
 
     protected def flush(): Unit
 
-    def input: BatchId.Aux[Input]
+    protected def input: AnyRef
 
     protected def closeUpstreams(): Unit
 
@@ -149,14 +151,66 @@ trait BufferedLayer extends Layer {
     *
     * @return a [[Batch]] that will be cached for subsequent [[#forward]]
     */
-  protected def rawForward(input: BatchId.Aux[Input]): BufferedBatch
+  protected def rawForward(input: Input): BufferedBatch
 
-  override final def forward(input: BatchId.Aux[Input]): BatchId.Aux[Output] = {
+  override final def forward(input: Input): Output = {
     cache.get(input) match {
       case null =>
-        rawForward(input)
+        val savedInput = input.addReference().asInstanceOf[Input]
+        val batch = rawForward(savedInput)
+        cache.put(savedInput, batch).ensuring(_ == null)
+        batch.checkedIfCloseOnlyOnce
       case sharedBatch =>
-        sharedBatch
+        sharedBatch.addReference()
     }
   }
+}
+
+object BufferedLayer {
+
+  trait Unary extends BufferedLayer {
+
+    protected val operand: Layer.Aux[Input, _ <: Batch]
+
+    protected type BufferedBatch <: UnaryBatch
+
+    protected trait UnaryBatch extends ReferenceCount { this: BufferedBatch =>
+
+      override def input: Input
+
+      protected val upstream: operand.Output = operand.forward(input)
+
+      override protected final def closeUpstreams(): Unit = {
+        upstream.close()
+        input.close()
+      }
+
+    }
+
+  }
+
+  trait Binary extends BufferedLayer {
+
+    protected val operand1: Layer.Aux[Input, _ <: Batch]
+    protected val operand2: Layer.Aux[Input, _ <: Batch]
+
+    protected type BufferedBatch <: BinaryBatch
+
+    protected trait BinaryBatch extends ReferenceCount { this: BufferedBatch =>
+
+      override def input: Input
+
+      protected val upstream1: operand1.Output = operand1.forward(input)
+      protected val upstream2: operand2.Output = operand2.forward(input)
+
+      override protected final def closeUpstreams(): Unit = {
+        upstream1.close()
+        upstream2.close()
+        input.close()
+      }
+
+    }
+
+  }
+
 }

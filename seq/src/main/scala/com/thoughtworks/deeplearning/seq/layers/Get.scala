@@ -9,8 +9,8 @@ import com.thoughtworks.deeplearning._
   */
 final case class Get[Input0 <: Batch, ElementData, ElementDelta](
     operand0: Layer.Aux[Input0, Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]],
-    i: Int)
-    extends Layer {
+    i: Int
+) extends Layer {
 
   final class Output private[Get] (upstream: Batch.Aux[scala.Seq[ElementData], (Int, ElementDelta)]) extends Batch {
 
@@ -19,6 +19,8 @@ final case class Get[Input0 <: Batch, ElementData, ElementDelta](
     override def backward(delta: ElementDelta): Unit = {
       upstream.backward((i, delta))
     }
+
+    override def addReference() = new Output(upstream.addReference())
 
     override def close(): Unit = {
       upstream.close()
@@ -32,9 +34,6 @@ final case class Get[Input0 <: Batch, ElementData, ElementDelta](
   override type Input = Input0
 
   // TODO: Support tail Int
-  override def forward(input: BatchId.Aux[Input]) = new BatchId {
-    override type Open = Output
-    def open() = new Output(operand0.forward(input).open())
-  }
+  override def forward(input: Input) = new Output(operand0.forward(input))
 
 }

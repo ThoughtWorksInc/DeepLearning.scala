@@ -3,6 +3,7 @@ package array2D.layers
 
 import cats.{Applicative, Eval, Traverse}
 import cats.implicits._
+import com.thoughtworks.deeplearning.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import com.thoughtworks.deeplearning.array2D.utilities._
@@ -57,12 +58,12 @@ final case class ToArray2D[Input0 <: Batch](
       upstreams.foreach(_.foreach(_.close()))
     }
 
+    override def addReference(): Output = {
+      new Output(upstreams.map(_.map(_.addReference())))
+    }
   }
 
-  override def forward(input: BatchId.Aux[Input]) = new BatchId {
-    override type Open = Output
-    override def open() = {
-      new Output(operands.map(_.map(_.forward(input).open())))
-    }
+  override def forward(input: Input) = {
+    new Output(operands.map(_.map(_.forward(input))))
   }
 }

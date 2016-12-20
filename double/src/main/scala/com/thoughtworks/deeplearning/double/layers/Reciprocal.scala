@@ -11,19 +11,17 @@ import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
   */
 final case class Reciprocal[Input0 <: Batch](
     operand: Layer.Aux[Input0, Batch.Aux[Eval[scala.Double], Eval[scala.Double]]])
-    extends BufferedLayer {
+    extends BufferedLayer.Unary {
 
-  protected final class BufferedBatch private[deeplearning] (
-      override val input: BatchId.Aux[Input0],
-      upstream: Batch.Aux[Eval[scala.Double], Eval[scala.Double]])
-      extends MonoidBatch
-      with DoubleMonoidBatch {
+  type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+
+  type Input = Input0
+
+  override protected def rawForward(input0: Input) = new {
+    override final val input = input0
+  } with  MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
     val value = upstream.value.map(1.0 / _)
-
-    override protected def closeUpstreams(): Unit = {
-      upstream.close()
-    }
 
     override protected def rawBackward(delta: Eval[scala.Double]): Unit = {
       val a = upstream.value
@@ -31,12 +29,7 @@ final case class Reciprocal[Input0 <: Batch](
         -outputDeltaValue / (aValue * aValue)
       })
     }
+
   }
 
-  type Input = Input0
-
-  override protected def rawForward(input: BatchId.Aux[Input]): BufferedBatch = {
-    val upstream = operand.forward(input).open()
-    new BufferedBatch(input, upstream)
-  }
 }

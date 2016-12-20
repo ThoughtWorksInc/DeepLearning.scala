@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning.double.layers
 import cats._
 import cats.implicits._
 import com.thoughtworks.deeplearning.double.optimizers.Optimizer
-import com.thoughtworks.deeplearning.{Batch, BatchId, Layer}
+import com.thoughtworks.deeplearning.{Batch, Layer}
 import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
 
 /**
@@ -11,15 +11,13 @@ import com.thoughtworks.deeplearning.double.utilities.DoubleMonoidBatch
   */
 final case class Weight(var rawValue: scala.Double)(implicit optimizer: Optimizer)
     extends Layer
-    with DoubleMonoidBatch
-    with BatchId {
+    with DoubleMonoidBatch {
   override type Input = Batch
   override type Output = Batch.Aux[Data, Delta]
-  override type Open = Output
 
-  override def open() = this
+  override def addReference() = this
 
-  override def forward(any: BatchId.Aux[Input]) = this
+  override def forward(any: Input) = this
 
   override def backward(delta: Delta): Unit = {
     synchronized {

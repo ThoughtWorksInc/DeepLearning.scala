@@ -1,7 +1,5 @@
-package com.thoughtworks.deeplearning.hlist.layers
-
-import com.thoughtworks.deeplearning.utilities.CloseableOnce
-import com.thoughtworks.deeplearning.{Batch, BatchId, Layer, utilities}
+package com.thoughtworks.deeplearning
+package hlist.layers
 
 final case class HCons[Input0 <: Batch,
                        HeadData,
@@ -38,11 +36,10 @@ final case class HCons[Input0 <: Batch,
 
     override type Data = shapeless.::[HeadData, TailData]
     override type Delta = shapeless.:+:[HeadDelta, TailDelta]
+
+    override def addReference() = new Output(headBatch.addReference(), tailBatch.addReference())
   }
 
-  override def forward(input: BatchId.Aux[Input]) = new BatchId {
-    override type Open = Output
-    override def open() = new Output(head.forward(input).open(), tail.forward(input).open())
-  }
+  override def forward(input: Input) = new Output(head.forward(input), tail.forward(input))
 
 }
