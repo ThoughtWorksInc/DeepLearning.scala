@@ -7,5 +7,3 @@ addSbtPlugin("com.thoughtworks.deeplearning" % "sbt-nd4j" % "1.0.0-M2")
 resolvers += "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/"
 
 addSbtPlugin("org.spark-packages" % "sbt-spark-package" % "0.2.5")
-
-addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-M15")
