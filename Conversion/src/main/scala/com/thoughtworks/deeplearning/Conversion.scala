@@ -91,6 +91,7 @@ object Conversion {
     def toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = toLayer(from)
 
   }
+
   implicit final class ToLiteralOps[From, Data, Delta](from: From)(
       implicit toLiteral: ToLiteral.Aux[From, Data, Delta]
   ) {
@@ -166,6 +167,7 @@ object Conversion {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
+
         override def apply(from: From) = toLiteral(from)
       }
     }
@@ -178,6 +180,44 @@ object Conversion {
   trait ToLayer[From, Input <: Batch] extends DepFn1[From] {
     type OutputData
     type OutputDelta
+    type Output = Batch.Aux[OutputData, OutputDelta]
+    type Out = Layer.Aux[Input, Output]
+  }
+
+  object <=> {
+
+    /** @template */
+    type Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+      <=>[NativeInput, NativeOutput] {
+        type InputData = InputData0
+        type InputDelta = InputDelta0
+        type OutputData = OutputData0
+        type OutputDelta = OutputDelta0
+      }
+
+    def apply[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta](
+        implicit typeClass: <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta])
+      : <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta] = typeClass
+
+    implicit def fromBatchOf[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+        implicit inputBatchOf: Lazy[ToLiteral.Aux[NativeInput, InputData0, InputDelta0]],
+        outputBatchOf: Lazy[ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]])
+      : <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+      new <=>[NativeInput, NativeOutput] {
+        type InputData = InputData0
+        type InputDelta = InputDelta0
+        type OutputData = OutputData0
+        type OutputDelta = OutputDelta0
+      }
+
+  }
+
+  trait <=>[NativeInput, NativeOutput] {
+    type InputData
+    type InputDelta
+    type OutputData
+    type OutputDelta
+    type Input = Batch.Aux[InputData, InputDelta]
     type Output = Batch.Aux[OutputData, OutputDelta]
     type Out = Layer.Aux[Input, Output]
   }
