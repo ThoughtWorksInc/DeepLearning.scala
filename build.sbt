@@ -4,7 +4,7 @@ lazy val Layer = project.disablePlugins(SparkPackagePlugin)
 
 lazy val Lift = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
-lazy val BpBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
+lazy val BpBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly, Conversion)
 
 lazy val BpDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, BpBoolean, BufferedLayer)
 
@@ -20,7 +20,7 @@ lazy val BpSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift, Conv
 
 lazy val Bp2DArray = project.disablePlugins(SparkPackagePlugin).dependsOn(BpDouble)
 
-lazy val BpHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
+lazy val BpHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, Conversion)
 
 lazy val BpCoproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(BpBoolean)
 

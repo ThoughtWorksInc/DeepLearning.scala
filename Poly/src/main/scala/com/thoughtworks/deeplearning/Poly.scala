@@ -9,7 +9,19 @@ import shapeless.{Lazy, Poly1, Poly2}
   */
 object Poly {
 
-  trait LayerPoly1 extends Poly1 {
+  trait LowPriorityPoly1 { this: LayerPoly1 =>
+
+    implicit def liftedToLayerCase[Operand, Input <: Batch, OperandData, OperandDelta](
+        implicit toLayer: Lift.ToLayer.Aux[Operand, Input, OperandData, OperandDelta],
+        layerCase: Lazy[Case[Layer.Aux[Input, Batch.Aux[OperandData, OperandDelta]]]]
+    ): Case.Aux[Operand, layerCase.value.Result] = {
+      at { operand =>
+        layerCase.value(toLayer(operand))
+      }
+    }
+  }
+
+  trait LayerPoly1 extends Poly1 /*with LowPriorityPoly1*/ {
     implicit def toLayerCase[Operand, Input <: Batch, OperandData, OperandDelta](
         implicit toLayer: ToLayer.Aux[Operand, Input, OperandData, OperandDelta],
         layerCase: Lazy[Case[Layer.Aux[Input, Batch.Aux[OperandData, OperandDelta]]]]
@@ -19,8 +31,28 @@ object Poly {
       }
     }
   }
+  trait LowPriorityPoly2 { this: LayerPoly2 =>
+    implicit def liftedToLayerCase[LeftOperand,
+                                   RightOperand,
+                                   Input <: Batch,
+                                   LeftData,
+                                   LeftDelta,
+                                   RightData,
+                                   RightDelta](
+        implicit leftToLayer: Lift.ToLayer.Aux[LeftOperand, Input, LeftData, LeftDelta],
+        rightToLayer: Lift.ToLayer.Aux[RightOperand, Input, RightData, RightDelta],
+        layerCase: Lazy[
+          Case[Layer.Aux[Input, Batch.Aux[LeftData, LeftDelta]], Layer.Aux[Input, Batch.Aux[RightData, RightDelta]]]]
+    ): Case.Aux[LeftOperand, RightOperand, layerCase.value.Result] = {
+      at { (left, right) =>
+        val leftLayer = leftToLayer(left)
+        val rightLayer = rightToLayer(right)
+        layerCase.value(leftLayer, rightLayer)
+      }
+    }
+  }
 
-  trait LayerPoly2 extends Poly2 {
+  trait LayerPoly2 extends Poly2 with LowPriorityPoly2 {
     implicit def toLayerCase[LeftOperand, RightOperand, Input <: Batch, LeftData, LeftDelta, RightData, RightDelta](
         implicit leftToLayer: ToLayer.Aux[LeftOperand, Input, LeftData, LeftDelta],
         rightToLayer: ToLayer.Aux[RightOperand, Input, RightData, RightDelta],
@@ -33,6 +65,7 @@ object Poly {
         layerCase.value(leftLayer, rightLayer)
       }
     }
+
   }
 
   object MathMethods {

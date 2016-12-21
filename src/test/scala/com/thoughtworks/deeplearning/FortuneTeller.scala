@@ -29,8 +29,6 @@ import util.Random
   */
 object FortuneTeller {
 
-  type Seq2D = BpSeq[BpSeq[BpDouble]]
-
   type Nullable[A <: BackPropagationType[_, _]] = BpHNil :++: A :++: BpCNil
 
   type InputField[A <: BackPropagationType[_, _]] = BpHNil :++: A :++: BpCNil

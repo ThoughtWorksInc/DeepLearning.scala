@@ -2,13 +2,15 @@ package com.thoughtworks.deeplearning
 import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.BpBoolean.BooleanMonoidBatch
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Conversion.{BackPropagationType, ToLiteral}
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Lift.ToLayer
 import com.thoughtworks.deeplearning.Poly.MathMethods
-import com.thoughtworks.deeplearning.Conversion.Layers.Literal
+//import com.thoughtworks.deeplearning.Conversion.Layers.Literal
 import com.thoughtworks.deeplearning.BpDouble.Layers._
 import com.thoughtworks.deeplearning.BpDouble.Optimizers.{LearningRate, Optimizer}
 
@@ -284,6 +286,16 @@ object BpDouble {
 
   }
 
+  implicit def liftNativeDouble: Lift.Aux[Double, Eval[Double], Eval[Double]] =
+    new Lift[Double] {
+      override type Data = Eval[Double]
+      override type Delta = Eval[Double]
+      override def apply(nativeDouble: Double) = {
+        Literal(Eval.now(nativeDouble))
+      }
+    }
+
+  @deprecated(since = "1.0.0", message = "Use `liftNativeDouble` instead")
   implicit def liftNativeDoubleToLiteral: ToLiteral.Aux[Double, Eval[Double], Eval[Double]] =
     new ToLiteral[Double] {
       override type Data = Eval[Double]
@@ -372,8 +384,18 @@ object BpDouble {
   }
 
   implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, BpDouble]
+      implicit toLayer: Conversion.ToLayer.OfType[From, Input, BpDouble]
   ): DoubleLayerOps[Input] = {
     new DoubleLayerOps(toLayer(from))
   }
+
+  implicit final class LiftedDoubleLayerOps[From, Input <: Batch](from: From)(
+      implicit toLayer: ToLayer.Aux[From, Input, Eval[Double], Eval[Double]]
+  ) {
+
+    def unary_- : Layer.Aux[Input, Batch.Aux[Eval[Double], Eval[Double]]] = {
+      Negative(toLayer(from))
+    }
+  }
+
 }

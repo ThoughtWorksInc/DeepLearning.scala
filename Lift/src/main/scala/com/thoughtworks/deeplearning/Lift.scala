@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Lift.Layers.Identity
-import shapeless.DepFn1
+import shapeless.{DepFn1, Lazy}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -65,32 +65,69 @@ object Lift {
     type Out = Layer.Aux[Input, Output]
   }
 
-  object ToLayer {
+  trait LowPriorityToLayer { this: ToLayer.type =>
+
+    implicit def unapplyOutputDataToLayer[Input <: Batch, F[_], X, OutputDelta]: ToLayer.Aux[
+      Layer.Aux[Input, Batch.Aux[F[X], OutputDelta]],
+      Input,
+      F[X],
+      OutputDelta
+    ] = layerToLayer[Input, F[X], OutputDelta]
+
+  }
+
+  object ToLayer extends LowPriorityToLayer {
 
     type Aux[From, Input <: Batch, OutputData0, OutputDelta0] = ToLayer[From, Input] {
       type OutputData = OutputData0
       type OutputDelta = OutputDelta0
     }
 
-    implicit def layerToLayer[Input <: Batch, OutputData0, OutputDelta0]
-      : ToLayer.Aux[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input, OutputData0, OutputDelta0] =
-      new ToLayer[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input] {
-        override type OutputData = OutputData0
-        override type OutputDelta = OutputDelta0
-
-        override def apply(layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = layer
-      }
-
     implicit def liftToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
         implicit currentParameter: Identity[InputData, InputDelta],
-        lift: Lift.Aux[From, OutputData0, OutputDelta0])
+        lift: Lazy[Lift.Aux[From, OutputData0, OutputDelta0]])
       : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
-        override def apply(from: From) = lift(from)
+        override def apply(from: From) = lift.value(from)
       }
     }
+
+    implicit def layerToLayer[Input <: Batch, OutputData0, OutputDelta0]
+    : ToLayer.Aux[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input, OutputData0, OutputDelta0] = {
+      new ToLayer[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input] {
+        override type OutputData = OutputData0
+        override type OutputDelta = OutputDelta0
+
+        override def apply(layer: Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]]) = layer
+      }
+    }
+
+//    implicit def layerToLayer[InputData, InputDelta, OutputData0, OutputDelta0]
+//      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]],
+//                    Batch.Aux[InputData, InputDelta],
+//                    OutputData0,
+//                    OutputDelta0] = {
+//      new ToLayer[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]],
+//                  Batch.Aux[InputData, InputDelta]] {
+//        override type OutputData = OutputData0
+//        override type OutputDelta = OutputDelta0
+//
+//        override def apply(layer: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]]) =
+//          layer
+//      }
+//    }
+
+    implicit def identityToLayer[Data, Delta]
+      : ToLayer.Aux[Identity[Data, Delta], Batch.Aux[Data, Delta], Data, Delta] =
+      new ToLayer[Identity[Data, Delta], Batch.Aux[Data, Delta]] {
+        override type OutputData = Data
+        override type OutputDelta = Delta
+        override def apply(id: Identity[Data, Delta]) = id
+
+      }
+
   }
 
   implicit final class LiftOps[NativeValue, Data, Delta](value: NativeValue)(
@@ -108,30 +145,30 @@ object Lift {
     type Out = Layer.Aux[Input, Output]
   }
 
-  trait BatchOf[NativeValue] {
+  trait Parameter[NativeValue] {
 
     type Data
     type Delta
 
-    type Out = Batch.Aux[Data, Delta]
+    type Out = Identity[Data, Delta]
 
   }
 
-  object BatchOf {
+  object Parameter {
 
     /** @template */
-    type Aux[NativeValue, Data0, Delta0] = BatchOf[NativeValue] {
+    type Aux[NativeValue, Data0, Delta0] = Parameter[NativeValue] {
       type Data = Data0
       type Delta = Delta0
     }
 
     def apply[NativeValue, Data, Delta](
-        implicit typeClass: BatchOf.Aux[NativeValue, Data, Delta]): BatchOf.Aux[NativeValue, Data, Delta] =
+        implicit typeClass: Parameter.Aux[NativeValue, Data, Delta]): Parameter.Aux[NativeValue, Data, Delta] =
       typeClass
 
     implicit def fromLift[NativeValue, Data0, Delta0](
-        implicit lift: Lift.Aux[NativeValue, Data0, Delta0]): BatchOf.Aux[NativeValue, Data0, Delta0] =
-      new BatchOf[NativeValue] {
+        implicit lift: Lazy[Lift.Aux[NativeValue, Data0, Delta0]]): Parameter.Aux[NativeValue, Data0, Delta0] =
+      new Parameter[NativeValue] {
         type Data = Data0
         type Delta = Delta0
       }
@@ -153,9 +190,9 @@ object Lift {
         implicit typeClass: LayerOf.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta])
       : LayerOf.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta] = typeClass
 
-    implicit def fromBatchOf[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-        implicit inputBatchOf: BatchOf.Aux[NativeInput, InputData0, InputDelta0],
-        outputBatchOf: BatchOf.Aux[NativeOutput, OutputData0, OutputDelta0])
+    implicit def fromLift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+        implicit inputBatchOf: Lift.Aux[NativeInput, InputData0, InputDelta0],
+        outputBatchOf: Lift.Aux[NativeOutput, OutputData0, OutputDelta0])
       : LayerOf.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
       new LayerOf[NativeInput, NativeOutput] {
         type InputData = InputData0
