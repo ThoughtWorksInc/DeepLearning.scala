@@ -14,12 +14,14 @@ import com.thoughtworks.deeplearning.BpDouble.Optimizers.{LearningRate, Optimize
 
 import language.implicitConversions
 
+private[deeplearning] sealed trait BpDoubleTypes {
+  type DoubleBatch >: Batch.Aux[Eval[Double], Eval[Double]] <: Batch.Aux[Eval[Double], Eval[Double]]
+}
+
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object BpDouble {
-
-  type DoubleBatch = Batch.Aux[Eval[Double], Eval[Double]]
+object BpDouble extends BpDoubleTypes {
 
   private[deeplearning] trait DoubleMonoidBatch extends Batch {
 
