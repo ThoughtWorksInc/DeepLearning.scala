@@ -67,7 +67,11 @@ object Conversion {
     type Data
     type Delta
 
-    type Out = Batch.Aux[Data, Delta] with Layer.Aux[Batch, Batch.Aux[Data, Delta]]
+    type Batch = Batch.Aux[Data, Delta]
+
+    type Placeholder = BackPropagationType[Data, Delta]
+
+    type Out = Batch with Layer.Aux[Layer.Batch, Batch]
 
   }
 
@@ -116,6 +120,7 @@ object Conversion {
 
   }
 
+  // FIXME: rename to placeholder
   final class BackPropagationType[Data0, Delta0] {
     type Data = Data0
     type Delta = Delta0
