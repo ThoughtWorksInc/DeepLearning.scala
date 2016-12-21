@@ -2,19 +2,21 @@ sbt.dsl.dependsOn(BpBoolean, BpDouble, Bp2DArray, BpHList, BpCoproduct, BpSeq, B
 
 lazy val Layer = project.disablePlugins(SparkPackagePlugin)
 
+lazy val Lift = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
+
 lazy val BpBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
 
 lazy val BpDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, BpBoolean, BufferedLayer)
 
 lazy val Conversion = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
-lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
+lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift, Conversion)
 
-lazy val BpAny = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
+lazy val BpAny = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift, Conversion)
 
-lazy val BpNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
+lazy val BpNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift, Conversion)
 
-lazy val BpSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Conversion)
+lazy val BpSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift, Conversion)
 
 lazy val Bp2DArray = project.disablePlugins(SparkPackagePlugin).dependsOn(BpDouble)
 
