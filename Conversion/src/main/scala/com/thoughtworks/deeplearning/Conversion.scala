@@ -121,6 +121,7 @@ object Conversion {
   }
 
   // FIXME: rename to placeholder
+  @deprecated
   final class BackPropagationType[Data0, Delta0] {
     type Data = Data0
     type Delta = Delta0
