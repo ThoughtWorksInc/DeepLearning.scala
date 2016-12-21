@@ -19,6 +19,8 @@ import language.implicitConversions
   */
 object BpDouble {
 
+  type DoubleBatch = Batch.Aux[Eval[Double], Eval[Double]]
+
   private[deeplearning] trait DoubleMonoidBatch extends Batch {
 
     override type Data = Eval[Double]
