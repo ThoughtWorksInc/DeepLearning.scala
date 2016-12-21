@@ -282,12 +282,10 @@ object BpDouble {
 
   }
 
-  implicit def liftNativeDoubleToLayer[InputData, InputDelta](
-      implicit inputType: BackPropagationType[InputData, InputDelta])
-    : ToLayer.Aux[Double, Batch.Aux[InputData, InputDelta], Eval[Double], Eval[Double]] =
-    new ToLayer[Double, Batch.Aux[InputData, InputDelta]] {
-      override type OutputData = Eval[Double]
-      override type OutputDelta = Eval[Double]
+  implicit def liftNativeDoubleToLiteral: ToLiteral.Aux[Double, Eval[Double], Eval[Double]] =
+    new ToLiteral[Double] {
+      override type Data = Eval[Double]
+      override type Delta = Eval[Double]
       override def apply(nativeDouble: Double) = {
         Literal(Eval.now(nativeDouble))
       }

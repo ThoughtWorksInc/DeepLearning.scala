@@ -29,7 +29,7 @@ final class LayerSpec extends FreeSpec with Matchers {
     val inputData = Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5))
 
     def train() = {
-      val outputBatch = network.forward(Eval.now(inputData.toNDArray).toBatch)
+      val outputBatch = network.forward(inputData.toNDArray.toBatch)
       try {
         val loss = outputBatch.value.map(_.sumT)
         outputBatch.backward(outputBatch.value)

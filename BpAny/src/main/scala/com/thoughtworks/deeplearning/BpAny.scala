@@ -37,13 +37,13 @@ object BpAny {
   }
 
   final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
-      val toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
+      layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
         implicit differentiableType: ToLayer.Aux[G, NewInput, InputData, InputDelta],
         toInput: Layer.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< Layer.Aux[NewInput, Input]
     ): Layer.Aux[NewInput, Batch.Aux[OutputData, OutputDelta]] = {
-      Compose(toLiteral, toInput(differentiableType(g)))
+      Compose(layer, toInput(differentiableType(g)))
     }
 
     def predict[InputData, InputDelta](inputData: InputData)(
@@ -51,7 +51,7 @@ object BpAny {
           Batch.Aux[InputData, InputDelta],
           Batch.Aux[OutputData, OutputDelta]]
     ): OutputData = {
-      managed(toLiteral.forward(Literal[InputData](inputData))).acquireAndGet(_.value)
+      managed(layer.forward(Literal[InputData](inputData))).acquireAndGet(_.value)
     }
 
     def train[InputData, InputDelta](inputData: InputData)(
@@ -60,7 +60,7 @@ object BpAny {
           Batch.Aux[OutputData, OutputDelta]],
         outputDataIsOutputDelta: OutputData <:< OutputDelta
     ): OutputData = {
-      val outputBatch = toLiteral.forward(Literal[InputData](inputData))
+      val outputBatch = layer.forward(Literal[InputData](inputData))
       try {
         val loss = outputBatch.value
         outputBatch.backward(outputDataIsOutputDelta(loss))
@@ -74,7 +74,8 @@ object BpAny {
   }
 
   implicit def toAnyLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
-      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta]): AnyLayerOps[Input, OutputData, OutputDelta] = {
+      implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
+    : AnyLayerOps[Input, OutputData, OutputDelta] = {
     new AnyLayerOps(toLayer(a))
   }
 

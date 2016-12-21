@@ -2,11 +2,13 @@ package com.thoughtworks.deeplearning
 
 import cats.implicits._
 import cats.{Applicative, Eval, Semigroup, Traverse}
-import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
+import com.thoughtworks.deeplearning.Layer.{Aux, Batch, CloseableOnce}
 import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.Bp2DArray.Layers._
 import com.thoughtworks.deeplearning.Bp2DArray.Optimizers._
 import com.thoughtworks.deeplearning.BpDouble._
+import com.thoughtworks.deeplearning.Conversion.Layers.Literal
+import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods
@@ -714,12 +716,19 @@ object Bp2DArray {
     new To2DArrayLayerOps(layerVector.view.map(_.view.map(toLayer(_))))
   }
 
-  implicit final class INDArrayOps(nativeBpDouble: INDArray) {
+  implicit final class INDArrayOps(ndArray: INDArray) {
     def toWeight[InputData, InputDelta](
         implicit inputType: BackPropagationType[InputData, InputDelta],
         optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Bp2DArray#Batch] = {
-      Weight(nativeBpDouble)
+      Weight(ndArray)
     }
+  }
+
+  implicit def ndArrayToLiteral: ToLiteral.Aux[INDArray, Eval[INDArray], Eval[INDArray]] = new ToLiteral[INDArray] {
+    override type Data = Eval[INDArray]
+    override type Delta = Eval[INDArray]
+
+    override def apply(ndArray: INDArray) = Literal(Eval.now(ndArray))
   }
 
 }

@@ -1,12 +1,12 @@
 package com.thoughtworks.deeplearning
 
 import language.implicitConversions
-
 import com.thoughtworks.deeplearning.Layer.Batch
 import shapeless._
 
 import language.existentials
 
+// TODO: Rename to Lift
 object Conversion {
 
   object Layers {
@@ -64,19 +64,41 @@ object Conversion {
 
   trait ToLiteral[From] extends DepFn1[From] {
 
-    type OutputData
-    type OutputDelta
+    type Data
+    type Delta
 
-    type Out = Batch.Aux[OutputData, OutputDelta] with Layer.Aux[Batch, Batch.Aux[OutputData, OutputDelta]]
+    type Out = Batch.Aux[Data, Delta] with Layer.Aux[Batch, Batch.Aux[Data, Delta]]
 
   }
 
   object ToLiteral {
-    type Aux[From, OutputData0, OutputDelta0] = ToLiteral[From] {
-      type OutputData = OutputData0
-      type OutputDelta = OutputDelta0
+
+    type Aux[From, Data0, Delta0] = ToLiteral[From] {
+      type Data = Data0
+      type Delta = Delta0
     }
+
   }
+
+  implicit final class ToLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
+      implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta]
+  ) {
+
+    def toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = toLayer(from)
+
+  }
+  implicit final class ToLiteralOps[From, Data, Delta](from: From)(
+      implicit toLiteral: ToLiteral.Aux[From, Data, Delta]
+  ) {
+
+    @inline
+    def toBatch: Batch.Aux[Data, Delta] = toLiteral(from)
+
+  }
+
+  final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
+      layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {}
+
   implicit def autoToLayer[A, Input <: Batch, OutputData, OutputDelta](a: A)(
       implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
     : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
@@ -103,14 +125,13 @@ object Conversion {
     // Workaround for https://issues.scala-lang.org/browse/SI-10008
     type Batch >: ConcreteBatch <: ConcreteBatch
 
+    @deprecated(since = "1.0.0",
+                message = "Use Layer.Aux[the.`ToLiteral[InputData]`.Out, the.`ToLiteral[OutputData]`.Out] instead")
     type To[OutputSymbol <: BackPropagationType[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
     //  type Layer.Aux[OutputType <: BackPropagationType] =
     //    Layer.Aux[ConcreteBatch, outputType.ConcreteBatch forSome { val outputType: OutputType }]
   }
 
-  implicit final class ToBatch[Data](a: Data) {
-    def toBatch[Delta]: Batch.Aux[Data, Delta] = Literal[Data](a)
-  }
   object ToLayer extends ToLayerLowPriorityImplicits {
 
     type Aux[From, Input <: Batch, OutputData0, OutputDelta0] = ToLayer[From, Input] {
