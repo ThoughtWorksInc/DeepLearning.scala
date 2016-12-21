@@ -122,7 +122,6 @@ object Conversion {
   }
 
   // FIXME: rename to placeholder
-  @deprecated
   final class BackPropagationType[Data0, Delta0] {
     type Data = Data0
     type Delta = Delta0
@@ -184,6 +183,35 @@ object Conversion {
     type Out = Layer.Aux[Input, Output]
   }
 
+  trait Parameter[NativeValue] {
+
+    type Data
+    type Delta
+
+    type Out = BackPropagationType[Data, Delta]
+
+  }
+
+  object Parameter {
+
+    /** @template */
+    type Aux[NativeValue, Data0, Delta0] = Parameter[NativeValue] {
+      type Data = Data0
+      type Delta = Delta0
+    }
+
+    def apply[NativeValue, Data, Delta](
+        implicit typeClass: Parameter.Aux[NativeValue, Data, Delta]): Parameter.Aux[NativeValue, Data, Delta] =
+      typeClass
+
+    implicit def fromLift[NativeValue, Data0, Delta0](
+        implicit lift: Lazy[ToLiteral.Aux[NativeValue, Data0, Delta0]]): Parameter.Aux[NativeValue, Data0, Delta0] =
+      new Parameter[NativeValue] {
+        type Data = Data0
+        type Delta = Delta0
+      }
+
+  }
   object <=> {
 
     /** @template */
