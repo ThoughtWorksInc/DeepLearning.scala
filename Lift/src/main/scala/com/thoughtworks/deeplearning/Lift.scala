@@ -16,7 +16,7 @@ trait Lift[From] extends DepFn1[From] {
 
   type Placeholder = BackPropagationType[Data, Delta]
 
-  type Out = Batch with Layer.Aux[Layer.Batch, Batch]
+  type Out = Literal[Data]
 
 }
 
@@ -26,7 +26,7 @@ object Lift {
     override type Data = Data0
     override type Delta = Delta0
 
-    override def apply(data: Data) = Literal[Data](data)
+    override def apply(data: Data0) = Literal[Data](data)
   }
 
   type Aux[-From, Data0, Delta0] = Lift[_ >: From] {
@@ -114,17 +114,17 @@ object Lift {
   }
   private[deeplearning] sealed trait ToLayerLowPriorityImplicits2 { this: ToLayer.type =>
 
-    implicit def layerToLayer2[InputData, InputDelta, OutputData0, OutputDelta0]
-      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]],
-                    Batch.Aux[InputData, InputDelta],
+    implicit def layerToLayer2[InputData0, InputDelta0, OutputData0, OutputDelta0]
+      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData0, InputDelta0], Batch.Aux[OutputData0, OutputDelta0]],
+                    Batch.Aux[InputData0, InputDelta0],
                     OutputData0,
                     OutputDelta0] =
-      new ToLayer[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]],
-                  Batch.Aux[InputData, InputDelta]] {
+      new ToLayer[Layer.Aux[Batch.Aux[InputData0, InputDelta0], Batch.Aux[OutputData0, OutputDelta0]],
+                  Batch.Aux[InputData0, InputDelta0]] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
 
-        override def apply(layer: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]) =
+        override def apply(layer: Layer.Aux[Batch.Aux[InputData0, InputDelta0], Batch.Aux[OutputData0, OutputDelta0]]) =
           layer
       }
 
@@ -267,7 +267,7 @@ object Lift {
     type OutputDelta
     type Input = Batch.Aux[InputData, InputDelta]
     type Output = Batch.Aux[OutputData, OutputDelta]
-    type Out = Layer.Aux[Input, Output]
+    type Out = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
   }
 
 }

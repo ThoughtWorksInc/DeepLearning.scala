@@ -4,10 +4,11 @@ import cats.Eval
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
-import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
+import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Lift.BackPropagationType.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.BpCoproduct.Layers._
-import shapeless.Lub
+import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import shapeless.{:+:, CNil, Coproduct, Lazy, Lub}
 
 import language.existentials
 import language.implicitConversions
@@ -24,10 +25,11 @@ object BpCoproduct {
   type BpCNil = BackPropagationType[shapeless.CNil, shapeless.CNil]
 
   /** @template */
+  @deprecated
   type BpCCons[Head <: BackPropagationType[_, _], Tail <: BpCoproduct] =
     BackPropagationType[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  /** @template */
+  @deprecated
   type :++:[Head <: BackPropagationType[_, _], Tail <: BpCoproduct] =
     BackPropagationType[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
@@ -264,4 +266,25 @@ object BpCoproduct {
   ): CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
     new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
+
+  implicit def liftCNil: Lift.Aux[CNil, CNil, CNil] = Lift.fromData[CNil, CNil]
+
+  implicit def liftCCons[Head, HeadData, HeadDelta, Tail <: Coproduct, TailData <: Coproduct, TailDelta <: Coproduct](
+      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
+      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
+    : Lift.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new Lift[Head :+: Tail] {
+    override type Data = HeadData :+: TailData
+    override type Delta = HeadDelta :+: TailDelta
+    override def apply(data: :+:[Head, Tail]): Literal[HeadData :+: TailData] = {
+      data match {
+        case shapeless.Inl(head) =>
+          val Literal(headData) = liftHead.value(head)
+          Literal(shapeless.Inl(headData))
+        case shapeless.Inr(tail) =>
+          val Literal(tailData) = liftTail.value(tail)
+          Literal(shapeless.Inr(tailData))
+      }
+    }
+  }
+
 }

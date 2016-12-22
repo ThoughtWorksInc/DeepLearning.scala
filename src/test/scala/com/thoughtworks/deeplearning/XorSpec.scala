@@ -1,5 +1,6 @@
 package com.thoughtworks.deeplearning
 
+import shapeless._
 import cats._
 import cats.implicits._
 import org.nd4s.Implicits._
@@ -61,7 +62,9 @@ final class XorSpec extends FreeSpec with Matchers {
     sigmoid.compose((row dot w) + b)
   }
 
-  def hiddenLayers(implicit encodedInput: Bp2DArray): encodedInput.To[Bp2DArray] = {
+  val ArrayToArray = shapeless.the[INDArray <=> INDArray]
+
+  def hiddenLayers(implicit encodedInput: Bp2DArray): ArrayToArray.Out = {
     fullyConnectedThenSigmoid(50, 3).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(6, 50).compose(encodedInput))))
@@ -229,8 +232,8 @@ final class XorSpec extends FreeSpec with Matchers {
     import shapeless._
     val (left :: result :: right :: HNil) =
       predictNetwork.predict(Inr(Inl(1.0)) :: Inl(HNil) :: Inr(Inl(0.0)) :: HNil)
-    val loss = trainNetwork.predict(
-      (Inl(HNil) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil) :: (Inr(Inl(1.0)) :: Inl(HNil) :: Inr(
+    val loss =
+      trainNetwork.predict((Inl(HNil) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil) :: (Inr(Inl(1.0)) :: Inl(HNil) :: Inr(
         Inl(0.0)) :: HNil) :: HNil)
     println(raw"""${left.value}^${result.value}=${right.value}
 loss: ${loss.value}
@@ -290,7 +293,7 @@ ${left11.value}^${right11.value}=${result11.value}
 }
 
 object XorSpec {
-  type OptionalDouble = BpHNil :++: DoubleBackProgationType :++: BpCNil
+  type OptionalDouble = shapeless.the.`Parameter[HNil :+: Double :+: CNil]`.Out
   type Input = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
   type ExpectedLabel = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
   type Output = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil

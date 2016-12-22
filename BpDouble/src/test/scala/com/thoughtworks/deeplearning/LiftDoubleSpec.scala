@@ -12,7 +12,11 @@ import org.scalatest._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class LiftDoubleSpec extends FreeSpec with Matchers {
-  "the Lift should be a double batch" in {
+  "Lift[Double] should be a double batch" in {
     """implicitly[shapeless.the.`Lift[Double]`.Out <:< Batch.Aux[Double, Double]]""" should compile
+  }
+
+  "<=> should create Layers" in {
+    """implicitly[shapeless.the.`Double <=> Double`.Out =:= Layer.Aux[Batch.Aux[Double, Double], Batch.Aux[Double, Double]]]""" should compile
   }
 }
