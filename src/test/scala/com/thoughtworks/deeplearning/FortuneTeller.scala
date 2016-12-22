@@ -46,10 +46,12 @@ object FortuneTeller {
   type Field3 = Enum1
 
   type InputTypePair =
-    InputField[Nullable[DoubleBackProgationType]] :**: InputField[Enum0] :**: InputField[DoubleBackProgationType] :**: InputField[Enum1] :**: BpHNil
+    InputField[Nullable[DoubleBackProgationType]] :**: InputField[Enum0] :**: InputField[DoubleBackProgationType] :**: InputField[
+      Enum1] :**: BpHNil
 
   type ExpectedLabel =
-    LabelField[Nullable[DoubleBackProgationType]] :**: LabelField[Enum0] :**: LabelField[DoubleBackProgationType] :**: LabelField[Enum1] :**: BpHNil
+    LabelField[Nullable[DoubleBackProgationType]] :**: LabelField[Enum0] :**: LabelField[DoubleBackProgationType] :**: LabelField[
+      Enum1] :**: BpHNil
 
   type UnsetProbability = DoubleBackProgationType
   type NullableFieldPrediction[Value <: BackPropagationType[_, _]] = UnsetProbability :**: Value :**: BpHNil
@@ -70,7 +72,8 @@ object FortuneTeller {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(implicit rowAndExpectedLabel: Bp2DArray :**: ExpectedLabel :**: BpHNil): rowAndExpectedLabel.To[DoubleBackProgationType] = {
+  def loss(implicit rowAndExpectedLabel: Bp2DArray :**: ExpectedLabel :**: BpHNil)
+    : rowAndExpectedLabel.To[DoubleBackProgationType] = {
     val row: rowAndExpectedLabel.To[Bp2DArray] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
     val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[DoubleBackProgationType]]] = row.toSeq
@@ -148,11 +151,12 @@ object FortuneTeller {
 
   def array2DToRow(implicit input: Bp2DArray): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil] = min(rowSeq(0)(0), 1.0) :**: rowSeq(0)(1) :**: BpHNil
-    val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :**: rowSeq(0)(3) :**: BpHNil
+    val field0: input.To[DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(
+        0)(1) :: shapeless.HNil.toLayer
+    val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :: rowSeq(0)(3) :: shapeless.HNil.toLayer
     val field2: input.To[DoubleBackProgationType] = rowSeq(0)(4)
-    val field3 = rowSeq(0)(5) :**: rowSeq(0)(6) :**: rowSeq(0)(7) :**: BpHNil
-    field0 :**: field1 :**: field2 :**: field3 :**: BpHNil
+    val field3 = rowSeq(0)(5) :: rowSeq(0)(6) :: rowSeq(0)(7) :: shapeless.HNil.toLayer
+    field0 :: field1 :: field2 :: field3 :: shapeless.HNil.toLayer
   }
   val array2DToRowNetwork = array2DToRow
 
@@ -340,7 +344,7 @@ object FortuneTeller {
     val encodedInput = rowToBp2DArrayNetwork.compose(inputRow)
     val encodedResult = hiddenLayersNetwork.compose(encodedInput)
 
-    lossNetwork.compose(encodedResult :**: expectedLabel :**: BpHNil)
+    lossNetwork.compose(encodedResult :: expectedLabel :: shapeless.HNil.toLayer)
   }
 
   val trainNetwork = train

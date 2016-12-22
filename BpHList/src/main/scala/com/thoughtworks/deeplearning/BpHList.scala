@@ -4,6 +4,7 @@ import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
 import com.thoughtworks.deeplearning.Lift.BackPropagationType.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpHList.Layers._
+import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import shapeless._
 
 import language.implicitConversions
@@ -91,26 +92,6 @@ object BpHList {
 
     }
 
-    case object HNil extends Layer with Batch {
-      override type Input = Batch
-
-      override type Data = shapeless.HNil
-
-      override type Delta = shapeless.CNil
-
-      override type Output = Batch.Aux[Data, Delta]
-
-      override def addReference() = this
-
-      override def forward(input: Input) = this
-
-      override def backward(delta: Delta): Unit = {}
-
-      override def value = shapeless.HNil
-
-      override def close(): Unit = {}
-    }
-
     final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.HList,
     TailDelta <: shapeless.Coproduct](
         operand: Layer.Aux[Input0, Batch.Aux[HeadData :: TailData, shapeless.:+:[HeadDelta, TailDelta]]]
@@ -158,17 +139,6 @@ object BpHList {
   type :**:[Head <: BackPropagationType[_, _], Tail <: BpHList] =
     BackPropagationType[::[DataOf[Head], DataOf[Tail]], :+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  val BpHNil: Layers.HNil.type = Layers.HNil
-
-  implicit def hnilToLayer[InputData, InputDelta](implicit inputType: BackPropagationType[InputData, InputDelta])
-    : ToLayer.Aux[Layers.HNil.type, Batch.Aux[InputData, InputDelta], HNil, CNil] =
-    new ToLayer[Layers.HNil.type, Batch.Aux[InputData, InputDelta]] {
-      override type OutputData = HNil
-      override type OutputDelta = CNil
-
-      override def apply(hnil: Layers.HNil.type) = hnil
-    }
-
   final class HListLayerOps[Input <: Batch, TailData <: HList, TailDelta <: Coproduct](
       tail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]]) {
 
@@ -201,19 +171,28 @@ object BpHList {
   }
 
   implicit def toHConsLayerOps[From,
-                          Input <: Batch,
-                          OutputData,
-                          OutputDelta,
-                          HeadData,
-                          HeadDelta,
-                          TailData <: HList,
-                          TailDelta <: Coproduct](from: From)(
+                               Input <: Batch,
+                               OutputData,
+                               OutputDelta,
+                               HeadData,
+                               HeadDelta,
+                               TailData <: HList,
+                               TailDelta <: Coproduct](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
       toHListLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
         Input,
         Batch.Aux[::[HeadData, TailData], :+:[HeadDelta, TailDelta]]]
   ): HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
     new HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListLayer(toLayer(from)))
+  }
+
+  implicit def liftHNil: Lift.Aux[HNil, HNil, CNil] = Lift.fromData[HNil, CNil]
+
+  implicit def liftHNilSingleton: Lift.Aux[shapeless.HNil.type, HNil, CNil] = new Lift[shapeless.HNil.type] {
+    override type Data = HNil
+    override type Delta = CNil
+
+    override def apply(hnil: shapeless.HNil.type) = Literal(hnil: HNil)
   }
 
 }

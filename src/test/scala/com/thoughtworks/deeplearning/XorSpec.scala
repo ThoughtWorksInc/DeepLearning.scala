@@ -125,7 +125,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   def decode(implicit row: Bp2DArray): row.To[XorSpec.Output] = {
     val rowSeq = row.toSeq
-    rowSeq(0)(0) :**: rowSeq(0)(1) :**: rowSeq(0)(2) :**: BpHNil
+    rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: shapeless.HNil.toLayer
   }
 
   val decodeNetwork = decode
@@ -187,7 +187,7 @@ final class XorSpec extends FreeSpec with Matchers {
   def train(implicit pair: ExpectedLabel :**: Input :**: BpHNil): pair.To[DoubleBackProgationType] = {
     val expectedLabel = pair.head
     val input = pair.tail.head
-    loss.compose(expectedLabel :**: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :**: BpHNil)
+    loss.compose(expectedLabel :: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :: shapeless.HNil.toLayer)
   }
 
   val trainNetwork = train
