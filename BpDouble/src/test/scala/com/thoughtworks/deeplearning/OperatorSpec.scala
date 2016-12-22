@@ -2,6 +2,7 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.BpDouble._
+import com.thoughtworks.deeplearning.Layer.Batch
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._

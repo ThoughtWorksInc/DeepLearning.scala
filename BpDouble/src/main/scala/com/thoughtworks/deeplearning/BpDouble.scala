@@ -299,12 +299,11 @@ object BpDouble extends BpDoubleTypes {
     }
   }
 
-  implicit def `max(Double,Double)`[Input <: Batch]
-    : max.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `max(Double,Double)`[Input <: Batch]: /* max.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
                    Layer.Aux[Input, BpDouble#Batch],
-                   Layer.Aux[Input, BpDouble#Batch]] /*: max.Case.Aux[Layer.Aux[Input, Batch.Aux[Double, Double]],
-                                                                  Layer.Aux[Input, Batch.Aux[Double, Double]],
-                                                                  Layer.Aux[Input, Batch.Aux[Double, Double]]]*/ = {
+                   Layer.Aux[Input, BpDouble#Batch]] */ max.Case.Aux[Layer.Aux[Input, Batch.Aux[Double, Double]],
+                                                                     Layer.Aux[Input, Batch.Aux[Double, Double]],
+                                                                     Layer.Aux[Input, Batch.Aux[Double, Double]]] = {
     max.at { (leftLayer, rightLayer) =>
       If[Input, BpDouble#Data, BpDouble#Delta](LessThan[Input](leftLayer, rightLayer), rightLayer, leftLayer)
     }
@@ -379,9 +378,9 @@ object BpDouble extends BpDoubleTypes {
     new DoubleLayerOps(toLayer(from))
   }
 
-//  implicit def doubleToLayer[Input0 <: Batch, OutputDelta]
-//    : ToLayer.Aux[Layer.Aux[Input0, Batch.Aux[Double, OutputDelta]], Input0, Double, OutputDelta] = {
-//    Conversion.ToLayer.layerToLayer
-//  }
+  implicit def doubleToLayer[Input0 <: Batch, OutputDelta]
+    : ToLayer.Aux[Layer.Aux[Input0, Batch.Aux[Double, OutputDelta]], Input0, Double, OutputDelta] = {
+    Conversion.ToLayer.layerToLayer
+  }
 
 }

@@ -114,8 +114,7 @@ object Conversion {
 
     implicit def toLayerOfType[Input0 <: Batch, OutputType <: BackPropagationType[_, _]]
       : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
-      ToLayer
-        .layerToLayer[Input0, BackPropagationType.DataOf[OutputType], BackPropagationType.DeltaOf[OutputType]]
+      layerToLayer[Input0, BackPropagationType.DataOf[OutputType], BackPropagationType.DeltaOf[OutputType]]
         .asInstanceOf[ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType]]
     }
 
@@ -151,7 +150,7 @@ object Conversion {
       }
 
     implicit def layerToLayer[Input <: Batch, OutputData0, OutputDelta0]
-      : ToLayer.Aux[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input, OutputData0, OutputDelta0] =
+    : ToLayer.Aux[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input, OutputData0, OutputDelta0] =
       new ToLayer[Layer.Aux[Input, Batch.Aux[OutputData0, OutputDelta0]], Input] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
@@ -205,7 +204,7 @@ object Conversion {
       typeClass
 
     implicit def fromLift[NativeValue, Data0, Delta0](
-        implicit lift: Lazy[ToLiteral.Aux[NativeValue, Data0, Delta0]]): Parameter.Aux[NativeValue, Data0, Delta0] =
+        implicit lift: ToLiteral.Aux[NativeValue, Data0, Delta0]): Parameter.Aux[NativeValue, Data0, Delta0] =
       new Parameter[NativeValue] {
         type Data = Data0
         type Delta = Delta0
@@ -228,8 +227,8 @@ object Conversion {
       : <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta] = typeClass
 
     implicit def fromBatchOf[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-        implicit inputBatchOf: Lazy[ToLiteral.Aux[NativeInput, InputData0, InputDelta0]],
-        outputBatchOf: Lazy[ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]])
+        implicit inputBatchOf: ToLiteral.Aux[NativeInput, InputData0, InputDelta0],
+        outputBatchOf: ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0])
       : <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
       new <=>[NativeInput, NativeOutput] {
         type InputData = InputData0
