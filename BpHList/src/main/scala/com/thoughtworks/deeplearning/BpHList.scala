@@ -188,11 +188,4 @@ object BpHList {
 
   implicit def liftHNil: Lift.Aux[HNil, HNil, CNil] = Lift.fromData[HNil, CNil]
 
-  implicit def liftHNilSingleton: Lift.Aux[shapeless.HNil.type, HNil, CNil] = new Lift[shapeless.HNil.type] {
-    override type Data = HNil
-    override type Delta = CNil
-
-    override def apply(hnil: shapeless.HNil.type) = Literal(hnil: HNil)
-  }
-
 }

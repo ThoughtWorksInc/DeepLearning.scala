@@ -22,14 +22,14 @@ trait Lift[From] extends DepFn1[From] {
 
 object Lift {
 
-  def fromData[Data0, Delta0]: Lift.Aux[Data0, Data0, Delta0] = new Lift[Data0] {
+  def fromData[Data0, Delta0] = new Lift[Data0] {
     override type Data = Data0
     override type Delta = Delta0
 
     override def apply(data: Data) = Literal[Data](data)
   }
 
-  type Aux[From, Data0, Delta0] = Lift[From] {
+  type Aux[-From, Data0, Delta0] = Lift[_ >: From] {
     type Data = Data0
     type Delta = Delta0
   }
