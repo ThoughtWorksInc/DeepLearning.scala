@@ -188,4 +188,17 @@ object BpHList {
 
   implicit def liftHNil: Lift.Aux[HNil, HNil, CNil] = Lift.fromData[HNil, CNil]
 
+  implicit def liftHCons[Head, HeadData, HeadDelta, Tail <: HList, TailData <: HList, TailDelta <: Coproduct](
+      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
+      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
+    : Lift.Aux[Head :: Tail, HeadData :: TailData, HeadDelta :+: TailDelta] = new Lift[Head :: Tail] {
+    override type Data = HeadData :: TailData
+    override type Delta = HeadDelta :+: TailDelta
+    override def apply(data: Head :: Tail): Literal[HeadData :: TailData] = {
+      val head :: tail = data
+      val Literal(headData) = liftHead.value(head)
+      val Literal(tailData) = liftTail.value(tail)
+      Literal(headData :: tailData)
+    }
+  }
 }
