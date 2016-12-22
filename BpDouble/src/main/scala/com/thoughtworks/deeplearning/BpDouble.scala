@@ -280,14 +280,7 @@ object BpDouble {
 
   }
 
-  implicit def liftNativeDoubleToLiteral: Lift.Aux[Double, Double, Double] =
-    new Lift[Double] {
-      override type Data = Double
-      override type Delta = Double
-      override def apply(nativeDouble: Double) = {
-        Literal(nativeDouble)
-      }
-    }
+  implicit def liftNativeDouble: Lift.Aux[Double, Double, Double] = Lift.fromData[Double, Double]
 
   implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                   Layer.Aux[Input, DoubleBackProgationType.Batch],

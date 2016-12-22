@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import cats.{Eval, Monoid}
 import cats.implicits._
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
 import com.thoughtworks.deeplearning.Lift._
 import shapeless.Lub
 
@@ -119,5 +119,7 @@ object BpBoolean {
       implicit toLayer: ToLayer.OfType[From, Input, BpBoolean]): BooleanLayerOps[Input] = {
     new BooleanLayerOps[Input](toLayer(from))
   }
+
+  implicit def liftBoolean: Lift.Aux[Boolean, Boolean, Boolean] = Lift.fromData[Boolean, Boolean]
 
 }

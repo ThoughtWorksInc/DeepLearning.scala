@@ -1,7 +1,8 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Lift.BackPropagationType
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
+import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import shapeless._
 
 import scala.language.{existentials, implicitConversions}
@@ -20,6 +21,13 @@ trait Lift[From] extends DepFn1[From] {
 }
 
 object Lift {
+
+  def fromData[Data0, Delta0]: Lift.Aux[Data0, Data0, Delta0] = new Lift[Data0] {
+    override type Data = Data0
+    override type Delta = Delta0
+
+    override def apply(data: Data) = Literal[Data](data)
+  }
 
   type Aux[From, Data0, Delta0] = Lift[From] {
     type Data = Data0

@@ -11,7 +11,7 @@ import org.scalatest._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class DoubleToLiteralSpec extends FreeSpec with Matchers {
+final class LiftDoubleSpec extends FreeSpec with Matchers {
   "the Lift should be a double batch" in {
     """implicitly[shapeless.the.`Lift[Double]`.Out <:< Batch.Aux[Double, Double]]""" should compile
   }
