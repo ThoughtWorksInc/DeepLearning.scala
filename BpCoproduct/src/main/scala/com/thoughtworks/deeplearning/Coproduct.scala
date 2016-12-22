@@ -181,12 +181,12 @@ object BpCoproduct {
           with Batch
           with CloseableOnce {
 
-        val value = upstream.value match {
-          case shapeless.Inl(_) => Eval.now(true)
-          case shapeless.Inr(_) => Eval.now(false)
+        override val value = upstream.value match {
+          case shapeless.Inl(_) => true
+          case shapeless.Inr(_) => false
         }
 
-        override def backward(delta: Eval[Boolean]): Unit = {}
+        override def backward(delta: Boolean): Unit = {}
 
         override def close(): Unit = {
           super.close()
@@ -250,13 +250,13 @@ object BpCoproduct {
   }
 
   implicit def toCConsLayerOps[From,
-                          Input <: Batch,
-                          OutputData,
-                          OutputDelta,
-                          HeadData,
-                          HeadDelta,
-                          TailData <: shapeless.Coproduct,
-                          TailDelta <: shapeless.Coproduct](from: From)(
+                               Input <: Batch,
+                               OutputData,
+                               OutputDelta,
+                               HeadData,
+                               HeadDelta,
+                               TailData <: shapeless.Coproduct,
+                               TailDelta <: shapeless.Coproduct](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
       toCoproductLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
         Input,

@@ -202,20 +202,20 @@ final class XorSpec extends FreeSpec with Matchers {
       if (isDropout) {
         Inl(HNil)
       } else {
-        Inr(Inl(Eval.now(if (value) {
+        Inr(Inl(if (value) {
           1.0
         } else {
           0.0
-        })))
+        }))
       }
     }
     def expectedLabel(isDropout: Boolean, value: Boolean) = {
       if (isDropout) {
-        Inr(Inl(Eval.now(if (value) {
+        Inr(Inl(if (value) {
           1.0
         } else {
           0.0
-        })))
+        }))
       } else {
         Inl(HNil)
       }
@@ -228,22 +228,22 @@ final class XorSpec extends FreeSpec with Matchers {
   def predictAndPrint() = {
     import shapeless._
     val (left :: result :: right :: HNil) =
-      predictNetwork.predict(Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: Inr(Inl(Eval.now(0.0))) :: HNil)
+      predictNetwork.predict(Inr(Inl(1.0)) :: Inl(HNil) :: Inr(Inl(0.0)) :: HNil)
     val loss = trainNetwork.predict(
-      (Inl(HNil) :: Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: HNil) :: (Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: Inr(
-        Inl(Eval.now(0.0))) :: HNil) :: HNil)
+      (Inl(HNil) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil) :: (Inr(Inl(1.0)) :: Inl(HNil) :: Inr(
+        Inl(0.0)) :: HNil) :: HNil)
     println(raw"""${left.value}^${result.value}=${right.value}
 loss: ${loss.value}
 """)
 
     val (left10 :: right10 :: result10 :: HNil) =
-      predictNetwork.predict(Inr(Inl(Eval.now(1.0))) :: Inr(Inl(Eval.now(0.0))) :: Inl(HNil) :: HNil)
+      predictNetwork.predict(Inr(Inl(1.0)) :: Inr(Inl(0.0)) :: Inl(HNil) :: HNil)
     val (left01 :: right01 :: result01 :: HNil) =
-      predictNetwork.predict(Inr(Inl(Eval.now(0.0))) :: Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: HNil)
+      predictNetwork.predict(Inr(Inl(0.0)) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil)
     val (left00 :: right00 :: result00 :: HNil) =
-      predictNetwork.predict(Inr(Inl(Eval.now(0.0))) :: Inr(Inl(Eval.now(0.0))) :: Inl(HNil) :: HNil)
+      predictNetwork.predict(Inr(Inl(0.0)) :: Inr(Inl(0.0)) :: Inl(HNil) :: HNil)
     val (left11 :: right11 :: result11 :: HNil) =
-      predictNetwork.predict(Inr(Inl(Eval.now(1.0))) :: Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: HNil)
+      predictNetwork.predict(Inr(Inl(1.0)) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil)
 
     println(raw"""${left00.value}^${right00.value}=${result00.value}
 ${left01.value}^${right01.value}=${result01.value}
@@ -261,29 +261,29 @@ ${left11.value}^${right11.value}=${result11.value}
     {
       import shapeless._
       val (left00 :: right00 :: result00 :: HNil) =
-        predictNetwork.predict(Inr(Inl(Eval.now(0.0))) :: Inr(Inl(Eval.now(0.0))) :: Inl(HNil) :: HNil)
-      result00.value should be < 0.5
+        predictNetwork.predict(Inr(Inl(0.0)) :: Inr(Inl(0.0)) :: Inl(HNil) :: HNil)
+      result00 should be < 0.5
       val (left01 :: right01 :: result01 :: HNil) =
-        predictNetwork.predict(Inr(Inl(Eval.now(0.0))) :: Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: HNil)
-      result01.value should be > 0.5
+        predictNetwork.predict(Inr(Inl(0.0)) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil)
+      result01 should be > 0.5
       val (left10 :: right10 :: result10 :: HNil) =
-        predictNetwork.predict(Inr(Inl(Eval.now(1.0))) :: Inr(Inl(Eval.now(0.0))) :: Inl(HNil) :: HNil)
-      result10.value should be > 0.5
+        predictNetwork.predict(Inr(Inl(1.0)) :: Inr(Inl(0.0)) :: Inl(HNil) :: HNil)
+      result10 should be > 0.5
       val (left11 :: right11 :: result11 :: HNil) =
-        predictNetwork.predict(Inr(Inl(Eval.now(1.0))) :: Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: HNil)
-      result11.value should be < 0.5
+        predictNetwork.predict(Inr(Inl(1.0)) :: Inr(Inl(1.0)) :: Inl(HNil) :: HNil)
+      result11 should be < 0.5
 
       val (_ :: result0x0 :: _ :: HNil) =
-        predictNetwork.predict(Inr(Inl(Eval.now(0.0))) :: Inl(HNil) :: Inr(Inl(Eval.now(0.0))) :: HNil)
-      result0x0.value should be < 0.5
+        predictNetwork.predict(Inr(Inl(0.0)) :: Inl(HNil) :: Inr(Inl(0.0)) :: HNil)
+      result0x0 should be < 0.5
 
       val (resultx11 :: _ :: _ :: HNil) =
-        predictNetwork.predict(Inl(HNil) :: Inr(Inl(Eval.now(1.0))) :: Inr(Inl(Eval.now(1.0))) :: HNil)
-      resultx11.value should be < 0.5
+        predictNetwork.predict(Inl(HNil) :: Inr(Inl(1.0)) :: Inr(Inl(1.0)) :: HNil)
+      resultx11 should be < 0.5
 
       val (_ :: result1x0 :: _ :: HNil) =
-        predictNetwork.predict(Inr(Inl(Eval.now(1.0))) :: Inl(HNil) :: Inr(Inl(Eval.now(0.0))) :: HNil)
-      result1x0.value should be > 0.5
+        predictNetwork.predict(Inr(Inl(1.0)) :: Inl(HNil) :: Inr(Inl(0.0)) :: HNil)
+      result1x0 should be > 0.5
     }
   }
 

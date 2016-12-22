@@ -24,9 +24,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       import shapeless._
       import shapeless.ops.coproduct._
       IndexedSeq(
-        Coproduct[Field0#Data](HNil: HNil) :: Inl(HNil) :: Eval.now(3.5) :: Inl(HNil) :: HNil,
-        Coproduct[Field0#Data](Eval.now(5.1)) :: Inr(Inl(HNil)) :: Eval.now(8.3) :: Inr(Inl(HNil)) :: HNil,
-        Coproduct[Field0#Data](HNil: HNil) :: Inl(HNil) :: Eval.now(91.3) :: Inr(Inr(Inl(HNil))) :: HNil
+        Coproduct[Field0#Data](HNil: HNil) :: Inl(HNil) :: 3.5 :: Inl(HNil) :: HNil,
+        Coproduct[Field0#Data](5.1) :: Inr(Inl(HNil)) :: 8.3 :: Inr(Inl(HNil)) :: HNil,
+        Coproduct[Field0#Data](HNil: HNil) :: Inl(HNil) :: 91.3 :: Inr(Inr(Inl(HNil))) :: HNil
       )
     }
 
@@ -78,7 +78,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
     def predictField2(data: InputTypePair#Data): Double = {
       val (result0NullProbability :: result0Value :: HNil) :: (result1Case0Probability :: result1Case1Probability :: HNil) :: result2 :: (result3Case0Probability :: result3Case1Probability :: result3Case2Probability :: HNil) :: HNil =
         predictNetwork.predict(data)
-      result2.value
+      result2
     }
     for (i <- 0 until 20) {
 //      println(predictNetwork)

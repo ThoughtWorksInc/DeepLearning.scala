@@ -27,12 +27,12 @@ object Bp2DArray {
 
   private[deeplearning] trait TwoDArraySemigroupBatch extends Batch {
 
-    override type Data = Eval[INDArray]
+    override type Data = INDArray
 
-    override type Delta = Eval[INDArray]
+    override type Delta = INDArray
 
     protected final def semigroup = new Semigroup[Delta] {
-      override def combine(x: Delta, y: Delta): Delta = x.map2(y)(_ + _)
+      override def combine(x: Delta, y: Delta): Delta = x + y
     }
 
   }
@@ -47,7 +47,7 @@ object Bp2DArray {
   }
 
   /** @template */
-  type Bp2DArray = BackPropagationType[Eval[INDArray], Eval[INDArray]]
+  type Bp2DArray = BackPropagationType[INDArray, INDArray]
 
   object Optimizers {
 
@@ -103,32 +103,19 @@ object Bp2DArray {
         } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           val value = {
-            upstream1.value
-              .map2(upstream2.value) { (aValue, bValue) =>
-                val Array(aRows, aColumns) = aValue.shape()
-                val Array(bRows, bColumns) = bValue.shape()
-                val newShape =
-                  Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-                aValue.broadcast(newShape: _*) * bValue.broadcast(newShape: _*)
-              }
-              .memoize
+            val aValue = upstream1.value
+            val bValue = upstream2.value
+            val Array(aRows, aColumns) = aValue.shape()
+            val Array(bRows, bColumns) = bValue.shape()
+            val newShape = Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+            aValue.broadcast(newShape: _*) * bValue.broadcast(newShape: _*)
           }
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
             val a = upstream1.value
             val b = upstream2.value
-            upstream1.backward(
-              Applicative[Eval]
-                .map3(outputDelta, a, b) { (outputDeltaValue, aData, bData) =>
-                  sumAs(bData.broadcast(outputDeltaValue.shape(): _*) * outputDeltaValue, aData.shape())
-                }
-                .memoize)
-            upstream2.backward(
-              Applicative[Eval]
-                .map3(outputDelta, a, b) { (outputDeltaValue, aData, bData) =>
-                  sumAs(aData.broadcast(outputDeltaValue.shape(): _*) * outputDeltaValue, bData.shape())
-                }
-                .memoize)
+            upstream1.backward(sumAs(b.broadcast(outputDelta.shape(): _*) * outputDelta, a.shape()))
+            upstream2.backward(sumAs(a.broadcast(outputDelta.shape(): _*) * outputDelta, b.shape()))
           }
         }
       }
@@ -148,21 +135,13 @@ object Bp2DArray {
           override final val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
-          val value = upstream1.value.map2(upstream2.value)(Transforms.max).memoize
+          val value = Transforms.max(upstream1.value, upstream2.value)
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
             val a = upstream1.value
             val b = upstream2.value
-            upstream1.backward(
-              Applicative[Eval].map3(outputDelta, a, b) { (outputDeltaValue, aValue, bValue) =>
-                (aValue gt bValue) * outputDeltaValue
-              }
-            )
-            upstream2.backward(
-              Applicative[Eval].map3(outputDelta, a, b) { (outputDeltaValue, aValue, bValue) =>
-                ((aValue lt bValue) * outputDeltaValue).sumT
-              }
-            )
+            upstream1.backward((a gt b) * outputDelta)
+            upstream2.backward(((a lt b) * outputDelta).sumT)
           }
         }
       }
@@ -183,52 +162,27 @@ object Bp2DArray {
         } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
           val value = {
-            upstream1.value
-              .map2(upstream2.value) { (aValue, bValue) =>
-                val Array(aRows, aColumns) = aValue.shape()
-                val Array(bRows, bColumns) = bValue.shape()
-                val newShape =
-                  Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-                aValue.broadcast(newShape: _*) + bValue.broadcast(newShape: _*)
-              }
-              .memoize
+            val aValue = upstream1.value
+            val bValue = upstream2.value
+            val Array(aRows, aColumns) = aValue.shape()
+            val Array(bRows, bColumns) = bValue.shape()
+            val newShape =
+              Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+            aValue.broadcast(newShape: _*) + bValue.broadcast(newShape: _*)
           }
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            val sumAsOriginalShape = { (outputDeltaValue: INDArray, upstreamValue: INDArray) =>
-              sumAs(outputDeltaValue, upstreamValue.shape)
-            }
-            upstream1.backward(outputDelta.map2(upstream1.value)(sumAsOriginalShape))
-            upstream2.backward(outputDelta.map2(upstream2.value)(sumAsOriginalShape))
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream1.backward(sumAs(outputDelta, upstream1.value.shape()))
+            upstream2.backward(sumAs(outputDelta, upstream2.value.shape()))
           }
         }
       }
-    }
-
-    object ToBp2DArray {
-
-      private[ToBp2DArray] implicit object SeqInstances extends Traverse[Seq] {
-        override def traverse[G[_]: Applicative, A, B](fa: Seq[A])(f: (A) => G[B]): G[Seq[B]] = {
-          fa.foldRight((Vector.empty[B]: Seq[B]).pure[G]) { (a: A, accumulation: G[Seq[B]]) =>
-            f(a).map2(accumulation)(_ +: _)
-          }
-        }
-
-        override def foldLeft[A, B](fa: Seq[A], b: B)(f: (B, A) => B): B = {
-          fa.foldLeft(b)(f)
-        }
-
-        override def foldRight[A, B](fa: Seq[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
-          fa.foldRight(lb)(f)
-        }
-      }
-
     }
 
     object ToSeq {
       private[ToSeq] trait Seq2DBatch extends Batch {
-        override type Data = Seq[Seq[Eval[Double]]]
-        override type Delta = (Int, (Int, Eval[Double]))
+        override type Data = Seq[Seq[Double]]
+        override type Delta = (Int, (Int, Double))
       }
     }
 
@@ -247,10 +201,7 @@ object Bp2DArray {
           override val input = input0
         } with UnaryBatch with Seq2DBatch {
 
-          private def zeroDelta =
-            upstream.value.map { upstreamData =>
-              Nd4j.zeros(upstreamData.shape: _*)
-            }.memoize
+          private def zeroDelta = Nd4j.zeros(upstream.value.shape: _*)
 
           @volatile
           var upstreamDelta = zeroDelta
@@ -267,24 +218,22 @@ object Bp2DArray {
             synchronized {
               val (i, (j, value)) = delta
               // Cannot use += because of https://issues.scala-lang.org/browse/SI-10021
-              upstreamDelta.value(i, j) = upstreamDelta.value(i, j) + value.value
+              upstreamDelta(i, j) = upstreamDelta(i, j) + value
             }
           }
 
           override val value: Data = {
-            val ndarray = upstream.value.value
+            val ndarray = upstream.value
             val doubleArray = ndarray.data.asDouble()
             for (i <- (0 until ndarray.rows).view) yield {
-              doubleArray.view(i * ndarray.columns, (i + 1) * ndarray.columns).map { doubleValue =>
-                Eval.now(doubleValue)
-              }
+              doubleArray.view(i * ndarray.columns, (i + 1) * ndarray.columns)
             }
           }
         }
       }
     }
 
-    final case class Weight(var rawValue: INDArray)(implicit optimizer: Optimizer)
+    final case class Weight(var value: INDArray)(implicit optimizer: Optimizer)
         extends Layer
         with TwoDArraySemigroupBatch {
       override type Input = Batch
@@ -292,13 +241,11 @@ object Bp2DArray {
 
       override def addReference() = this
 
-      override def value = Eval.now(rawValue)
-
       override def forward(any: Input) = this
 
       override def backward(delta: Delta): Unit = {
         synchronized {
-          rawValue = optimizer.updateNDArray(rawValue, delta.value)
+          value = optimizer.updateNDArray(value, delta)
         }
       }
 
@@ -306,26 +253,23 @@ object Bp2DArray {
 
     }
 
-    final case class ToBp2DArray[Input0 <: Batch](
-        operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]]])
+    final case class ToBp2DArray[Input0 <: Batch](operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Double, Double]]]])
         extends Layer {
-
-      import ToBp2DArray.SeqInstances
 
       type Input = Input0
 
-      final class Output private[ToBp2DArray] (upstreams: Seq[Seq[Batch.Aux[Eval[Double], Eval[Double]]]])
+      final class Output private[ToBp2DArray] (upstreams: Seq[Seq[Batch.Aux[Double, Double]]])
           extends TwoDArraySemigroupBatch
           with CloseableOnce {
-        override def backward(delta: Eval[INDArray]): Unit = {
+        override def backward(delta: INDArray): Unit = {
           for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
-            upstream.backward(delta.map(_(i, j)))
+            upstream.backward(delta(i, j))
           }
 
         }
 
         override val value = {
-          upstreams.traverse(_.traverse(_.value)).map(_.toNDArray).memoize
+          upstreams.map(_.map(_.value)).toNDArray
         }
 
         override def close(): Unit = {
@@ -354,16 +298,11 @@ object Bp2DArray {
           override val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
-          val value = upstream.value.map(_.sum(dimensions: _*)).memoize
+          val value = upstream.value.sum(dimensions: _*)
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
             val a = upstream.value
-            upstream.backward(
-              outputDelta
-                .map2(a) { (outputDeltaValue, aValue) =>
-                  outputDeltaValue.broadcast(aValue.shape: _*)
-                }
-                .memoize)
+            upstream.backward(outputDelta.broadcast(a.shape: _*))
           }
         }
       }
@@ -380,15 +319,10 @@ object Bp2DArray {
           override val input = input0
         } with DoubleMonoidBatch with MonoidBatch with UnaryBatch {
 
-          val value = upstream.value.map(_.sumT).memoize
+          val value = (upstream.value: INDArray).sumT
 
-          override protected def rawBackward(outputDelta: Eval[Double]): Unit = {
-            upstream.backward(
-              outputDelta
-                .map2(upstream.value) { (outputDeltaValue, aValue) =>
-                  Nd4j.valueArrayOf(aValue.shape(), outputDeltaValue)
-                }
-                .memoize)
+          override protected def rawBackward(outputDelta: Double): Unit = {
+            upstream.backward(Nd4j.valueArrayOf(upstream.value.shape(), outputDelta))
           }
         }
       }
@@ -405,17 +339,11 @@ object Bp2DArray {
           override val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
-          val value = upstream.value.map(_ rdiv 1.0).memoize
+          val value = upstream.value rdiv 1.0
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            val upstreamValue = upstream.value
-            upstream.backward(
-              outputDelta
-                .map2(upstream.value) { (outputDeltaValue, aValue) =>
-                  -outputDeltaValue / (aValue * aValue)
-                }
-                .memoize
-            )
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            val upstreamValue: INDArray = upstream.value
+            upstream.backward(-outputDelta / (upstreamValue * upstreamValue))
           }
         }
       }
@@ -434,11 +362,11 @@ object Bp2DArray {
         new {
           override final val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
-          val value = upstream1.value.map2(upstream2.value)(_ + _).memoize
+          val value = (upstream1.value: INDArray) + upstream2.value
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
             upstream1.backward(outputDelta)
-            upstream2.backward(outputDelta.map(_.sumT))
+            upstream2.backward(outputDelta.sumT)
           }
         }
       }
@@ -455,10 +383,10 @@ object Bp2DArray {
           override val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
-          val value = upstream.value.map(-_).memoize
+          val value = -upstream.value
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            upstream.backward(outputDelta.map(-_).memoize)
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream.backward(-outputDelta)
           }
         }
       }
@@ -473,10 +401,10 @@ object Bp2DArray {
         new {
           override val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
-          val value = upstream.value.map(Transforms.exp).memoize
+          val value = Transforms.exp(upstream.value)
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            upstream.backward(value.map2(outputDelta)(_ * _).memoize)
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream.backward(value * outputDelta)
           }
         }
       }
@@ -492,10 +420,10 @@ object Bp2DArray {
           override val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
 
-          val value = upstream.value.map(Transforms.log).memoize
+          val value = Transforms.log(upstream.value)
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            upstream.backward(outputDelta.map2(upstream.value)(_ / _).memoize)
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream.backward(outputDelta / upstream.value)
           }
         }
       }
@@ -515,19 +443,15 @@ object Bp2DArray {
           override final val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
-          val value = upstream1.value.map2(upstream2.value)(_ * _).memoize
+          val value = (upstream1.value: INDArray) * upstream2.value
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            val a = upstream1.value
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            val a: INDArray = upstream1.value
             val b = upstream2.value
 
-            val aDelta = outputDelta.map2(b)(_ * _).memoize
+            val aDelta = outputDelta * b
             upstream1.backward(aDelta)
-            val bDelta = outputDelta
-              .map2(a) { (outputDeltaValue, aValue) =>
-                (aValue * outputDeltaValue).sumT
-              }
-              .memoize
+            val bDelta = (a * outputDelta).sumT
             upstream2.backward(bDelta)
           }
         }
@@ -548,25 +472,13 @@ object Bp2DArray {
           override final val input = input0
         } with TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
-          override val value = upstream1.value.map2(upstream2.value)(_ dot _).memoize
+          override val value = (upstream1.value: INDArray) dot upstream2.value
 
-          override protected def rawBackward(outputDelta: Eval[INDArray]): Unit = {
-            val b = upstream2.value
-            upstream1.backward(
-              outputDelta
-                .map2(b) {
-                  _ dot _.T
-                }
-                .memoize)
-            val a = upstream1.value
-            upstream2.backward(
-              outputDelta
-                .flatMap[INDArray] { outputDeltaValue =>
-                  a.map { aData =>
-                    aData.T.dot(outputDeltaValue)
-                  }
-                }
-                .memoize)
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            val b: INDArray = upstream2.value
+            upstream1.backward(outputDelta dot b.T)
+            val a: INDArray = upstream1.value
+            upstream2.backward(a.T.dot(outputDelta))
           }
         }
 
@@ -693,7 +605,7 @@ object Bp2DArray {
       Negative(differentiable)
     }
 
-    def toSeq: Layer.Aux[Input, Batch.Aux[Seq[Seq[Eval[Double]]], (Int, (Int, Eval[Double]))]] = {
+    def toSeq: Layer.Aux[Input, Batch.Aux[Seq[Seq[Double]], (Int, (Int, Double))]] = {
       ToSeq(differentiable)
     }
 
@@ -706,8 +618,7 @@ object Bp2DArray {
   }
 
   // TODO: Support Array for better performance.
-  final class To2DArrayLayerOps[Input <: Batch](
-      layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Eval[Double], Eval[Double]]]]]) {
+  final class To2DArrayLayerOps[Input <: Batch](layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Double, Double]]]]) {
     def toBp2DArray: Layer.Aux[Input, Bp2DArray#Batch] = ToBp2DArray(layerVector)
   }
 
@@ -724,11 +635,11 @@ object Bp2DArray {
     }
   }
 
-  implicit def ndArrayToLiteral: ToLiteral.Aux[INDArray, Eval[INDArray], Eval[INDArray]] = new ToLiteral[INDArray] {
-    override type Data = Eval[INDArray]
-    override type Delta = Eval[INDArray]
+  implicit def ndArrayToLiteral: ToLiteral.Aux[INDArray, INDArray, INDArray] = new ToLiteral[INDArray] {
+    override type Data = INDArray
+    override type Delta = INDArray
 
-    override def apply(ndArray: INDArray) = Literal(Eval.now(ndArray))
+    override def apply(ndArray: INDArray) = Literal(ndArray)
   }
 
 }

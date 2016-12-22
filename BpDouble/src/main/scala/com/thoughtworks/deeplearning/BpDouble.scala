@@ -15,7 +15,7 @@ import com.thoughtworks.deeplearning.BpDouble.Optimizers.{LearningRate, Optimize
 import language.implicitConversions
 
 private[deeplearning] sealed trait BpDoubleTypes {
-  type DoubleBatch >: Batch.Aux[Eval[Double], Eval[Double]] <: Batch.Aux[Eval[Double], Eval[Double]]
+  type DoubleBatch >: Batch.Aux[Double, Double] <: Batch.Aux[Double, Double]
 }
 
 /**
@@ -25,16 +25,16 @@ object BpDouble extends BpDoubleTypes {
 
   private[deeplearning] trait DoubleMonoidBatch extends Batch {
 
-    override type Data = Eval[Double]
+    override type Data = Double
 
-    override type Delta = Eval[Double]
+    override type Delta = Double
 
     protected final def monoid = implicitly[Monoid[Delta]]
 
   }
 
   /** @template */
-  type BpDouble = BackPropagationType[Eval[Double], Eval[Double]]
+  type BpDouble = BackPropagationType[Double, Double]
 
   object Optimizers {
 
@@ -73,7 +73,7 @@ object BpDouble extends BpDoubleTypes {
 
   object Layers {
 
-    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]])
+    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -85,10 +85,10 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = upstream.value.map(math.exp).memoize
+          val value = math.exp(upstream.value)
 
-          override protected def rawBackward(outputDelta: Eval[Double]): Unit = {
-            upstream.backward(value.map2(outputDelta)(_ * _).memoize)
+          override protected def rawBackward(outputDelta: Double): Unit = {
+            upstream.backward(value * outputDelta)
           }
 
         }
@@ -96,8 +96,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class LessThan[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]
+        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
+        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = BooleanMonoidBatch with MonoidBatch with BinaryBatch
@@ -108,17 +108,16 @@ object BpDouble extends BpDoubleTypes {
         new {
           override final val input = input0
         } with BooleanMonoidBatch with MonoidBatch with BinaryBatch {
-          override val value = upstream1.value.map2(upstream2.value)(_ < _).memoize
+          override val value = upstream1.value < upstream2.value
 
-          override protected def rawBackward(delta: Eval[Boolean]): Unit = {
-            upstream1.backward(Eval.now(0.0))
-            upstream2.backward(Eval.now(0.0))
+          override protected def rawBackward(delta: Delta): Unit = {
+            // No backward pass
           }
         }
       }
     }
 
-    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]])
+    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -130,17 +129,17 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = upstream.value.map(math.log).memoize
+          val value = math.log(upstream.value)
 
-          override protected def rawBackward(outputDelta: Eval[Double]): Unit = {
-            upstream.backward(outputDelta.map2(upstream.value)(_ / _).memoize)
+          override protected def rawBackward(outputDelta: Double): Unit = {
+            upstream.backward(outputDelta / upstream.value)
           }
 
         }
 
     }
 
-    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]])
+    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -152,10 +151,10 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = upstream.value.map(-_)
+          val value = -upstream.value
 
-          override protected def rawBackward(delta: Eval[Double]): Unit = {
-            upstream.backward(delta.map(-_))
+          override protected def rawBackward(delta: Double): Unit = {
+            upstream.backward(-delta)
           }
 
         }
@@ -163,8 +162,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class Plus[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]
+        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
+        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -176,9 +175,9 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with DoubleMonoidBatch with MonoidBatch with BinaryBatch {
 
-          val value = upstream1.value.map2(upstream2.value)(_ + _)
+          val value = upstream1.value + upstream2.value
 
-          override protected def rawBackward(delta: Eval[Double]): Unit = {
+          override protected def rawBackward(delta: Double): Unit = {
             upstream1.backward(delta)
             upstream2.backward(delta)
           }
@@ -187,7 +186,7 @@ object BpDouble extends BpDoubleTypes {
       }
     }
 
-    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]])
+    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -199,13 +198,12 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = upstream.value.map(1.0 / _)
+          val value = 1.0 / upstream.value
 
-          override protected def rawBackward(delta: Eval[Double]): Unit = {
+          override protected def rawBackward(delta: Double): Unit = {
             val a = upstream.value
-            upstream.backward(delta.map2(a) { (outputDeltaValue: Double, aValue: Double) =>
-              -outputDeltaValue / (aValue * aValue)
-            })
+
+            upstream.backward(-delta / (a * a))
           }
 
         }
@@ -213,8 +211,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class Substract[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]
+        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
+        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -226,11 +224,11 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with DoubleMonoidBatch with MonoidBatch with BinaryBatch {
 
-          val value = upstream1.value.map2(upstream2.value)(_ - _)
+          val value = upstream1.value - upstream2.value
 
-          override protected def rawBackward(delta: Eval[Double]): Unit = {
+          override protected def rawBackward(delta: Double): Unit = {
             upstream1.backward(delta)
-            upstream2.backward(delta.map(-_))
+            upstream2.backward(-delta)
           }
 
         }
@@ -238,8 +236,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class Times[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Eval[Double], Eval[Double]]]
+        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
+        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -251,20 +249,20 @@ object BpDouble extends BpDoubleTypes {
           override final val input = input0
         } with DoubleMonoidBatch with MonoidBatch with BinaryBatch {
 
-          override final val value = upstream1.value.map2(upstream2.value)(_ * _)
+          override final val value = upstream1.value * upstream2.value
 
-          override protected def rawBackward(delta: Eval[Double]): Unit = {
+          override protected def rawBackward(delta: Double): Unit = {
             val a = upstream1.value
             val b = upstream2.value
-            upstream1.backward(delta.map2(b)(_ * _))
-            upstream2.backward(delta.map2(a)(_ * _))
+            upstream1.backward(delta * b)
+            upstream2.backward(delta * a)
           }
 
         }
       }
     }
 
-    final case class Weight(var rawValue: Double)(implicit optimizer: Optimizer) extends Layer with DoubleMonoidBatch {
+    final case class Weight(var value: Double)(implicit optimizer: Optimizer) extends Layer with DoubleMonoidBatch {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
@@ -274,11 +272,9 @@ object BpDouble extends BpDoubleTypes {
 
       override def backward(delta: Delta): Unit = {
         synchronized {
-          rawValue = optimizer.updateDouble(rawValue, delta.value)
+          value = optimizer.updateDouble(value, delta)
         }
       }
-
-      override def value = Eval.now(rawValue)
 
       override def close(): Unit = {}
 
@@ -286,12 +282,12 @@ object BpDouble extends BpDoubleTypes {
 
   }
 
-  implicit def liftNativeDoubleToLiteral: ToLiteral.Aux[Double, Eval[Double], Eval[Double]] =
+  implicit def liftNativeDoubleToLiteral: ToLiteral.Aux[Double, Double, Double] =
     new ToLiteral[Double] {
-      override type Data = Eval[Double]
-      override type Delta = Eval[Double]
+      override type Data = Double
+      override type Delta = Double
       override def apply(nativeDouble: Double) = {
-        Literal(Eval.now(nativeDouble))
+        Literal(nativeDouble)
       }
     }
 
@@ -302,9 +298,13 @@ object BpDouble extends BpDoubleTypes {
       If[Input, BpDouble#Data, BpDouble#Delta](LessThan[Input](leftLayer, rightLayer), leftLayer, rightLayer)
     }
   }
-  implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                                                                  Layer.Aux[Input, BpDouble#Batch],
-                                                                  Layer.Aux[Input, BpDouble#Batch]] = {
+
+  implicit def `max(Double,Double)`[Input <: Batch]
+    : max.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+                   Layer.Aux[Input, BpDouble#Batch],
+                   Layer.Aux[Input, BpDouble#Batch]] /*: max.Case.Aux[Layer.Aux[Input, Batch.Aux[Double, Double]],
+                                                                  Layer.Aux[Input, Batch.Aux[Double, Double]],
+                                                                  Layer.Aux[Input, Batch.Aux[Double, Double]]]*/ = {
     max.at { (leftLayer, rightLayer) =>
       If[Input, BpDouble#Data, BpDouble#Delta](LessThan[Input](leftLayer, rightLayer), rightLayer, leftLayer)
     }
@@ -353,7 +353,7 @@ object BpDouble extends BpDoubleTypes {
   implicit def `abs(Double)`[Input <: Batch]
     : abs.Case.Aux[Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch]] = {
     abs.at { operand =>
-      If[Input, BpDouble#Data, BpDouble#Delta](LessThan(operand, Literal(Eval.now(0.0))), Negative(operand), operand)
+      If[Input, BpDouble#Data, BpDouble#Delta](LessThan(operand, Literal(0.0)), Negative(operand), operand)
     }
   }
 
@@ -378,4 +378,10 @@ object BpDouble extends BpDoubleTypes {
   ): DoubleLayerOps[Input] = {
     new DoubleLayerOps(toLayer(from))
   }
+
+//  implicit def doubleToLayer[Input0 <: Batch, OutputDelta]
+//    : ToLayer.Aux[Layer.Aux[Input0, Batch.Aux[Double, OutputDelta]], Input0, Double, OutputDelta] = {
+//    Conversion.ToLayer.layerToLayer
+//  }
+
 }

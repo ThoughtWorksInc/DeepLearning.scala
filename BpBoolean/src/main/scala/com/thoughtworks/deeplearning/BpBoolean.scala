@@ -15,14 +15,14 @@ object BpBoolean {
 
   private[deeplearning] trait BooleanMonoidBatch extends Batch {
 
-    override type Data = Eval[Boolean]
+    override type Data = Boolean
 
-    override type Delta = Eval[Boolean]
+    override type Delta = Boolean
 
     protected final def monoid = new Monoid[Delta] {
-      override def empty = Eval.now(false)
+      override def empty = false
 
-      override def combine(x: Delta, y: Delta) = x.map2(y)(_ ^ _)
+      override def combine(x: Delta, y: Delta) = x ^ y
     }
 
   }
@@ -39,7 +39,7 @@ object BpBoolean {
 
       override def forward(input: Input0) = {
         resource.managed(condition.forward(input)).acquireAndGet { conditionBatch =>
-          (if (conditionBatch.value.value) `then` else `else`).forward(input)
+          (if (conditionBatch.value) `then` else `else`).forward(input)
         }
       }
     }
@@ -57,27 +57,25 @@ object BpBoolean {
 
         } with MonoidBatch with BooleanMonoidBatch with UnaryBatch {
 
-          override val value = upstream.value.map(!_)
+          override val value = !upstream.value
 
-          override protected def rawBackward(delta: Eval[Boolean]): Unit = {
-            upstream.backward(delta.map(!_))
+          override protected def rawBackward(delta: Boolean): Unit = {
+            upstream.backward(!delta)
           }
 
         }
       }
     }
 
-    final case class Weight[Input0 <: Batch](var rawValue: Boolean) extends Layer with BooleanMonoidBatch {
+    final case class Weight[Input0 <: Batch](var value: Boolean) extends Layer with BooleanMonoidBatch {
       override type Input = Input0
       override type Output = Weight[Input0]
 
       override def forward(any: Input) = this
 
       override def backward(delta: Delta): Unit = {
-        rawValue ^= delta.value
+        value ^= delta
       }
-
-      override def value = Eval.now(rawValue)
 
       override def close(): Unit = {}
 
@@ -90,7 +88,7 @@ object BpBoolean {
   import Layers._
 
   /** @template */
-  type BpBoolean = BackPropagationType[Eval[Boolean], Eval[Boolean]]
+  type BpBoolean = BackPropagationType[Boolean, Boolean]
 
   final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BpBoolean#Batch]) {
 

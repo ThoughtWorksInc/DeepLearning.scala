@@ -5,6 +5,7 @@ import com.thoughtworks.deeplearning.Conversion._
 import com.thoughtworks.deeplearning.Bp2DArray._
 import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
 import com.thoughtworks.deeplearning.BpDouble._
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.Implicits._
 import org.scalatest._
 
@@ -31,7 +32,7 @@ final class LayerSpec extends FreeSpec with Matchers {
     def train() = {
       val outputBatch = network.forward(inputData.toNDArray.toBatch)
       try {
-        val loss = outputBatch.value.map(_.sumT)
+        val loss = (outputBatch.value: INDArray).sumT
         outputBatch.backward(outputBatch.value)
         loss
       } finally {

@@ -13,6 +13,6 @@ import org.scalatest._
   */
 final class DoubleToLiteralSpec extends FreeSpec with Matchers {
   "the ToLiteral should be a double batch" in {
-    """implicitly[shapeless.the.`ToLiteral[Double]`.Out <:< Batch.Aux[Eval[Double], Eval[Double]]]""" should compile
+    """implicitly[shapeless.the.`ToLiteral[Double]`.Out <:< Batch.Aux[Double, Double]]""" should compile
   }
 }

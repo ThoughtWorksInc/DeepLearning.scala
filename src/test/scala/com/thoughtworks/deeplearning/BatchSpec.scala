@@ -22,14 +22,14 @@ final class BatchSpec extends FreeSpec with Matchers {
 
    */
   "Batch#Batch" in {
-    "implicitly[BpDouble#Batch <:< Batch.Aux[Eval[Double], Eval[Double]]]" should compile
-    "implicitly[BpDouble#Batch =:= Batch.Aux[Eval[Double], Eval[Double]]]" should compile
+    "implicitly[BpDouble#Batch <:< Batch.Aux[Double, Double]]" should compile
+    "implicitly[BpDouble#Batch =:= Batch.Aux[Double, Double]]" should compile
     "implicitly[BpDouble#Batch <:< BackPropagationType[_, _]#Batch]" should compile
     "implicitly[BpDouble#Batch =:= BackPropagationType[_, _]#Batch]" shouldNot compile
     "implicitly[BackPropagationType[_, _]#Batch =:= BpDouble#Batch]" shouldNot compile
     "implicitly[(BpDouble :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
     "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
-    "implicitly[(BpDouble :**: BpHNil)#Batch =:= Batch.Aux[Eval[Double] :: shapeless.HNil, Eval[Double] :+: CNil]]" should compile
+    "implicitly[(BpDouble :**: BpHNil)#Batch =:= Batch.Aux[Double :: shapeless.HNil, Double :+: CNil]]" should compile
     "implicitly[(BpDouble :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
     "implicitly[BpHList#Batch <:< (BpDouble :**: BpHNil)#Batch]" shouldNot compile
     "implicitly[(BpAny :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
@@ -49,7 +49,7 @@ final class BatchSpec extends FreeSpec with Matchers {
 
     "implicitly[(BpDouble :**: BpHNil)#Batch <:< (BpDouble :**: BpHList)#Batch]" should compile
     "implicitly[(BpAny :**: BpHNil)#Data <:< BpHList#Data]" should compile
-    "implicitly[(cats.Eval[BpDouble] :: HNil) <:< BpHList#Data]" should compile
+    "implicitly[(Double :: HNil) <:< BpHList#Data]" should compile
     "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Data <:< (BpBoolean :**: BpHList)#Data]" should compile
     "implicitly[(BpBoolean :**: BpDouble :**: BpHNil)#Batch <:< (BpBoolean :**: BpHList)#Batch]" should compile
     "implicitly[(BpDouble :**: BpHNil)#Batch <:< (BpAny :**: BpHNil)#Batch]" should compile

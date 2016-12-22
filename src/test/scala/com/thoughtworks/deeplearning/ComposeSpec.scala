@@ -25,6 +25,6 @@ final class ComposeSpec extends FreeSpec with Matchers {
       network1.compose(network2)
     }
     val network3 = makeNetwork3
-    network3.train(Eval.now(0.1))
+    network3.train(0.1)
   }
 }

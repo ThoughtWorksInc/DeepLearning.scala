@@ -27,6 +27,6 @@ final class SeqSpec extends FreeSpec with Matchers {
 
   "erased BpSeq" in {
     val unsafeNetwork = unsafe
-    unsafeNetwork.train(Seq(Eval.now(2.4)))
+    unsafeNetwork.train(Seq(2.4))
   }
 }
