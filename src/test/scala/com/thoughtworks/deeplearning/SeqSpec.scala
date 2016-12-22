@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpSeq._
 import com.thoughtworks.deeplearning.BpDouble._
 import com.thoughtworks.deeplearning.BpDouble.Optimizers.LearningRate

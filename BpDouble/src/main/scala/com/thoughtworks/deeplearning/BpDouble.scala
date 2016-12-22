@@ -2,13 +2,13 @@ package com.thoughtworks.deeplearning
 import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.BpBoolean.BooleanMonoidBatch
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Poly.MathMethods
-import com.thoughtworks.deeplearning.Conversion.Layers.Literal
+import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.BpDouble.Layers._
 import com.thoughtworks.deeplearning.BpDouble.Optimizers.{LearningRate, Optimizer}
 
@@ -280,8 +280,8 @@ object BpDouble {
 
   }
 
-  implicit def liftNativeDoubleToLiteral: ToLiteral.Aux[Double, Double, Double] =
-    new ToLiteral[Double] {
+  implicit def liftNativeDoubleToLiteral: Lift.Aux[Double, Double, Double] =
+    new Lift[Double] {
       override type Data = Double
       override type Delta = Double
       override def apply(nativeDouble: Double) = {
@@ -375,7 +375,7 @@ object BpDouble {
   }
 
 //  implicit def doubleToLayer[Input <: Batch]: ToLayer.Aux[Layer.Aux[Input, DoubleBatch], Input, Double, Double] = {
-//    Conversion.ToLayer.layerToLayer
+//    Lift.ToLayer.layerToLayer
 //  }
 
 }

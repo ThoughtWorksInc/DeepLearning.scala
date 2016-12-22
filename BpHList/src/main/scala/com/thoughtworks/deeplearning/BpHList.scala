@@ -1,8 +1,8 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Conversion.BackPropagationType.{DataOf, DeltaOf}
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift.BackPropagationType.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpHList.Layers._
 import shapeless._
 

@@ -10,7 +10,7 @@ import com.thoughtworks.deeplearning.BpNothing._
 import com.thoughtworks.deeplearning.BpDouble._
 import com.thoughtworks.deeplearning.BpSeq._
 import com.thoughtworks.deeplearning.Bp2DArray._
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
 import com.thoughtworks.deeplearning.BpCoproduct._
 import org.nd4j.linalg.factory.Nd4j

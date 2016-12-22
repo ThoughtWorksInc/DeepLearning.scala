@@ -2,10 +2,10 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.BpBoolean._
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Conversion.BackPropagationType.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Lift.BackPropagationType.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.BpCoproduct.Layers._
 import shapeless.Lub
 

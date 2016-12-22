@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpSeq.Layers.{Get, ToSeq}
 
 import language.implicitConversions

@@ -5,7 +5,7 @@ import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.BpDouble._
 import com.thoughtworks.deeplearning.BpAny._
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpHList._
 import language.existentials
 import shapeless._

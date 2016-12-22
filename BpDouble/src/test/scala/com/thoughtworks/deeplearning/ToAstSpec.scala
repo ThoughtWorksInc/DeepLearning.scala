@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats._
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpDouble._
 import org.scalatest.{FreeSpec, Matchers}
 

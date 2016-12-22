@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Bp2DArray._
-import com.thoughtworks.deeplearning.Conversion._
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpHList._
 import com.thoughtworks.deeplearning.BpDouble._
 import com.thoughtworks.deeplearning.BpAny._
