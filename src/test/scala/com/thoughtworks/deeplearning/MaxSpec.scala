@@ -17,9 +17,9 @@ final class MaxSpec extends FreeSpec with Matchers {
 
   "complex input" in {
     def buildNeuralNetwork(implicit input: DoubleBackProgationType :**: Bp2DArray :**: BpHNil) = {
-      val m0 = max(1.0, 2.0.toLiteral)
+      val m0 = max(1.0, 2.0.toLayer)
       val m1: input.To[DoubleBackProgationType] = max(m0, 1.6)
-      val m2 = max(m0.toLiteral, m1.toLiteral)
+      val m2 = max(m0.toLayer, m1.toLayer)
     }
 
     buildNeuralNetwork

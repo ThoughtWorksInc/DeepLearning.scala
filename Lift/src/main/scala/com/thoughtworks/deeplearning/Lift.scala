@@ -6,7 +6,6 @@ import shapeless._
 
 import scala.language.{existentials, implicitConversions}
 
-
 trait Lift[From] extends DepFn1[From] {
 
   type Data
@@ -80,21 +79,20 @@ object Lift {
 
   }
 
-
   implicit final class ToLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
-      implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta]
+      implicit typeClassInstance: ToLayer.Aux[From, Input, OutputData, OutputDelta]
   ) {
 
-    def toLiteral: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = toLayer(from)
+    def toLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = typeClassInstance(from)
 
   }
 
-  implicit final class ToLiteralOps[From, Data, Delta](from: From)(
-      implicit toLiteral: Lift.Aux[From, Data, Delta]
+  implicit final class ToBatchOps[From, Data, Delta](from: From)(
+      implicit lift: Lift.Aux[From, Data, Delta]
   ) {
 
     @inline
-    def toBatch: Batch.Aux[Data, Delta] = toLiteral(from)
+    def toBatch: Batch.Aux[Data, Delta] = lift(from)
 
   }
 
@@ -109,12 +107,17 @@ object Lift {
   private[deeplearning] sealed trait ToLayerLowPriorityImplicits2 { this: ToLayer.type =>
 
     implicit def layerToLayer2[InputData, InputDelta, OutputData0, OutputDelta0]
-      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]], Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] =
-      new ToLayer[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]], Batch.Aux[InputData, InputDelta]] {
+      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]],
+                    Batch.Aux[InputData, InputDelta],
+                    OutputData0,
+                    OutputDelta0] =
+      new ToLayer[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]],
+                  Batch.Aux[InputData, InputDelta]] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
 
-        override def apply(layer: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]) = layer
+        override def apply(layer: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]) =
+          layer
       }
 
   }
@@ -168,15 +171,15 @@ object Lift {
         override def apply(layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = layer
       }
 
-    implicit def literalToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
+    implicit def liftToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
         implicit inputType: BackPropagationType[InputData, InputDelta],
-        toLiteral: Lift.Aux[From, OutputData0, OutputDelta0])
+        lift: Lift.Aux[From, OutputData0, OutputDelta0])
       : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
 
-        override def apply(from: From) = toLiteral(from)
+        override def apply(from: From) = lift(from)
       }
     }
 
@@ -236,9 +239,9 @@ object Lift {
         implicit typeClass: <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta])
       : <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta] = typeClass
 
-    implicit def fromBatchOf[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-                                                                                                             implicit inputBatchOf: Lazy[Lift.Aux[NativeInput, InputData0, InputDelta0]],
-                                                                                                             outputBatchOf: Lazy[Lift.Aux[NativeOutput, OutputData0, OutputDelta0]])
+    implicit def lift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+        implicit liftInput: Lazy[Lift.Aux[NativeInput, InputData0, InputDelta0]],
+        liftOutput: Lazy[Lift.Aux[NativeOutput, OutputData0, OutputDelta0]])
       : <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
       new <=>[NativeInput, NativeOutput] {
         type InputData = InputData0
