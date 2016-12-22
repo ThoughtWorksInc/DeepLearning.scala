@@ -16,16 +16,16 @@ import language.existentials
   */
 class DifferentiableTypeSpec extends FreeSpec with Matchers {
 
-  "BpDouble :**: BpHNil" in {
-    "implicitly[(BpDouble :**: BpHNil) =:= BackPropagationType[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]" should compile
-    "implicitly[Array[BpDouble :**: BpHNil] =:= Array[BackPropagationType[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]]" should compile
+  "DoubleBackProgationType :**: BpHNil" in {
+    "implicitly[(DoubleBackProgationType :**: BpHNil) =:= BackPropagationType[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]" should compile
+    "implicitly[Array[DoubleBackProgationType :**: BpHNil] =:= Array[BackPropagationType[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]]" should compile
   }
 
   "x" in {
-    val inputSymbol: BpDouble :**: BpHNil = implicitly
+    val inputSymbol: DoubleBackProgationType :**: BpHNil = implicitly
 
-    implicitly[inputSymbol.Batch =:= (BpDouble :**: BpHNil)#Batch]
-    implicitly[Layer.Aux[(BpDouble :**: BpHNil)#Batch, (BpBoolean :**: BpHNil)#Batch] =:= inputSymbol.To[BpBoolean :**: BpHNil]]
+    implicitly[inputSymbol.Batch =:= (DoubleBackProgationType :**: BpHNil)#Batch]
+    implicitly[Layer.Aux[(DoubleBackProgationType :**: BpHNil)#Batch, (BpBoolean :**: BpHNil)#Batch] =:= inputSymbol.To[BpBoolean :**: BpHNil]]
 
   }
 }

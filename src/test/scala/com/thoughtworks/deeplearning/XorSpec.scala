@@ -136,7 +136,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val predictNetwork = predict
 
-  def loss(implicit pair: ExpectedLabel :**: Bp2DArray :**: BpHNil): pair.To[BpDouble] = {
+  def loss(implicit pair: ExpectedLabel :**: Bp2DArray :**: BpHNil): pair.To[DoubleBackProgationType] = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head
@@ -184,7 +184,7 @@ final class XorSpec extends FreeSpec with Matchers {
     loss0 + loss1 + loss2
   }
 
-  def train(implicit pair: ExpectedLabel :**: Input :**: BpHNil): pair.To[BpDouble] = {
+  def train(implicit pair: ExpectedLabel :**: Input :**: BpHNil): pair.To[DoubleBackProgationType] = {
     val expectedLabel = pair.head
     val input = pair.tail.head
     loss.compose(expectedLabel :**: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :**: BpHNil)
@@ -290,8 +290,8 @@ ${left11.value}^${right11.value}=${result11.value}
 }
 
 object XorSpec {
-  type OptionalDouble = BpHNil :++: BpDouble :++: BpCNil
+  type OptionalDouble = BpHNil :++: DoubleBackProgationType :++: BpCNil
   type Input = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
   type ExpectedLabel = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
-  type Output = BpDouble :**: BpDouble :**: BpDouble :**: BpHNil
+  type Output = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
 }

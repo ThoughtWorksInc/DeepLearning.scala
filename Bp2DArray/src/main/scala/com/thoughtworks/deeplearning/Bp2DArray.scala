@@ -123,7 +123,7 @@ object Bp2DArray {
 
     final case class MaxBpDouble[Input0 <: Batch](
         operand1: Layer.Aux[Input0, Bp2DArray#Batch],
-        operand2: Layer.Aux[Input0, BpDouble#Batch]
+        operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
@@ -351,7 +351,7 @@ object Bp2DArray {
 
     final case class PlusBpDouble[Input0 <: Batch](
         operand1: Layer.Aux[Input0, Bp2DArray#Batch],
-        operand2: Layer.Aux[Input0, BpDouble#Batch]
+        operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
@@ -431,7 +431,7 @@ object Bp2DArray {
 
     final case class MultiplyBpDouble[Input0 <: Batch](
         operand1: Layer.Aux[Input0, Bp2DArray#Batch],
-        operand2: Layer.Aux[Input0, BpDouble#Batch]
+        operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = TwoDArraySemigroupBatch with SemigroupBatch with BinaryBatch
@@ -490,7 +490,7 @@ object Bp2DArray {
   import Layers._
 
   implicit def `max(Bp2DArray,Double)`[Left, Right, Input <: Batch]: max.Case.Aux[Layer.Aux[Input, Bp2DArray#Batch],
-                                                                                  Layer.Aux[Input, BpDouble#Batch],
+                                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                                   Layer.Aux[Input, Bp2DArray#Batch]] =
     max.at(MaxBpDouble(_, _))
 
@@ -502,7 +502,7 @@ object Bp2DArray {
     }
   }
 
-  implicit def `BpDouble/Bp2DArray`[Input <: Batch]: MathMethods./.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `BpDouble/Bp2DArray`[Input <: Batch]: MathMethods./.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
@@ -511,7 +511,7 @@ object Bp2DArray {
   }
 
   implicit def `Bp2DArray/BpDouble`[Input <: Batch]: MathMethods./.Case.Aux[Layer.Aux[Input, Bp2DArray#Batch],
-                                                                            Layer.Aux[Input, BpDouble#Batch],
+                                                                            Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyBpDouble(leftLayer, BpDouble.Layers.Reciprocal(rightLayer))
@@ -527,14 +527,14 @@ object Bp2DArray {
   }
 
   implicit def `Bp2DArray*BpDouble`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, Bp2DArray#Batch],
-                                                                            Layer.Aux[Input, BpDouble#Batch],
+                                                                            Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyBpDouble(leftLayer, rightLayer)
     }
   }
 
-  implicit def `BpDouble*Bp2DArray`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `BpDouble*Bp2DArray`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
@@ -550,7 +550,7 @@ object Bp2DArray {
     }
   }
 
-  implicit def `BpDouble-Bp2DArray`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `BpDouble-Bp2DArray`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
@@ -559,7 +559,7 @@ object Bp2DArray {
   }
 
   implicit def `Bp2DArray-BpDouble`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, Bp2DArray#Batch],
-                                                                            Layer.Aux[Input, BpDouble#Batch],
+                                                                            Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusBpDouble(leftLayer, BpDouble.Layers.Negative(rightLayer))
@@ -575,14 +575,14 @@ object Bp2DArray {
   }
 
   implicit def `Bp2DArray+BpDouble`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, Bp2DArray#Batch],
-                                                                            Layer.Aux[Input, BpDouble#Batch],
+                                                                            Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusBpDouble(leftLayer, rightLayer)
     }
   }
 
-  implicit def `BpDouble+Bp2DArray`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
+  implicit def `BpDouble+Bp2DArray`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch],
                                                                             Layer.Aux[Input, Bp2DArray#Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
@@ -623,7 +623,7 @@ object Bp2DArray {
   }
 
   implicit def toTo2DArrayLayerOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
-      implicit toLayer: ToLayer.OfType[Element, Input, BpDouble]): To2DArrayLayerOps[Input] = {
+      implicit toLayer: ToLayer.OfType[Element, Input, DoubleBackProgationType]): To2DArrayLayerOps[Input] = {
     new To2DArrayLayerOps(layerVector.view.map(_.view.map(toLayer(_))))
   }
 

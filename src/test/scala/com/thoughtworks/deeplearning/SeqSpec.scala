@@ -22,7 +22,7 @@ final class SeqSpec extends FreeSpec with Matchers {
   }
 
   def unsafe(implicit s: BpSeq[BpAny]) = {
-    s(0).asInstanceOf[s.To[BpDouble]] - 1.0.toWeight
+    s(0).asInstanceOf[s.To[DoubleBackProgationType]] - 1.0.toWeight
   }
 
   "erased BpSeq" in {

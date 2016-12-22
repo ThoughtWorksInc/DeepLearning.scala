@@ -14,14 +14,10 @@ import com.thoughtworks.deeplearning.BpDouble.Optimizers.{LearningRate, Optimize
 
 import language.implicitConversions
 
-private[deeplearning] sealed trait BpDoubleTypes {
-  type DoubleBatch >: Batch.Aux[Double, Double] <: Batch.Aux[Double, Double]
-}
-
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object BpDouble extends BpDoubleTypes {
+object BpDouble {
 
   private[deeplearning] trait DoubleMonoidBatch extends Batch {
 
@@ -34,7 +30,9 @@ object BpDouble extends BpDoubleTypes {
   }
 
   /** @template */
-  type BpDouble = BackPropagationType[Double, Double]
+  type DoubleBackProgationType = BackPropagationType[Double, Double]
+
+  private[deeplearning] val DoubleBackProgationType = BackPropagationType[Double, Double]
 
   object Optimizers {
 
@@ -73,7 +71,7 @@ object BpDouble extends BpDoubleTypes {
 
   object Layers {
 
-    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
+    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -96,8 +94,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class LessThan[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
+                                                operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
+                                                operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = BooleanMonoidBatch with MonoidBatch with BinaryBatch
@@ -117,7 +115,7 @@ object BpDouble extends BpDoubleTypes {
       }
     }
 
-    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
+    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -139,7 +137,7 @@ object BpDouble extends BpDoubleTypes {
 
     }
 
-    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
+    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -162,8 +160,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class Plus[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
+                                            operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
+                                            operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -186,7 +184,7 @@ object BpDouble extends BpDoubleTypes {
       }
     }
 
-    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, Batch.Aux[Double, Double]])
+    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -211,8 +209,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class Substract[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
+                                                 operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
+                                                 operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -236,8 +234,8 @@ object BpDouble extends BpDoubleTypes {
     }
 
     final case class Times[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, Batch.Aux[Double, Double]],
-        operand2: Layer.Aux[Input0, Batch.Aux[Double, Double]]
+                                             operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
+                                             operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -291,96 +289,92 @@ object BpDouble extends BpDoubleTypes {
       }
     }
 
-  implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                                                                  Layer.Aux[Input, BpDouble#Batch],
-                                                                  Layer.Aux[Input, BpDouble#Batch]] = {
+  implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     min.at { (leftLayer, rightLayer) =>
-      If[Input, BpDouble#Data, BpDouble#Delta](LessThan[Input](leftLayer, rightLayer), leftLayer, rightLayer)
+      If[Input, DoubleBackProgationType.Data, DoubleBackProgationType.Delta](LessThan[Input](leftLayer, rightLayer), leftLayer, rightLayer)
     }
   }
 
-  implicit def `max(Double,Double)`[Input <: Batch]
-    : max.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                   Layer.Aux[Input, BpDouble#Batch],
-                   Layer.Aux[Input, BpDouble#Batch]] /*: max.Case.Aux[Layer.Aux[Input, Batch.Aux[Double, Double]],
-                                                                  Layer.Aux[Input, Batch.Aux[Double, Double]],
-                                                                  Layer.Aux[Input, Batch.Aux[Double, Double]]]*/ = {
+  implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     max.at { (leftLayer, rightLayer) =>
-      If[Input, BpDouble#Data, BpDouble#Delta](LessThan[Input](leftLayer, rightLayer), rightLayer, leftLayer)
+      If[Input, DoubleBackProgationType.Data, DoubleBackProgationType.Delta](LessThan[Input](leftLayer, rightLayer), rightLayer, leftLayer)
     }
   }
 
-  implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch]] = {
+  implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, Negative(rightLayer))
     }
   }
 
-  implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch]] = {
+  implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch]] = {
+  implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     /.at { (leftLayer, rightLayer) =>
       Times(leftLayer, Reciprocal(rightLayer))
     }
   }
 
-  implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch],
-                                                           Layer.Aux[Input, BpDouble#Batch]] = {
+  implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
+                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     *.at(Times(_, _))
   }
 
   implicit def `log(Double)`[Input <: Batch]
-    : log.Case.Aux[Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch]] = {
+    : log.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch], Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     log.at(Log(_))
   }
 
   implicit def `exp(Double)`[Input <: Batch]
-    : exp.Case.Aux[Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch]] = {
+    : exp.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch], Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     exp.at(Exp(_))
   }
 
   implicit def `abs(Double)`[Input <: Batch]
-    : abs.Case.Aux[Layer.Aux[Input, BpDouble#Batch], Layer.Aux[Input, BpDouble#Batch]] = {
+    : abs.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch], Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
     abs.at { operand =>
-      If[Input, BpDouble#Data, BpDouble#Delta](LessThan(operand, Literal(0.0)), Negative(operand), operand)
+      If[Input, DoubleBackProgationType.Data, DoubleBackProgationType.Delta](LessThan(operand, Literal(0.0)), Negative(operand), operand)
     }
   }
 
   implicit final class NativeDoubleOps(nativeDouble: Double) {
     def toWeight[InputData, InputDelta](
         implicit inputType: BackPropagationType[InputData, InputDelta],
-        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], BpDouble#Batch] = {
+        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], DoubleBackProgationType.Batch] = {
       Weight(nativeDouble)
     }
   }
 
-  final class DoubleLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, BpDouble#Batch]) {
+  final class DoubleLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, DoubleBackProgationType.Batch]) {
 
-    def unary_- : Layer.Aux[Input, BpDouble#Batch] = {
+    def unary_- : Layer.Aux[Input, DoubleBackProgationType.Batch] = {
       Negative(differentiable)
     }
 
   }
 
   implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, BpDouble]
+      implicit toLayer: ToLayer.OfType[From, Input, DoubleBackProgationType]
   ): DoubleLayerOps[Input] = {
     new DoubleLayerOps(toLayer(from))
   }
 
-//  implicit def doubleToLayer[Input0 <: Batch, OutputDelta]
-//    : ToLayer.Aux[Layer.Aux[Input0, Batch.Aux[Double, OutputDelta]], Input0, Double, OutputDelta] = {
+//  implicit def doubleToLayer[Input <: Batch]: ToLayer.Aux[Layer.Aux[Input, DoubleBatch], Input, Double, Double] = {
 //    Conversion.ToLayer.layerToLayer
 //  }
 

@@ -109,8 +109,20 @@ object Conversion {
     : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
     toLayer(a)
   }
+  private[deeplearning] sealed trait ToLayerLowPriorityImplicits2 { this: ToLayer.type =>
 
-  private[deeplearning] sealed trait ToLayerLowPriorityImplicits { this: ToLayer.type =>
+    implicit def layerToLayer2[InputData, InputDelta, OutputData0, OutputDelta0]
+      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]], Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] =
+      new ToLayer[Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData0, OutputDelta0]], Batch.Aux[InputData, InputDelta]] {
+        override type OutputData = OutputData0
+        override type OutputDelta = OutputDelta0
+
+        override def apply(layer: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]) = layer
+      }
+
+  }
+  private[deeplearning] sealed trait ToLayerLowPriorityImplicits extends ToLayerLowPriorityImplicits2 {
+    this: ToLayer.type =>
 
     implicit def toLayerOfType[Input0 <: Batch, OutputType <: BackPropagationType[_, _]]
       : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {

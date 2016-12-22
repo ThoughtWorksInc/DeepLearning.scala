@@ -29,7 +29,7 @@ import util.Random
   */
 object FortuneTeller {
 
-  type Seq2D = BpSeq[BpSeq[BpDouble]]
+  type Seq2D = BpSeq[BpSeq[DoubleBackProgationType]]
 
   type Nullable[A <: BackPropagationType[_, _]] = BpHNil :++: A :++: BpCNil
 
@@ -40,25 +40,25 @@ object FortuneTeller {
   type Enum0 = BpHNil :++: BpHNil :++: BpCNil
   type Enum1 = BpHNil :++: BpHNil :++: BpHNil :++: BpCNil
 
-  type Field0 = Nullable[BpDouble]
+  type Field0 = Nullable[DoubleBackProgationType]
   type Field1 = Enum0
-  type Field2 = BpDouble
+  type Field2 = DoubleBackProgationType
   type Field3 = Enum1
 
   type InputTypePair =
-    InputField[Nullable[BpDouble]] :**: InputField[Enum0] :**: InputField[BpDouble] :**: InputField[Enum1] :**: BpHNil
+    InputField[Nullable[DoubleBackProgationType]] :**: InputField[Enum0] :**: InputField[DoubleBackProgationType] :**: InputField[Enum1] :**: BpHNil
 
   type ExpectedLabel =
-    LabelField[Nullable[BpDouble]] :**: LabelField[Enum0] :**: LabelField[BpDouble] :**: LabelField[Enum1] :**: BpHNil
+    LabelField[Nullable[DoubleBackProgationType]] :**: LabelField[Enum0] :**: LabelField[DoubleBackProgationType] :**: LabelField[Enum1] :**: BpHNil
 
-  type UnsetProbability = BpDouble
+  type UnsetProbability = DoubleBackProgationType
   type NullableFieldPrediction[Value <: BackPropagationType[_, _]] = UnsetProbability :**: Value :**: BpHNil
 
-  type Enum0Prediction = BpDouble :**: BpDouble :**: BpHNil
-  type Enum1Prediction = BpDouble :**: BpDouble :**: BpDouble :**: BpHNil
+  type Enum0Prediction = DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
+  type Enum1Prediction = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
 
   type PredictionResult =
-    NullableFieldPrediction[BpDouble] :**: Enum0Prediction :**: BpDouble :**: Enum1Prediction :**: BpHNil
+    NullableFieldPrediction[DoubleBackProgationType] :**: Enum0Prediction :**: DoubleBackProgationType :**: Enum1Prediction :**: BpHNil
 
   implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
     override def currentLearningRate() = 0.0003
@@ -66,18 +66,18 @@ object FortuneTeller {
     override protected def l2Regularization = 0.1
   }
 
-  def probabilityLoss(implicit x: BpDouble): x.To[BpDouble] = {
+  def probabilityLoss(implicit x: DoubleBackProgationType): x.To[DoubleBackProgationType] = {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(implicit rowAndExpectedLabel: Bp2DArray :**: ExpectedLabel :**: BpHNil): rowAndExpectedLabel.To[BpDouble] = {
+  def loss(implicit rowAndExpectedLabel: Bp2DArray :**: ExpectedLabel :**: BpHNil): rowAndExpectedLabel.To[DoubleBackProgationType] = {
     val row: rowAndExpectedLabel.To[Bp2DArray] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
-    val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[BpDouble]]] = row.toSeq
+    val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[DoubleBackProgationType]]] = row.toSeq
 
     // 暂时先在CPU上计算
 
-    val expectedLabelField0: rowAndExpectedLabel.To[LabelField[Nullable[BpDouble]]] = expectedLabel.head
+    val expectedLabelField0: rowAndExpectedLabel.To[LabelField[Nullable[DoubleBackProgationType]]] = expectedLabel.head
     val expectedLabelRest1 = expectedLabel.tail
     val expectedLabelField1 = expectedLabelRest1.head
     val expectedLabelRest2 = expectedLabelRest1.tail
@@ -94,7 +94,7 @@ object FortuneTeller {
 //        max(1.0 - rowSeq(0)(0), 0.0)
       } { inr =>
         val expectedValue = inr.head
-        (rowSeq(0)(0) + abs(rowSeq(0)(1) - expectedValue)): rowAndExpectedLabel.To[BpDouble]
+        (rowSeq(0)(0) + abs(rowSeq(0)(1) - expectedValue)): rowAndExpectedLabel.To[DoubleBackProgationType]
       }
     }
 
@@ -148,9 +148,9 @@ object FortuneTeller {
 
   def array2DToRow(implicit input: Bp2DArray): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[BpDouble :**: BpDouble :**: BpHNil] = min(rowSeq(0)(0), 1.0) :**: rowSeq(0)(1) :**: BpHNil
+    val field0: input.To[DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil] = min(rowSeq(0)(0), 1.0) :**: rowSeq(0)(1) :**: BpHNil
     val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :**: rowSeq(0)(3) :**: BpHNil
-    val field2: input.To[BpDouble] = rowSeq(0)(4)
+    val field2: input.To[DoubleBackProgationType] = rowSeq(0)(4)
     val field3 = rowSeq(0)(5) :**: rowSeq(0)(6) :**: rowSeq(0)(7) :**: BpHNil
     field0 :**: field1 :**: field2 :**: field3 :**: BpHNil
   }
@@ -166,7 +166,7 @@ object FortuneTeller {
     val field3 = rest2.head
     val rest3 = rest2.tail
 
-    val field0Flag0: row.To[BpDouble] = field0.choice { _ =>
+    val field0Flag0: row.To[DoubleBackProgationType] = field0.choice { _ =>
       1.0
     } { _ =>
       0.0
@@ -186,22 +186,22 @@ object FortuneTeller {
       }
     }
 
-    val field0Value0: row.To[BpDouble] = field0.choice { unknown: row.To[BpHNil] =>
-      0.5.toWeight: row.To[BpDouble]
+    val field0Value0: row.To[DoubleBackProgationType] = field0.choice { unknown: row.To[BpHNil] =>
+      0.5.toWeight: row.To[DoubleBackProgationType]
     } {
       _.choice { knownField0 =>
         knownField0.choice { unset: row.To[BpHNil] =>
-          0.5.toWeight: row.To[BpDouble]
+          0.5.toWeight: row.To[DoubleBackProgationType]
         } {
-          _.choice { nativeDouble: row.To[BpDouble] =>
-            nativeDouble: row.To[BpDouble]
+          _.choice { nativeDouble: row.To[DoubleBackProgationType] =>
+            nativeDouble: row.To[DoubleBackProgationType]
           } { cnil: row.To[BpCNil] =>
-            `throw`(new IllegalArgumentException): row.To[BpDouble]
-          }: row.To[BpDouble]
-        }: row.To[BpDouble]
+            `throw`(new IllegalArgumentException): row.To[DoubleBackProgationType]
+          }: row.To[DoubleBackProgationType]
+        }: row.To[DoubleBackProgationType]
       } { cnil: row.To[BpCNil] =>
         `throw`(new IllegalArgumentException)
-      }: row.To[BpDouble]
+      }: row.To[DoubleBackProgationType]
 
     }
 
@@ -216,7 +216,7 @@ object FortuneTeller {
       0.0
     }
 
-    val field1Value0: row.To[BpDouble] = isField1Unknown.`if` {
+    val field1Value0: row.To[DoubleBackProgationType] = isField1Unknown.`if` {
       0.5.toWeight
     } {
       isField1Case0.`if` {
@@ -227,13 +227,13 @@ object FortuneTeller {
     }
 
     val field1Value1 = isField1Unknown.`if` {
-      0.5.toWeight: row.To[BpDouble]
+      0.5.toWeight: row.To[DoubleBackProgationType]
     } {
       isField1Case0.`if` {
-        0.0: row.To[BpDouble]
+        0.0: row.To[DoubleBackProgationType]
       } {
-        1.0: row.To[BpDouble]
-      }: row.To[BpDouble]
+        1.0: row.To[DoubleBackProgationType]
+      }: row.To[DoubleBackProgationType]
     }
 
     val isField2Unknown = field2.isInl

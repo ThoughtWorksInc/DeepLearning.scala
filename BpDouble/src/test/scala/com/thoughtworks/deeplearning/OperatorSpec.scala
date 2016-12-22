@@ -11,7 +11,7 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
   */
 final class OperatorSpec extends FreeSpec with Matchers {
 
-  "BpDouble input" in {
+  "DoubleBackProgationType input" in {
     def buildLayer(implicit input: shapeless.the.`Parameter[Double]`.Out): shapeless.the.`Double <=> Double`.Out = {
       val m0: shapeless.the.`Double <=> Double`.Out = 0.0 - max(1.0, 2.0)
       -m0
