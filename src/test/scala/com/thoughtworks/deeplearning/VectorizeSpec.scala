@@ -4,6 +4,8 @@ import cats.Eval
 import com.thoughtworks.deeplearning.Lift._
 import org.scalatest._
 import com.thoughtworks.deeplearning.DifferentiableAny._
+import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}
