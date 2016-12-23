@@ -85,6 +85,8 @@ object DifferentiableAny {
 
   implicit def liftAny: Lift.Aux[Any, Any, ExistentialNothing] = Lift.fromData
 
-  trait Trainable[-Data, +Delta] extends (Data => Delta)
+  trait Trainable[-Data, +Delta] {
+    def apply(data: Data): Delta
+  }
 
 }
