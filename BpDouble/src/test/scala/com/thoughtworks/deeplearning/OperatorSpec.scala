@@ -20,9 +20,10 @@ final class OperatorSpec extends FreeSpec with Matchers {
       -m0
     }
 
+    val doubleToDouble = FromTo[Double, Double]
     val layer: shapeless.the.`Double <=> Double`.Out = buildLayer
 
-    layer.train(1.0)
+    (layer: doubleToDouble.Out).train(1.0)
   }
 
 }

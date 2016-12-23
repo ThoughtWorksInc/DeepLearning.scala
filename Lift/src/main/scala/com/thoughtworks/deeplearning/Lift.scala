@@ -108,25 +108,27 @@ object Lift {
     def apply[NativeOutput](implicit tc: To[NativeOutput]): tc.type = tc
   }
 
-  object <=> {
+  trait FromTo[NativeInput, NativeOutput] extends IsLayer
+
+  object FromTo {
 
     /** @template */
     type Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
-      <=>[NativeInput, NativeOutput] {
+      FromTo[NativeInput, NativeOutput] {
         type InputData = InputData0
         type InputDelta = InputDelta0
         type OutputData = OutputData0
         type OutputDelta = OutputDelta0
       }
 
-    def apply[NativeInput, NativeOutput](implicit typeClass: <=>[NativeInput, NativeOutput]): typeClass.type =
+    def apply[NativeInput, NativeOutput](implicit typeClass: FromTo[NativeInput, NativeOutput]): typeClass.type =
       typeClass
 
     implicit def lift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
         implicit liftInput: Lazy[Lift.Aux[NativeInput, InputData0, InputDelta0]],
         liftOutput: Lazy[Lift.Aux[NativeOutput, OutputData0, OutputDelta0]])
-      : <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
-      new <=>[NativeInput, NativeOutput] {
+      : FromTo.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+      new FromTo[NativeInput, NativeOutput] {
         type InputData = InputData0
         type InputDelta = InputDelta0
         type OutputData = OutputData0
@@ -135,7 +137,8 @@ object Lift {
 
   }
 
-  trait <=>[NativeInput, NativeOutput] extends IsLayer
+  type <=>[NativeInput, NativeOutput] = FromTo[NativeInput, NativeOutput]
+
   // FIXME: rename to placeholder
   final class Placeholder[Data0, Delta0] {
     type Data = Data0
