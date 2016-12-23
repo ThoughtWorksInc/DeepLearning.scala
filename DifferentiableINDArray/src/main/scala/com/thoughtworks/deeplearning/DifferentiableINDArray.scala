@@ -38,12 +38,15 @@ object DifferentiableINDArray {
 
   }
 
+  // TODO: Add a test for this method and auto-broadcasting on n-dimension arrays for n > 2
   private[DifferentiableINDArray] def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = {
-    shape match {
-      case Array(1, 1) => outputDeltaValue.sum(0, 1)
-      case Array(_, 1) => outputDeltaValue.sum(1)
-      case Array(1, _) => outputDeltaValue.sum(0)
-      case Array(_, _) => outputDeltaValue
+    val singleElementDimension = shape.zipWithIndex.collect {
+      case (1, dimension) => dimension
+    }
+    if (singleElementDimension.isEmpty) {
+      outputDeltaValue
+    } else {
+      outputDeltaValue.sum(singleElementDimension: _*).reshape(shape: _*)
     }
   }
 
