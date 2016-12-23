@@ -20,7 +20,7 @@ final class LayerSpec extends FreeSpec with Matchers {
 
   "INDArrayPlaceholder dot INDArrayPlaceholder" in {
 
-    def makeNetwork(implicit x: INDArrayPlaceholder) = {
+    def makeNetwork(implicit x: shapeless.the.`From[INDArray]`.Out) = {
       val weightInitialValue = Array(Array(0.0, 5.0))
       -weightInitialValue.toNDArray.toWeight.dot(x)
     }
