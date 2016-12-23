@@ -14,10 +14,17 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 final class OperatorSpec extends FreeSpec with Matchers {
 
   "DoublePlaceholder input" in {
-//    shapeless.the.`From[Double]`.Out
     def buildLayer(implicit input: shapeless.the.`From[Double]`.Out): shapeless.the.`To[Double]`.Out = {
       val m0: shapeless.the.`To[Double]`.Out = 0.0 - max(1.0, 2.0) - input
-      -m0
+      val layer: Layer.Aux[Batch.Aux[Double, Double], Batch.Aux[Double, Double]] = -m0
+      val layer2: shapeless.the.`Double <=> Double`.Out = layer
+
+      val layer3: shapeless.the.`To[Double]`.Out = layer2
+
+      val d = To[Double]
+      val layer4: d.Out = layer3
+
+      layer4
     }
 
     val doubleToDouble = FromTo[Double, Double]

@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning
 import cats.{Eval, Monoid}
 import cats.implicits._
+import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
 import com.thoughtworks.deeplearning.DifferentiableBoolean.BooleanMonoidBatch
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.Poly.MathMethods._
@@ -373,8 +374,8 @@ object DifferentiableDouble {
     new DoubleLayerOps(toLayer(from))
   }
 
-//  implicit def doubleToLayer[Input <: Batch]: ToLayer.Aux[Layer.Aux[Input, DoubleBatch], Input, Double, Double] = {
-//    Lift.ToLayer.layerToLayer
-//  }
+  implicit def doubleTrainable: Trainable[Double, Double] = new Trainable[Double, Double] {
+    def apply(data: Double): Double = data
+  }
 
 }

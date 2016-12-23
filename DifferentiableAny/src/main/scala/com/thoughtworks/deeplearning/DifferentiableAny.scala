@@ -60,7 +60,7 @@ object DifferentiableAny {
         implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
           Batch.Aux[InputData, InputDelta],
           Batch.Aux[OutputData, OutputDelta]],
-        outputDataIsOutputDelta: OutputData <:< OutputDelta
+        outputDataIsOutputDelta: Trainable[OutputData, OutputDelta]
     ): OutputData = {
       val outputBatch = layer.forward(Literal[InputData](inputData))
       try {
@@ -84,5 +84,7 @@ object DifferentiableAny {
   type ExistentialNothing = T forSome { type T >: Nothing <: Nothing }
 
   implicit def liftAny: Lift.Aux[Any, Any, ExistentialNothing] = Lift.fromData
+
+  trait Trainable[-Data, +Delta] extends (Data => Delta)
 
 }

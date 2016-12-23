@@ -1,4 +1,11 @@
-sbt.dsl.dependsOn(DifferentiableBoolean, DifferentiableDouble, DifferentiableINDArray, DifferentiableHList, DifferentiableCoproduct, DifferentiableSeq, DifferentiableAny, DifferentiableNothing)
+sbt.dsl.dependsOn(DifferentiableBoolean,
+                  DifferentiableDouble,
+                  DifferentiableINDArray,
+                  DifferentiableHList,
+                  DifferentiableCoproduct,
+                  DifferentiableSeq,
+                  DifferentiableAny,
+                  DifferentiableNothing)
 
 lazy val Layer = project.disablePlugins(SparkPackagePlugin)
 
@@ -6,7 +13,12 @@ lazy val Lift = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
 lazy val DifferentiableBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
 
-lazy val DifferentiableDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny % Test)
+lazy val DifferentiableDouble =
+  project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+
+lazy val DifferentiableInt = project
+  .disablePlugins(SparkPackagePlugin)
+  .dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
 
 lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
@@ -14,9 +26,10 @@ lazy val DifferentiableAny = project.disablePlugins(SparkPackagePlugin).dependsO
 
 lazy val DifferentiableNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
-lazy val DifferentiableSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val DifferentiableSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableInt)
 
-lazy val DifferentiableINDArray = project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableDouble)
+lazy val DifferentiableINDArray =
+  project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableInt, DifferentiableDouble)
 
 lazy val DifferentiableHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
 
