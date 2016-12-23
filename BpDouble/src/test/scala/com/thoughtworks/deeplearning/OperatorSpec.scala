@@ -22,7 +22,7 @@ final class OperatorSpec extends FreeSpec with Matchers {
 
     val layer: shapeless.the.`Double <=> Double`.Out = buildLayer
 
-    toAnyLayerOps(layer).train(1.0)
+    layer.train(1.0)
   }
 
 }
