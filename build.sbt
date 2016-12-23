@@ -6,7 +6,7 @@ lazy val Lift = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
 lazy val BpBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
 
-lazy val BpDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, BpBoolean, BufferedLayer)
+lazy val BpDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, BpBoolean, BufferedLayer, BpAny % Test)
 
 lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
