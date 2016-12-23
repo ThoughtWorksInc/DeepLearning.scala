@@ -29,13 +29,12 @@ import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}
 import util.Random
-import com.thoughtworks.{deeplearning => dl}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class XorSpec extends FreeSpec with Matchers {
-
+  import shapeless.the
   import XorSpec._
 
   implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
@@ -64,7 +63,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val ArrayToArray = FromTo[INDArray, INDArray]
 
-  def hiddenLayers(implicit encodedInput: Bp2DArray): ArrayToArray.Out = {
+  def hiddenLayers(implicit encodedInput: shapeless.the.`From[INDArray]`.Out): ArrayToArray.Out = {
     fullyConnectedThenSigmoid(50, 3).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(6, 50).compose(encodedInput))))
@@ -72,7 +71,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val hiddenLayersNetwork = hiddenLayers
 
-  def encode(implicit input: XorSpec.Input): input.To[Bp2DArray] = {
+  def encode(implicit input: shapeless.the.`From[XorSpec.InputData]`.Out): shapeless.the.`To[INDArray]`.Out = {
     val field0 = input.head
     val rest0 = input.tail
     val field1 = rest0.head
@@ -126,20 +125,22 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val encodeNetwork = encode
 
-  def decode(implicit row: Bp2DArray): row.To[XorSpec.Output] = {
+  def decode(implicit row: shapeless.the.`From[INDArray]`.Out): shapeless.the.`To[XorSpec.OutputData]`.Out = {
     val rowSeq = row.toSeq
     rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: shapeless.HNil.toLayer
   }
 
   val decodeNetwork = decode
 
-  def predict(implicit input: XorSpec.Input): input.To[XorSpec.Output] = {
+  def predict(
+      implicit input: shapeless.the.`From[XorSpec.InputData]`.Out): shapeless.the.`To[XorSpec.OutputData]`.Out = {
     decodeNetwork.compose(hiddenLayersNetwork.compose(encodeNetwork.compose(input)))
   }
 
   val predictNetwork = predict
 
-  def loss(implicit pair: ExpectedLabel :**: Bp2DArray :**: BpHNil): pair.To[DoubleBackProgationType] = {
+  def loss(implicit pair: shapeless.the.`From[ExpectedLabelData :: INDArray :: HNil]`.Out)
+    : shapeless.the.`To[Double]`.Out = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head
@@ -187,7 +188,8 @@ final class XorSpec extends FreeSpec with Matchers {
     loss0 + loss1 + loss2
   }
 
-  def train(implicit pair: ExpectedLabel :**: Input :**: BpHNil): pair.To[DoubleBackProgationType] = {
+  def train(implicit pair: shapeless.the.`From[ExpectedLabelData :: InputData :: HNil]`.Out)
+    : shapeless.the.`To[Double]`.Out = {
     val expectedLabel = pair.head
     val input = pair.tail.head
     loss.compose(expectedLabel :: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :: shapeless.HNil.toLayer)
@@ -195,7 +197,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val trainNetwork = train
 
-  def makeTrainingData(): (ExpectedLabel :**: Input :**: BpHNil)#Data = {
+  def makeTrainingData(): ExpectedLabelData :: InputData :: HNil = {
     import shapeless._
     val field0 = Random.nextBoolean()
     val field1 = Random.nextBoolean()
@@ -293,8 +295,8 @@ ${left11.value}^${right11.value}=${result11.value}
 }
 
 object XorSpec {
-  type OptionalDouble = shapeless.the.`From[HNil :+: Double :+: CNil]`.Out
-  type Input = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
-  type ExpectedLabel = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
-  type Output = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
+  type OptionalDoubleData = HNil :+: Double :+: CNil
+  type ExpectedLabelData = OptionalDoubleData :: OptionalDoubleData :: OptionalDoubleData :: HNil
+  type InputData = OptionalDoubleData :: OptionalDoubleData :: OptionalDoubleData :: HNil
+  type OutputData = Double :: Double :: Double :: HNil
 }
