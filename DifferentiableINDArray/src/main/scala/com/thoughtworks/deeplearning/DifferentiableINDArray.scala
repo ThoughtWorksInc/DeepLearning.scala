@@ -653,4 +653,8 @@ object DifferentiableINDArray {
 
   implicit def liftINDArray: Lift.Aux[INDArray, INDArray, INDArray] = Lift.fromData
 
+  implicit def indArrayTrainable: Trainable[INDArray, INDArray] = new Trainable[INDArray, INDArray] {
+    override def apply(data: INDArray): INDArray = data
+  }
+
 }
