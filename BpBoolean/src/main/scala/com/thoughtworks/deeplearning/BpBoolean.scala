@@ -30,7 +30,7 @@ object BpBoolean {
   object Layers {
 
     final case class If[Input0 <: Batch, OutputData0, OutputDelta0](
-        condition: Layer.Aux[Input0, BpBoolean#Batch],
+        condition: Layer.Aux[Input0, BooleanPlaceholder.Batch],
         `then`: Layer.Aux[Input0, Batch.Aux[OutputData0, OutputDelta0]],
         `else`: Layer.Aux[Input0, Batch.Aux[OutputData0, OutputDelta0]])
         extends Layer {
@@ -44,7 +44,8 @@ object BpBoolean {
       }
     }
 
-    final case class Not[Input0 <: Batch](operand: Layer.Aux[Input0, BpBoolean#Batch]) extends BufferedLayer.Unary {
+    final case class Not[Input0 <: Batch](operand: Layer.Aux[Input0, BooleanPlaceholder.Batch])
+        extends BufferedLayer.Unary {
 
       type BufferedBatch = MonoidBatch with BooleanMonoidBatch with UnaryBatch
 
@@ -87,10 +88,10 @@ object BpBoolean {
 
   import Layers._
 
-  /** @template */
-  type BpBoolean = Placeholder[Boolean, Boolean]
+  private[deeplearning] type BooleanPlaceholder = Placeholder[Boolean, Boolean]
+  private[deeplearning] val BooleanPlaceholder: BooleanPlaceholder = implicitly
 
-  final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BpBoolean#Batch]) {
+  final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BooleanPlaceholder.Batch]) {
 
     def `if`[Then,
              Else,
@@ -116,7 +117,7 @@ object BpBoolean {
   }
 
   implicit def toBooleanLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, BpBoolean]): BooleanLayerOps[Input] = {
+      implicit toLayer: ToLayer.OfType[From, Input, BooleanPlaceholder]): BooleanLayerOps[Input] = {
     new BooleanLayerOps[Input](toLayer(from))
   }
 

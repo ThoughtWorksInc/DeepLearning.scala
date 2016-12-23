@@ -265,12 +265,14 @@ object Lift {
     type Out = Layer.Aux[Input, Output]
   }
 
-  trait From[NativeValue] {
+  trait From[NativeValue] extends DepFn0 {
 
     type Data
     type Delta
 
     type Out = Placeholder[Data, Delta]
+
+    override def apply() = new Placeholder
 
   }
 
@@ -282,9 +284,7 @@ object Lift {
       type Delta = Delta0
     }
 
-    def apply[NativeValue, Data, Delta](
-        implicit typeClass: From.Aux[NativeValue, Data, Delta]): From.Aux[NativeValue, Data, Delta] =
-      typeClass
+    def apply[NativeValue](implicit typeClass: From[NativeValue]): typeClass.type = typeClass
 
     implicit def fromLift[NativeValue, Data0, Delta0](
         implicit lift: Lazy[Lift.Aux[NativeValue, Data0, Delta0]]): From.Aux[NativeValue, Data0, Delta0] =

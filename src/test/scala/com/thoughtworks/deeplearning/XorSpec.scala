@@ -43,18 +43,18 @@ final class XorSpec extends FreeSpec with Matchers {
     override protected def l2Regularization = 0.01
   }
 
-  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Bp2DArray) = {
+  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: INDArrayPlaceholder) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     //    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
 
-  def sigmoid(implicit input: Bp2DArray) = {
+  def sigmoid(implicit input: INDArrayPlaceholder) = {
     1.0 / (exp(-input) + 1.0)
   }
 
-  def fullyConnectedThenSigmoid(inputSize: Int, outputSize: Int)(implicit row: Bp2DArray) = {
+  def fullyConnectedThenSigmoid(inputSize: Int, outputSize: Int)(implicit row: INDArrayPlaceholder) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     //    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight

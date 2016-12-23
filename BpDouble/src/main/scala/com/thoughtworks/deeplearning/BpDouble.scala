@@ -11,6 +11,7 @@ import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.BpDouble.Layers._
 import com.thoughtworks.deeplearning.BpDouble.Optimizers.{LearningRate, Optimizer}
+import shapeless.the
 
 import language.implicitConversions
 
@@ -29,10 +30,9 @@ object BpDouble {
 
   }
 
-  /** @template */
-  type DoubleBackProgationType = Placeholder[Double, Double]
+  private[deeplearning] type DoublePlaceholder = Placeholder[Double, Double]
 
-  private[deeplearning] val DoubleBackProgationType = Placeholder[Double, Double]
+  private[deeplearning] val DoublePlaceholder: DoublePlaceholder = implicitly
 
   object Optimizers {
 
@@ -71,7 +71,7 @@ object BpDouble {
 
   object Layers {
 
-    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
+    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -94,8 +94,8 @@ object BpDouble {
     }
 
     final case class LessThan[Input0 <: Batch](
-                                                operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
-                                                operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = BooleanMonoidBatch with MonoidBatch with BinaryBatch
@@ -115,7 +115,7 @@ object BpDouble {
       }
     }
 
-    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
+    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -137,7 +137,7 @@ object BpDouble {
 
     }
 
-    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
+    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -160,8 +160,8 @@ object BpDouble {
     }
 
     final case class Plus[Input0 <: Batch](
-                                            operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
-                                            operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -184,7 +184,7 @@ object BpDouble {
       }
     }
 
-    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, DoubleBackProgationType.Batch])
+    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
         extends BufferedLayer.Unary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
@@ -209,8 +209,8 @@ object BpDouble {
     }
 
     final case class Substract[Input0 <: Batch](
-                                                 operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
-                                                 operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -234,8 +234,8 @@ object BpDouble {
     }
 
     final case class Times[Input0 <: Batch](
-                                             operand1: Layer.Aux[Input0, DoubleBackProgationType.Batch],
-                                             operand2: Layer.Aux[Input0, DoubleBackProgationType.Batch]
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
 
       type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
@@ -282,87 +282,93 @@ object BpDouble {
 
   implicit def liftNativeDouble: Lift.Aux[Double, Double, Double] = Lift.fromData[Double, Double]
 
-  implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+  implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     min.at { (leftLayer, rightLayer) =>
-      If[Input, DoubleBackProgationType.Data, DoubleBackProgationType.Delta](LessThan[Input](leftLayer, rightLayer), leftLayer, rightLayer)
+      If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan[Input](leftLayer, rightLayer),
+                                                                 leftLayer,
+                                                                 rightLayer)
     }
   }
 
-  implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                                  Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+  implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     max.at { (leftLayer, rightLayer) =>
-      If[Input, DoubleBackProgationType.Data, DoubleBackProgationType.Delta](LessThan[Input](leftLayer, rightLayer), rightLayer, leftLayer)
+      If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan[Input](leftLayer, rightLayer),
+                                                                 rightLayer,
+                                                                 leftLayer)
     }
   }
 
-  implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+  implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, Negative(rightLayer))
     }
   }
 
-  implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+  implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, rightLayer)
     }
   }
 
-  implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+  implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     /.at { (leftLayer, rightLayer) =>
       Times(leftLayer, Reciprocal(rightLayer))
     }
   }
 
-  implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch],
-                                                           Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+  implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
+                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     *.at(Times(_, _))
   }
 
   implicit def `log(Double)`[Input <: Batch]
-    : log.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch], Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+    : log.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     log.at(Log(_))
   }
 
   implicit def `exp(Double)`[Input <: Batch]
-    : exp.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch], Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+    : exp.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     exp.at(Exp(_))
   }
 
   implicit def `abs(Double)`[Input <: Batch]
-    : abs.Case.Aux[Layer.Aux[Input, DoubleBackProgationType.Batch], Layer.Aux[Input, DoubleBackProgationType.Batch]] = {
+    : abs.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     abs.at { operand =>
-      If[Input, DoubleBackProgationType.Data, DoubleBackProgationType.Delta](LessThan(operand, Literal(0.0)), Negative(operand), operand)
+      If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan(operand, Literal(0.0)),
+                                                                 Negative(operand),
+                                                                 operand)
     }
   }
 
   implicit final class NativeDoubleOps(nativeDouble: Double) {
     def toWeight[InputData, InputDelta](
-                                         implicit inputType: Placeholder[InputData, InputDelta],
-                                         optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], DoubleBackProgationType.Batch] = {
+        implicit inputType: Placeholder[InputData, InputDelta],
+        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], DoublePlaceholder.Batch] = {
       Weight(nativeDouble)
     }
   }
 
-  final class DoubleLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, DoubleBackProgationType.Batch]) {
+  final class DoubleLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, DoublePlaceholder.Batch]) {
 
-    def unary_- : Layer.Aux[Input, DoubleBackProgationType.Batch] = {
+    def unary_- : Layer.Aux[Input, DoublePlaceholder.Batch] = {
       Negative(differentiable)
     }
 
   }
 
   implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, DoubleBackProgationType]
+      implicit toLayer: ToLayer.OfType[From, Input, DoublePlaceholder]
   ): DoubleLayerOps[Input] = {
     new DoubleLayerOps(toLayer(from))
   }

@@ -29,7 +29,7 @@ import util.Random
   */
 object FortuneTeller {
 
-  type Seq2D = BpSeq[BpSeq[DoubleBackProgationType]]
+  type Seq2D = BpSeq[BpSeq[DoublePlaceholder]]
 
   type Nullable[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
 
@@ -40,27 +40,27 @@ object FortuneTeller {
   type Enum0 = BpHNil :++: BpHNil :++: BpCNil
   type Enum1 = BpHNil :++: BpHNil :++: BpHNil :++: BpCNil
 
-  type Field0 = Nullable[DoubleBackProgationType]
+  type Field0 = Nullable[DoublePlaceholder]
   type Field1 = Enum0
-  type Field2 = DoubleBackProgationType
+  type Field2 = DoublePlaceholder
   type Field3 = Enum1
 
   type InputTypePair =
-    InputField[Nullable[DoubleBackProgationType]] :**: InputField[Enum0] :**: InputField[DoubleBackProgationType] :**: InputField[
+    InputField[Nullable[DoublePlaceholder]] :**: InputField[Enum0] :**: InputField[DoublePlaceholder] :**: InputField[
       Enum1] :**: BpHNil
 
   type ExpectedLabel =
-    LabelField[Nullable[DoubleBackProgationType]] :**: LabelField[Enum0] :**: LabelField[DoubleBackProgationType] :**: LabelField[
+    LabelField[Nullable[DoublePlaceholder]] :**: LabelField[Enum0] :**: LabelField[DoublePlaceholder] :**: LabelField[
       Enum1] :**: BpHNil
 
-  type UnsetProbability = DoubleBackProgationType
+  type UnsetProbability = DoublePlaceholder
   type NullableFieldPrediction[Value <: Placeholder[_, _]] = UnsetProbability :**: Value :**: BpHNil
 
-  type Enum0Prediction = DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
-  type Enum1Prediction = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
+  type Enum0Prediction = DoublePlaceholder :**: DoublePlaceholder :**: BpHNil
+  type Enum1Prediction = DoublePlaceholder :**: DoublePlaceholder :**: DoublePlaceholder :**: BpHNil
 
   type PredictionResult =
-    NullableFieldPrediction[DoubleBackProgationType] :**: Enum0Prediction :**: DoubleBackProgationType :**: Enum1Prediction :**: BpHNil
+    NullableFieldPrediction[DoublePlaceholder] :**: Enum0Prediction :**: DoublePlaceholder :**: Enum1Prediction :**: BpHNil
 
   implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
     override def currentLearningRate() = 0.0003
@@ -68,19 +68,19 @@ object FortuneTeller {
     override protected def l2Regularization = 0.1
   }
 
-  def probabilityLoss(implicit x: DoubleBackProgationType): x.To[DoubleBackProgationType] = {
+  def probabilityLoss(implicit x: DoublePlaceholder): x.To[DoublePlaceholder] = {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(implicit rowAndExpectedLabel: Bp2DArray :**: ExpectedLabel :**: BpHNil)
-    : rowAndExpectedLabel.To[DoubleBackProgationType] = {
-    val row: rowAndExpectedLabel.To[Bp2DArray] = rowAndExpectedLabel.head
+  def loss(implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: BpHNil)
+    : rowAndExpectedLabel.To[DoublePlaceholder] = {
+    val row: rowAndExpectedLabel.To[INDArrayPlaceholder] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
-    val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[DoubleBackProgationType]]] = row.toSeq
+    val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[DoublePlaceholder]]] = row.toSeq
 
     // 暂时先在CPU上计算
 
-    val expectedLabelField0: rowAndExpectedLabel.To[LabelField[Nullable[DoubleBackProgationType]]] = expectedLabel.head
+    val expectedLabelField0: rowAndExpectedLabel.To[LabelField[Nullable[DoublePlaceholder]]] = expectedLabel.head
     val expectedLabelRest1 = expectedLabel.tail
     val expectedLabelField1 = expectedLabelRest1.head
     val expectedLabelRest2 = expectedLabelRest1.tail
@@ -97,7 +97,7 @@ object FortuneTeller {
 //        max(1.0 - rowSeq(0)(0), 0.0)
       } { inr =>
         val expectedValue = inr.head
-        (rowSeq(0)(0) + abs(rowSeq(0)(1) - expectedValue)): rowAndExpectedLabel.To[DoubleBackProgationType]
+        (rowSeq(0)(0) + abs(rowSeq(0)(1) - expectedValue)): rowAndExpectedLabel.To[DoublePlaceholder]
       }
     }
 
@@ -149,18 +149,18 @@ object FortuneTeller {
 
   val lossNetwork = loss
 
-  def array2DToRow(implicit input: Bp2DArray): input.To[PredictionResult] = {
+  def array2DToRow(implicit input: INDArrayPlaceholder): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(
+    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: BpHNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(
         0)(1) :: shapeless.HNil.toLayer
     val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :: rowSeq(0)(3) :: shapeless.HNil.toLayer
-    val field2: input.To[DoubleBackProgationType] = rowSeq(0)(4)
+    val field2: input.To[DoublePlaceholder] = rowSeq(0)(4)
     val field3 = rowSeq(0)(5) :: rowSeq(0)(6) :: rowSeq(0)(7) :: shapeless.HNil.toLayer
     field0 :: field1 :: field2 :: field3 :: shapeless.HNil.toLayer
   }
   val array2DToRowNetwork = array2DToRow
 
-  def rowToBp2DArray(implicit row: InputTypePair): row.To[Bp2DArray] = {
+  def rowToBp2DArray(implicit row: InputTypePair): row.To[INDArrayPlaceholder] = {
     val field0 = row.head
     val rest0 = row.tail
     val field1 = rest0.head
@@ -170,7 +170,7 @@ object FortuneTeller {
     val field3 = rest2.head
     val rest3 = rest2.tail
 
-    val field0Flag0: row.To[DoubleBackProgationType] = field0.choice { _ =>
+    val field0Flag0: row.To[DoublePlaceholder] = field0.choice { _ =>
       1.0
     } { _ =>
       0.0
@@ -190,22 +190,22 @@ object FortuneTeller {
       }
     }
 
-    val field0Value0: row.To[DoubleBackProgationType] = field0.choice { unknown: row.To[BpHNil] =>
-      0.5.toWeight: row.To[DoubleBackProgationType]
+    val field0Value0: row.To[DoublePlaceholder] = field0.choice { unknown: row.To[BpHNil] =>
+      0.5.toWeight: row.To[DoublePlaceholder]
     } {
       _.choice { knownField0 =>
         knownField0.choice { unset: row.To[BpHNil] =>
-          0.5.toWeight: row.To[DoubleBackProgationType]
+          0.5.toWeight: row.To[DoublePlaceholder]
         } {
-          _.choice { nativeDouble: row.To[DoubleBackProgationType] =>
-            nativeDouble: row.To[DoubleBackProgationType]
+          _.choice { nativeDouble: row.To[DoublePlaceholder] =>
+            nativeDouble: row.To[DoublePlaceholder]
           } { cnil: row.To[BpCNil] =>
-            `throw`(new IllegalArgumentException): row.To[DoubleBackProgationType]
-          }: row.To[DoubleBackProgationType]
-        }: row.To[DoubleBackProgationType]
+            `throw`(new IllegalArgumentException): row.To[DoublePlaceholder]
+          }: row.To[DoublePlaceholder]
+        }: row.To[DoublePlaceholder]
       } { cnil: row.To[BpCNil] =>
         `throw`(new IllegalArgumentException)
-      }: row.To[DoubleBackProgationType]
+      }: row.To[DoublePlaceholder]
 
     }
 
@@ -220,7 +220,7 @@ object FortuneTeller {
       0.0
     }
 
-    val field1Value0: row.To[DoubleBackProgationType] = isField1Unknown.`if` {
+    val field1Value0: row.To[DoublePlaceholder] = isField1Unknown.`if` {
       0.5.toWeight
     } {
       isField1Case0.`if` {
@@ -231,13 +231,13 @@ object FortuneTeller {
     }
 
     val field1Value1 = isField1Unknown.`if` {
-      0.5.toWeight: row.To[DoubleBackProgationType]
+      0.5.toWeight: row.To[DoublePlaceholder]
     } {
       isField1Case0.`if` {
-        0.0: row.To[DoubleBackProgationType]
+        0.0: row.To[DoublePlaceholder]
       } {
-        1.0: row.To[DoubleBackProgationType]
-      }: row.To[DoubleBackProgationType]
+        1.0: row.To[DoublePlaceholder]
+      }: row.To[DoublePlaceholder]
     }
 
     val isField2Unknown = field2.isInl
@@ -315,14 +315,14 @@ object FortuneTeller {
 
   val rowToBp2DArrayNetwork = rowToBp2DArray
 
-  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: Bp2DArray) = {
+  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: INDArrayPlaceholder) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
 //    val b = (Nd4j.randn(1, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
 
-  def hiddenLayers(implicit encodedInput: Bp2DArray) = {
+  def hiddenLayers(implicit encodedInput: INDArrayPlaceholder) = {
     fullyConnectedThenRelu(50, 8).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(12, 50).compose(encodedInput))))

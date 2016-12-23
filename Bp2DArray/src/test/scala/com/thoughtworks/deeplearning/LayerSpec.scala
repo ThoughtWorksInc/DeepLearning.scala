@@ -18,9 +18,9 @@ final class LayerSpec extends FreeSpec with Matchers {
     override def currentLearningRate() = 0.0003
   }
 
-  "Bp2DArray dot Bp2DArray" in {
+  "INDArrayPlaceholder dot INDArrayPlaceholder" in {
 
-    def makeNetwork(implicit x: Bp2DArray) = {
+    def makeNetwork(implicit x: INDArrayPlaceholder) = {
       val weightInitialValue = Array(Array(0.0, 5.0))
       -weightInitialValue.toNDArray.toWeight.dot(x)
     }

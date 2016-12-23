@@ -247,7 +247,7 @@ object BpCoproduct {
                                          commonToLayer(lub.right(tailToLayer(caseTail(tail)))))
     }
 
-    def isInl: Layer.Aux[Input, BpBoolean#Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+    def isInl: Layer.Aux[Input, BooleanPlaceholder.Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 
