@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Lift.BackPropagationType
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import shapeless._
@@ -14,7 +13,7 @@ trait Lift[From] extends DepFn1[From] {
 
   type Batch = Batch.Aux[Data, Delta]
 
-  type Placeholder = BackPropagationType[Data, Delta]
+  type Placeholder = Lift.Placeholder[Data, Delta]
 
   type Out = Literal[Data]
 
@@ -66,8 +65,79 @@ object Lift {
 
   import Layers._
 
+  trait IsLayer {
+    type OutputData
+    type OutputDelta
+    type InputData
+    type InputDelta
+    type ConcreteOut = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
+    type Out >: ConcreteOut <: ConcreteOut
+  }
+
+  object IsLayer {
+
+    type Aux[InputData0, InputDelta0, OutputData0, OutputDelta0] = IsLayer {
+      type OutputData = OutputData0
+      type OutputDelta = OutputDelta0
+      type InputData = InputData0
+      type InputDelta = InputDelta0
+    }
+
+  }
+
+  trait To[NativeOutput] extends IsLayer
+  object To {
+    type Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] = To[NativeOutput] {
+      type OutputData = OutputData0
+      type OutputDelta = OutputDelta0
+      type InputData = InputData0
+      type InputDelta = InputDelta0
+    }
+
+    implicit def to[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+        implicit inputPlaceHolder: Placeholder[InputData0, InputDelta0],
+        liftTo: Lift.Aux[NativeOutput, OutputData0, OutputDelta0]
+    ): To.Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+      new To[NativeOutput] {
+        type OutputData = OutputData0
+        type OutputDelta = OutputDelta0
+        type InputData = InputData0
+        type InputDelta = InputDelta0
+      }
+
+    def apply[NativeOutput](implicit tc: To[NativeOutput]): tc.type = tc
+  }
+
+  object <=> {
+
+    /** @template */
+    type Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+      <=>[NativeInput, NativeOutput] {
+        type InputData = InputData0
+        type InputDelta = InputDelta0
+        type OutputData = OutputData0
+        type OutputDelta = OutputDelta0
+      }
+
+    def apply[NativeInput, NativeOutput](implicit typeClass: <=>[NativeInput, NativeOutput]): typeClass.type =
+      typeClass
+
+    implicit def lift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+        implicit liftInput: Lazy[Lift.Aux[NativeInput, InputData0, InputDelta0]],
+        liftOutput: Lazy[Lift.Aux[NativeOutput, OutputData0, OutputDelta0]])
+      : <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+      new <=>[NativeInput, NativeOutput] {
+        type InputData = InputData0
+        type InputDelta = InputDelta0
+        type OutputData = OutputData0
+        type OutputDelta = OutputDelta0
+      }
+
+  }
+
+  trait <=>[NativeInput, NativeOutput] extends IsLayer
   // FIXME: rename to placeholder
-  final class BackPropagationType[Data0, Delta0] {
+  final class Placeholder[Data0, Delta0] {
     type Data = Data0
     type Delta = Delta0
 
@@ -76,32 +146,25 @@ object Lift {
     // Workaround for https://issues.scala-lang.org/browse/SI-10008
     type Batch >: ConcreteBatch <: ConcreteBatch
 
-    @deprecated(since = "1.0.0",
-                message = "Use Layer.Aux[the.`Lift[InputData]`.Out, the.`Lift[OutputData]`.Out] instead")
-    type To[OutputSymbol <: BackPropagationType[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
+    @deprecated(message = "Use the.`Lift.To[Xxx]`.Out] instead", since = "1.0.0")
+    type To[OutputSymbol <: Placeholder[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
 
-    //    def <=>[OutputData, OutputDelta](outputType:BackPropagationType[OutputData,OutputDelta])
-
-    //  type Layer.Aux[OutputType <: BackPropagationType] =
-    //    Layer.Aux[ConcreteBatch, outputType.ConcreteBatch forSome { val outputType: OutputType }]
   }
-  
-  object BackPropagationType {
 
-    implicit def apply[Data, Delta]: BackPropagationType[Data, Delta] = new BackPropagationType
+  object Placeholder {
 
-    type DataOf[T <: BackPropagationType[_, _]] = t.Data forSome { val t: T }
-    type DeltaOf[T <: BackPropagationType[_, _]] = t.Delta forSome { val t: T }
+    implicit def apply[Data, Delta]: Placeholder[Data, Delta] = new Placeholder
 
-    implicit def inputTypeToLayer[InputData, InputDelta]: ToLayer.Aux[BackPropagationType[InputData, InputDelta],
-                                                                      Batch.Aux[InputData, InputDelta],
-                                                                      InputData,
-                                                                      InputDelta] =
-      new ToLayer[BackPropagationType[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
+    type DataOf[T <: Placeholder[_, _]] = t.Data forSome { val t: T }
+    type DeltaOf[T <: Placeholder[_, _]] = t.Delta forSome { val t: T }
+
+    implicit def inputTypeToLayer[InputData, InputDelta]
+      : ToLayer.Aux[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
+      new ToLayer[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
         override type OutputData = InputData
         override type OutputDelta = InputDelta
 
-        override def apply(input: BackPropagationType[InputData, InputDelta]) =
+        override def apply(input: Placeholder[InputData, InputDelta]) =
           Identity[InputData, InputDelta]()
       }
 
@@ -135,16 +198,16 @@ object Lift {
 
   private[deeplearning] sealed trait ToLayerLowPriorityImplicits { this: ToLayer.type =>
 
-    implicit def toLayerOfType[Input0 <: Batch, OutputType <: BackPropagationType[_, _]]
+    implicit def toLayerOfType[Input0 <: Batch, OutputType <: Placeholder[_, _]]
       : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
       ToLayer
-        .layerToLayer[Input0, BackPropagationType.DataOf[OutputType], BackPropagationType.DeltaOf[OutputType]]
+        .layerToLayer[Input0, Placeholder.DataOf[OutputType], Placeholder.DeltaOf[OutputType]]
         .asInstanceOf[ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType]]
     }
 
-    implicit def liftedToLayer[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]
+    implicit def isLayerToLayer[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]
       : ToLayer.Aux[
-        <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]#Out,
+        IsLayer.Aux[InputData0, InputDelta0, OutputData0, OutputDelta0]#Out,
         Batch.Aux[InputData0, InputDelta0],
         OutputData0,
         OutputDelta0
@@ -161,7 +224,7 @@ object Lift {
       type OutputDelta = OutputDelta0
     }
 
-    type OfType[From, Input <: Batch, OutputType <: BackPropagationType[_, _]] =
+    type OfType[From, Input <: Batch, OutputType <: Placeholder[_, _]] =
       ToLayer.Aux[From, Input, differentiableType.Data, differentiableType.Delta] forSome {
         val differentiableType: OutputType
       }
@@ -175,8 +238,8 @@ object Lift {
         override def apply(layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) = layer
       }
 
-    implicit def liftToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
-        implicit inputType: BackPropagationType[InputData, InputDelta],
+    implicit def placeholderToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
+        implicit inputType: Placeholder[InputData, InputDelta],
         lift: Lift.Aux[From, OutputData0, OutputDelta0])
       : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
@@ -199,72 +262,34 @@ object Lift {
     type Out = Layer.Aux[Input, Output]
   }
 
-  trait Parameter[NativeValue] {
+  trait From[NativeValue] {
 
     type Data
     type Delta
 
-    type Out = BackPropagationType[Data, Delta]
+    type Out = Placeholder[Data, Delta]
 
   }
 
-  object Parameter {
+  object From {
 
     /** @template */
-    type Aux[NativeValue, Data0, Delta0] = Parameter[NativeValue] {
+    type Aux[NativeValue, Data0, Delta0] = From[NativeValue] {
       type Data = Data0
       type Delta = Delta0
     }
 
     def apply[NativeValue, Data, Delta](
-        implicit typeClass: Parameter.Aux[NativeValue, Data, Delta]): Parameter.Aux[NativeValue, Data, Delta] =
+        implicit typeClass: From.Aux[NativeValue, Data, Delta]): From.Aux[NativeValue, Data, Delta] =
       typeClass
 
     implicit def fromLift[NativeValue, Data0, Delta0](
-        implicit lift: Lazy[Lift.Aux[NativeValue, Data0, Delta0]]): Parameter.Aux[NativeValue, Data0, Delta0] =
-      new Parameter[NativeValue] {
+        implicit lift: Lazy[Lift.Aux[NativeValue, Data0, Delta0]]): From.Aux[NativeValue, Data0, Delta0] =
+      new From[NativeValue] {
         type Data = Data0
         type Delta = Delta0
       }
 
-  }
-  object <=> {
-
-    /** @template */
-    type Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
-      <=>[NativeInput, NativeOutput] {
-        type InputData = InputData0
-        type InputDelta = InputDelta0
-        type OutputData = OutputData0
-        type OutputDelta = OutputDelta0
-      }
-
-    def apply[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta](
-        implicit typeClass: <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta])
-      : <=>.Aux[NativeInput, NativeOutput, InputData, InputDelta, OutputData, OutputDelta] = typeClass
-
-    implicit def lift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-        implicit liftInput: Lazy[Lift.Aux[NativeInput, InputData0, InputDelta0]],
-        liftOutput: Lazy[Lift.Aux[NativeOutput, OutputData0, OutputDelta0]])
-      : <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
-      new <=>[NativeInput, NativeOutput] {
-        type InputData = InputData0
-        type InputDelta = InputDelta0
-        type OutputData = OutputData0
-        type OutputDelta = OutputDelta0
-      }
-
-  }
-
-  trait <=>[NativeInput, NativeOutput] {
-    type InputData
-    type InputDelta
-    type OutputData
-    type OutputDelta
-    type Input = Batch.Aux[InputData, InputDelta]
-    type Output = Batch.Aux[OutputData, OutputDelta]
-    type ConcretOut = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
-    type Out >: ConcretOut <: ConcretOut
   }
 
 }

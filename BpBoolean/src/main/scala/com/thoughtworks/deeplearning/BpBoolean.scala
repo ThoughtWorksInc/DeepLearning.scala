@@ -88,7 +88,7 @@ object BpBoolean {
   import Layers._
 
   /** @template */
-  type BpBoolean = BackPropagationType[Boolean, Boolean]
+  type BpBoolean = Placeholder[Boolean, Boolean]
 
   final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BpBoolean#Batch]) {
 

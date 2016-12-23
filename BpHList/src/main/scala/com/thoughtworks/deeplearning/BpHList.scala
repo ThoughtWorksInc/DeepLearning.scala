@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Lift.BackPropagationType.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Lift.Placeholder.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpHList.Layers._
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
@@ -126,18 +126,18 @@ object BpHList {
   }
 
   /** @template */
-  type BpHList = BackPropagationType[_ <: HList, _ <: Coproduct]
+  type BpHList = Placeholder[_ <: HList, _ <: Coproduct]
 
   /** @template */
-  type BpHNil = BackPropagationType[HNil, CNil]
+  type BpHNil = Placeholder[HNil, CNil]
 
   /** @template */
-  type BpHCons[Head <: BackPropagationType[_, _], Tail <: BpHList] =
-    BackPropagationType[DataOf[Head] :: DataOf[Tail], DeltaOf[Head] :+: DeltaOf[Tail]]
+  type BpHCons[Head <: Placeholder[_, _], Tail <: BpHList] =
+    Placeholder[DataOf[Head] :: DataOf[Tail], DeltaOf[Head] :+: DeltaOf[Tail]]
 
   /** @template */
-  type :**:[Head <: BackPropagationType[_, _], Tail <: BpHList] =
-    BackPropagationType[::[DataOf[Head], DataOf[Tail]], :+:[DeltaOf[Head], DeltaOf[Tail]]]
+  type :**:[Head <: Placeholder[_, _], Tail <: BpHList] =
+    Placeholder[::[DataOf[Head], DataOf[Tail]], :+:[DeltaOf[Head], DeltaOf[Tail]]]
 
   final class HListLayerOps[Input <: Batch, TailData <: HList, TailDelta <: Coproduct](
       tail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]]) {

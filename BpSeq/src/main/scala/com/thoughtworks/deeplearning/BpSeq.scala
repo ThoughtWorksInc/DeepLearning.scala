@@ -84,8 +84,8 @@ object BpSeq {
 
   }
 
-  type BpSeq[A <: BackPropagationType[_, _]] =
-    BackPropagationType[Seq[BackPropagationType.DataOf[A]], (Int, BackPropagationType.DeltaOf[A])]
+  type BpSeq[A <: Placeholder[_, _]] =
+    Placeholder[Seq[Placeholder.DataOf[A]], (Int, Placeholder.DeltaOf[A])]
 
   object BpSeq {
     def apply[From, Input <: Batch](layers: From*)(

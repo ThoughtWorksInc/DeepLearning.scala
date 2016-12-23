@@ -30,9 +30,9 @@ object BpDouble {
   }
 
   /** @template */
-  type DoubleBackProgationType = BackPropagationType[Double, Double]
+  type DoubleBackProgationType = Placeholder[Double, Double]
 
-  private[deeplearning] val DoubleBackProgationType = BackPropagationType[Double, Double]
+  private[deeplearning] val DoubleBackProgationType = Placeholder[Double, Double]
 
   object Optimizers {
 
@@ -347,8 +347,8 @@ object BpDouble {
 
   implicit final class NativeDoubleOps(nativeDouble: Double) {
     def toWeight[InputData, InputDelta](
-        implicit inputType: BackPropagationType[InputData, InputDelta],
-        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], DoubleBackProgationType.Batch] = {
+                                         implicit inputType: Placeholder[InputData, InputDelta],
+                                         optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], DoubleBackProgationType.Batch] = {
       Weight(nativeDouble)
     }
   }

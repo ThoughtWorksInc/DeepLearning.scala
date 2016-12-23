@@ -31,11 +31,11 @@ object FortuneTeller {
 
   type Seq2D = BpSeq[BpSeq[DoubleBackProgationType]]
 
-  type Nullable[A <: BackPropagationType[_, _]] = BpHNil :++: A :++: BpCNil
+  type Nullable[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
 
-  type InputField[A <: BackPropagationType[_, _]] = BpHNil :++: A :++: BpCNil
+  type InputField[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
 
-  type LabelField[A <: BackPropagationType[_, _]] = BpHNil :++: A :++: BpCNil
+  type LabelField[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
 
   type Enum0 = BpHNil :++: BpHNil :++: BpCNil
   type Enum1 = BpHNil :++: BpHNil :++: BpHNil :++: BpCNil
@@ -54,7 +54,7 @@ object FortuneTeller {
       Enum1] :**: BpHNil
 
   type UnsetProbability = DoubleBackProgationType
-  type NullableFieldPrediction[Value <: BackPropagationType[_, _]] = UnsetProbability :**: Value :**: BpHNil
+  type NullableFieldPrediction[Value <: Placeholder[_, _]] = UnsetProbability :**: Value :**: BpHNil
 
   type Enum0Prediction = DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil
   type Enum1Prediction = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil

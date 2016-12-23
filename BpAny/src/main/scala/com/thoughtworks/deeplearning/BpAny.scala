@@ -13,7 +13,7 @@ import language.implicitConversions
 object BpAny {
 
   /** @template */
-  type BpAny = BackPropagationType[Any, _]
+  type BpAny = Placeholder[Any, _]
 
   object Layers {
 

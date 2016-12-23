@@ -5,7 +5,7 @@ import com.thoughtworks.deeplearning.BpBoolean._
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.BpBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Lift.BackPropagationType.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Lift.Placeholder.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.BpCoproduct.Layers._
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import shapeless.{:+:, CNil, Coproduct, Lazy, Lub}
@@ -19,19 +19,19 @@ import language.implicitConversions
 object BpCoproduct {
 
   /** @template */
-  type BpCoproduct = BackPropagationType[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
+  type BpCoproduct = Placeholder[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
 
   /** @template */
-  type BpCNil = BackPropagationType[shapeless.CNil, shapeless.CNil]
+  type BpCNil = Placeholder[shapeless.CNil, shapeless.CNil]
 
   /** @template */
-  @deprecated
-  type BpCCons[Head <: BackPropagationType[_, _], Tail <: BpCoproduct] =
-    BackPropagationType[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
+  @deprecated(message="Use `To[Double :+: CNil]` instead",since = "1.0.0")
+  type BpCCons[Head <: Placeholder[_, _], Tail <: BpCoproduct] =
+    Placeholder[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
-  @deprecated
-  type :++:[Head <: BackPropagationType[_, _], Tail <: BpCoproduct] =
-    BackPropagationType[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
+  @deprecated(message="Use `To[Double :+: CNil]` instead",since = "1.0.0")
+  type :++:[Head <: Placeholder[_, _], Tail <: BpCoproduct] =
+    Placeholder[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
   object Layers {
 

@@ -9,7 +9,7 @@ import com.thoughtworks.deeplearning.Lift._
 object BpNothing {
 
   /** @template */
-  type BpNothing = BackPropagationType[Nothing, Any]
+  type BpNothing = Placeholder[Nothing, Any]
 
   object Layers {
 
@@ -37,7 +37,7 @@ object BpNothing {
   import Layers._
 
   def `throw`[InputData, InputDelta](throwable: => Throwable)(
-      implicit inputType: BackPropagationType[InputData, InputDelta])
+      implicit inputType: Placeholder[InputData, InputDelta])
     : Layer.Aux[Batch.Aux[InputData, InputDelta], BpNothing#Batch] = {
     Throw(throwable _)
   }

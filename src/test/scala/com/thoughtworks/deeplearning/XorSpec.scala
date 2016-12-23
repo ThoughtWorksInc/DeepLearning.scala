@@ -293,7 +293,7 @@ ${left11.value}^${right11.value}=${result11.value}
 }
 
 object XorSpec {
-  type OptionalDouble = shapeless.the.`Parameter[HNil :+: Double :+: CNil]`.Out
+  type OptionalDouble = shapeless.the.`From[HNil :+: Double :+: CNil]`.Out
   type Input = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
   type ExpectedLabel = OptionalDouble :**: OptionalDouble :**: OptionalDouble :**: BpHNil
   type Output = DoubleBackProgationType :**: DoubleBackProgationType :**: DoubleBackProgationType :**: BpHNil

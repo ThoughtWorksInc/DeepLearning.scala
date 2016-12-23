@@ -15,14 +15,14 @@ final class OperatorSpec extends FreeSpec with Matchers {
 
   "DoubleBackProgationType input" in {
 
-    def buildLayer(implicit input: shapeless.the.`Parameter[Double]`.Out): shapeless.the.`Double <=> Double`.Out = {
-      val m0: input.To[shapeless.the.`Parameter[Double]`.Out] /* shapeless.the.`input.ToLayer[Double]`.Out */ = 0.0 - max(
-          1.0,
-          2.0) - input
+    def buildLayer(implicit input: shapeless.the.`From[Double]`.Out): shapeless.the.`To[Double]`.Out = {
+      val m0: shapeless.the.`To[Double]`.Out = 0.0 - max(1.0, 2.0) - input
       -m0
     }
 
-    toAnyLayerOps(buildLayer).train(1.0)
+    val layer: shapeless.the.`Double <=> Double`.Out = buildLayer
+
+    toAnyLayerOps(layer).train(1.0)
   }
 
 }

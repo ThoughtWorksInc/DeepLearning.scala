@@ -47,7 +47,7 @@ object Bp2DArray {
   }
 
   /** @template */
-  type Bp2DArray = BackPropagationType[INDArray, INDArray]
+  type Bp2DArray = Placeholder[INDArray, INDArray]
 
   object Optimizers {
 
@@ -638,8 +638,8 @@ object Bp2DArray {
 
   implicit final class INDArrayOps(ndArray: INDArray) {
     def toWeight[InputData, InputDelta](
-        implicit inputType: BackPropagationType[InputData, InputDelta],
-        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Bp2DArray#Batch] = {
+                                         implicit inputType: Placeholder[InputData, InputDelta],
+                                         optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], Bp2DArray#Batch] = {
       Weight(ndArray)
     }
   }

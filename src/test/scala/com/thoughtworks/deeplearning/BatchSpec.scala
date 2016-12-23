@@ -24,9 +24,9 @@ final class BatchSpec extends FreeSpec with Matchers {
   "Batch#Batch" in {
     "implicitly[DoubleBackProgationType.Batch <:< Batch.Aux[Double, Double]]" should compile
     "implicitly[DoubleBackProgationType.Batch =:= Batch.Aux[Double, Double]]" should compile
-    "implicitly[DoubleBackProgationType.Batch <:< BackPropagationType[_, _]#Batch]" should compile
-    "implicitly[DoubleBackProgationType.Batch =:= BackPropagationType[_, _]#Batch]" shouldNot compile
-    "implicitly[BackPropagationType[_, _]#Batch =:= DoubleBackProgationType.Batch]" shouldNot compile
+    "implicitly[DoubleBackProgationType.Batch <:< Placeholder[_, _]#Batch]" should compile
+    "implicitly[DoubleBackProgationType.Batch =:= Placeholder[_, _]#Batch]" shouldNot compile
+    "implicitly[Placeholder[_, _]#Batch =:= DoubleBackProgationType.Batch]" shouldNot compile
     "implicitly[(DoubleBackProgationType :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
     "implicitly[(BpBoolean :**: DoubleBackProgationType :**: BpHNil)#Batch <:< BpHList#Batch]" should compile
     "implicitly[(DoubleBackProgationType :**: BpHNil)#Batch =:= Batch.Aux[Double :: shapeless.HNil, Double :+: CNil]]" should compile

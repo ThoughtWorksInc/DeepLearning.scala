@@ -17,8 +17,8 @@ import language.existentials
 class DifferentiableTypeSpec extends FreeSpec with Matchers {
 
   "DoubleBackProgationType :**: BpHNil" in {
-    "implicitly[(DoubleBackProgationType :**: BpHNil) =:= BackPropagationType[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]" should compile
-    "implicitly[Array[DoubleBackProgationType :**: BpHNil] =:= Array[BackPropagationType[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]]" should compile
+    "implicitly[(DoubleBackProgationType :**: BpHNil) =:= Placeholder[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]" should compile
+    "implicitly[Array[DoubleBackProgationType :**: BpHNil] =:= Array[Placeholder[::[Double, shapeless.HNil], shapeless.:+:[Double, shapeless.CNil]]]]" should compile
   }
 
   "x" in {
