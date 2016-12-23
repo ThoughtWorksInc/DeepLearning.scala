@@ -2,11 +2,11 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.BpSeq._
-import com.thoughtworks.deeplearning.BpDouble._
-import com.thoughtworks.deeplearning.BpDouble.Optimizers.LearningRate
+import com.thoughtworks.deeplearning.DifferentiableSeq._
+import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableDouble.Optimizers.LearningRate
 import org.scalatest._
-import com.thoughtworks.deeplearning.BpAny._
+import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 
@@ -21,11 +21,11 @@ final class SeqSpec extends FreeSpec with Matchers {
     override protected def currentLearningRate() = 0.03
   }
 
-  def unsafe(implicit s: BpSeq[BpAny]) = {
+  def unsafe(implicit s: DifferentiableSeq[AnyPlaceholder]) = {
     s(0).asInstanceOf[s.To[DoublePlaceholder]] - 1.0.toWeight
   }
 
-  "erased BpSeq" in {
+  "erased DifferentiableSeq" in {
     val unsafeNetwork = unsafe
     unsafeNetwork.train(Seq(2.4))
   }

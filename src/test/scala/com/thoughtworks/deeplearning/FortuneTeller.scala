@@ -3,16 +3,16 @@ package com.thoughtworks.deeplearning
 import cats.Eval
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
-import com.thoughtworks.deeplearning.BpHList._
-import com.thoughtworks.deeplearning.BpAny._
-import com.thoughtworks.deeplearning.BpBoolean._
-import com.thoughtworks.deeplearning.BpNothing._
-import com.thoughtworks.deeplearning.BpDouble._
-import com.thoughtworks.deeplearning.BpSeq._
-import com.thoughtworks.deeplearning.Bp2DArray._
+import com.thoughtworks.deeplearning.DifferentiableHList._
+import com.thoughtworks.deeplearning.DifferentiableAny._
+import com.thoughtworks.deeplearning.DifferentiableBoolean._
+import com.thoughtworks.deeplearning.DifferentiableNothing._
+import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableSeq._
+import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
-import com.thoughtworks.deeplearning.BpCoproduct._
+import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.LearningRate
+import com.thoughtworks.deeplearning.DifferentiableCoproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
@@ -29,16 +29,16 @@ import util.Random
   */
 object FortuneTeller {
 
-  type Seq2D = BpSeq[BpSeq[DoublePlaceholder]]
+  type Seq2D = DifferentiableSeq[DifferentiableSeq[DoublePlaceholder]]
 
-  type Nullable[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
+  type Nullable[A <: Placeholder[_, _]] = DifferentiableHNil :++: A :++: DifferentiableCNil
 
-  type InputField[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
+  type InputField[A <: Placeholder[_, _]] = DifferentiableHNil :++: A :++: DifferentiableCNil
 
-  type LabelField[A <: Placeholder[_, _]] = BpHNil :++: A :++: BpCNil
+  type LabelField[A <: Placeholder[_, _]] = DifferentiableHNil :++: A :++: DifferentiableCNil
 
-  type Enum0 = BpHNil :++: BpHNil :++: BpCNil
-  type Enum1 = BpHNil :++: BpHNil :++: BpHNil :++: BpCNil
+  type Enum0 = DifferentiableHNil :++: DifferentiableHNil :++: DifferentiableCNil
+  type Enum1 = DifferentiableHNil :++: DifferentiableHNil :++: DifferentiableHNil :++: DifferentiableCNil
 
   type Field0 = Nullable[DoublePlaceholder]
   type Field1 = Enum0
@@ -47,22 +47,22 @@ object FortuneTeller {
 
   type InputTypePair =
     InputField[Nullable[DoublePlaceholder]] :**: InputField[Enum0] :**: InputField[DoublePlaceholder] :**: InputField[
-      Enum1] :**: BpHNil
+      Enum1] :**: DifferentiableHNil
 
   type ExpectedLabel =
     LabelField[Nullable[DoublePlaceholder]] :**: LabelField[Enum0] :**: LabelField[DoublePlaceholder] :**: LabelField[
-      Enum1] :**: BpHNil
+      Enum1] :**: DifferentiableHNil
 
   type UnsetProbability = DoublePlaceholder
-  type NullableFieldPrediction[Value <: Placeholder[_, _]] = UnsetProbability :**: Value :**: BpHNil
+  type NullableFieldPrediction[Value <: Placeholder[_, _]] = UnsetProbability :**: Value :**: DifferentiableHNil
 
-  type Enum0Prediction = DoublePlaceholder :**: DoublePlaceholder :**: BpHNil
-  type Enum1Prediction = DoublePlaceholder :**: DoublePlaceholder :**: DoublePlaceholder :**: BpHNil
+  type Enum0Prediction = DoublePlaceholder :**: DoublePlaceholder :**: DifferentiableHNil
+  type Enum1Prediction = DoublePlaceholder :**: DoublePlaceholder :**: DoublePlaceholder :**: DifferentiableHNil
 
   type PredictionResult =
-    NullableFieldPrediction[DoublePlaceholder] :**: Enum0Prediction :**: DoublePlaceholder :**: Enum1Prediction :**: BpHNil
+    NullableFieldPrediction[DoublePlaceholder] :**: Enum0Prediction :**: DoublePlaceholder :**: Enum1Prediction :**: DifferentiableHNil
 
-  implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
+  implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization with DifferentiableDouble.Optimizers.L2Regularization {
     override def currentLearningRate() = 0.0003
 
     override protected def l2Regularization = 0.1
@@ -72,11 +72,11 @@ object FortuneTeller {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: BpHNil)
+  def loss(implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: DifferentiableHNil)
     : rowAndExpectedLabel.To[DoublePlaceholder] = {
     val row: rowAndExpectedLabel.To[INDArrayPlaceholder] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
-    val rowSeq: rowAndExpectedLabel.To[BpSeq[BpSeq[DoublePlaceholder]]] = row.toSeq
+    val rowSeq: rowAndExpectedLabel.To[DifferentiableSeq[DifferentiableSeq[DoublePlaceholder]]] = row.toSeq
 
     // 暂时先在CPU上计算
 
@@ -151,7 +151,7 @@ object FortuneTeller {
 
   def array2DToRow(implicit input: INDArrayPlaceholder): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: BpHNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(
+    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: DifferentiableHNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(
         0)(1) :: shapeless.HNil.toLayer
     val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :: rowSeq(0)(3) :: shapeless.HNil.toLayer
     val field2: input.To[DoublePlaceholder] = rowSeq(0)(4)
@@ -160,7 +160,7 @@ object FortuneTeller {
   }
   val array2DToRowNetwork = array2DToRow
 
-  def rowToBp2DArray(implicit row: InputTypePair): row.To[INDArrayPlaceholder] = {
+  def rowToDifferentiableINDArray(implicit row: InputTypePair): row.To[INDArrayPlaceholder] = {
     val field0 = row.head
     val rest0 = row.tail
     val field1 = rest0.head
@@ -190,20 +190,20 @@ object FortuneTeller {
       }
     }
 
-    val field0Value0: row.To[DoublePlaceholder] = field0.choice { unknown: row.To[BpHNil] =>
+    val field0Value0: row.To[DoublePlaceholder] = field0.choice { unknown: row.To[DifferentiableHNil] =>
       0.5.toWeight: row.To[DoublePlaceholder]
     } {
       _.choice { knownField0 =>
-        knownField0.choice { unset: row.To[BpHNil] =>
+        knownField0.choice { unset: row.To[DifferentiableHNil] =>
           0.5.toWeight: row.To[DoublePlaceholder]
         } {
           _.choice { nativeDouble: row.To[DoublePlaceholder] =>
             nativeDouble: row.To[DoublePlaceholder]
-          } { cnil: row.To[BpCNil] =>
+          } { cnil: row.To[DifferentiableCNil] =>
             `throw`(new IllegalArgumentException): row.To[DoublePlaceholder]
           }: row.To[DoublePlaceholder]
         }: row.To[DoublePlaceholder]
-      } { cnil: row.To[BpCNil] =>
+      } { cnil: row.To[DifferentiableCNil] =>
         `throw`(new IllegalArgumentException)
       }: row.To[DoublePlaceholder]
 
@@ -310,10 +310,10 @@ object FortuneTeller {
                                   field3Value1,
                                   field3Value2)
 
-    Vector(encodedLayerRow0).toBp2DArray
+    Vector(encodedLayerRow0).toDifferentiableINDArray
   }
 
-  val rowToBp2DArrayNetwork = rowToBp2DArray
+  val rowToDifferentiableINDArrayNetwork = rowToDifferentiableINDArray
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(implicit row: INDArrayPlaceholder) = {
     val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
@@ -331,17 +331,17 @@ object FortuneTeller {
   val hiddenLayersNetwork = hiddenLayers
 
   def predict(implicit input: InputTypePair): input.To[PredictionResult] = {
-    val encodedInput = rowToBp2DArrayNetwork.compose(input)
+    val encodedInput = rowToDifferentiableINDArrayNetwork.compose(input)
     val encodedResult = hiddenLayersNetwork.compose(encodedInput)
     array2DToRowNetwork.compose(encodedResult)
   }
 
   val predictNetwork = predict
 
-  def train(implicit input: InputTypePair :**: ExpectedLabel :**: BpHNil) = {
+  def train(implicit input: InputTypePair :**: ExpectedLabel :**: DifferentiableHNil) = {
     val inputRow = input.head
     val expectedLabel = input.tail.head
-    val encodedInput = rowToBp2DArrayNetwork.compose(inputRow)
+    val encodedInput = rowToDifferentiableINDArrayNetwork.compose(inputRow)
     val encodedResult = hiddenLayersNetwork.compose(encodedInput)
 
     lossNetwork.compose(encodedResult :: expectedLabel :: shapeless.HNil.toLayer)

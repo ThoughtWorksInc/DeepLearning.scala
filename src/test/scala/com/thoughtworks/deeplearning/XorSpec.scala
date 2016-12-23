@@ -10,21 +10,21 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
-import com.thoughtworks.deeplearning.BpHList._
-import com.thoughtworks.deeplearning.BpNothing._
+import com.thoughtworks.deeplearning.DifferentiableHList._
+import com.thoughtworks.deeplearning.DifferentiableNothing._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
-import com.thoughtworks.deeplearning.BpBoolean._
-import com.thoughtworks.deeplearning.BpSeq._
-import com.thoughtworks.deeplearning.BpDouble._
-import com.thoughtworks.deeplearning.Bp2DArray._
+import com.thoughtworks.deeplearning.DifferentiableBoolean._
+import com.thoughtworks.deeplearning.DifferentiableSeq._
+import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.Bp2DArray.Optimizers.LearningRate
-import com.thoughtworks.deeplearning.BpCoproduct._
+import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.LearningRate
+import com.thoughtworks.deeplearning.DifferentiableCoproduct._
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.scalatest._
-import com.thoughtworks.deeplearning.BpAny._
+import com.thoughtworks.deeplearning.DifferentiableAny._
 import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}
@@ -37,7 +37,7 @@ final class XorSpec extends FreeSpec with Matchers {
   import shapeless.the
   import XorSpec._
 
-  implicit val optimizer = new Bp2DArray.Optimizers.L2Regularization with BpDouble.Optimizers.L2Regularization {
+  implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization with DifferentiableDouble.Optimizers.L2Regularization {
     override protected def currentLearningRate() = 0.006
 
     override protected def l2Regularization = 0.01
@@ -120,7 +120,7 @@ final class XorSpec extends FreeSpec with Matchers {
         `throw`(new IllegalArgumentException)
       }
     }
-    Vector(Vector(encoded0, encoded1, encoded2, encoded3, encoded4, encoded5)).toBp2DArray
+    Vector(Vector(encoded0, encoded1, encoded2, encoded3, encoded4, encoded5)).toDifferentiableINDArray
   }
 
   val encodeNetwork = encode

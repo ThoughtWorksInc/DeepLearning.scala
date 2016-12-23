@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats.Eval
 import com.thoughtworks.deeplearning.Lift._
 import org.scalatest._
-import com.thoughtworks.deeplearning.BpAny._
+import com.thoughtworks.deeplearning.DifferentiableAny._
 import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}
@@ -18,7 +18,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
   import FortuneTeller._
 
-  "Convert HMatrix to Bp2DArray" in {
+  "Convert HMatrix to DifferentiableINDArray" in {
 
     val trainingData = {
       import shapeless._
@@ -110,9 +110,9 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 //    sample1Field2 should be < sample2Field2
     /*
      最终目标是生成一个预测神经网络和一个训练神经网络
-     为了生成这两个网络，需要生成若干处理Bp2DArray的全连接层、InputData到Bp2DArray的转换、Bp2DArray到Row的转换、Bp2DArray到Double loss的转换
+     为了生成这两个网络，需要生成若干处理DifferentiableINDArray的全连接层、InputData到DifferentiableINDArray的转换、DifferentiableINDArray到Row的转换、DifferentiableINDArray到Double loss的转换
 
-     InputData到Bp2DArray的转换可以从InputData到若干Double的转换做起
+     InputData到DifferentiableINDArray的转换可以从InputData到若干Double的转换做起
 
      目前可以暂时使用HList而不是直接用case class的神经网络，将来可以直接使用case class
 

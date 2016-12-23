@@ -1,26 +1,26 @@
-sbt.dsl.dependsOn(BpBoolean, BpDouble, Bp2DArray, BpHList, BpCoproduct, BpSeq, BpAny, BpNothing)
+sbt.dsl.dependsOn(DifferentiableBoolean, DifferentiableDouble, DifferentiableINDArray, DifferentiableHList, DifferentiableCoproduct, DifferentiableSeq, DifferentiableAny, DifferentiableNothing)
 
 lazy val Layer = project.disablePlugins(SparkPackagePlugin)
 
 lazy val Lift = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
-lazy val BpBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
+lazy val DifferentiableBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
 
-lazy val BpDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, BpBoolean, BufferedLayer, BpAny % Test)
+lazy val DifferentiableDouble = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny % Test)
 
 lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
-lazy val BpAny = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val DifferentiableAny = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
-lazy val BpNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val DifferentiableNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
-lazy val BpSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val DifferentiableSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
 
-lazy val Bp2DArray = project.disablePlugins(SparkPackagePlugin).dependsOn(BpDouble)
+lazy val DifferentiableINDArray = project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableDouble)
 
-lazy val BpHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
+lazy val DifferentiableHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
 
-lazy val BpCoproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(BpBoolean)
+lazy val DifferentiableCoproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableBoolean)
 
 lazy val BufferedLayer = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
