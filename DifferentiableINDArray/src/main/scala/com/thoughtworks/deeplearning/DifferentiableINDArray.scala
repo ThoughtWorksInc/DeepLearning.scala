@@ -2,6 +2,7 @@ package com.thoughtworks.deeplearning
 
 import cats.implicits._
 import cats.{Applicative, Eval, Semigroup, Traverse}
+import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch, CloseableOnce}
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
