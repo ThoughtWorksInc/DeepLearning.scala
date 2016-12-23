@@ -10,9 +10,9 @@ import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
-import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.ops.transforms.Transforms.sign
@@ -258,7 +258,8 @@ object DifferentiableINDArray {
 
     }
 
-    final case class ToDifferentiableINDArray[Input0 <: Batch](operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Double, Double]]]])
+    final case class ToDifferentiableINDArray[Input0 <: Batch](
+        operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Double, Double]]]])
         extends Layer {
 
       type Input = Input0
@@ -465,6 +466,8 @@ object DifferentiableINDArray {
       }
     }
 
+    // TODO: Support n-dimension array when n > 2
+    // See https://www.tensorflow.org/api_docs/python/math_ops/matrix_math_functions#matmul for the behavior
     final case class Dot[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
@@ -617,6 +620,7 @@ object DifferentiableINDArray {
 
   final class TwoDArrayLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, INDArrayPlaceholder.Batch]) {
 
+    // TODO: Considering if rename this method to `matmul`
     def dot(right: Layer.Aux[Input, INDArrayPlaceholder.Batch]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Dot(differentiable, right)
     }
