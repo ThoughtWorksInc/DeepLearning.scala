@@ -66,6 +66,26 @@ object Lift {
 
   import Layers._
 
+  // FIXME: rename to placeholder
+  final class BackPropagationType[Data0, Delta0] {
+    type Data = Data0
+    type Delta = Delta0
+
+    private type ConcreteBatch = Batch.Aux[Data, Delta]
+
+    // Workaround for https://issues.scala-lang.org/browse/SI-10008
+    type Batch >: ConcreteBatch <: ConcreteBatch
+
+    @deprecated(since = "1.0.0",
+                message = "Use Layer.Aux[the.`Lift[InputData]`.Out, the.`Lift[OutputData]`.Out] instead")
+    type To[OutputSymbol <: BackPropagationType[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
+
+    //    def <=>[OutputData, OutputDelta](outputType:BackPropagationType[OutputData,OutputDelta])
+
+    //  type Layer.Aux[OutputType <: BackPropagationType] =
+    //    Layer.Aux[ConcreteBatch, outputType.ConcreteBatch forSome { val outputType: OutputType }]
+  }
+  
   object BackPropagationType {
 
     implicit def apply[Data, Delta]: BackPropagationType[Data, Delta] = new BackPropagationType
@@ -112,25 +132,8 @@ object Lift {
     : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
     toLayer(a)
   }
-  private[deeplearning] sealed trait ToLayerLowPriorityImplicits2 { this: ToLayer.type =>
 
-    implicit def layerToLayer2[InputData0, InputDelta0, OutputData0, OutputDelta0]
-      : ToLayer.Aux[Layer.Aux[Batch.Aux[InputData0, InputDelta0], Batch.Aux[OutputData0, OutputDelta0]],
-                    Batch.Aux[InputData0, InputDelta0],
-                    OutputData0,
-                    OutputDelta0] =
-      new ToLayer[Layer.Aux[Batch.Aux[InputData0, InputDelta0], Batch.Aux[OutputData0, OutputDelta0]],
-                  Batch.Aux[InputData0, InputDelta0]] {
-        override type OutputData = OutputData0
-        override type OutputDelta = OutputDelta0
-
-        override def apply(layer: Layer.Aux[Batch.Aux[InputData0, InputDelta0], Batch.Aux[OutputData0, OutputDelta0]]) =
-          layer
-      }
-
-  }
-  private[deeplearning] sealed trait ToLayerLowPriorityImplicits extends ToLayerLowPriorityImplicits2 {
-    this: ToLayer.type =>
+  private[deeplearning] sealed trait ToLayerLowPriorityImplicits { this: ToLayer.type =>
 
     implicit def toLayerOfType[Input0 <: Batch, OutputType <: BackPropagationType[_, _]]
       : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
@@ -139,23 +142,16 @@ object Lift {
         .asInstanceOf[ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType]]
     }
 
-  }
+    implicit def liftedToLayer[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]
+      : ToLayer.Aux[
+        <=>.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]#Out,
+        Batch.Aux[InputData0, InputDelta0],
+        OutputData0,
+        OutputDelta0
+      ] = {
+      layerToLayer
+    }
 
-  // FIXME: rename to placeholder
-  final class BackPropagationType[Data0, Delta0] {
-    type Data = Data0
-    type Delta = Delta0
-
-    private type ConcreteBatch = Batch.Aux[Data, Delta]
-
-    // Workaround for https://issues.scala-lang.org/browse/SI-10008
-    type Batch >: ConcreteBatch <: ConcreteBatch
-
-    @deprecated(since = "1.0.0",
-                message = "Use Layer.Aux[the.`Lift[InputData]`.Out, the.`Lift[OutputData]`.Out] instead")
-    type To[OutputSymbol <: BackPropagationType[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
-    //  type Layer.Aux[OutputType <: BackPropagationType] =
-    //    Layer.Aux[ConcreteBatch, outputType.ConcreteBatch forSome { val outputType: OutputType }]
   }
 
   object ToLayer extends ToLayerLowPriorityImplicits {
@@ -267,7 +263,8 @@ object Lift {
     type OutputDelta
     type Input = Batch.Aux[InputData, InputDelta]
     type Output = Batch.Aux[OutputData, OutputDelta]
-    type Out = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
+    type ConcretOut = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
+    type Out >: ConcretOut <: ConcretOut
   }
 
 }
