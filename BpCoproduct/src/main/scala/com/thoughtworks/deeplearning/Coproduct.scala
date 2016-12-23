@@ -267,11 +267,11 @@ object BpCoproduct {
     new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
 
-  implicit def liftCNil: Lift.Aux[CNil, CNil, CNil] = Lift.fromData[CNil, CNil]
+  implicit def liftCNil: Lift.Aux[CNil, CNil, CNil] = Lift.fromData
 
   implicit def liftCCons[Head, HeadData, HeadDelta, Tail <: Coproduct, TailData <: Coproduct, TailDelta <: Coproduct](
-      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
-      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
+                                                                                                                       implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
+                                                                                                                       liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
     : Lift.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new Lift[Head :+: Tail] {
     override type Data = HeadData :+: TailData
     override type Delta = HeadDelta :+: TailDelta

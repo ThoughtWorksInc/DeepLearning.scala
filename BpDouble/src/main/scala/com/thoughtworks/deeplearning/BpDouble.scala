@@ -280,7 +280,7 @@ object BpDouble {
 
   }
 
-  implicit def liftNativeDouble: Lift.Aux[Double, Double, Double] = Lift.fromData[Double, Double]
+  implicit def liftDouble: Lift.Aux[Double, Double, Double] = Lift.fromData
 
   implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                                   Layer.Aux[Input, DoublePlaceholder.Batch],

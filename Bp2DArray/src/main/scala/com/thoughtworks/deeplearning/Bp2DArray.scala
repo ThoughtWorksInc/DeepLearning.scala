@@ -651,6 +651,6 @@ object Bp2DArray {
     }
   }
 
-  implicit def liftINDArray: Lift.Aux[INDArray, INDArray, INDArray] = Lift.fromData[INDArray, INDArray]
+  implicit def liftINDArray: Lift.Aux[INDArray, INDArray, INDArray] = Lift.fromData
 
 }

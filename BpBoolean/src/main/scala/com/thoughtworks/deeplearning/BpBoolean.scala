@@ -121,6 +121,6 @@ object BpBoolean {
     new BooleanLayerOps[Input](toLayer(from))
   }
 
-  implicit def liftBoolean: Lift.Aux[Boolean, Boolean, Boolean] = Lift.fromData[Boolean, Boolean]
+  implicit def liftBoolean: Lift.Aux[Boolean, Boolean, Boolean] = Lift.fromData
 
 }

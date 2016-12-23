@@ -11,24 +11,19 @@ trait Lift[From] extends DepFn1[From] {
   type Data
   type Delta
 
-  type Batch = Batch.Aux[Data, Delta]
-
-  type Placeholder = Lift.Placeholder[Data, Delta]
-
   type Out = Literal[Data]
 
 }
-
 object Lift {
 
-  def fromData[Data0, Delta0] = new Lift[Data0] {
+  def fromData[From <: Data0, Data0, Delta0] = new Lift[From] {
     override type Data = Data0
     override type Delta = Delta0
 
-    override def apply(data: Data0) = Literal[Data](data)
+    override def apply(data: From) = Literal[Data](data)
   }
 
-  type Aux[-From, Data0, Delta0] = Lift[_ >: From] {
+  type Aux[From, Data0, Delta0] = Lift[From] {
     type Data = Data0
     type Delta = Delta0
   }

@@ -6,6 +6,7 @@ import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.Lift._
 import resource.managed
 import language.implicitConversions
+import language.existentials
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -13,7 +14,7 @@ import language.implicitConversions
 object BpAny {
 
   /** @template */
-  type BpAny = Placeholder[Any, _]
+  type BpAny = Placeholder[Any, ExistentialNothing]
 
   object Layers {
 
@@ -78,5 +79,9 @@ object BpAny {
     : AnyLayerOps[Input, OutputData, OutputDelta] = {
     new AnyLayerOps(toLayer(a))
   }
+
+  type ExistentialNothing = T forSome { type T >: Nothing <: Nothing }
+
+  implicit def liftAny: Lift.Aux[Any, Any, ExistentialNothing] = Lift.fromData
 
 }

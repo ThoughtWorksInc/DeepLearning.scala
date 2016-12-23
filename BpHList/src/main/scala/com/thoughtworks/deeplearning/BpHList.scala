@@ -186,7 +186,7 @@ object BpHList {
     new HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListLayer(toLayer(from)))
   }
 
-  implicit def liftHNil: Lift.Aux[HNil, HNil, CNil] = Lift.fromData[HNil, CNil]
+  implicit def liftHNil[From <: HNil]: Lift.Aux[From, HNil, CNil] = Lift.fromData
 
   implicit def liftHCons[Head, HeadData, HeadDelta, Tail <: HList, TailData <: HList, TailDelta <: Coproduct](
       implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
