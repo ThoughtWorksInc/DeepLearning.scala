@@ -310,7 +310,7 @@ object FortuneTeller {
                                   field3Value1,
                                   field3Value2)
 
-    Vector(encodedLayerRow0).toDifferentiableINDArray
+    Vector(encodedLayerRow0).toINDArray
   }
 
   val rowToDifferentiableINDArrayNetwork = rowToDifferentiableINDArray

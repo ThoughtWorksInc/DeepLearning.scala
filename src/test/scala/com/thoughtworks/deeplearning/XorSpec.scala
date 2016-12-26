@@ -120,7 +120,7 @@ final class XorSpec extends FreeSpec with Matchers {
         `throw`(new IllegalArgumentException)
       }
     }
-    Vector(Vector(encoded0, encoded1, encoded2, encoded3, encoded4, encoded5)).toDifferentiableINDArray
+    Vector(Vector(encoded0, encoded1, encoded2, encoded3, encoded4, encoded5)).toINDArray
   }
 
   val encodeNetwork = encode
