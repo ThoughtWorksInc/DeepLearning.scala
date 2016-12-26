@@ -375,7 +375,7 @@ object DifferentiableDouble {
   }
 
   implicit def doubleTrainable: Trainable[Double, Double] = new Trainable[Double, Double] {
-    def apply(data: Double): Double = data
+    def apply(data: Double): Double = 1.0
   }
 
 }

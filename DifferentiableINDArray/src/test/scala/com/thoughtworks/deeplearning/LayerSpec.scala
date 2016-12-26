@@ -21,13 +21,20 @@ final class LayerSpec extends FreeSpec with Matchers {
   "INDArrayPlaceholder dot INDArrayPlaceholder" in {
 
     def makeNetwork(implicit x: shapeless.the.`From[INDArray]`.Out) = {
-      val weightInitialValue = Array(Array(0.0, 5.0))
+      val weightInitialValue =
+        Array(
+          Array(0.0, 5.0)
+        )
       -weightInitialValue.toNDArray.toWeight.dot(x)
     }
 
     val network = makeNetwork
 
-    val inputData = Array(Array(2.5, -3.2, -19.5), Array(7.5, -5.4, 4.5))
+    val inputData =
+      Array(
+        Array(2.5, -3.2, -19.5),
+        Array(7.5, -5.4, 4.5)
+      )
 
     def train() = {
       val outputBatch = network.forward(inputData.toNDArray.toBatch)

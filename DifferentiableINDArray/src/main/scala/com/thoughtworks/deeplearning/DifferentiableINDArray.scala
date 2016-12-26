@@ -40,8 +40,8 @@ object DifferentiableINDArray {
 
   // TODO: Add a test for this method and auto-broadcasting on n-dimension arrays for n > 2
   private[DifferentiableINDArray] def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = {
-    val singleElementDimension = shape.zipWithIndex.collect {
-      case (1, dimension) => dimension
+    val singleElementDimension = shape.view.zip(outputDeltaValue.shape).zipWithIndex.collect {
+      case ((1, originSize), dimension) if originSize > 1 => dimension
     }
     if (singleElementDimension.isEmpty) {
       outputDeltaValue
@@ -92,6 +92,14 @@ object DifferentiableINDArray {
 
   object Layers {
 
+    private def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]) = {
+      shape1.zip(shape2).map {
+        case (1, bSize) => bSize
+        case (aSize, 1) => aSize
+        case (aSize, bSize) if aSize == bSize => aSize
+      }
+    }
+
     final case class MultiplyDifferentiableINDArray[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
@@ -109,10 +117,11 @@ object DifferentiableINDArray {
           val value = {
             val aValue = upstream1.value
             val bValue = upstream2.value
-            val Array(aRows, aColumns) = aValue.shape()
-            val Array(bRows, bColumns) = bValue.shape()
-            val newShape = Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
-            aValue.broadcast(newShape: _*) * bValue.broadcast(newShape: _*)
+            val newShape = autoBroadcastShape(aValue.shape(), bValue.shape())
+            val broadcastA = aValue.broadcast(newShape: _*)
+            val broadcastB = bValue.broadcast(newShape: _*)
+            val result = broadcastA * broadcastB
+            result
           }
 
           override protected def rawBackward(outputDelta: INDArray): Unit = {
@@ -168,10 +177,7 @@ object DifferentiableINDArray {
           val value = {
             val aValue = upstream1.value
             val bValue = upstream2.value
-            val Array(aRows, aColumns) = aValue.shape()
-            val Array(bRows, bColumns) = bValue.shape()
-            val newShape =
-              Array(math.max(aRows, bRows), math.max(aColumns, bColumns))
+            val newShape = autoBroadcastShape(aValue.shape(), bValue.shape())
             aValue.broadcast(newShape: _*) + bValue.broadcast(newShape: _*)
           }
 
@@ -258,13 +264,12 @@ object DifferentiableINDArray {
 
     }
 
-    final case class ToINDArray[Input0 <: Batch](
-        operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Double, Double]]]])
+    final case class ToINDArray[Input0 <: Batch](operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Double, Double]]]])
         extends Layer {
 
       type Input = Input0
 
-      final class Output private[ToINDArray](upstreams: Seq[Seq[Batch.Aux[Double, Double]]])
+      final class Output private[ToINDArray] (upstreams: Seq[Seq[Batch.Aux[Double, Double]]])
           extends INDArraySemigroupBatch
           with CloseableOnce {
         override def backward(delta: INDArray): Unit = {
@@ -662,7 +667,7 @@ object DifferentiableINDArray {
   implicit def liftINDArray: Lift.Aux[INDArray, INDArray, INDArray] = Lift.fromData
 
   implicit def indArrayTrainable: Trainable[INDArray, INDArray] = new Trainable[INDArray, INDArray] {
-    override def apply(data: INDArray): INDArray = data
+    override def apply(data: INDArray): INDArray = Nd4j.ones(data.shape(): _*)
   }
 
 }
