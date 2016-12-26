@@ -37,10 +37,6 @@ lazy val DifferentiableCoproduct = project.disablePlugins(SparkPackagePlugin).de
 
 lazy val BufferedLayer = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
 
-lazy val `sbt-nd4j` = project.disablePlugins(SparkPackagePlugin)
-
-SbtNd4J.addNd4jRuntime(Test)
-
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
@@ -54,3 +50,5 @@ lazy val unidoc = project
   .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
+
+fork in Test := true

@@ -1,9 +1,11 @@
-libraryDependencies += "org.nd4j" %% "nd4s" % "0.4-rc3.8" exclude ("org.scalatest", s"scalatest_${scalaBinaryVersion.value}")
+libraryDependencies += "org.nd4j" %% "nd4s" % "0.7.1"
 
-libraryDependencies += "org.nd4j" % "nd4j-api" % "0.4-rc3.9"
-
-SbtNd4J.addNd4jRuntime(Test)
+libraryDependencies += "org.nd4j" % "nd4j-api" % "0.7.1"
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
+
+libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.7.1"
+
+fork in Test := true
