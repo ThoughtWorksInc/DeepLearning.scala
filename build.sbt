@@ -41,6 +41,8 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
 
+addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "1.0.0" % Test)
+
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 publishArtifact := false

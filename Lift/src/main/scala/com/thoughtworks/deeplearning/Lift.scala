@@ -65,8 +65,8 @@ object Lift {
     type OutputDelta
     type InputData
     type InputDelta
-    type ConcreteOut = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
-    type Out >: ConcreteOut <: ConcreteOut
+    type ConcreteLayer = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
+    type T >: ConcreteLayer <: ConcreteLayer
   }
 
   object IsLayer {
@@ -144,7 +144,7 @@ object Lift {
     // Workaround for https://issues.scala-lang.org/browse/SI-10008
     type Batch >: ConcreteBatch <: ConcreteBatch
 
-    @deprecated(message = "Use the.`Lift.To[Xxx]`.Out] instead", since = "1.0.0")
+    @deprecated(message = "Use the.`Lift.To[Xxx]`.T] instead", since = "1.0.0")
     type To[OutputSymbol <: Placeholder[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
 
   }
@@ -205,7 +205,7 @@ object Lift {
 
     implicit def isLayerToLayer[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]
       : ToLayer.Aux[
-        IsLayer.Aux[InputData0, InputDelta0, OutputData0, OutputDelta0]#Out,
+        IsLayer.Aux[InputData0, InputDelta0, OutputData0, OutputDelta0]#T,
         Batch.Aux[InputData0, InputDelta0],
         OutputData0,
         OutputDelta0
@@ -265,7 +265,9 @@ object Lift {
     type Data
     type Delta
 
-    type Out = Placeholder[Data, Delta]
+    type T = Placeholder[Data, Delta]
+
+    type Out = T
 
     override def apply() = new Placeholder
 

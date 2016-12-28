@@ -34,7 +34,6 @@ import util.Random
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class XorSpec extends FreeSpec with Matchers {
-  import shapeless.the
   import XorSpec._
 
   implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization with DifferentiableDouble.Optimizers.L2Regularization {
@@ -63,7 +62,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val ArrayToArray = FromTo[INDArray, INDArray]
 
-  def hiddenLayers(implicit encodedInput: shapeless.the.`From[INDArray]`.Out): ArrayToArray.Out = {
+  def hiddenLayers(implicit encodedInput: From[INDArray]##T): ArrayToArray.T = {
     fullyConnectedThenSigmoid(50, 3).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(6, 50).compose(encodedInput))))
@@ -71,7 +70,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val hiddenLayersNetwork = hiddenLayers
 
-  def encode(implicit input: shapeless.the.`From[XorSpec.InputData]`.Out): shapeless.the.`To[INDArray]`.Out = {
+  def encode(implicit input: From[XorSpec.InputData]##T): To[INDArray]##T = {
     val field0 = input.head
     val rest0 = input.tail
     val field1 = rest0.head
@@ -125,7 +124,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val encodeNetwork = encode
 
-  def decode(implicit row: shapeless.the.`From[INDArray]`.Out): shapeless.the.`To[XorSpec.OutputData]`.Out = {
+  def decode(implicit row: From[INDArray]##T): To[XorSpec.OutputData]##T = {
     val rowSeq = row.toSeq
     rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: shapeless.HNil.toLayer
   }
@@ -133,14 +132,14 @@ final class XorSpec extends FreeSpec with Matchers {
   val decodeNetwork = decode
 
   def predict(
-      implicit input: shapeless.the.`From[XorSpec.InputData]`.Out): shapeless.the.`To[XorSpec.OutputData]`.Out = {
+      implicit input: From[XorSpec.InputData]##T): To[XorSpec.OutputData]##T = {
     decodeNetwork.compose(hiddenLayersNetwork.compose(encodeNetwork.compose(input)))
   }
 
   val predictNetwork = predict
 
-  def loss(implicit pair: shapeless.the.`From[ExpectedLabelData :: INDArray :: HNil]`.Out)
-    : shapeless.the.`To[Double]`.Out = {
+  def loss(implicit pair: From[ExpectedLabelData :: INDArray :: HNil]##T)
+    : To[Double]##T = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head
@@ -188,8 +187,8 @@ final class XorSpec extends FreeSpec with Matchers {
     loss0 + loss1 + loss2
   }
 
-  def train(implicit pair: shapeless.the.`From[ExpectedLabelData :: InputData :: HNil]`.Out)
-    : shapeless.the.`To[Double]`.Out = {
+  def train(implicit pair: From[ExpectedLabelData :: InputData :: HNil]##T)
+    : To[Double]##T = {
     val expectedLabel = pair.head
     val input = pair.tail.head
     loss.compose(expectedLabel :: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :: shapeless.HNil.toLayer)
