@@ -13,4 +13,4 @@ lazy val secret = project settings(publishArtifact := false) configure { secret 
     case None =>
       secret
   }
-fff
+}
