@@ -5,3 +5,5 @@ addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVer
 libraryDependencies += "org.typelevel" %% "cats" % "0.8.1"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
+
+addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "1.0.0" % Test)
