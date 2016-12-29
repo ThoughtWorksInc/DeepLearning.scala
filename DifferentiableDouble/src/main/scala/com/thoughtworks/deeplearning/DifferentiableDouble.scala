@@ -84,7 +84,7 @@ object DifferentiableDouble {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = math.exp(upstream.value)
+          val value: Double = math.exp(upstream.value).toDouble
 
           override protected def rawBackward(outputDelta: Double): Unit = {
             upstream.backward(value * outputDelta)
@@ -128,7 +128,7 @@ object DifferentiableDouble {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = math.log(upstream.value)
+          val value = math.log(upstream.value).toDouble
 
           override protected def rawBackward(outputDelta: Double): Unit = {
             upstream.backward(outputDelta / upstream.value)
@@ -197,7 +197,7 @@ object DifferentiableDouble {
           override final val input = input0
         } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
 
-          val value = 1.0 / upstream.value
+          val value = the[Numeric[Double]].one / upstream.value
 
           override protected def rawBackward(delta: Double): Unit = {
             val a = upstream.value
@@ -346,7 +346,7 @@ object DifferentiableDouble {
   implicit def `abs(Double)`[Input <: Batch]
     : abs.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     abs.at { operand =>
-      If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan(operand, Literal(0.0)),
+      If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan(operand, Literal(the[Numeric[Double]].zero)),
                                                                  Negative(operand),
                                                                  operand)
     }
@@ -375,7 +375,7 @@ object DifferentiableDouble {
   }
 
   implicit def doubleTrainable: Trainable[Double, Double] = new Trainable[Double, Double] {
-    def apply(data: Double): Double = 1.0
+    def apply(data: Double): Double = the[Numeric[Double]].one
   }
 
 }

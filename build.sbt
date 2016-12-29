@@ -1,3 +1,5 @@
+import java.util.regex.Pattern
+
 sbt.dsl.dependsOn(DifferentiableBoolean,
                   DifferentiableDouble,
                   DifferentiableINDArray,
@@ -15,6 +17,31 @@ lazy val DifferentiableBoolean = project.disablePlugins(SparkPackagePlugin).depe
 
 lazy val DifferentiableDouble =
   project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+
+lazy val DifferentiableFloat =
+  project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+
+val DoubleRegex = """(?i:double)""".r
+
+sourceGenerators in Compile in DifferentiableFloat += Def.task {
+  for {
+    doubleFile <- (unmanagedSources in Compile in DifferentiableDouble).value
+    relativeFile <- doubleFile.relativeTo((sourceDirectory in Compile in DifferentiableDouble).value)
+  } yield {
+    val doubleSource = IO.read(doubleFile, scala.io.Codec.UTF8.charSet)
+
+    val floatSource = DoubleRegex.replaceAllIn(doubleSource, { m =>
+      m.matched match {
+        case "Double" => "Float"
+        case "double" => "float"
+      }
+    })
+
+    val outputFile = (sourceManaged in Compile in DifferentiableFloat).value / relativeFile.getPath
+    IO.write(outputFile, floatSource, scala.io.Codec.UTF8.charSet)
+    outputFile
+  }
+}.taskValue
 
 lazy val DifferentiableInt = project
   .disablePlugins(SparkPackagePlugin)
