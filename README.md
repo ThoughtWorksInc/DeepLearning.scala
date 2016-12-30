@@ -15,7 +15,7 @@
 
 **DeepLearning.scala** is a DSL to create very complicated neural networks.
 
-With the help of DeepLearning.scala, a normal programmer like you or me is able to build very complicated neural networks from very simple code. A programmer still writes code as usual. The only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
+With the help of DeepLearning.scala, a normal programmer is able to build very complicated neural networks from very simple code. A programmer still writes code as usual. The only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
 
 ## Features
 
@@ -67,4 +67,6 @@ Version 3.0 will be released in late 2017.
 
 ## Acknowledges
 
-DeepLearning.scala is heavily inspired by my colleague, @MarisaKirisame. @milessabin's [shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming used in DeepLearning.scala.
+DeepLearning.scala is heavily inspired by my colleague [@MarisaKirisame](https://github.com/MarisaKirisame).
+
+[@milessabin](https://github.com/milessabin)'s [shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming used in DeepLearning.scala.
