@@ -18,19 +18,11 @@ import language.implicitConversions
   */
 object DifferentiableCoproduct {
 
-  /** @template */
-  type DifferentiableCoproduct = Placeholder[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
+  private[deeplearning] type CoproductPlaceholder = Placeholder[_ <: shapeless.Coproduct, _ <: shapeless.Coproduct]
 
-  /** @template */
-  type DifferentiableCNil = Placeholder[shapeless.CNil, shapeless.CNil]
+  private[deeplearning] type CNilPlaceholder = Placeholder[shapeless.CNil, shapeless.CNil]
 
-  /** @template */
-  @deprecated(message="Use `To[Double :+: CNil]` instead",since = "1.0.0")
-  type DifferentiableCCons[Head <: Placeholder[_, _], Tail <: DifferentiableCoproduct] =
-    Placeholder[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
-
-  @deprecated(message="Use `To[Double :+: CNil]` instead",since = "1.0.0")
-  type :++:[Head <: Placeholder[_, _], Tail <: DifferentiableCoproduct] =
+  private[deeplearning] type :++:[Head <: Placeholder[_, _], Tail <: CoproductPlaceholder] =
     Placeholder[shapeless.:+:[DataOf[Head], DataOf[Tail]], shapeless.:+:[DeltaOf[Head], DeltaOf[Tail]]]
 
   object Layers {
@@ -247,7 +239,8 @@ object DifferentiableCoproduct {
                                          commonToLayer(lub.right(tailToLayer(caseTail(tail)))))
     }
 
-    def isInl: Layer.Aux[Input, BooleanPlaceholder.Batch] = IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
+    def isInl: Layer.Aux[Input, BooleanPlaceholder.Batch] =
+      IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
 
@@ -270,8 +263,8 @@ object DifferentiableCoproduct {
   implicit def liftCNil: Lift.Aux[CNil, CNil, CNil] = Lift.fromData
 
   implicit def liftCCons[Head, HeadData, HeadDelta, Tail <: Coproduct, TailData <: Coproduct, TailDelta <: Coproduct](
-                                                                                                                       implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
-                                                                                                                       liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
+      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
+      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
     : Lift.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new Lift[Head :+: Tail] {
     override type Data = HeadData :+: TailData
     override type Delta = HeadDelta :+: TailDelta

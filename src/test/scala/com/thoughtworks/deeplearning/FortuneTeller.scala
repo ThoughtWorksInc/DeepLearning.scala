@@ -31,14 +31,15 @@ object FortuneTeller {
 
   type Seq2D = DifferentiableSeq[DifferentiableSeq[DoublePlaceholder]]
 
-  type Nullable[A <: Placeholder[_, _]] = DifferentiableHNil :++: A :++: DifferentiableCNil
+  type Nullable[A <: Placeholder[_, _]] = HNilPlaceholder :++: A :++: CNilPlaceholder
 
-  type InputField[A <: Placeholder[_, _]] = DifferentiableHNil :++: A :++: DifferentiableCNil
+  type InputField[A <: Placeholder[_, _]] = HNilPlaceholder :++: A :++: CNilPlaceholder
 
-  type LabelField[A <: Placeholder[_, _]] = DifferentiableHNil :++: A :++: DifferentiableCNil
+  type LabelField[A <: Placeholder[_, _]] = HNilPlaceholder :++: A :++: CNilPlaceholder
 
-  type Enum0 = DifferentiableHNil :++: DifferentiableHNil :++: DifferentiableCNil
-  type Enum1 = DifferentiableHNil :++: DifferentiableHNil :++: DifferentiableHNil :++: DifferentiableCNil
+  type Enum0 = HNilPlaceholder :++: HNilPlaceholder :++: CNilPlaceholder
+  type Enum1 =
+    HNilPlaceholder :++: HNilPlaceholder :++: HNilPlaceholder :++: CNilPlaceholder
 
   type Field0 = Nullable[DoublePlaceholder]
   type Field1 = Enum0
@@ -46,23 +47,25 @@ object FortuneTeller {
   type Field3 = Enum1
 
   type InputTypePair =
-    InputField[Nullable[DoublePlaceholder]] :**: InputField[Enum0] :**: InputField[DoublePlaceholder] :**: InputField[
-      Enum1] :**: DifferentiableHNil
+    InputField[Nullable[DoublePlaceholder]] :**: InputField[Enum0] :**: InputField[DoublePlaceholder] :**: InputField[Enum1] :**: HNilPlaceholder
 
   type ExpectedLabel =
-    LabelField[Nullable[DoublePlaceholder]] :**: LabelField[Enum0] :**: LabelField[DoublePlaceholder] :**: LabelField[
-      Enum1] :**: DifferentiableHNil
+    LabelField[Nullable[DoublePlaceholder]] :**: LabelField[Enum0] :**: LabelField[
+      DoublePlaceholder] :**: LabelField[Enum1] :**: HNilPlaceholder
 
   type UnsetProbability = DoublePlaceholder
-  type NullableFieldPrediction[Value <: Placeholder[_, _]] = UnsetProbability :**: Value :**: DifferentiableHNil
+  type NullableFieldPrediction[Value <: Placeholder[_, _]] =
+    UnsetProbability :**: Value :**: HNilPlaceholder
 
-  type Enum0Prediction = DoublePlaceholder :**: DoublePlaceholder :**: DifferentiableHNil
-  type Enum1Prediction = DoublePlaceholder :**: DoublePlaceholder :**: DoublePlaceholder :**: DifferentiableHNil
+  type Enum0Prediction = DoublePlaceholder :**: DoublePlaceholder :**: HNilPlaceholder
+  type Enum1Prediction =
+    DoublePlaceholder :**: DoublePlaceholder :**: DoublePlaceholder :**: HNilPlaceholder
 
   type PredictionResult =
-    NullableFieldPrediction[DoublePlaceholder] :**: Enum0Prediction :**: DoublePlaceholder :**: Enum1Prediction :**: DifferentiableHNil
+    NullableFieldPrediction[DoublePlaceholder] :**: Enum0Prediction :**: DoublePlaceholder :**: Enum1Prediction :**: HNilPlaceholder
 
-  implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization with DifferentiableDouble.Optimizers.L2Regularization {
+  implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization
+  with DifferentiableDouble.Optimizers.L2Regularization {
     override def currentLearningRate() = 0.0003
 
     override protected def l2Regularization = 0.1
@@ -72,7 +75,8 @@ object FortuneTeller {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: DifferentiableHNil)
+  def loss(
+      implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: HNilPlaceholder)
     : rowAndExpectedLabel.To[DoublePlaceholder] = {
     val row: rowAndExpectedLabel.To[INDArrayPlaceholder] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
@@ -151,8 +155,9 @@ object FortuneTeller {
 
   def array2DToRow(implicit input: INDArrayPlaceholder): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: DifferentiableHNil] = min(rowSeq(0)(0), 1.0) :: rowSeq(
-        0)(1) :: shapeless.HNil.toLayer
+    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: HNilPlaceholder] = min(
+        rowSeq(0)(0),
+        1.0) :: rowSeq(0)(1) :: shapeless.HNil.toLayer
     val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :: rowSeq(0)(3) :: shapeless.HNil.toLayer
     val field2: input.To[DoublePlaceholder] = rowSeq(0)(4)
     val field3 = rowSeq(0)(5) :: rowSeq(0)(6) :: rowSeq(0)(7) :: shapeless.HNil.toLayer
@@ -190,20 +195,20 @@ object FortuneTeller {
       }
     }
 
-    val field0Value0: row.To[DoublePlaceholder] = field0.choice { unknown: row.To[DifferentiableHNil] =>
+    val field0Value0: row.To[DoublePlaceholder] = field0.choice { unknown: row.To[HNilPlaceholder] =>
       0.5.toWeight: row.To[DoublePlaceholder]
     } {
       _.choice { knownField0 =>
-        knownField0.choice { unset: row.To[DifferentiableHNil] =>
+        knownField0.choice { unset: row.To[HNilPlaceholder] =>
           0.5.toWeight: row.To[DoublePlaceholder]
         } {
           _.choice { nativeDouble: row.To[DoublePlaceholder] =>
             nativeDouble: row.To[DoublePlaceholder]
-          } { cnil: row.To[DifferentiableCNil] =>
+          } { cnil: row.To[CNilPlaceholder] =>
             `throw`(new IllegalArgumentException): row.To[DoublePlaceholder]
           }: row.To[DoublePlaceholder]
         }: row.To[DoublePlaceholder]
-      } { cnil: row.To[DifferentiableCNil] =>
+      } { cnil: row.To[CNilPlaceholder] =>
         `throw`(new IllegalArgumentException)
       }: row.To[DoublePlaceholder]
 
@@ -338,7 +343,7 @@ object FortuneTeller {
 
   val predictNetwork = predict
 
-  def train(implicit input: InputTypePair :**: ExpectedLabel :**: DifferentiableHNil) = {
+  def train(implicit input: :**:[InputTypePair, :**:[ExpectedLabel, HNilPlaceholder]]) = {
     val inputRow = input.head
     val expectedLabel = input.tail.head
     val encodedInput = rowToDifferentiableINDArrayNetwork.compose(inputRow)

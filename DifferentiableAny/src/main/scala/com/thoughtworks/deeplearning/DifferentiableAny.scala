@@ -13,7 +13,6 @@ import language.existentials
   */
 object DifferentiableAny {
 
-  /** @template */
   private[deeplearning] type AnyPlaceholder = Placeholder[Any, ExistentialNothing]
   private[deeplearning] val AnyPlaceholder: AnyPlaceholder = implicitly
 

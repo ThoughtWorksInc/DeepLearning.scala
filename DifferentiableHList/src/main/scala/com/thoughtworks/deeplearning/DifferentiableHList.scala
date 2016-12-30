@@ -126,17 +126,13 @@ object DifferentiableHList {
   }
 
   /** @template */
-  type DifferentiableHList = Placeholder[_ <: HList, _ <: Coproduct]
+  private[deeplearning] type HListPlaceholder = Placeholder[_ <: HList, _ <: Coproduct]
 
   /** @template */
-  type DifferentiableHNil = Placeholder[HNil, CNil]
+  private[deeplearning] type HNilPlaceholder = Placeholder[HNil, CNil]
 
   /** @template */
-  type DifferentiableHCons[Head <: Placeholder[_, _], Tail <: DifferentiableHList] =
-    Placeholder[DataOf[Head] :: DataOf[Tail], DeltaOf[Head] :+: DeltaOf[Tail]]
-
-  /** @template */
-  type :**:[Head <: Placeholder[_, _], Tail <: DifferentiableHList] =
+  private[deeplearning] type :**:[Head <: Placeholder[_, _], Tail <: HListPlaceholder] =
     Placeholder[::[DataOf[Head], DataOf[Tail]], :+:[DeltaOf[Head], DeltaOf[Tail]]]
 
   final class HListLayerOps[Input <: Batch, TailData <: HList, TailDelta <: Coproduct](

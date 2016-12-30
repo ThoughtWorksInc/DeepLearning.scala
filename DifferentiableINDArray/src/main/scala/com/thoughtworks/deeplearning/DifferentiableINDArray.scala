@@ -51,7 +51,7 @@ object DifferentiableINDArray {
   }
 
   private[deeplearning] type INDArrayPlaceholder = Placeholder[INDArray, INDArray]
-  val INDArrayPlaceholder: INDArrayPlaceholder = implicitly
+  private[deeplearning] val INDArrayPlaceholder: INDArrayPlaceholder = implicitly
 
   object Optimizers {
 

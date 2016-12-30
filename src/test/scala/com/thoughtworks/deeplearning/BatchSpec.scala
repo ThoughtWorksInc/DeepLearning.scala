@@ -27,33 +27,33 @@ final class BatchSpec extends FreeSpec with Matchers {
     "implicitly[DoublePlaceholder.Batch <:< Placeholder[_, _]#Batch]" should compile
     "implicitly[DoublePlaceholder.Batch =:= Placeholder[_, _]#Batch]" shouldNot compile
     "implicitly[Placeholder[_, _]#Batch =:= DoublePlaceholder.Batch]" shouldNot compile
-    "implicitly[(DoublePlaceholder :**: DifferentiableHNil)#Batch <:< DifferentiableHList#Batch]" should compile
-    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: DifferentiableHNil)#Batch <:< DifferentiableHList#Batch]" should compile
-    "implicitly[(DoublePlaceholder :**: DifferentiableHNil)#Batch =:= Batch.Aux[Double :: shapeless.HNil, Double :+: CNil]]" should compile
-    "implicitly[(DoublePlaceholder :**: DifferentiableHNil)#Batch <:< DifferentiableHList#Batch]" should compile
-    "implicitly[DifferentiableHList#Batch <:< (DoublePlaceholder :**: DifferentiableHNil)#Batch]" shouldNot compile
-    "implicitly[(AnyPlaceholder :**: DifferentiableHNil)#Batch <:< DifferentiableHList#Batch]" should compile
-    "implicitly[(AnyPlaceholder :**: DifferentiableHList)#Batch <:< DifferentiableHList#Batch]" should compile
-    "implicitly[(AnyPlaceholder :**: DifferentiableHList)#Batch <:< (AnyPlaceholder :**: DifferentiableHList)#Batch]" should compile
-    "implicitly[(AnyPlaceholder :**: DifferentiableHList)#Batch =:= (AnyPlaceholder :**: DifferentiableHList)#Batch]" should compile
-    "implicitly[(AnyPlaceholder :**: DifferentiableHNil)#Batch =:= DifferentiableHList#Batch]" shouldNot compile
-    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: DifferentiableHNil) <:< DifferentiableHList]" should compile
-    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: DifferentiableHNil) <:< (BooleanPlaceholder :**: DifferentiableHList)]" shouldNot compile
+    "implicitly[(DoublePlaceholder :**: HNilPlaceholder)#Batch <:< HListPlaceholder#Batch]" should compile
+    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: HNilPlaceholder)#Batch <:< HListPlaceholder#Batch]" should compile
+    "implicitly[(DoublePlaceholder :**: HNilPlaceholder)#Batch =:= Batch.Aux[Double :: shapeless.HNil, Double :+: CNil]]" should compile
+    "implicitly[(DoublePlaceholder :**: HNilPlaceholder)#Batch <:< HListPlaceholder#Batch]" should compile
+    "implicitly[HListPlaceholder#Batch <:< (DoublePlaceholder :**: HNilPlaceholder)#Batch]" shouldNot compile
+    "implicitly[(AnyPlaceholder :**: HNilPlaceholder)#Batch <:< HListPlaceholder#Batch]" should compile
+    "implicitly[(AnyPlaceholder :**: HListPlaceholder)#Batch <:< HListPlaceholder#Batch]" should compile
+    "implicitly[(AnyPlaceholder :**: HListPlaceholder)#Batch <:< (AnyPlaceholder :**: HListPlaceholder)#Batch]" should compile
+    "implicitly[(AnyPlaceholder :**: HListPlaceholder)#Batch =:= (AnyPlaceholder :**: HListPlaceholder)#Batch]" should compile
+    "implicitly[(AnyPlaceholder :**: HNilPlaceholder)#Batch =:= HListPlaceholder#Batch]" shouldNot compile
+    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: HNilPlaceholder) <:< HListPlaceholder]" should compile
+    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: HNilPlaceholder) <:< (BooleanPlaceholder :**: HListPlaceholder)]" shouldNot compile
   }
 
-  "(AnyPlaceholder :**: DifferentiableHList)#Batch" ignore {
+  "(AnyPlaceholder :**: HListPlaceholder)#Batch" ignore {
     /*
       以下几个测试符合逻辑，但Scala编译器不认可
       没有很好的解决办法，只能尽量避免使用抽象类型吧
      */
 
-    "implicitly[(DoublePlaceholder :**: DifferentiableHNil)#Batch <:< (DoublePlaceholder :**: DifferentiableHList)#Batch]" should compile
-    "implicitly[(AnyPlaceholder :**: DifferentiableHNil)#Data <:< DifferentiableHList#Data]" should compile
-    "implicitly[(Double :: HNil) <:< DifferentiableHList#Data]" should compile
-    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: DifferentiableHNil)#Data <:< (BooleanPlaceholder :**: DifferentiableHList)#Data]" should compile
-    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: DifferentiableHNil)#Batch <:< (BooleanPlaceholder :**: DifferentiableHList)#Batch]" should compile
-    "implicitly[(DoublePlaceholder :**: DifferentiableHNil)#Batch <:< (AnyPlaceholder :**: DifferentiableHNil)#Batch]" should compile
-    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: DifferentiableHNil)#Batch <:< (BooleanPlaceholder :**: AnyPlaceholder :**: DifferentiableHNil)#Batch]" should compile
+    "implicitly[(DoublePlaceholder :**: HNilPlaceholder)#Batch <:< (DoublePlaceholder :**: HListPlaceholder)#Batch]" should compile
+    "implicitly[(AnyPlaceholder :**: HNilPlaceholder)#Data <:< HListPlaceholder#Data]" should compile
+    "implicitly[(Double :: HNil) <:< HListPlaceholder#Data]" should compile
+    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: HNilPlaceholder)#Data <:< (BooleanPlaceholder :**: HListPlaceholder)#Data]" should compile
+    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: HNilPlaceholder)#Batch <:< (BooleanPlaceholder :**: HListPlaceholder)#Batch]" should compile
+    "implicitly[(DoublePlaceholder :**: HNilPlaceholder)#Batch <:< (AnyPlaceholder :**: HNilPlaceholder)#Batch]" should compile
+    "implicitly[(BooleanPlaceholder :**: DoublePlaceholder :**: HNilPlaceholder)#Batch <:< (BooleanPlaceholder :**: AnyPlaceholder :**: HNilPlaceholder)#Batch]" should compile
   }
 
 }
