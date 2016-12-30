@@ -55,7 +55,7 @@ Version 2.0 will be released in March 2017.
 ### v3.0
 
 * Support using custom `case class`es inside neural networks.
-* Support distributed models and distributed training on Spark.
+* Support distributed models and distributed training on [Spark](https://spark.apache.org/).
 
 Version 3.0 will be released in late 2017.
 
