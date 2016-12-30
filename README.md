@@ -15,7 +15,7 @@
 
 **DeepLearning.scala** is a DSL for creating complex neural networks.
 
-With the help of DeepLearning.scala, a normal programmer is able to build complex neural networks simply. He still writes code as usual, and the only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
+With the help of DeepLearning.scala, a normal programmer is able to build complex neural networks from simple code. He still writes code as usual, and the only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
 
 ## Features
 
