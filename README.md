@@ -33,7 +33,7 @@ Neural networks created by DeepLearning.scala may contains control flows like `i
 
 ### Composibility
 
-Neural networks created by DeepLearning.scala are composible. You can create large network by combining smaller network. If two larger networks shares some sub-networks, the weights trained with one network affects the other network.
+Neural networks created by DeepLearning.scala are composible. You can create large network by combining smaller networks. If two larger networks shares some sub-networks, the weights trained with one network affects the other network.
 
 ### Static type system
 
