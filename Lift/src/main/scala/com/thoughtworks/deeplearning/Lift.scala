@@ -144,8 +144,7 @@ object Lift {
     // Workaround for https://issues.scala-lang.org/browse/SI-10008
     type Batch >: ConcreteBatch <: ConcreteBatch
 
-    @deprecated(message = "Use the.`Lift.To[Xxx]`.T] instead", since = "1.0.0")
-    type To[OutputSymbol <: Placeholder[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
+    private[deeplearning] type To[OutputSymbol <: Placeholder[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
 
   }
 
