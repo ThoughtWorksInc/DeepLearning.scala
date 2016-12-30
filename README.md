@@ -13,9 +13,9 @@
 [![DifferentiableCoproduct](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablecoproduct/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablecoproduct)
 [![DifferentiableINDArray](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableindarray/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableindarray)
 
-**DeepLearning.scala** is a DSL to create very complicated neural networks.
+**DeepLearning.scala** is a DSL for creating very complex neural networks.
 
-With the help of DeepLearning.scala, a normal programmer is able to build very complicated neural networks from very simple code. A programmer still writes code as usual. The only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
+With the help of DeepLearning.scala, a normal programmer is able to build very complex neural networks from very simple code. A programmer still writes code as usual. The only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
 
 ## Features
 
