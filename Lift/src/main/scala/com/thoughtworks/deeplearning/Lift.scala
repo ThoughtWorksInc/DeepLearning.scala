@@ -152,8 +152,8 @@ object Lift {
 
     implicit def apply[Data, Delta]: Placeholder[Data, Delta] = new Placeholder
 
-    type DataOf[T <: Placeholder[_, _]] = t.Data forSome { val t: T }
-    type DeltaOf[T <: Placeholder[_, _]] = t.Delta forSome { val t: T }
+    private[deeplearning] type DataOf[T <: Placeholder[_, _]] = t.Data forSome { val t: T }
+    private[deeplearning] type DeltaOf[T <: Placeholder[_, _]] = t.Delta forSome { val t: T }
 
     implicit def inputTypeToLayer[InputData, InputDelta]
       : ToLayer.Aux[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =

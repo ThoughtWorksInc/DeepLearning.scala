@@ -29,7 +29,7 @@ import util.Random
   */
 object FortuneTeller {
 
-  type Seq2D = DifferentiableSeq[DifferentiableSeq[DoublePlaceholder]]
+  type Seq2D = SeqPlaceholder[SeqPlaceholder[DoublePlaceholder]]
 
   type Nullable[A <: Placeholder[_, _]] = HNilPlaceholder :++: A :++: CNilPlaceholder
 
@@ -80,7 +80,7 @@ object FortuneTeller {
     : rowAndExpectedLabel.To[DoublePlaceholder] = {
     val row: rowAndExpectedLabel.To[INDArrayPlaceholder] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
-    val rowSeq: rowAndExpectedLabel.To[DifferentiableSeq[DifferentiableSeq[DoublePlaceholder]]] = row.toSeq
+    val rowSeq: rowAndExpectedLabel.To[SeqPlaceholder[SeqPlaceholder[DoublePlaceholder]]] = row.toSeq
 
     // 暂时先在CPU上计算
 

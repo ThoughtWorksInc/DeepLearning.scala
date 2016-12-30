@@ -3,6 +3,8 @@ package com.thoughtworks.deeplearning
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableSeq.Layers.{Get, ToSeq}
+import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import shapeless.Lazy
 
 import language.implicitConversions
 import language.higherKinds
@@ -84,16 +86,8 @@ object DifferentiableSeq {
 
   }
 
-  type DifferentiableSeq[A <: Placeholder[_, _]] =
+  private[deeplearning] type SeqPlaceholder[A <: Placeholder[_, _]] =
     Placeholder[Seq[Placeholder.DataOf[A]], (Int, Placeholder.DeltaOf[A])]
-
-  object DifferentiableSeq {
-    def apply[From, Input <: Batch](layers: From*)(
-        implicit elementToLayer: ToLayer[From, Input]
-    ): Layer.Aux[Input, Batch.Aux[Seq[elementToLayer.OutputData], (Int, elementToLayer.OutputDelta)]] = {
-      ToSeq[Input, elementToLayer.OutputData, elementToLayer.OutputDelta](layers.map(elementToLayer(_)))
-    }
-  }
 
   final class SeqLayerOps[Input <: Batch, ElementData, ElementDelta](
       seqLayer: Layer.Aux[Input, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]]) {
@@ -113,27 +107,16 @@ object DifferentiableSeq {
     new SeqLayerOps[Input, ElementData, ElementDelta](toSeqLayer(toLayer(from)))
   }
 
-  implicit def seqToLayer[Input0 <: Batch, ElementData, ElementDelta]
-    : ToLayer.Aux[Layer.Aux[
-                    Input0,
-                    Batch.Aux[Seq[ElementData], (Int, ElementDelta)]
-                  ],
-                  Input0,
-                  Seq[ElementData],
-                  (Int, ElementDelta)] = {
-    new ToLayer[com.thoughtworks.deeplearning.Layer.Aux[
-                  Input0,
-                  Batch.Aux[Seq[ElementData], (Int, ElementDelta)]
-                ],
-                Input0] {
+  implicit def seqToLayer[From, Input0 <: Batch, ElementData, ElementDelta](
+      implicit elementToLayer: Lazy[ToLayer.Aux[From, Input0, ElementData, ElementDelta]])
+    : ToLayer.Aux[Seq[From], Input0, Seq[ElementData], (Int, ElementDelta)] = {
+    new ToLayer[Seq[From], Input0] {
       type OutputData = Seq[ElementData]
       type OutputDelta = (Int, ElementDelta)
 
-      override def apply(
-          layer: Layer.Aux[
-            Input0,
-            Batch.Aux[Seq[ElementData], (Int, ElementDelta)]
-          ]) = layer
+      override def apply(layers: Seq[From]): Layer.Aux[Input0, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]] = {
+        ToSeq[Input0, ElementData, ElementDelta](layers.map(elementToLayer.value(_)))
+      }
     }
   }
 

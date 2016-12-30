@@ -21,11 +21,11 @@ final class SeqSpec extends FreeSpec with Matchers {
     override protected def currentLearningRate() = 0.03
   }
 
-  def unsafe(implicit s: DifferentiableSeq[AnyPlaceholder]) = {
+  def unsafe(implicit s: SeqPlaceholder[AnyPlaceholder]) = {
     s(0).asInstanceOf[s.To[DoublePlaceholder]] - 1.0.toWeight
   }
 
-  "erased DifferentiableSeq" in {
+  "erased SeqPlaceholder" in {
     val unsafeNetwork = unsafe
     unsafeNetwork.train(Seq(2.4))
   }
