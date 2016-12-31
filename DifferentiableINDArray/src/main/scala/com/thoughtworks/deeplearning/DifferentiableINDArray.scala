@@ -94,11 +94,13 @@ object DifferentiableINDArray {
 
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def apply(weight: Weight) = optimizer
+      override def ndArrayOptimizer(weight: Weight) = optimizer
     }
   }
 
-  trait OptimizerFactory extends (Weight => Optimizer)
+  trait OptimizerFactory {
+    def ndArrayOptimizer(weight: Weight): Optimizer
+  }
 
   object Layers {
 
@@ -257,13 +259,13 @@ object DifferentiableINDArray {
 
     object Weight {
       def apply(value: INDArray)(implicit optimizerFactory: OptimizerFactory) = new Weight(value) {
-        val optimizer = optimizerFactory(this)
+        override protected val optimizer = optimizerFactory.ndArrayOptimizer(this)
       }
     }
 
     abstract case class Weight(var value: INDArray) extends Layer with INDArraySemigroupBatch {
 
-      def optimizer: Optimizer
+      protected def optimizer: Optimizer
 
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]

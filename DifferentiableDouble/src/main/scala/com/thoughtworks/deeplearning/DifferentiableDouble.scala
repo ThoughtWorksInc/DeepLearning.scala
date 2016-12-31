@@ -264,7 +264,7 @@ object DifferentiableDouble {
     object Weight {
 
       def apply(value: Double)(implicit optimizerFactory: OptimizerFactory) = new Weight(value) {
-        override protected val optimizer = optimizerFactory(this)
+        override protected val optimizer = optimizerFactory.doubleOptimizer(this)
       }
 
     }
@@ -293,14 +293,16 @@ object DifferentiableDouble {
 
   import Layers._
 
+
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def apply(weight: Weight) = optimizer
+      override def doubleOptimizer(weight: Weight) = optimizer
     }
   }
 
-  trait OptimizerFactory extends (Weight => Optimizer)
-
+  trait OptimizerFactory {
+    def doubleOptimizer(weight: Weight): Optimizer
+  }
   implicit def liftDouble: Lift.Aux[Double, Double, Double] = Lift.fromData
 
   implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
