@@ -1,5 +1,3 @@
-import java.util.regex.Pattern
-
 sbt.dsl.dependsOn(DifferentiableBoolean,
                   DifferentiableDouble,
                   DifferentiableINDArray,
