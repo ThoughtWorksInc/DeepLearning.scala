@@ -74,7 +74,9 @@ object DifferentiableINDArray {
     }
 
     trait Optimizer {
+
       def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray
+
     }
 
     trait LearningRate extends Optimizer {
@@ -89,6 +91,14 @@ object DifferentiableINDArray {
   }
 
   import Optimizers._
+
+  object OptimizerFactory {
+    implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
+      override def apply(weight: Weight) = optimizer
+    }
+  }
+
+  trait OptimizerFactory extends (Weight => Optimizer)
 
   object Layers {
 
@@ -245,9 +255,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Weight(var value: INDArray)(implicit optimizer: Optimizer)
-        extends Layer
-        with INDArraySemigroupBatch {
+    object Weight {
+      def apply(value: INDArray)(implicit optimizerFactory: OptimizerFactory) = new Weight(value) {
+        val optimizer = optimizerFactory(this)
+      }
+    }
+
+    abstract case class Weight(var value: INDArray) extends Layer with INDArraySemigroupBatch {
+
+      def optimizer: Optimizer
+
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
@@ -673,7 +690,7 @@ object DifferentiableINDArray {
   implicit final class INDArrayOps(ndArray: INDArray) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Placeholder[InputData, InputDelta],
-        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], INDArrayPlaceholder.Batch] = {
+        optimizerFactory: OptimizerFactory): Layer.Aux[Batch.Aux[InputData, InputDelta], INDArrayPlaceholder.Batch] = {
       Weight(ndArray)
     }
   }

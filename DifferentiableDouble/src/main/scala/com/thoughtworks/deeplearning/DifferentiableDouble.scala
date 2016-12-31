@@ -10,8 +10,6 @@ import com.thoughtworks.deeplearning.DifferentiableBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
-import com.thoughtworks.deeplearning.DifferentiableDouble.Layers._
-import com.thoughtworks.deeplearning.DifferentiableDouble.Optimizers.{LearningRate, Optimizer}
 import shapeless.the
 
 import language.implicitConversions
@@ -69,6 +67,8 @@ object DifferentiableDouble {
     }
 
   }
+
+  import Optimizers._
 
   object Layers {
 
@@ -261,9 +261,19 @@ object DifferentiableDouble {
       }
     }
 
-    final case class Weight(var value: Double)(implicit optimizer: Optimizer) extends Layer with DoubleMonoidBatch {
+    object Weight {
+
+      def apply(value: Double)(implicit optimizerFactory: OptimizerFactory) = new Weight(value) {
+        override protected val optimizer = optimizerFactory(this)
+      }
+
+    }
+
+    abstract case class Weight(var value: Double) extends Layer with DoubleMonoidBatch {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
+
+      protected def optimizer: Optimizer
 
       override def addReference() = this
 
@@ -280,6 +290,16 @@ object DifferentiableDouble {
     }
 
   }
+
+  import Layers._
+
+  object OptimizerFactory {
+    implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
+      override def apply(weight: Weight) = optimizer
+    }
+  }
+
+  trait OptimizerFactory extends (Weight => Optimizer)
 
   implicit def liftDouble: Lift.Aux[Double, Double, Double] = Lift.fromData
 
@@ -355,7 +375,7 @@ object DifferentiableDouble {
   implicit final class NativeDoubleOps(nativeDouble: Double) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Placeholder[InputData, InputDelta],
-        optimizer: Optimizer): Layer.Aux[Batch.Aux[InputData, InputDelta], DoublePlaceholder.Batch] = {
+        optimizerFactory: OptimizerFactory): Layer.Aux[Batch.Aux[InputData, InputDelta], DoublePlaceholder.Batch] = {
       Weight(nativeDouble)
     }
   }
