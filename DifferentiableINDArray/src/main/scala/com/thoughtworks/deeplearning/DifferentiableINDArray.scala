@@ -93,6 +93,7 @@ object DifferentiableINDArray {
   object Layers {
 
     private def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]) = {
+      require(shape1.length == shape2.length)
       shape1.zip(shape2).map {
         case (1, bSize) => bSize
         case (aSize, 1) => aSize
