@@ -624,6 +624,11 @@ object DifferentiableINDArray {
     exp.at(Exp(_))
   }
 
+  implicit def `log(INDArray)`[Input <: Batch]
+    : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+    log.at(Log(_))
+  }
+
   final class INDArrayLayerOps[Input <: Batch](operand: Layer.Aux[Input, INDArrayPlaceholder.Batch]) {
 
     // TODO: Considering if rename this method to `matmul`
@@ -637,6 +642,14 @@ object DifferentiableINDArray {
 
     def toSeq: Layer.Aux[Input, Batch.Aux[Seq[Seq[Double]], (Int, (Int, Double))]] = {
       ToSeq(operand)
+    }
+
+    def reduceSum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
+      ReduceSum(operand)
+    }
+
+    def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Sum(operand, dimensions)
     }
 
   }
