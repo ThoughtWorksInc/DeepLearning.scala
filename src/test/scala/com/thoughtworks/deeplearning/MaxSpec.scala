@@ -1,6 +1,6 @@
-package com.thoughtworks.deeplearning
+package com.thoughtworks
+package deeplearning
 
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -13,7 +13,10 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 final class MaxSpec extends FreeSpec with Matchers {
+
+  import com.thoughtworks.deeplearning.DifferentiableINDArray._
 
   "complex input" in {
     def buildNeuralNetwork(implicit input: DoublePlaceholder :**: INDArrayPlaceholder :**: HNilPlaceholder) = {

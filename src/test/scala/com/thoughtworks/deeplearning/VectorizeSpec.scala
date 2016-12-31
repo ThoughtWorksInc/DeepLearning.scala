@@ -1,11 +1,11 @@
-package com.thoughtworks.deeplearning
+package com.thoughtworks
+package deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Lift._
 import org.scalatest._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}
@@ -16,9 +16,11 @@ import util.Random
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 final class VectorizeSpec extends FreeSpec with Matchers {
 
   import FortuneTeller._
+  import com.thoughtworks.deeplearning.DifferentiableINDArray._
 
   "Convert HMatrix to DifferentiableINDArray" in {
 

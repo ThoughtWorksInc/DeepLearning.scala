@@ -1,4 +1,5 @@
-package com.thoughtworks.deeplearning
+package com.thoughtworks
+package deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Layer._
@@ -9,12 +10,8 @@ import com.thoughtworks.deeplearning.DifferentiableBoolean._
 import com.thoughtworks.deeplearning.DifferentiableNothing._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.LearningRate
 import com.thoughtworks.deeplearning.DifferentiableCoproduct._
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4s.Implicits._
 import org.scalatest._
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -27,7 +24,11 @@ import util.Random
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 object FortuneTeller {
+  import com.thoughtworks.deeplearning.DifferentiableINDArray._
+  import org.nd4j.linalg.factory.Nd4j
+  import org.nd4s.Implicits._
 
   type Seq2D = SeqPlaceholder[SeqPlaceholder[DoublePlaceholder]]
 

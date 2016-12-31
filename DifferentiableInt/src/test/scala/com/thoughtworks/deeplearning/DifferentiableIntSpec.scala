@@ -19,7 +19,7 @@ final class DifferentiableIntSpec extends FreeSpec with Matchers {
       override protected def currentLearningRate() = 0.6
     }
 
-    def makeNetwork(implicit x: shapeless.the.`From[Any]`.Out) = {
+    def makeNetwork(implicit x: Placeholder[Any, ExistentialNothing]) = {
       val w = 5.toWeight
       w + 1
     }

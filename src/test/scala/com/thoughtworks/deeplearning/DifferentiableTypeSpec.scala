@@ -2,7 +2,6 @@ package com.thoughtworks.deeplearning
 
 import shapeless._
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableDouble._

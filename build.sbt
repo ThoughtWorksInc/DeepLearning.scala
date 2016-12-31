@@ -69,6 +69,8 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
 
 addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "1.0.0" % Test)
 
+libraryDependencies += "com.thoughtworks.enableIf" %% "enableif" % "1.1.4" % Test
+
 crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1")
 
 publishArtifact := false

@@ -1,12 +1,10 @@
-package com.thoughtworks.deeplearning
+package com.thoughtworks
+package deeplearning
 
+import org.scalatest._
 import shapeless._
 import cats._
 import cats.implicits._
-import org.nd4s.Implicits._
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.ops.transforms.Transforms
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Layer._
 import com.thoughtworks.deeplearning.Layer.Batch._
@@ -17,13 +15,8 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.LearningRate
 import com.thoughtworks.deeplearning.DifferentiableCoproduct._
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4s.Implicits._
-import org.scalatest._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import language.implicitConversions
 import language.existentials
@@ -33,10 +26,20 @@ import util.Random
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 final class XorSpec extends FreeSpec with Matchers {
-  import XorSpec._
 
-  implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization with DifferentiableDouble.Optimizers.L2Regularization {
+  import XorSpec._
+  import com.thoughtworks.deeplearning.DifferentiableINDArray._
+  import org.nd4s.Implicits._
+  import org.nd4j.linalg.api.ndarray.INDArray
+  import org.nd4j.linalg.factory.Nd4j
+  import org.nd4j.linalg.ops.transforms.Transforms
+  import org.nd4j.linalg.factory.Nd4j
+  import org.nd4s.Implicits._
+
+  implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization
+  with DifferentiableDouble.Optimizers.L2Regularization {
     override protected def currentLearningRate() = 0.006
 
     override protected def l2Regularization = 0.01
@@ -62,7 +65,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val ArrayToArray = FromTo[INDArray, INDArray]
 
-  def hiddenLayers(implicit encodedInput: From[INDArray]##T): ArrayToArray.T = {
+  def hiddenLayers(implicit encodedInput: From[INDArray] ## T): ArrayToArray.T = {
     fullyConnectedThenSigmoid(50, 3).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(6, 50).compose(encodedInput))))
@@ -70,7 +73,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val hiddenLayersNetwork = hiddenLayers
 
-  def encode(implicit input: From[XorSpec.InputData]##T): To[INDArray]##T = {
+  def encode(implicit input: From[XorSpec.InputData] ## T): To[INDArray] ## T = {
     val field0 = input.head
     val rest0 = input.tail
     val field1 = rest0.head
@@ -124,22 +127,20 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val encodeNetwork = encode
 
-  def decode(implicit row: From[INDArray]##T): To[XorSpec.OutputData]##T = {
+  def decode(implicit row: From[INDArray] ## T): To[XorSpec.OutputData] ## T = {
     val rowSeq = row.toSeq
     rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: shapeless.HNil.toLayer
   }
 
   val decodeNetwork = decode
 
-  def predict(
-      implicit input: From[XorSpec.InputData]##T): To[XorSpec.OutputData]##T = {
+  def predict(implicit input: From[XorSpec.InputData] ## T): To[XorSpec.OutputData] ## T = {
     decodeNetwork.compose(hiddenLayersNetwork.compose(encodeNetwork.compose(input)))
   }
 
   val predictNetwork = predict
 
-  def loss(implicit pair: From[ExpectedLabelData :: INDArray :: HNil]##T)
-    : To[Double]##T = {
+  def loss(implicit pair: From[ExpectedLabelData :: INDArray :: HNil] ## T): To[Double] ## T = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head
@@ -187,8 +188,7 @@ final class XorSpec extends FreeSpec with Matchers {
     loss0 + loss1 + loss2
   }
 
-  def train(implicit pair: From[ExpectedLabelData :: InputData :: HNil]##T)
-    : To[Double]##T = {
+  def train(implicit pair: From[ExpectedLabelData :: InputData :: HNil] ## T): To[Double] ## T = {
     val expectedLabel = pair.head
     val input = pair.tail.head
     loss.compose(expectedLabel :: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :: shapeless.HNil.toLayer)
@@ -293,6 +293,7 @@ ${left11.value}^${right11.value}=${result11.value}
 
 }
 
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 object XorSpec {
   type OptionalDoubleData = HNil :+: Double :+: CNil
   type ExpectedLabelData = OptionalDoubleData :: OptionalDoubleData :: OptionalDoubleData :: HNil
