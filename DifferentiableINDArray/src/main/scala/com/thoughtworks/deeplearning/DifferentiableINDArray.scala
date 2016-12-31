@@ -663,7 +663,7 @@ object DifferentiableINDArray {
       ToSeq(operand)
     }
 
-    def reduceSum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
+    def sum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceSum(operand)
     }
 
