@@ -1,3 +1,5 @@
+parallelExecution in Global := false
+
 sbt.dsl.dependsOn(DifferentiableBoolean,
                   DifferentiableDouble,
                   DifferentiableINDArray,
@@ -7,17 +9,17 @@ sbt.dsl.dependsOn(DifferentiableBoolean,
                   DifferentiableAny,
                   DifferentiableNothing)
 
-lazy val Layer = project.disablePlugins(SparkPackagePlugin)
+lazy val Layer = project
 
-lazy val Lift = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
+lazy val Lift = project.dependsOn(Layer)
 
-lazy val DifferentiableBoolean = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer, BufferedLayer, Poly)
+lazy val DifferentiableBoolean = project.dependsOn(Layer, BufferedLayer, Poly)
 
 lazy val DifferentiableDouble =
-  project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+  project.dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
 
 lazy val DifferentiableFloat =
-  project.disablePlugins(SparkPackagePlugin).dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+  project.dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
 
 val DoubleRegex = """(?i:double)""".r
 
@@ -41,26 +43,25 @@ sourceGenerators in Compile in DifferentiableFloat += Def.task {
   }
 }.taskValue
 
-lazy val DifferentiableInt = project
-  .disablePlugins(SparkPackagePlugin)
-  .dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+lazy val DifferentiableInt =
+  project.dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
 
-lazy val Poly = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val Poly = project.dependsOn(Lift)
 
-lazy val DifferentiableAny = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val DifferentiableAny = project.dependsOn(Lift)
 
-lazy val DifferentiableNothing = project.disablePlugins(SparkPackagePlugin).dependsOn(Lift)
+lazy val DifferentiableNothing = project.dependsOn(Lift)
 
-lazy val DifferentiableSeq = project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableInt)
+lazy val DifferentiableSeq = project.dependsOn(DifferentiableInt)
 
 lazy val DifferentiableINDArray =
-  project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableInt, DifferentiableDouble)
+  project.dependsOn(DifferentiableInt, DifferentiableDouble)
 
-lazy val DifferentiableHList = project.disablePlugins(SparkPackagePlugin).dependsOn(Poly)
+lazy val DifferentiableHList = project.dependsOn(Poly)
 
-lazy val DifferentiableCoproduct = project.disablePlugins(SparkPackagePlugin).dependsOn(DifferentiableBoolean)
+lazy val DifferentiableCoproduct = project.dependsOn(DifferentiableBoolean)
 
-lazy val BufferedLayer = project.disablePlugins(SparkPackagePlugin).dependsOn(Layer)
+lazy val BufferedLayer = project.dependsOn(Layer)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
@@ -68,13 +69,23 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % Test
 
 addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "1.0.0" % Test)
 
-crossScalaVersions := Seq("2.10.6", "2.11.8")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1")
 
 publishArtifact := false
 
 lazy val unidoc = project
   .enablePlugins(TravisUnidocTitle)
-  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full))
+  .settings(
+    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
+      import Ordering.Implicits._
+      if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
+        inAnyProject -- inProjects(DifferentiableINDArray)
+      } else {
+        inAnyProject
+      }
+    },
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  )
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
