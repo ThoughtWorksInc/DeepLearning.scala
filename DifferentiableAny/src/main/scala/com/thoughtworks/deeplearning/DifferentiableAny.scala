@@ -41,10 +41,10 @@ object DifferentiableAny {
       layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
-        implicit differentiableType: ToLayer.Aux[G, NewInput, InputData, InputDelta],
+        implicit toLayer: ToLayer.Aux[G, NewInput, InputData, InputDelta],
         toInput: Layer.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< Layer.Aux[NewInput, Input]
     ): Layer.Aux[NewInput, Batch.Aux[OutputData, OutputDelta]] = {
-      Compose(layer, toInput(differentiableType(g)))
+      Compose(layer, toInput(toLayer(g)))
     }
 
     def predict[InputData, InputDelta](inputData: InputData)(
