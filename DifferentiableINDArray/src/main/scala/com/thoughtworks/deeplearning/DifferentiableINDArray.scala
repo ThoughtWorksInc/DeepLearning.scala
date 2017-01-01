@@ -442,6 +442,26 @@ object DifferentiableINDArray {
       }
     }
 
+    final case class Abs[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+        extends BufferedLayer.Unary {
+      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+
+      type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+
+          val value = Transforms.abs(upstream.value)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream.backward(outputDelta * Transforms.sign(upstream.value))
+          }
+        }
+      }
+    }
+
     final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
         extends BufferedLayer.Unary {
       type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
@@ -646,6 +666,11 @@ object DifferentiableINDArray {
   implicit def `log(INDArray)`[Input <: Batch]
     : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     log.at(Log(_))
+  }
+
+  implicit def `abs(INDArray)`[Input <: Batch]
+    : abs.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+    abs.at(Abs(_))
   }
 
   final class INDArrayLayerOps[Input <: Batch](operand: Layer.Aux[Input, INDArrayPlaceholder.Batch]) {
