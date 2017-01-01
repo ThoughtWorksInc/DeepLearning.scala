@@ -113,7 +113,7 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MultiplyDifferentiableINDArray[Input0 <: Batch](
+    final case class MultiplyINDArray[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
     ) extends BufferedLayer.Binary {
@@ -147,7 +147,7 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MaxBpDouble[Input0 <: Batch](
+    final case class MaxDouble[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
@@ -173,7 +173,7 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class PlusDifferentiableINDArray[Input0 <: Batch](
+    final case class PlusINDArray[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
     ) extends BufferedLayer.Binary {
@@ -380,7 +380,7 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class PlusBpDouble[Input0 <: Batch](
+    final case class PlusDouble[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
@@ -482,7 +482,7 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MultiplyBpDouble[Input0 <: Batch](
+    final case class MultiplyDouble[Input0 <: Batch](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
         operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
     ) extends BufferedLayer.Binary {
@@ -548,14 +548,14 @@ object DifferentiableINDArray {
     : max.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                    Layer.Aux[Input, DoublePlaceholder.Batch],
                    Layer.Aux[Input, INDArrayPlaceholder.Batch]] =
-    max.at(MaxBpDouble(_, _))
+    max.at(MaxDouble(_, _))
 
   implicit def `INDArray/INDArray`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
-      MultiplyDifferentiableINDArray(leftLayer, Reciprocal(rightLayer))
+      MultiplyINDArray(leftLayer, Reciprocal(rightLayer))
     }
   }
 
@@ -564,7 +564,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
-      MultiplyBpDouble(Reciprocal(rightLayer), leftLayer)
+      MultiplyDouble(Reciprocal(rightLayer), leftLayer)
     }
   }
 
@@ -573,7 +573,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
-      MultiplyBpDouble(leftLayer, DifferentiableDouble.Layers.Reciprocal(rightLayer))
+      MultiplyDouble(leftLayer, DifferentiableDouble.Layers.Reciprocal(rightLayer))
     }
   }
 
@@ -582,7 +582,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
-      MultiplyDifferentiableINDArray(leftLayer, rightLayer)
+      MultiplyINDArray(leftLayer, rightLayer)
     }
   }
 
@@ -591,7 +591,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
-      MultiplyBpDouble(leftLayer, rightLayer)
+      MultiplyDouble(leftLayer, rightLayer)
     }
   }
 
@@ -600,7 +600,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
-      MultiplyBpDouble(rightLayer, leftLayer)
+      MultiplyDouble(rightLayer, leftLayer)
     }
   }
 
@@ -609,7 +609,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
-      PlusDifferentiableINDArray(leftLayer, Negative(rightLayer))
+      PlusINDArray(leftLayer, Negative(rightLayer))
     }
   }
 
@@ -618,7 +618,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
-      PlusBpDouble(Negative(rightLayer), leftLayer)
+      PlusDouble(Negative(rightLayer), leftLayer)
     }
   }
 
@@ -627,7 +627,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
-      PlusBpDouble(leftLayer, DifferentiableDouble.Layers.Negative(rightLayer))
+      PlusDouble(leftLayer, DifferentiableDouble.Layers.Negative(rightLayer))
     }
   }
 
@@ -636,7 +636,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
-      PlusDifferentiableINDArray(leftLayer, rightLayer)
+      PlusINDArray(leftLayer, rightLayer)
     }
   }
 
@@ -645,7 +645,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
-      PlusBpDouble(leftLayer, rightLayer)
+      PlusDouble(leftLayer, rightLayer)
     }
   }
 
@@ -654,7 +654,7 @@ object DifferentiableINDArray {
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
-      PlusBpDouble(rightLayer, leftLayer)
+      PlusDouble(rightLayer, leftLayer)
     }
   }
 
