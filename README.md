@@ -15,35 +15,35 @@
 
 **DeepLearning.scala** is a DSL for creating complex neural networks.
 
-With the help of DeepLearning.scala, a normal programmer is able to build complex neural networks from simple code. He still writes code as usual, and the only difference is that the code with DeepLearning.scala are [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which let the code evolve itself and modify its parameters continuously.
+With the help of DeepLearning.scala, regular programmers are able to build complex neural networks from simple code. You  write code almost as usual, the only difference being that code based on DeepLearning.scala is [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which enables such code to evolve by modifying its parameters continuously.
 
 ## Features
 
 ### Differentiable basic types
 
-Like [Theano](http://deeplearning.net/software/theano/) or other deep learning toolkits, DeepLearning.scala allows you to build neural networks from mathematical formula, which handle [float](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableFloat$.html)s, [double](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableDouble$.html)s, [GPU-accelerated N-dimensional array](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableINDArray$.html)s, and calculate derivatives of the weights in the formula.
+Like [Theano](http://deeplearning.net/software/theano/) and other deep learning toolkits, DeepLearning.scala allows you to build neural networks from mathematical formulas. It supports [float](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableFloat$.html)s, [double](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableDouble$.html)s, [GPU-accelerated N-dimensional array](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableINDArray$.html)s, and calculates derivatives of the weights in the formulas.
 
-### Differentiable ADT
+### Differentiable ADTs
 
-Neural networks created by DeepLearning.scala are able to handle [ADT](https://en.wikipedia.org/wiki/Algebraic_data_type) data structures(e.g. [HList](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableHList$.html) and [Coproduct](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableCoproduct$.html)), and calculate derivatives through these data structure.
+Neural networks created by DeepLearning.scala support [ADT](https://en.wikipedia.org/wiki/Algebraic_data_type) data structures (e.g. [HList](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableHList$.html) and [Coproduct](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableCoproduct$.html)), and calculate derivatives through these data structures.
 
 ### Differentiable control flow
 
-Neural networks created by DeepLearning.scala may contains control flows like `if`/`else`/`switch`/`case`. Combining with ADT data structures, You can implement arbitary algorithms inside neural networks, and train variables used in the algorithms.
+Neural networks created by DeepLearning.scala may contains control flows such as `if`/`else`/`switch`/`case`. Combined with ADT data structures, you can implement arbitary algorithms inside neural networks, and train the variables used in the algorithms.
 
-### Composibility
+### Composability
 
-Neural networks created by DeepLearning.scala are composible. You can create large network by combining smaller networks. If two larger networks shares some sub-networks, the weights in shared sub-networks trained with one network affects the other network.
+Neural networks created by DeepLearning.scala are composable. You can create large network by combining smaller networks. If two larger networks share some sub-networks, the weights in shared sub-networks trained with one network affect the other network.
 
 ### Static type system
 
-All the above features are statically type checked.
+All of the above features are statically type checked.
 
 ## Roadmap
 
 ### v1.0
 
-Version 1.0 is the current version with all above features. The final version will be released in Janary 2017.
+Version 1.0 is the current version with all of the above features. The final version will be released in Janary 2017.
 
 ### v2.0
 
@@ -69,4 +69,4 @@ Version 3.0 will be released in late 2017.
 
 DeepLearning.scala is heavily inspired by my colleague [@MarisaKirisame](https://github.com/MarisaKirisame).
 
-[@milessabin](https://github.com/milessabin)'s [shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming used in DeepLearning.scala.
+[@milessabin](https://github.com/milessabin)'s [shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming as used in DeepLearning.scala.
