@@ -47,7 +47,7 @@ trait BufferedLayer extends Layer {
       }
     }
 
-    private[BufferedLayer] final def checkedIfCloseOnlyOnce: Open = {
+    private[BufferedLayer] final def checkedIfCloseOnlyOnce: Self = {
       Option(checked).getOrElse(ReferenceCount.this.self)
     }
 
@@ -55,7 +55,7 @@ trait BufferedLayer extends Layer {
       * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
       * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
       */
-    override final def addReference(): Open = {
+    override final def addReference(): Self = {
       val newCount = synchronized {
         val newCount = count + 1
         count = newCount
@@ -65,9 +65,9 @@ trait BufferedLayer extends Layer {
       checkedIfCloseOnlyOnce
     }
 
-    type Open >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
+    private[BufferedLayer] type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
 
-    private final def self: Open = this: Batch.Aux[Data, Delta]
+    private final def self: Self = this: Batch.Aux[Data, Delta]
 
     private[BufferedLayer] var count: Int = 1
 
@@ -143,7 +143,8 @@ trait BufferedLayer extends Layer {
     }
   }
 
-  type Output = BufferedBatch#Open
+  /** @template */
+  type Output = BufferedBatch#Self
 
   protected type BufferedBatch <: ReferenceCount
 
