@@ -185,9 +185,6 @@ object Lift {
 
   }
 
-  final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
-      layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {}
-
   implicit def autoToLayer[A, Input <: Batch, OutputData, OutputDelta](a: A)(
       implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
     : Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
