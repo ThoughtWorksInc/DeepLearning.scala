@@ -4,6 +4,7 @@ import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import shapeless._
 
+import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
 trait Lift[From] extends DepFn1[From] {
@@ -252,6 +253,7 @@ object Lift {
   /**
     * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
     */
+  @implicitNotFound("Cannot convert ${From} to layer")
   trait ToLayer[From, Input <: Batch] extends DepFn1[From] {
     type OutputData
     type OutputDelta
@@ -259,6 +261,7 @@ object Lift {
     type Out = Layer.Aux[Input, Output]
   }
 
+  @implicitNotFound("Don't know how to make ${NativeValue} differentiable")
   trait From[NativeValue] extends DepFn0 {
 
     type Data
