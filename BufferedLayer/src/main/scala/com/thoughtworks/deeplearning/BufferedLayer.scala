@@ -52,7 +52,7 @@ trait BufferedLayer extends Layer {
     }
 
     /**
-      * Returns a wrapped [[Batch]] able to detect error of closing more than once if ASSERTION is enabled,
+      * Returns a wrapped [[com.thoughtworks.deeplearning.Layer.Batch Batch]] able to detect error of closing more than once if ASSERTION is enabled,
       * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
       */
     override final def addReference(): Self = {
@@ -151,7 +151,7 @@ trait BufferedLayer extends Layer {
   /**
     * Performs the underlying forward pass.
     *
-    * @return a [[Batch]] that will be cached for subsequent [[forward]]
+    * @return a [[com.thoughtworks.deeplearning.Layer.Batch Batch]] that will be cached for subsequent [[forward]]
     */
   protected def rawForward(input: Input): BufferedBatch
 
