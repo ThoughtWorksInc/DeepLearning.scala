@@ -391,7 +391,7 @@ object DifferentiableDouble {
   }
 
   implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, DoublePlaceholder]
+      implicit toLayer: ToLayer.OfPlaceholder[From, Input, DoublePlaceholder]
   ): DoubleLayerOps[Input] = {
     new DoubleLayerOps(toLayer(from))
   }

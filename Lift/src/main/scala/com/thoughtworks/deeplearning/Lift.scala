@@ -156,7 +156,7 @@ object Lift {
     private[deeplearning] type DataOf[T <: Placeholder[_, _]] = t.Data forSome { val t: T }
     private[deeplearning] type DeltaOf[T <: Placeholder[_, _]] = t.Delta forSome { val t: T }
 
-    implicit def inputTypeToLayer[InputData, InputDelta]
+    implicit def inputPlaceholderToLayer[InputData, InputDelta]
       : ToLayer.Aux[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
       new ToLayer[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
         override type OutputData = InputData
@@ -193,11 +193,11 @@ object Lift {
 
   private[deeplearning] sealed trait ToLayerLowPriorityImplicits { this: ToLayer.type =>
 
-    implicit def toLayerOfType[Input0 <: Batch, OutputType <: Placeholder[_, _]]
-      : ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType] = {
+    implicit def toLayerOfPlaceholder[Input0 <: Batch, OutputPlaceholder <: Placeholder[_, _]]
+      : ToLayer.OfPlaceholder[Layer.Aux[Input0, OutputPlaceholder#Batch], Input0, OutputPlaceholder] = {
       ToLayer
-        .layerToLayer[Input0, Placeholder.DataOf[OutputType], Placeholder.DeltaOf[OutputType]]
-        .asInstanceOf[ToLayer.OfType[Layer.Aux[Input0, OutputType#Batch], Input0, OutputType]]
+        .layerToLayer[Input0, Placeholder.DataOf[OutputPlaceholder], Placeholder.DeltaOf[OutputPlaceholder]]
+        .asInstanceOf[ToLayer.OfPlaceholder[Layer.Aux[Input0, OutputPlaceholder#Batch], Input0, OutputPlaceholder]]
     }
 
     implicit def isLayerToLayer[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]
@@ -219,9 +219,9 @@ object Lift {
       type OutputDelta = OutputDelta0
     }
 
-    type OfType[From, Input <: Batch, OutputType <: Placeholder[_, _]] =
-      ToLayer.Aux[From, Input, differentiableType.Data, differentiableType.Delta] forSome {
-        val differentiableType: OutputType
+    type OfPlaceholder[From, Input <: Batch, OutputPlaceholder <: Placeholder[_, _]] =
+      ToLayer.Aux[From, Input, differentiablePlaceholder.Data, differentiablePlaceholder.Delta] forSome {
+        val differentiablePlaceholder: OutputPlaceholder
       }
 
     implicit def layerToLayer[Input <: Batch, OutputData0, OutputDelta0]
@@ -234,7 +234,7 @@ object Lift {
       }
 
     implicit def placeholderToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
-        implicit inputType: Placeholder[InputData, InputDelta],
+        implicit inputPlaceholder: Placeholder[InputData, InputDelta],
         lift: Lift.Aux[From, OutputData0, OutputDelta0])
       : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {

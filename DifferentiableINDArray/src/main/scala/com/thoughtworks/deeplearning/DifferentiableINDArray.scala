@@ -699,7 +699,7 @@ object DifferentiableINDArray {
   }
 
   implicit def toINDArrayLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, INDArrayPlaceholder]
+      implicit toLayer: ToLayer.OfPlaceholder[From, Input, INDArrayPlaceholder]
   ): INDArrayLayerOps[Input] = {
     new INDArrayLayerOps(toLayer(from))
   }
@@ -710,7 +710,7 @@ object DifferentiableINDArray {
   }
 
   implicit def toToINDArrayLayerOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
-      implicit toLayer: ToLayer.OfType[Element, Input, DoublePlaceholder]): ToINDArrayLayerOps[Input] = {
+      implicit toLayer: ToLayer.OfPlaceholder[Element, Input, DoublePlaceholder]): ToINDArrayLayerOps[Input] = {
     new ToINDArrayLayerOps(layerVector.view.map(_.view.map(toLayer(_))))
   }
 

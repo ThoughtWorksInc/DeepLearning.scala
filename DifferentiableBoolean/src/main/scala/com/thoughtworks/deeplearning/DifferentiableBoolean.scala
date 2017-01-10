@@ -117,7 +117,7 @@ object DifferentiableBoolean {
   }
 
   implicit def toBooleanLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfType[From, Input, BooleanPlaceholder]): BooleanLayerOps[Input] = {
+      implicit toLayer: ToLayer.OfPlaceholder[From, Input, BooleanPlaceholder]): BooleanLayerOps[Input] = {
     new BooleanLayerOps[Input](toLayer(from))
   }
 
