@@ -29,7 +29,7 @@ Neural networks created by DeepLearning.scala support [ADT](https://en.wikipedia
 
 ### Differentiable control flow
 
-Neural networks created by DeepLearning.scala may contains control flows such as `if`/`else`/`switch`/`case`. Combined with ADT data structures, you can implement arbitary algorithms inside neural networks, and train the variables used in the algorithms.
+Neural networks created by DeepLearning.scala may contains control flows like `if`/`else`/`match`/`case` in a regular language. Combined with ADT data structures, you can implement arbitary algorithms inside neural networks, and train the variables used in the algorithms.
 
 ### Composability
 
