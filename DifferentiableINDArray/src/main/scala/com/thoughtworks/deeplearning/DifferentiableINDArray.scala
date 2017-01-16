@@ -238,7 +238,7 @@ object DifferentiableINDArray {
             })
           }
 
-          override def backward(delta: Delta): Unit = {
+          override protected def forceBackward(delta: Delta): Unit = {
             synchronized {
               val (i, (j, value)) = delta
               // Cannot use += because of https://issues.scala-lang.org/browse/SI-10021
@@ -270,17 +270,19 @@ object DifferentiableINDArray {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
-      override def addReference() = this
+      override final val isTrainable = true
 
-      override def forward(any: Input) = this
+      override final def addReference() = this
 
-      override def backward(delta: Delta): Unit = {
+      override final def forward(any: Input) = this
+
+      override final protected def forceBackward(delta: Delta): Unit = {
         synchronized {
           value = optimizer.updateNDArray(value, delta)
         }
       }
 
-      override def close(): Unit = {}
+      override final def close(): Unit = {}
 
     }
 
@@ -292,7 +294,10 @@ object DifferentiableINDArray {
       final class Output private[ToINDArray] (upstreams: Seq[Seq[Batch.Aux[Double, Double]]])
           extends INDArraySemigroupBatch
           with CloseableOnce {
-        override def backward(delta: INDArray): Unit = {
+
+        override val isTrainable = upstreams.exists(_.exists(_.isTrainable))
+
+        override protected def forceBackward(delta: INDArray): Unit = {
           for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
             upstream.backward(delta(i, j))
           }

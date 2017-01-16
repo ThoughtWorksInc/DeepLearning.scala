@@ -7,7 +7,6 @@ import scala.annotation.elidable
 
 object Layer {
 
-
   private[deeplearning] trait CloseableOnce extends AutoCloseable {
 
     private[CloseableOnce] final class ClosingFlag {
@@ -53,7 +52,16 @@ object Layer {
 
     def addReference(): Batch.Aux[Data, Delta]
 
-    def backward(delta: Delta): Unit
+    protected def forceBackward(delta: Delta): Unit
+
+    def isTrainable: Boolean
+
+    @inline
+    final def backward(delta: => Delta): Unit = {
+      if (isTrainable) {
+        forceBackward(delta)
+      }
+    }
 
     def value: Data
   }

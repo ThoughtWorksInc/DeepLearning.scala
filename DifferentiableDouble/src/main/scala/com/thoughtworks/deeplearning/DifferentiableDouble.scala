@@ -273,26 +273,27 @@ object DifferentiableDouble {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
+      override final def isTrainable = true
+
       protected def optimizer: Optimizer
 
-      override def addReference() = this
+      override final def addReference() = this
 
-      override def forward(any: Input) = this
+      override final def forward(any: Input) = this
 
-      override def backward(delta: Delta): Unit = {
+      override protected final def forceBackward(delta: Delta): Unit = {
         synchronized {
           value = optimizer.updateDouble(value, delta)
         }
       }
 
-      override def close(): Unit = {}
+      override final def close(): Unit = {}
 
     }
 
   }
 
   import Layers._
-
 
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {

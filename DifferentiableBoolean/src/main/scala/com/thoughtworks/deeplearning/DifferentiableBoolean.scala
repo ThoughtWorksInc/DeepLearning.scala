@@ -74,13 +74,15 @@ object DifferentiableBoolean {
 
       override def forward(any: Input) = this
 
-      override def backward(delta: Delta): Unit = {
+      override protected def forceBackward(delta: Delta): Unit = {
         value ^= delta
       }
 
       override def close(): Unit = {}
 
       override def addReference(): Weight[Input0] = this
+
+      override def isTrainable = true
 
     }
 

@@ -25,9 +25,11 @@ object DifferentiableSeq {
 
       final class Output private[Get] (upstream: Batch.Aux[Seq[ElementData], (Int, ElementDelta)]) extends Batch {
 
+        override val isTrainable = upstream.isTrainable
+
         type Delta = ElementDelta
         type Data = ElementData
-        override def backward(delta: ElementDelta): Unit = {
+        override protected def forceBackward(delta: ElementDelta): Unit = {
           upstream.backward((i, delta))
         }
 
@@ -62,7 +64,9 @@ object DifferentiableSeq {
         override type Data = Seq[ElementData]
         override type Delta = (Int, ElementDelta)
 
-        override def backward(pair: (Int, ElementDelta)): Unit = {
+        override val isTrainable = upstreams.exists(_.isTrainable)
+
+        override protected def forceBackward(pair: (Int, ElementDelta)): Unit = {
           val (i, delta) = pair
           upstreams(i).backward(delta)
         }

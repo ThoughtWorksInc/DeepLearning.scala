@@ -25,7 +25,9 @@ trait BufferedLayer extends Layer {
 
       override final def addReference() = ReferenceCount.this.addReference()
 
-      override final def backward(delta: Delta) = ReferenceCount.this.backward(delta)
+      override final protected def forceBackward(delta: Delta) = ReferenceCount.this.forceBackward(delta)
+
+      override final def isTrainable: Boolean = ReferenceCount.this.isTrainable
 
       override final def value = ReferenceCount.this.value
 
@@ -113,7 +115,7 @@ trait BufferedLayer extends Layer {
       })
     }
 
-    override final def backward(delta: Delta): Unit = {
+    override final protected def forceBackward(delta: Delta): Unit = {
       synchronized {
         currentDelta = currentDelta |+| delta
       }
@@ -136,7 +138,7 @@ trait BufferedLayer extends Layer {
       }.foreach(rawBackward)
     }
 
-    override final def backward(delta: Delta): Unit = {
+    override final protected def forceBackward(delta: Delta): Unit = {
       synchronized {
         currentDelta = currentDelta |+| Some(delta)
       }
@@ -182,6 +184,8 @@ object BufferedLayer {
 
       protected val upstream: operand.Output = operand.forward(input)
 
+      override final val isTrainable: Boolean = upstream.isTrainable
+
       override protected final def closeUpstreams(): Unit = {
         upstream.close()
         input.close()
@@ -204,6 +208,8 @@ object BufferedLayer {
 
       protected val upstream1: operand1.Output = operand1.forward(input)
       protected val upstream2: operand2.Output = operand2.forward(input)
+
+      override final val isTrainable: Boolean = upstream1.isTrainable || upstream2.isTrainable
 
       override protected final def closeUpstreams(): Unit = {
         upstream1.close()

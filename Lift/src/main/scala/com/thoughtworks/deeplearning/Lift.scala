@@ -50,7 +50,9 @@ object Lift {
 
       override def forward(input: Input) = this
 
-      override def backward(delta: Delta): Unit = {}
+      override def isTrainable: Boolean = false
+
+      override protected def forceBackward(delta: Delta): Unit = {}
 
       override def close(): Unit = {}
 

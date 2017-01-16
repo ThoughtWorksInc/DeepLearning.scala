@@ -22,7 +22,7 @@ object DifferentiableNothing {
 
       override def forward(input: Input) = this
 
-      override def backward(delta: Delta): Unit = {}
+      override protected def forceBackward(delta: Delta): Unit = {}
 
       override def value: Data = {
         throw throwable()
@@ -31,6 +31,9 @@ object DifferentiableNothing {
       override def close(): Unit = {}
 
       override def addReference() = this
+
+      override def isTrainable = false
+
     }
 
   }

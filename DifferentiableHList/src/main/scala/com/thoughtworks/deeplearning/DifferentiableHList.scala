@@ -31,7 +31,10 @@ object DifferentiableHList {
                                          tailBatch: Batch.Aux[TailData, TailDelta])
           extends Batch
           with CloseableOnce {
-        override def backward(delta: Delta): Unit = {
+
+        override val isTrainable = headBatch.isTrainable || tailBatch.isTrainable
+
+        override protected def forceBackward(delta: Delta): Unit = {
           delta match {
             case shapeless.Inl(headDelta) =>
               headBatch.backward(headDelta)
@@ -70,7 +73,10 @@ object DifferentiableHList {
           upstream: Batch.Aux[::[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
-        override def backward(delta: Delta): Unit = {
+
+        override val isTrainable = upstream.isTrainable
+
+        override protected def forceBackward(delta: Delta): Unit = {
           upstream.backward(shapeless.Inl(delta))
         }
 
@@ -101,7 +107,10 @@ object DifferentiableHList {
       final class Output private[Tail] (upstream: Batch.Aux[HeadData :: TailData, shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
-        override def backward(delta: Delta): Unit = {
+
+        override val isTrainable = upstream.isTrainable
+
+        override protected def forceBackward(delta: Delta): Unit = {
           upstream.backward(shapeless.Inr(delta))
         }
 

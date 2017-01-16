@@ -60,11 +60,13 @@ object DifferentiableInt {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
+      override def isTrainable = true
+
       override def addReference() = this
 
       override def forward(any: Input) = this
 
-      override def backward(delta: Delta): Unit = {
+      override protected def forceBackward(delta: Delta): Unit = {
         synchronized {
           value = math.rint(optimizer.updateDouble(value, delta)).toInt
         }

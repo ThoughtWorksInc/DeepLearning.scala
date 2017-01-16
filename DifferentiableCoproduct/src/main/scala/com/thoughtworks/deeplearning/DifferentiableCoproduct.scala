@@ -39,10 +39,12 @@ object DifferentiableCoproduct {
         override type Data = HeadData
         override type Delta = HeadDelta
 
-        val value =
+        override val isTrainable = upstream.isTrainable
+
+        override val value =
           upstream.value.asInstanceOf[shapeless.Inl[HeadData, TailData]].head
 
-        override def backward(delta: Delta): Unit = {
+        override protected def forceBackward(delta: Delta): Unit = {
           upstream.backward(shapeless.Inl(delta))
         }
 
@@ -72,12 +74,15 @@ object DifferentiableCoproduct {
       final class Output private[Inl] (upstream: Batch.Aux[HeadData, HeadDelta])
           extends Batch
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
+
+        override val isTrainable = upstream.isTrainable
+
         def value = shapeless.Inl(upstream.value: HeadData)
 
         type Data = shapeless.Inl[HeadData, Nothing]
         type Delta = shapeless.:+:[HeadDelta, shapeless.Coproduct]
 
-        override def backward(delta: shapeless.:+:[HeadDelta, shapeless.Coproduct]): Unit = {
+        override protected def forceBackward(delta: shapeless.:+:[HeadDelta, shapeless.Coproduct]): Unit = {
           delta match {
             case shapeless.Inl(headDelta) => upstream.backward(headDelta)
             case shapeless.Inr(_) =>
@@ -106,12 +111,15 @@ object DifferentiableCoproduct {
       final class Output private[Inr] (upstream: Batch.Aux[TailData, TailDelta])
           extends Batch
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
-        def value = shapeless.Inr(upstream.value: TailData)
 
-        type Data = shapeless.Inr[Nothing, TailData]
-        type Delta = shapeless.:+:[Any, TailDelta]
+        override val isTrainable = upstream.isTrainable
 
-        override def backward(delta: shapeless.:+:[Any, TailDelta]): Unit = {
+        override def value = shapeless.Inr(upstream.value: TailData)
+
+        override type Data = shapeless.Inr[Nothing, TailData]
+        override type Delta = shapeless.:+:[Any, TailDelta]
+
+        override protected def forceBackward(delta: shapeless.:+:[Any, TailDelta]): Unit = {
           delta match {
             case shapeless.Inr(tailDelta) => upstream.backward(tailDelta)
             case shapeless.Inl(_) =>
@@ -140,13 +148,16 @@ object DifferentiableCoproduct {
           upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
           extends Batch
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
+
         override type Data = TailData
         override type Delta = TailDelta
 
-        val value =
+        override val isTrainable = upstream.isTrainable
+
+        override val value =
           upstream.value.asInstanceOf[shapeless.Inr[TailData, TailData]].tail
 
-        override def backward(delta: Delta): Unit = {
+        override protected def forceBackward(delta: Delta): Unit = {
           upstream.backward(shapeless.Inr(delta))
         }
 
@@ -175,12 +186,14 @@ object DifferentiableCoproduct {
           with Batch
           with CloseableOnce {
 
+        override val isTrainable = upstream.isTrainable
+
         override val value = upstream.value match {
           case shapeless.Inl(_) => true
           case shapeless.Inr(_) => false
         }
 
-        override def backward(delta: Boolean): Unit = {}
+        override protected def forceBackward(delta: Boolean): Unit = {}
 
         override def close(): Unit = {
           super.close()
