@@ -1,10 +1,11 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.DifferentiableAny.Layers.Compose
+import com.thoughtworks.deeplearning.DifferentiableAny.Layers.{Compose, WithOutputDataHook}
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.Lift._
 import resource.managed
+
 import language.implicitConversions
 import language.existentials
 
@@ -32,6 +33,18 @@ object DifferentiableAny {
         } finally {
           tmpBatch.close()
         }
+      }
+    }
+
+    final case class WithOutputDataHook[Input0 <: Batch, OutputData, OutputDelta]
+    (layer: Layer.Aux[Input0, Batch.Aux[OutputData, OutputDelta]],hook: OutputData => Unit) extends Layer {
+      override type Input = Input0
+      override type Output = Batch.Aux[OutputData, OutputDelta]
+
+      override def forward(input: Input): Output = {
+        val output = layer.forward(input)
+        hook(output.value)
+        output
       }
     }
 
@@ -72,6 +85,9 @@ object DifferentiableAny {
 
     }
 
+    def withOutputDataHook(hook: OutputData => Unit): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+      WithOutputDataHook(layer,hook)
+    }
   }
 
   implicit def toAnyLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
