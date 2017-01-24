@@ -80,6 +80,7 @@ final class XorSpec extends FreeSpec with Matchers {
     val rest1 = rest0.tail
     val field2 = rest1.head
 
+
     val encoded0 = field0.choice { _ =>
       1.0
     } { _ =>
