@@ -147,7 +147,7 @@ object Lift {
     // Workaround for https://issues.scala-lang.org/browse/SI-10008
     type Batch >: ConcreteBatch <: ConcreteBatch
 
-    private[deeplearning] type To[OutputSymbol <: Placeholder[_, _]] = Layer.Aux[Batch, OutputSymbol#Batch]
+    private[deeplearning] type To[OutputPlaceholder <: Placeholder[_, _]] = Layer.Aux[Batch, OutputPlaceholder#Batch]
 
   }
 
