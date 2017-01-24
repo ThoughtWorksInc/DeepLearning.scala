@@ -24,7 +24,9 @@ class DifferentiableTypeSpec extends FreeSpec with Matchers {
     val inputSymbol: DoublePlaceholder :**: HNilPlaceholder = implicitly
 
     implicitly[inputSymbol.Batch =:= (DoublePlaceholder :**: HNilPlaceholder)#Batch]
-    implicitly[Layer.Aux[(DoublePlaceholder :**: HNilPlaceholder)#Batch, (BooleanPlaceholder :**: HNilPlaceholder)#Batch] =:= inputSymbol.To[BooleanPlaceholder :**: HNilPlaceholder]]
+    implicitly[Layer.Aux[
+      (DoublePlaceholder :**: HNilPlaceholder)#Batch,
+      (BooleanPlaceholder :**: HNilPlaceholder)#Batch] =:= inputSymbol.To[BooleanPlaceholder :**: HNilPlaceholder]]
 
   }
 }

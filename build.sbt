@@ -1,13 +1,15 @@
 parallelExecution in Global := false
 
-sbt.dsl.dependsOn(DifferentiableBoolean,
-                  DifferentiableDouble,
-                  DifferentiableINDArray,
-                  DifferentiableHList,
-                  DifferentiableCoproduct,
-                  DifferentiableSeq,
-                  DifferentiableAny,
-                  DifferentiableNothing)
+sbt.dsl.dependsOn(
+  DifferentiableBoolean,
+  DifferentiableDouble,
+  DifferentiableINDArray,
+  DifferentiableHList,
+  DifferentiableCoproduct,
+  DifferentiableSeq,
+  DifferentiableAny,
+  DifferentiableNothing
+)
 
 lazy val Layer = project
 

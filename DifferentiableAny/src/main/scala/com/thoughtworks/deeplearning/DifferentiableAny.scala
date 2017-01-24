@@ -36,8 +36,10 @@ object DifferentiableAny {
       }
     }
 
-    final case class WithOutputDataHook[Input0 <: Batch, OutputData, OutputDelta]
-    (layer: Layer.Aux[Input0, Batch.Aux[OutputData, OutputDelta]],hook: OutputData => Unit) extends Layer {
+    final case class WithOutputDataHook[Input0 <: Batch, OutputData, OutputDelta](
+        layer: Layer.Aux[Input0, Batch.Aux[OutputData, OutputDelta]],
+        hook: OutputData => Unit)
+        extends Layer {
       override type Input = Input0
       override type Output = Batch.Aux[OutputData, OutputDelta]
 
@@ -86,7 +88,7 @@ object DifferentiableAny {
     }
 
     def withOutputDataHook(hook: OutputData => Unit): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
-      WithOutputDataHook(layer,hook)
+      WithOutputDataHook(layer, hook)
     }
   }
 

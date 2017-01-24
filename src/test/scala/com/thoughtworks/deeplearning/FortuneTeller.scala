@@ -48,11 +48,12 @@ object FortuneTeller {
   type Field3 = Enum1
 
   type InputTypePair =
-    InputField[Nullable[DoublePlaceholder]] :**: InputField[Enum0] :**: InputField[DoublePlaceholder] :**: InputField[Enum1] :**: HNilPlaceholder
+    InputField[Nullable[DoublePlaceholder]] :**: InputField[Enum0] :**: InputField[DoublePlaceholder] :**: InputField[
+      Enum1] :**: HNilPlaceholder
 
   type ExpectedLabel =
-    LabelField[Nullable[DoublePlaceholder]] :**: LabelField[Enum0] :**: LabelField[
-      DoublePlaceholder] :**: LabelField[Enum1] :**: HNilPlaceholder
+    LabelField[Nullable[DoublePlaceholder]] :**: LabelField[Enum0] :**: LabelField[DoublePlaceholder] :**: LabelField[
+      Enum1] :**: HNilPlaceholder
 
   type UnsetProbability = DoublePlaceholder
   type NullableFieldPrediction[Value <: Placeholder[_, _]] =
@@ -76,8 +77,7 @@ object FortuneTeller {
     0.5 + 0.5 / (1.0 - log(x)) - 0.5 / (1.0 - log(1.0 - x))
   }
   val probabilityLossNetwork = probabilityLoss
-  def loss(
-      implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: HNilPlaceholder)
+  def loss(implicit rowAndExpectedLabel: INDArrayPlaceholder :**: ExpectedLabel :**: HNilPlaceholder)
     : rowAndExpectedLabel.To[DoublePlaceholder] = {
     val row: rowAndExpectedLabel.To[INDArrayPlaceholder] = rowAndExpectedLabel.head
     val expectedLabel: rowAndExpectedLabel.To[ExpectedLabel] = rowAndExpectedLabel.tail.head
@@ -156,9 +156,8 @@ object FortuneTeller {
 
   def array2DToRow(implicit input: INDArrayPlaceholder): input.To[PredictionResult] = {
     val rowSeq = input.toSeq
-    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: HNilPlaceholder] = min(
-        rowSeq(0)(0),
-        1.0) :: rowSeq(0)(1) :: shapeless.HNil.toLayer
+    val field0: input.To[DoublePlaceholder :**: DoublePlaceholder :**: HNilPlaceholder] = min(rowSeq(0)(0), 1.0) :: rowSeq(
+        0)(1) :: shapeless.HNil.toLayer
     val field1: input.To[Enum0Prediction] = rowSeq(0)(2) :: rowSeq(0)(3) :: shapeless.HNil.toLayer
     val field2: input.To[DoublePlaceholder] = rowSeq(0)(4)
     val field3 = rowSeq(0)(5) :: rowSeq(0)(6) :: rowSeq(0)(7) :: shapeless.HNil.toLayer
@@ -303,18 +302,20 @@ object FortuneTeller {
       }
     }
 
-    val encodedLayerRow0 = Vector(field0Flag0,
-                                  field0Flag1,
-                                  field0Value0,
-                                  field1Flag0,
-                                  field1Value0,
-                                  field1Value1,
-                                  field2Flag0,
-                                  field2Value0,
-                                  field3Flag0,
-                                  field3Value0,
-                                  field3Value1,
-                                  field3Value2)
+    val encodedLayerRow0 = Vector(
+      field0Flag0,
+      field0Flag1,
+      field0Value0,
+      field1Flag0,
+      field1Value0,
+      field1Value1,
+      field2Flag0,
+      field2Value0,
+      field3Flag0,
+      field3Value0,
+      field3Value1,
+      field3Value2
+    )
 
     Vector(encodedLayerRow0).toINDArray
   }
