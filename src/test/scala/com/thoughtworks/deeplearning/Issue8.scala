@@ -1,20 +1,23 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
-import com.thoughtworks.deeplearning.DifferentiableAny._
-import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.Poly.MathFunctions._
-import com.thoughtworks.deeplearning.Poly.MathOps
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4s.Implicits._
 import org.scalatest.{FreeSpec, Matchers}
-import shapeless._
+import com.thoughtworks.enableMembersIf
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 final class Issue8 extends FreeSpec with Matchers {
+
+  import com.thoughtworks.deeplearning.DifferentiableINDArray._
+  import com.thoughtworks.deeplearning.DifferentiableAny._
+  import com.thoughtworks.deeplearning.Layer.Batch
+  import com.thoughtworks.deeplearning.Lift._
+  import com.thoughtworks.deeplearning.Poly.MathFunctions._
+  import com.thoughtworks.deeplearning.Poly.MathOps
+  import org.nd4j.linalg.api.ndarray.INDArray
+  import org.nd4s.Implicits._
+  import shapeless._
 
   "issue8" in {
     def layer(implicit x: From[INDArray]##T) = {
