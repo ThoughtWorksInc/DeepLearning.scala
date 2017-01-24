@@ -703,10 +703,11 @@ object DifferentiableINDArray {
 
   }
 
-  implicit def toINDArrayLayerOps[From, Input <: Batch](from: From)(
-      implicit toLayer: ToLayer.OfPlaceholder[From, Input, INDArrayPlaceholder]
+  implicit def toINDArrayLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
+      implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
+      constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input, Batch.Aux[INDArray, INDArray]]
   ): INDArrayLayerOps[Input] = {
-    new INDArrayLayerOps(toLayer(from))
+    new INDArrayLayerOps(constrait(toLayer(from)))
   }
 
   // TODO: Support Array for better performance.
