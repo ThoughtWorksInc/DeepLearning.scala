@@ -66,6 +66,6 @@ Version 3.0 will be released in late 2017.
 
 ## Acknowledges
 
-DeepLearning.scala is heavily inspired by my colleague [@MarisaKirisame](https://github.com/MarisaKirisame).
+DeepLearning.scala is heavily inspired by my colleague [@MarisaKirisame](https://github.com/MarisaKirisame). Originally, we worked together for a prototype of deep learning framework, then we split our work aprt to this project and [DeepDarkFantasy](https://github.com/ThoughtWorksInc/DeepDarkFantasy).
 
 [@milessabin](https://github.com/milessabin)'s [shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming as used in DeepLearning.scala.
