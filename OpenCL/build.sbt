@@ -14,8 +14,7 @@ val lwjglNatives: String = {
   } else if (util.Properties.isWin) {
     "natives-windows"
   } else {
-    throw new MessageOnlyException(
-      s"lwjgl does not support ${util.Properties.osName}")
+    throw new MessageOnlyException(s"lwjgl does not support ${util.Properties.osName}")
   }
 }
 
