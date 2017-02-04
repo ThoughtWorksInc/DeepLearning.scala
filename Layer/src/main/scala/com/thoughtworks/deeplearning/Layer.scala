@@ -1,5 +1,7 @@
 package com.thoughtworks.deeplearning
 
+import com.dongxiguo.fastring.Fastring
+
 import language.existentials
 import language.implicitConversions
 import language.higherKinds
@@ -73,6 +75,15 @@ object Layer {
       type Output <: Output0
     }
 
+  final case class OpenClBlock(code: Fastring, definitions: String, valueName: String)
+
+  final case class ClBatch(
+                            forwardCode: Fastring,
+                            outputDataName: String,
+                              backwardCode: Fastring,
+                            inputDeltaName:String
+                          )
+
 }
 
 trait Layer {
@@ -85,4 +96,7 @@ trait Layer {
 
   def forward(input: Input): Output
 
+  def symbolicForward(inputName:String): (Fastring, Fastring) => Fastring
+
 }
+
