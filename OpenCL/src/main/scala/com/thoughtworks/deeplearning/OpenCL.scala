@@ -22,6 +22,11 @@ object OpenCL {
 
   def compile(dslFunctions: Map[String, TypedFunction[_, _]]): Fastring = {
     var seed = 0
+    def nextId() = {
+      val id = seed
+      seed += 1
+      id
+    }
     val types = mutable.Map.empty[String, Fastring]
     val globalDeclarations = mutable.Buffer.empty[Fastring]
     val globalDefinitions = mutable.Buffer.empty[Fastring]
@@ -58,19 +63,31 @@ object OpenCL {
           }
 
           override def freshName(prefix: String): String = {
-            val id = seed
-            seed += 1
-            raw"""${prefix}_$id"""
+            raw"""${prefix}_${nextId()}"""
           }
         }
 
         val result = functionContext.getValue(dslFunction)
         val outputTypeName = functionContext.getType(outputType)
         val inputTypeName = functionContext.getType(inputType)
+        val outputValueName = raw"""output_${nextId()}"""
         fastraw"""
-$outputTypeName $functionName($inputTypeName input) {
+static size_t __output_id() {
+  uint rank = get_work_dim();
+  uint i = rank;
+  size_t skip = 1;
+  size_t result = 0;
+  do {
+    i--;
+    result += skip * get_global_id(i);
+    skip *= get_global_size(i);
+  } while(i != 0);
+  return result;
+}
+
+__kernel void $functionName(/*$inputTypeName input, */ __global $outputTypeName * $outputValueName) {
   ${localDefinitions.mkFastring}
-  return $result;
+  $outputValueName[__output_id()] = $result;
 }
 """
       }
