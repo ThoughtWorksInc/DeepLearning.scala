@@ -1,0 +1,28 @@
+---
+layout: default
+---
+
+
+
+
+<div id="main">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <nav class="toc" role="navigation">
+                    {% include docnav.html nav=site.data.doc%}
+                </nav>
+            </div>
+            <div id="content" class="8u skel-cell-important">
+                <section>
+                    <div class="col-md-9 normal-head">
+                        {{ content }}
+                        <div class="spacing"></div>
+                    </div>
+
+                </section>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,19 @@
+gems: [jekyll-paginate]
+
+name: ThoughtWorks
+description: DeepLearning.scala by ThougthWorks
+
+# News
+paginate: 6
+paginate_path: "/news/page:num"
+future: true
+
+
+assets:
+  prefix: "/assets"
+  digest: true
+  sources:
+    - _assets/css
+    - _assets/images
+    - _assets/fonts
+    - _assets/js

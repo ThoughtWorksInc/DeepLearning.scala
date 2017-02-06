@@ -1,0 +1,20 @@
+---
+layout: default
+---
+<!-- Main -->
+	<div id="main">
+		<div id="content" class="container">
+			<div class="row">
+				<section class="8u -2u">
+					<!--<a href="{{ site.prefix }}{{ page.url }}" class="image full"><img src="/assets/{{ page.featured }}" alt=""></a>-->
+					<header>
+						<h2>{{ page.title }}</h2>
+					</header>
+					<strong>{{ page.date | date_to_long_string }}</strong>
+					<div class="normal-head">
+						{{ page.content }}
+					</div>
+				</section>
+			</div>
+		</div>
+	</div>

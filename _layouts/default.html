@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<!--
+DeepLearning.scala by ThoughtWorks
+templated.co @templatedco
+Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+<head>
+	<title>DeepLearning.scala by ThoughtWorks</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+	<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,300,700,500,900' rel='stylesheet' type='text/css'>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="{{ site.github.url }}/assets/js/skel.min.js"> </script>
+	<script src="{{ site.github.url }}/assets/js/skel-panels.min.js"></script>
+	<script src="{{ site.github.url }}/assets/js/init.js"> </script>
+	<script>
+		init_init("{{ site.github.url }}/assets/css/style");
+	</script>
+	<noscript>
+		<link rel="stylesheet" href="{{ site.github.url }}/assets/css/skel-noscript.css" />
+		<link rel="stylesheet" href="{{ site.github.url }}/assets/css/style.css" />
+		<link rel="stylesheet" href="{{ site.github.url }}/assets/css/style-desktop.css" />
+	</noscript>
+	<style>
+		{% if page.background != none %}
+		#header, #tweet{
+			background-image: url("{{ site.github.url }}/assets/images/{{page.background}}");
+		}
+
+		{% endif %}
+	</style>
+</head>
+
+
+
+<body {% if page.type == "homepage" %} class='homepage' {% endif %}>
+	<!-- Header -->
+	<div id="header">
+		{% include nav.html %}
+		<div class="container">
+
+			<!-- Logo -->
+			<div id="logo">
+				<h1><a href="#">DeepLearning.scala</a></h1>
+				<span class="tag">By ThoughtWorks</span>
+			</div>
+		</div>
+	</div>
+	<!-- Header -->
+	{{ content }}
+
+	<!-- Tweet -->
+	<div id="tweet">
+		<div class="container">
+			<section>
+				<blockquote>&ldquo;In posuere eleifend odio. Quisque semper augue mattis wisi. Maecenas ligula. Pellentesque viverra vulputate enim. Aliquam erat volutpat.&rdquo;</blockquote>
+			</section>
+		</div>
+	</div>
+
+
+<!-- Footer -->
+<div id="footer">
+	<div class="container">
+		<section>
+			<header>
+				<h2>Get in touch</h2>
+				<span class="byline">Integer sit amet pede vel arcu aliquet pretium</span>
+			</header>
+			<ul class="contact">
+				<li><a href="#" class="fa fa-twitter"><span>Twitter</span></a></li>
+				<li class="active"><a href="#" class="fa fa-facebook"><span>Facebook</span></a></li>
+				<li><a href="#" class="fa fa-dribbble"><span>Pinterest</span></a></li>
+				<li><a href="#" class="fa fa-tumblr"><span>Google+</span></a></li>
+			</ul>
+		</section>
+	</div>
+</div>
+
+<!-- Copyright -->
+<div id="copyright">
+	<div class="container">
+		Design: <a href="http://templated.co">TEMPLATED</a> Images: <a href="http://unsplash.com">Unsplash</a> (<a href="http://unsplash.com/cc0">CC0</a>)
+		Jekyll Template: <a href="http://cloudcannon.com">Cloud Cannon</a>
+	</div>
+</div>
+
+</body>
+</html>
