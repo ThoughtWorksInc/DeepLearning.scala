@@ -20,7 +20,13 @@ object OpenCL {
     def getType(dslType: DslType[_]): Fastring
   }
 
-  def compile(dslFunctions: Map[String, TypedFunction[_, _]]): Fastring = {
+  final case class Kernel[Input <: HList, Output](name: String,
+                                                  numberOfDimensions: Int,
+                                                  dslFunction: DslFunction[Input, Output],
+                                                  inputType: DslType[Input],
+                                                  outputType: DslType[Output])
+
+  def compile(kernels: Kernel[_ <: HList, _]*): Fastring = {
     var seed = 0
     def nextId() = {
       val id = seed
@@ -31,47 +37,48 @@ object OpenCL {
     val globalDeclarations = mutable.Buffer.empty[Fastring]
     val globalDefinitions = mutable.Buffer.empty[Fastring]
 
-    val exportedFunctions = for ((functionName, TypedFunction(dslFunction, inputType, outputType)) <- dslFunctions)
-      yield {
-        val localDefinitions = mutable.Buffer.empty[Fastring]
+    val exportedFunctions = for {
+      Kernel(functionName, numberOfDimensions, dslFunction, inputType, outputType) <- kernels
+    } yield {
+      val localDefinitions = mutable.Buffer.empty[Fastring]
 
-        val functionCodeCache = new util.IdentityHashMap[DslFunction[_, _], Fastring]().asScala
+      val functionCodeCache = new util.IdentityHashMap[DslFunction[_, _], Fastring]().asScala
 
-        val functionContext = new Context {
-          override def getType(dslType: DslType[_]): Fastring = {
-            val code = dslType.toCode(this)
-            types.get(code.identifier) match {
-              case Some(typeName) => typeName
-              case None =>
-                globalDeclarations += code.globalDeclarations
-                globalDefinitions += code.globalDefinitions
-                types.put(code.identifier, code.typeName)
-                code.typeName
-            }
-          }
-
-          override def getValue(dslFunction: DslFunction[_, _]): Fastring = {
-            functionCodeCache.getOrElseUpdate(
-              dslFunction, {
-                val code = dslFunction.toCode(this)
-                localDefinitions += code.localDefinitions
-                globalDeclarations += code.globalDeclarations
-                globalDefinitions += code.globalDefinitions
-                code.value
-              }
-            )
-          }
-
-          override def freshName(prefix: String): String = {
-            raw"""${prefix}_${nextId()}"""
+      val functionContext = new Context {
+        override def getType(dslType: DslType[_]): Fastring = {
+          val code = dslType.toCode(this)
+          types.get(code.identifier) match {
+            case Some(typeName) => typeName
+            case None =>
+              globalDeclarations += code.globalDeclarations
+              globalDefinitions += code.globalDefinitions
+              types.put(code.identifier, code.typeName)
+              code.typeName
           }
         }
 
-        val result = functionContext.getValue(dslFunction)
-        val outputTypeName = functionContext.getType(outputType)
-        val inputTypeName = functionContext.getType(inputType)
-        val outputValueName = raw"""output_${nextId()}"""
-        fastraw"""
+        override def getValue(dslFunction: DslFunction[_, _]): Fastring = {
+          functionCodeCache.getOrElseUpdate(
+            dslFunction, {
+              val code = dslFunction.toCode(this)
+              localDefinitions += code.localDefinitions
+              globalDeclarations += code.globalDeclarations
+              globalDefinitions += code.globalDefinitions
+              code.value
+            }
+          )
+        }
+
+        override def freshName(prefix: String): String = {
+          raw"""${prefix}_${nextId()}"""
+        }
+      }
+
+      val result = functionContext.getValue(dslFunction)
+      val outputTypeName = functionContext.getType(outputType)
+      val inputTypeName = functionContext.getType(inputType)
+      val outputValueName = raw"""output_${nextId()}"""
+      fastraw"""
 static size_t __output_id() {
   uint rank = get_work_dim();
   uint i = rank;
@@ -90,7 +97,7 @@ __kernel void $functionName(/*$inputTypeName input, */ __global $outputTypeName 
   $outputValueName[__output_id()] = $result;
 }
 """
-      }
+    }
     fastraw"""
 ${globalDeclarations.mkFastring}
 ${globalDefinitions.mkFastring}
@@ -98,10 +105,6 @@ ${exportedFunctions.mkFastring}
 """
 
   }
-
-  final case class TypedFunction[Input <: HList, Output](dslFunction: DslFunction[Input, Output],
-                                                         inputType: DslType[Input],
-                                                         outputType: DslType[Output])
 
   object DslFunction {
 

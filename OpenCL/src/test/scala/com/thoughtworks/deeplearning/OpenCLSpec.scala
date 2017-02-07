@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import java.nio.{ByteBuffer, FloatBuffer, IntBuffer}
 
-import com.thoughtworks.deeplearning.OpenCL.{DslFunction, DslType, TypedFunction}
+import com.thoughtworks.deeplearning.OpenCL._
 import org.lwjgl.opencl._
 import CL10._
 import CL11._
@@ -33,8 +33,8 @@ final class OpenCLSpec extends FreeSpec with Matchers {
   "Add" in {
 
     val f = DslFunction.Add(DslFunction.DoubleLiteral(1.5), DslFunction.DoubleLiteral(1.5), DslType.DslDouble)
-    val tf = TypedFunction(f, DslType.DslHNil, DslType.DslDouble)
-    val cl = OpenCL.compile(Map("f" -> tf)).toArray[CharSequence]
+    val kernel = Kernel("f", 1, f, DslType.DslHNil, DslType.DslDouble)
+    val cl = OpenCL.compile(kernel).toArray[CharSequence]
     cl should not be empty
 //    println(cl.mkString)
     val output = Array(0.0)
