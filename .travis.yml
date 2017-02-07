@@ -6,10 +6,22 @@ addons:
  apt:
    packages:
      - graphviz
+     - cmake
+     - pkg-config
+     - python
      - ocl-icd-dev
-     - beignet
+     - libegl1-mesa-dev
      - ocl-icd-opencl-dev
-     - ocl-icd-libopencl1
+     - libdrm-dev
+     - libxfixes-dev
+     - libxext-dev
+     - llvm-3.6-dev
+     - clang-3.6
+     - libclang-3.6-dev
+     - libtinfo-dev
+     - libedit-dev
+     - zlib1g-dev
+     - beignet
 
 language: scala
 
