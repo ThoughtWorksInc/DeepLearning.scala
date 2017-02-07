@@ -21,6 +21,7 @@ matrix:
             - graphviz
     - os: osx
       osx_image: xcode8
+      language: java
       before_install:
         - brew update
         - brew install sbt
