@@ -1,32 +1,32 @@
-dist: trusty
-
 sudo: false
+
+os:
+  - linux
+  - mac
 
 addons:
  apt:
    packages:
      - graphviz
-     - cmake
-     - pkg-config
-     - python
-     - ocl-icd-dev
-     - libegl1-mesa-dev
-     - ocl-icd-opencl-dev
-     - libdrm-dev
-     - libxfixes-dev
-     - libxext-dev
-     - llvm-3.6-dev
-     - clang-3.6
-     - libclang-3.6-dev
-     - libtinfo-dev
-     - libedit-dev
-     - zlib1g-dev
-     - beignet
 
 language: scala
 
 jdk:
   - oraclejdk8
+
+before_install:
+  - if [ $TRAVIS_OS_NAME = "linux" ]; then
+      bash .travis/amd_sdk.sh;
+      tar -xjf AMD-SDK.tar.bz2;
+      AMDAPPSDK=${HOME}/AMDAPPSDK;
+      export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors;
+      mkdir -p ${OPENCL_VENDOR_PATH};
+      sh AMD-APP-SDK*.sh --tar -xf -C ${AMDAPPSDK};
+      echo libamdocl64.so > ${OPENCL_VENDOR_PATH}/amdocl64.icd;
+      export LD_LIBRARY_PATH=${AMDAPPSDK}/lib/x86_64:${LD_LIBRARY_PATH};
+      chmod +x ${AMDAPPSDK}/bin/x86_64/clinfo;
+      ${AMDAPPSDK}/bin/x86_64/clinfo;
+    fi;
 
 before_cache:
   - find $HOME/.sbt -name '*.lock' -delete
