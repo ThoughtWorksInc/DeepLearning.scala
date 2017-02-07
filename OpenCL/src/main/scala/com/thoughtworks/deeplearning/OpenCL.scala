@@ -73,28 +73,35 @@ object OpenCL {
           raw"""${prefix}_${nextId()}"""
         }
       }
+      val indexId = nextId()
+      val sizes = for (i <- (1 until numberOfDimensions).reverse.view) yield {
+        val nextDimension = i + 1
+        if (nextDimension == numberOfDimensions) {
+          fast"\n  size_t size${i}_$indexId = get_global_size($i);"
+        } else {
+          fast"\n  size_t size${i}_$indexId = size$nextDimension * get_global_size($i);"
+        }
+      }
+      val starts = for (i <- (0 until numberOfDimensions).view) yield {
+        val nextDimension = i + 1
+        if (nextDimension == numberOfDimensions) {
+          fast"\n  size_t start${i}_$indexId = get_global_id($i);"
+        } else {
+          fast"\n  size_t start${i}_$indexId = get_global_id($i) * size$nextDimension;"
+        }
+      }
+      val outputId = (for (i <- (0 until numberOfDimensions).view) yield fast"start${i}_$indexId").mkFastring("+")
 
       val result = functionContext.getValue(dslFunction)
       val outputTypeName = functionContext.getType(outputType)
       val inputTypeName = functionContext.getType(inputType)
       val outputValueName = raw"""output_${nextId()}"""
       fastraw"""
-static size_t __output_id() {
-  uint rank = get_work_dim();
-  uint i = rank;
-  size_t skip = 1;
-  size_t result = 0;
-  do {
-    i--;
-    result += skip * get_global_id(i);
-    skip *= get_global_size(i);
-  } while(i != 0);
-  return result;
-}
-
 __kernel void $functionName(/*$inputTypeName input, */ __global $outputTypeName * $outputValueName) {
   ${localDefinitions.mkFastring}
-  $outputValueName[__output_id()] = $result;
+  ${sizes.mkFastring}
+  ${starts.mkFastring}
+  $outputValueName[$outputId] = $result;
 }
 """
     }
