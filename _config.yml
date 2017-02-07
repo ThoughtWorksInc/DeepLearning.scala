@@ -12,8 +12,3 @@ future: true
 assets:
   prefix: "/assets"
   digest: true
-  sources:
-    - _assets/css
-    - _assets/images
-    - _assets/fonts
-    - _assets/js
