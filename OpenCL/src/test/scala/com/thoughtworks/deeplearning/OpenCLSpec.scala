@@ -168,21 +168,18 @@ final class OpenCLSpec extends FreeSpec with Matchers {
 //                      },
 //                      NULL
 //                    ))
-                  try {
-                    checkCLError(
-                      clSetEventCallback(
-                        event2,
-                        CL_COMPLETE,
-                        new CLEventCallbackI {
-                          override def invoke(event2: Long, status: Int, user_data: Long): Unit = {
-                            clReleaseEvent(event2)
-                          }
-                        },
-                        NULL
-                      ))
-                  } finally {
-                    clReleaseEvent(event2)
-                  }
+                  checkCLError(
+                    clSetEventCallback(
+                      event2,
+                      CL_COMPLETE,
+                      new CLEventCallbackI {
+                        override def invoke(event2: Long, status: Int, user_data: Long): Unit = {
+                          clReleaseEvent(event2)
+                        }
+                      },
+                      NULL
+                    ))
+
                 } finally {
                   clReleaseMemObject(buffer)
                 }
