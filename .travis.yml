@@ -7,6 +7,7 @@ addons:
    packages:
      - graphviz
      - ocl-icd-opencl-dev
+     - ocl-icd-libopencl1
 
 language: scala
 
