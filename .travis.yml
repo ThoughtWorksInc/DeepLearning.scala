@@ -21,7 +21,8 @@ addons:
      - libtinfo-dev
      - libedit-dev
      - zlib1g-dev
-     - beignet
+     - fglrx-updates-core
+     - fglrx-core
 
 language: scala
 
