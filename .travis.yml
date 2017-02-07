@@ -2,7 +2,7 @@ sudo: required
 
 os:
   - linux
-  - mac
+  - osx
 
 addons:
  apt:
