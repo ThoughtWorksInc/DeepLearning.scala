@@ -6,6 +6,8 @@ addons:
  apt:
    packages:
      - graphviz
+     - ocl-icd-dev
+     - beignet
      - ocl-icd-opencl-dev
      - ocl-icd-libopencl1
 
