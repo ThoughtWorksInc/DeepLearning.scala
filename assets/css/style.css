@@ -370,6 +370,8 @@
 		/*padding-left: 1em;*/
 	/*}*/
 
+/*normal-head*/
+
 	.normal-head h1, .normal-head h2,.normal-head h3,.normal-head h4,.normal-head h5,.normal-head h6 {
 		font-weight: bold;
 	}
@@ -426,13 +428,14 @@
 	}
 
 	.normal-head code {
-	font-family: Consolas, Monaco, Andale Mono, monospace;
-	line-height: 1.5;
-	font-size: 13px;
+		font-family: Consolas, Monaco, Andale Mono, monospace;
+		line-height: 1.5;
+		font-size: 13px;
 	}
 
 
 	.normal-head pre {
+		font-family: Consolas, Monaco, Andale Mono, monospace;
 		border: 1px solid #CCCCCC;
 		line-height: 1.25em;
 		overflow: auto;
@@ -1088,6 +1091,9 @@
 		color: rgba(255,255,255,.2);
 	}
 
+/*********************************************************************************/
+/* Pagination                                                                        */
+/*********************************************************************************/
 
 	.pagination {
 		display: inline-block;
