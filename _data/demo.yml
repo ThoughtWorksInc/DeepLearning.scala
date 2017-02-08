@@ -6,3 +6,7 @@
   url: /demo/GettingStarted.html
 - text: SoftmaxLinearClassifier
   url: /demo/SoftmaxLinearClassifier.html
+- text: MiniBatchGradientDescent
+  url: /demo/MiniBatchGradientDescent.html
+- text: TwoLayerNet
+  url: /demo/TwoLayerNet.html
