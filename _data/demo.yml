@@ -4,3 +4,5 @@
   url: /demo/Getting-Started.html
 - text: GettingStarted
   url: /demo/GettingStarted.html
+- text: SoftmaxLinearClassifier
+  url: /demo/SoftmaxLinearClassifier.html
