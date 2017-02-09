@@ -418,7 +418,8 @@
 
 	.normal-head h1 {
 		color: #000000;
-		font-size: 28px;
+		font-size: 32px;
+		margin-bottom: 20px;
 	}
 
 	.normal-head h2 {
