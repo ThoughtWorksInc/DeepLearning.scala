@@ -484,7 +484,7 @@
 	}
 
 	.normal-head .output pre {
-		border: 2px solid #0000CC;
+		border: 1px solid grey;
 	}
 
 	/*.normal-head pre > .normal-head code {*/
