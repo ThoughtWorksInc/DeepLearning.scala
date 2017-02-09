@@ -66,9 +66,11 @@ lazy val DifferentiableCoproduct = project.dependsOn(DifferentiableBoolean)
 lazy val BufferedLayer = project.dependsOn(Layer)
 
 // Rename to OpenCLCompiler?
-lazy val OpenCL = project
+lazy val OpenCLCompiler = project
 
-lazy val OpenCLBufferFactory = project
+lazy val Releasable = project
+
+lazy val OpenCL = project.dependsOn(Releasable)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 

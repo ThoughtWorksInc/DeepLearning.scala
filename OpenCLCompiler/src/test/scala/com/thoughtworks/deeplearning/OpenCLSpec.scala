@@ -66,7 +66,7 @@ final class OpenCLSpec extends FreeSpec with Matchers {
 
       val (deviceId, deviceCapabilities) = (for (i <- 0 until deviceIds.capacity()) yield {
         val deviceId = deviceIds.get(i)
-        val deviceCapabilities = CL.createDeviceCapabilities(deviceId, platformCapabilities);
+        val deviceCapabilities = CL.createDeviceCapabilities(deviceId, platformCapabilities)
         deviceId -> deviceCapabilities
       }).maxBy((deviceRank _).tupled)
       val contextProperties = stack.pointers(CL_CONTEXT_PLATFORM, platformId, 0)
