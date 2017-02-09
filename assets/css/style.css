@@ -935,6 +935,17 @@
 		.fa-share-alt:before{content:"\f1e0"}
 		.fa-cubes:before{content:"\f1b3"}
 
+	.anchor-link {
+		float: left;
+		margin-left: -0.5em;
+		margin-right: -0.5em;
+		color: transparent;
+	}
+
+	.anchor-link:hover {
+		color: grey;
+	}
+
 /*********************************************************************************/
 /* Social Icon Styles                                                            */
 /*********************************************************************************/
