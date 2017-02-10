@@ -24,7 +24,7 @@ scalacOptions <++= (scalaVersion) map { sv =>
 
 incOptions := incOptions.value.withNameHashing(true)
 
-crossScalaVersions := Seq("2.10.4", "2.11.2")
+crossScalaVersions := Seq("2.10.4", "2.11.8", "2.12.1")
 
 description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
 
