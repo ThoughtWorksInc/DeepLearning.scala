@@ -63,6 +63,8 @@ lazy val DifferentiableHList = project.dependsOn(Poly)
 
 lazy val DifferentiableCoproduct = project.dependsOn(DifferentiableBoolean)
 
+lazy val DifferentiableOpenCLBuffer = project.dependsOn(OpenCL, OpenCLCompiler, Layer)
+
 lazy val BufferedLayer = project.dependsOn(Layer)
 
 // Rename to OpenCLCompiler?
