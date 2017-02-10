@@ -1,5 +1,5 @@
 /*
-	Linear by TEMPLATED
+	DeepLearning.scala by ThoughtWorks
     templated.co @templatedco
     Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
 */
@@ -20,7 +20,7 @@
 	{
 		margin-bottom: 1.6em;
 	}
-	
+
 		header h2
 		{
 			font-size: 3.4em;
@@ -53,7 +53,7 @@
 	{
 		padding: 6em 0em;
 	}
-	
+
 	.homepage #content header h2
 	{
 		padding: 0.70em 0em;
@@ -68,21 +68,21 @@
 /*********************************************************************************/
 /* Footer                                                                        */
 /*********************************************************************************/
-	
+
 	#footer
 	{
 		padding: 6em 0em;
 	}
-	
+
 /*********************************************************************************/
 /* Featured                                                                      */
 /*********************************************************************************/
-	
+
 	#featured
 	{
 		padding: 6em 0em;
 	}
-	
+
 	#featured h3
 	{
 		padding: 1.5em 0em;
@@ -93,17 +93,17 @@
 	{
 		margin-bottom: 3em;
 	}
-	
+
 	#featured p
 	{
 		line-height: 2em;
 		font-size: 1.2em;
 	}
-	
+
 /*********************************************************************************/
 /* Tweet                                                                         */
 /*********************************************************************************/
-	
+
 	#tweet
 	{
 		padding: 6em 0em;
@@ -115,4 +115,4 @@
 		padding: 1em 4em;
 		line-height: 1.5em;
 		font-size: 1.8em;
-	}	
+	}

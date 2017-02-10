@@ -1,5 +1,5 @@
 /*
-	Linear by TEMPLATED
+	DeepLearning.scala by ThoughtWorks
     templated.co @templatedco
     Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
 */
@@ -21,7 +21,7 @@
 	{
 		margin-bottom: 1.6em;
 	}
-	
+
 		header h2
 		{
 			font-size: 2.8em;
@@ -39,7 +39,7 @@
 	#main
 	{
 	}
-	
+
 	.homepage #content header h2
 	{
 		font-size: 1.8em;
@@ -53,7 +53,7 @@
 /*********************************************************************************/
 /* Tweet                                                                         */
 /*********************************************************************************/
-	
+
 	#tweet
 	{
 	}
@@ -61,4 +61,4 @@
 	#tweet blockquote
 	{
 		font-size: 1.6em;
-	}	
+	}

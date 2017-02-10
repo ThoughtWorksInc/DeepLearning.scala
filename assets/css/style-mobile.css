@@ -1,5 +1,5 @@
 /*
-	Linear by TEMPLATED
+	DeepLearning.scala by ThoughtWorks
     templated.co @templatedco
     Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
 */
@@ -44,7 +44,7 @@
 	{
 		margin-top: 0 !important;
 	}
-	
+
 	.container
 	{
 		padding: 0em 1em;
@@ -60,7 +60,7 @@
 	{
 		margin-bottom: 1.6em;
 	}
-	
+
 		header h2
 		{
 			font-size: 2em;
@@ -96,7 +96,7 @@
 			font-weight: 300;
 			text-decoration: none;
 		}
-		
+
 		#titleBar .tag
 		{
 			display: none;
@@ -146,12 +146,12 @@
 			padding: 0 1em 0 1em;
 			letter-spacing: 1px;
 		}
-		
+
 			#navPanel .link:first-child
 			{
 				border-top: 0;
 			}
-			
+
 			#navPanel .link.depth-0
 			{
 				color: #fff;
@@ -163,7 +163,7 @@
 			#navPanel .indent-4 { display: inline-block; width: 4em; }
 			#navPanel .indent-5 { display: inline-block; width: 5em; }
 			#navPanel .depth-0 { color: #fff; }
-			
+
 /*********************************************************************************/
 /* Header                                                                        */
 /*********************************************************************************/
@@ -184,7 +184,7 @@
 	{
 		display: none;
 	}
-	
+
 	#nav
 	{
 		display: none;
@@ -214,16 +214,16 @@
 /*********************************************************************************/
 /* Footer                                                                        */
 /*********************************************************************************/
-	
+
 	#footer
 	{
 		padding: 4em 0em 2em 0em;
 	}
-	
+
 /*********************************************************************************/
 /* Featured                                                                      */
 /*********************************************************************************/
-	
+
 	#featured
 	{
 		padding: 4em 0em 3em 0em;
@@ -238,16 +238,16 @@
 /*********************************************************************************/
 /* Welcome                                                                       */
 /*********************************************************************************/
-	
+
 	#welcome
 	{
 		padding: 4em 0em 3em 0em;
 	}
-	
+
 /*********************************************************************************/
 /* Tweet                                                                         */
 /*********************************************************************************/
-	
+
 	#tweet
 	{
 		padding: 3em 0em 1em 0em;
@@ -260,4 +260,4 @@
 		margin: 0;
 		padding: 1em 1em;
 		font-size: 1.2em;
-	}		
+	}
