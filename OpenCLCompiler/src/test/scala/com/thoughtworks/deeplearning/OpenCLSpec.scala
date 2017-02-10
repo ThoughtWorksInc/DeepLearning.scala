@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import java.nio.{ByteBuffer, FloatBuffer, IntBuffer}
 
-import com.thoughtworks.deeplearning.OpenCL._
+import com.thoughtworks.deeplearning.OpenCLCompiler._
 import org.lwjgl.opencl._
 import CL10._
 import CL11._
@@ -16,7 +16,7 @@ import org.lwjgl.system.Pointer._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class OpenCLSpec extends FreeSpec with Matchers {
+final class OpenCLCompilerSpec extends FreeSpec with Matchers {
 
   private def checkCLError(errorCode: Int) = {
     if (errorCode != CL_SUCCESS) {
@@ -34,7 +34,7 @@ final class OpenCLSpec extends FreeSpec with Matchers {
 
     val f = DslFunction.Add(DslFunction.DoubleLiteral(1.5), DslFunction.DoubleLiteral(1.5), DslType.DslDouble)
     val kernel = Kernel("f", 1, f, DslType.DslHNil, DslType.DslDouble)
-    val cl = OpenCL.compile(kernel).toArray[CharSequence]
+    val cl = OpenCLCompiler.compile(kernel).toArray[CharSequence]
     cl should not be empty
 //    println(cl.mkString)
     val output = Array(0.0)

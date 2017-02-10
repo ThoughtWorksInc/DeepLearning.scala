@@ -4,7 +4,7 @@ import java.util
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
-import com.thoughtworks.deeplearning.OpenCL.DslFunction.Value
+import com.thoughtworks.deeplearning.OpenCLCompiler.DslFunction.Value
 import shapeless.{HList, HNil}
 
 import scala.collection.JavaConverters._
