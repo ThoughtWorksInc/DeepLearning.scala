@@ -11,7 +11,7 @@ sbt.dsl.dependsOn(
   DifferentiableNothing
 )
 
-lazy val Layer = project
+lazy val Layer = project.dependsOn(`stateless-future`)
 
 lazy val Lift = project.dependsOn(Layer)
 
@@ -69,6 +69,8 @@ lazy val BufferedLayer = project.dependsOn(Layer)
 lazy val OpenCLCompiler = project
 
 lazy val Releasable = project
+
+lazy val `stateless-future` = project
 
 lazy val OpenCL = project.dependsOn(Releasable)
 
