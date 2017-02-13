@@ -12,3 +12,6 @@ future: true
 assets:
   prefix: "/assets"
   digest: true
+
+exclude:
+  - README.md
