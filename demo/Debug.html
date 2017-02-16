@@ -1,0 +1,70 @@
+---
+layout: demo
+title: Debug
+download_path: demo_download/.
+filename: Debug.ipynb
+---
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#22914;&#20309;&#26597;&#30475;&#25968;&#25454;&#22312;&#31070;&#32463;&#32593;&#32476;&#20013;&#30340;&#26576;&#20010;&#38454;&#27573;&#30340;&#29366;&#24577;">&#22914;&#20309;&#26597;&#30475;&#25968;&#25454;&#22312;&#31070;&#32463;&#32593;&#32476;&#20013;&#30340;&#26576;&#20010;&#38454;&#27573;&#30340;&#29366;&#24577;<a class="anchor-link" href="#&#22914;&#20309;&#26597;&#30475;&#25968;&#25454;&#22312;&#31070;&#32463;&#32593;&#32476;&#20013;&#30340;&#26576;&#20010;&#38454;&#27573;&#30340;&#29366;&#24577;">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="&#20197;softmax&#19968;&#33410;&#20195;&#30721;&#20026;&#20363;">&#20197;softmax&#19968;&#33410;&#20195;&#30721;&#20026;&#20363;<a class="anchor-link" href="#&#20197;softmax&#19968;&#33410;&#20195;&#30721;&#20026;&#20363;">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>原来的代码是这样的：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">expScores</span> <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
+    <span class="n">expScores</span> <span class="o">/</span> <span class="n">expScores</span><span class="o">.</span><span class="n">sum</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+  <span class="o">}</span>
+</pre></div>
+<p>假如要查看<code>exp(scores)</code>后的状态，需要在<code>exp(scores)</code>后添加一行代码，如下：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">expScores</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span>  <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
+      <span class="o">.</span><span class="n">withOutputDataHook</span><span class="o">{</span> <span class="n">data</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">data</span><span class="o">)</span> <span class="o">}</span>
+    <span class="n">expScores</span> <span class="o">/</span> <span class="n">expScores</span><span class="o">.</span><span class="n">sum</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+  <span class="o">}</span>
+</pre></div>
+<p>也可以省略类型，简写成这样(可能有警告，可以选择无视)：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">expScores</span> <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
+      <span class="o">.</span><span class="n">withOutputDataHook</span><span class="o">{</span> <span class="n">data</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">data</span><span class="o">)</span> <span class="o">}</span>
+    <span class="n">expScores</span> <span class="o">/</span> <span class="n">expScores</span><span class="o">.</span><span class="n">sum</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+  <span class="o">}</span>
+</pre></div>
+<p><code>withOutputDataHook</code>在<code>com.thoughtworks.deeplearning#DifferentiableAny</code>下，方法签名如下：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="n">withOutputDataHook</span><span class="o">(</span><span class="n">hook</span><span class="k">:</span> <span class="kt">OutputData</span> <span class="o">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span><span class="k">:</span> <span class="kt">Layer.Aux</span><span class="o">[</span><span class="kt">Input</span>, <span class="kt">Batch.Aux</span><span class="o">[</span><span class="kt">OutputData</span>, <span class="kt">OutputDelta</span><span class="o">]]</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+<p>调用这个方法时可以传入一个自定义方法来进行输出或者其它操作，同时可以在这个自定义方法上打断点来查看<code>exp(scores)</code>后的状态。
+假如不需要debug的时候可以注释掉新增的一行，不会影响其它地方的代码。</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><a href="https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/src/main/scala/com/thoughtworks/deeplearning/tutorial/Debug.scala">完整代码</a></p>
+
+</div>
+</div>
+</div>
+ 
+
