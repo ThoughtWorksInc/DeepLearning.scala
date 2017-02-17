@@ -2,13 +2,13 @@ organization := "com.qifun"
 
 name := "stateless-future-util"
 
-version := "0.5.2-SNAPSHOT"
+version := "0.6.0-SNAPSHOT"
 
 libraryDependencies += "com.qifun" %% "stateless-future" % "0.3.2"
 
-libraryDependencies += "com.dongxiguo" %% "fastring" % "0.2.4"
+libraryDependencies += "com.dongxiguo" %% "fastring" % "0.3.1"
 
-libraryDependencies += "com.dongxiguo" %% "zero-log" % "0.3.6"
+libraryDependencies += "com.dongxiguo" %% "zero-log" % "0.4.1"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
