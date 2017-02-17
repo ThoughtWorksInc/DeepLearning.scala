@@ -140,7 +140,7 @@ trait BufferedLayer extends Layer {
 
     override final protected def forceBackward(delta: Delta): Unit = {
       synchronized {
-        currentDelta = currentDelta |+| Some(delta)
+        currentDelta |+|= Some(delta)
       }
     }
   }
