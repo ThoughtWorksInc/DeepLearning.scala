@@ -112,14 +112,14 @@ object DifferentiableSeq {
   }
 
   implicit def seqToLayer[From, Input0 <: Batch, ElementData, ElementDelta](
-      implicit elementToLayer: Lazy[ToLayer.Aux[From, Input0, ElementData, ElementDelta]])
+      implicit elementToLayer: ToLayer.Aux[From, Input0, ElementData, ElementDelta])
     : ToLayer.Aux[Seq[From], Input0, Seq[ElementData], (Int, ElementDelta)] = {
     new ToLayer[Seq[From], Input0] {
       type OutputData = Seq[ElementData]
       type OutputDelta = (Int, ElementDelta)
 
       override def apply(layers: Seq[From]): Layer.Aux[Input0, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]] = {
-        ToSeq[Input0, ElementData, ElementDelta](layers.map(elementToLayer.value(_)))
+        ToSeq[Input0, ElementData, ElementDelta](layers.map(elementToLayer(_)))
       }
     }
   }
