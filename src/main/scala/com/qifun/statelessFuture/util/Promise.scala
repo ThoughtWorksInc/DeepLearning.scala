@@ -50,7 +50,7 @@ trait Promise[AwaitResult]
   extends Any with Future.Stateful[AwaitResult] {
 
   // TODO: 把List和Tuple2合并成一个对象，以减少内存占用
-  protected val state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]]
+  protected def state: AtomicReference[Either[Queue[(AwaitResult => TailRec[Unit], Catcher[TailRec[Unit]])], Try[AwaitResult]]]
   // 为了能在Scala 2.10中编译通过
   import Promise.Scala210TailRec
 
