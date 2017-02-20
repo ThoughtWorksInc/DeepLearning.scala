@@ -76,7 +76,7 @@ lazy val `stateless-future` = project
 
 lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
-lazy val OpenCL = project.dependsOn(Releasable)
+lazy val OpenCL = project.dependsOn(Releasable, `stateless-future`)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
