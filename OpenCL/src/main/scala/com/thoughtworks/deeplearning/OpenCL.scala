@@ -133,34 +133,6 @@ object OpenCL {
     }
   }
 
-  private object ContextCallbackDispatcher {
-
-    private val managedCallbacksById = new mutable.WeakHashMap[Long, (String, ByteBuffer) => Unit]
-    private var seed = 0L
-
-    def register(managedCallback: (String, ByteBuffer) => Unit): Long = {
-      val id = seed
-      seed += 1
-      managedCallbacksById.put(id, managedCallback)
-      id
-    }
-
-    val callback: CLContextCallback = CLContextCallback.create(new CLContextCallbackI {
-      override def invoke(errInfo: Long, privateInfo: Long, size: Long, userData: Long): Unit = {
-        if (size.isValidInt) {
-          managedCallbacksById(userData).apply(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
-        } else {
-          throw new IllegalArgumentException(s"size($size) is too large")
-        }
-      }
-    })
-
-    override protected def finalize(): Unit = {
-      callback.close()
-    }
-
-  }
-
   def platforms: Seq[Platform] = {
     val Array(numberOfPlatformIDs) = {
       val a = Array(0)
@@ -237,13 +209,10 @@ object OpenCL {
         val errorCodeBuffer = stack.ints(0)
         val contextProperties = stack.pointers(CL_CONTEXT_PLATFORM, Platform.this.id, 0)
         val deviceIds = stack.pointers(devices.map(_.id): _*)
-        val context = clCreateContext(contextProperties,
-                                      deviceIds,
-                                      ContextCallbackDispatcher.callback,
-                                      ContextCallbackDispatcher.register(logger),
-                                      errorCodeBuffer)
+        val callbackContainer = CLContextCallback.create(new ManagedContextCallbackI(logger))
+        val context = clCreateContext(contextProperties, deviceIds, callbackContainer, NULL, errorCodeBuffer)
         checkErrorCode(errorCodeBuffer.get(0))
-        new Context(context)
+        new Context(context, callbackContainer)
       } finally {
         stack.close()
       }
@@ -251,7 +220,18 @@ object OpenCL {
 
   }
 
+  final class ManagedContextCallbackI(logger: (String, ByteBuffer) => Unit) extends CLContextCallbackI {
+    override def invoke(errInfo: Long, privateInfo: Long, size: Long, user_data: Long): Unit = {
+      if (size.isValidInt) {
+        logger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
+      } else {
+        throw new IllegalArgumentException(s"numberOfBytes($size) is too large")
+      }
+    }
+  }
+
   trait SizeOf[T] {
+    // TODO: add encoding / decoding methods
     def numberOfBytes: Int
   }
 
@@ -287,7 +267,7 @@ object OpenCL {
 
   }
 
-  final class Context(val handle: Long) extends Releasable {
+  final class Context(val handle: Long, callback: CLContextCallback) extends Releasable {
 
     def createCommandQueue(device: Device, properties: Long): CommandQueue = {
       val a = Array(0)
@@ -299,11 +279,20 @@ object OpenCL {
 
     def duplicate(): Context = {
       checkErrorCode(clRetainContext(handle))
-      new Context(handle)
+      new Context(handle, callback)
     }
 
     override protected def release(): Unit = {
-      checkErrorCode(clReleaseContext(handle))
+      val rcBuffer = Array(0)
+      checkErrorCode(clGetContextInfo(handle, CL_CONTEXT_REFERENCE_COUNT, rcBuffer, null))
+      rcBuffer match {
+        case Array(1) =>
+          // It's the last reference
+          checkErrorCode(clReleaseContext(handle))
+          callback.close()
+        case _ =>
+          checkErrorCode(clReleaseContext(handle))
+      }
     }
 
     def createBuffer[Element](size: Long)(implicit sizeOf: SizeOf[Element]): Buffer[Element] = {
@@ -334,11 +323,15 @@ object OpenCL {
     def readRaw[Element](buffer: Buffer[Element], preconditionEvents: Event[_]*)(
         implicit sizeOf: SizeOf[Element]): ReadBuffer = {
 
-      val output: ByteBuffer = ByteBuffer.allocateDirect(sizeOf.numberOfBytes * buffer.size)
+      val output: ByteBuffer = BufferUtils.createByteBuffer(buffer.numberOfBytes)
       val readBufferEvent = {
         val stack = stackPush()
         try {
-          val inputEventBuffer = stack.pointers(preconditionEvents.view.map(_.handle): _*)
+          val inputEventBuffer = if (preconditionEvents.isEmpty) {
+            null
+          } else {
+            stack.pointers(preconditionEvents.view.map(_.handle): _*)
+          }
           val outputEventBuffer = stack.pointers(0L)
           checkErrorCode(
             clEnqueueReadBuffer(handle, buffer.handle, CL_FALSE, 0, output, inputEventBuffer, outputEventBuffer))
@@ -347,6 +340,7 @@ object OpenCL {
           stack.close()
         }
       }
+      checkErrorCode(clFlush(handle))
       new ReadBuffer(readBufferEvent, output)
     }
 
@@ -386,21 +380,24 @@ object OpenCL {
 
     override def onComplete(handler: Result => TailRec[Unit])(
         implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+      object Callback extends CLEventCallbackI {
+        override final def invoke(event: Long, status: Int, user_data: Long): Unit = {
+          container.close()
+          val Some(resultOrException) = value
+          (resultOrException match {
+            case Success(result) =>
+              handler(result)
+            case Failure(exception) =>
+              catcher(exception)
+          }).result
+        }
+        val container: CLEventCallback = CLEventCallback.create(this)
+      }
       checkErrorCode(
         clSetEventCallback(
           handle,
           CL_COMPLETE,
-          new CLEventCallbackI {
-            override def invoke(event: Long, status: Int, user_data: Long): Unit = {
-              val Some(resultOrException) = value
-              (resultOrException match {
-                case Success(result) =>
-                  handler(result)
-                case Failure(exception) =>
-                  catcher(exception)
-              }).result
-            }
-          },
+          Callback.container,
           NULL
         )
       )
@@ -410,14 +407,14 @@ object OpenCL {
 
   final class Buffer[Element](val handle: Long) extends Releasable {
 
-    def size: Int = {
+    def numberOfBytes: Int = {
       val sizeBuffer: Array[Long] = Array(0L)
       checkErrorCode(clGetMemObjectInfo(handle, CL_MEM_SIZE, sizeBuffer, null))
       val Array(value) = sizeBuffer
       if (value.isValidInt) {
         value.toInt
       } else {
-        throw new IllegalStateException(s"Buffer's size($value) is too large")
+        throw new IllegalStateException(s"Buffer's numberOfBytes($value) is too large")
       }
     }
 
