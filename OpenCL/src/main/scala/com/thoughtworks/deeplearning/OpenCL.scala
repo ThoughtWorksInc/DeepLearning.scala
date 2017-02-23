@@ -7,14 +7,15 @@ import org.lwjgl.opencl._
 import CL10._
 import CL11._
 import CL12._
-import org.lwjgl.system.MemoryUtil._
 import org.lwjgl.{BufferUtils, PointerBuffer}
+import org.lwjgl.system.MemoryUtil.{memASCII, _}
 import org.lwjgl.system.MemoryStack._
 import org.lwjgl.system.Pointer._
 
 import scala.collection.mutable
 import com.qifun.statelessFuture.Future
-import org.lwjgl.system.{JNI, MemoryUtil}
+import com.thoughtworks.deeplearning.Memory.{Address, Box}
+import org.lwjgl.system.{JNI, MemoryUtil, Pointer}
 
 import scala.util.control.Exception.Catcher
 import scala.util.control.TailCalls
@@ -245,47 +246,10 @@ data: $data""")
         val context =
           clCreateContext(contextProperties, deviceIds, Context.callback, memNewWeakGlobalRef(logger), errorCodeBuffer)
         checkErrorCode(errorCodeBuffer.get(0))
-        new Context(context, logger)
+        new Context(Address(context), logger)
       } finally {
         stack.close()
       }
-    }
-
-  }
-
-  trait SizeOf[T] {
-    // TODO: add encoding / decoding methods
-    def numberOfBytes: Int
-  }
-
-  object SizeOf {
-
-    implicit object ByteSizeOf extends SizeOf[Byte] {
-      override def numberOfBytes: Int = java.lang.Byte.BYTES
-    }
-
-    implicit object ShortSizeOf extends SizeOf[Short] {
-      override def numberOfBytes: Int = java.lang.Short.BYTES
-    }
-
-    implicit object IntSizeOf extends SizeOf[Int] {
-      override def numberOfBytes: Int = java.lang.Integer.BYTES
-    }
-
-    implicit object LongSizeOf extends SizeOf[Long] {
-      override def numberOfBytes: Int = java.lang.Long.BYTES
-    }
-
-    implicit object CharSizeOf extends SizeOf[Char] {
-      override def numberOfBytes: Int = java.lang.Character.BYTES
-    }
-
-    implicit object FloatSizeOf extends SizeOf[Float] {
-      override def numberOfBytes: Int = java.lang.Float.BYTES
-    }
-
-    implicit object DoubleSizeOf extends SizeOf[Double] {
-      override def numberOfBytes: Int = java.lang.Double.BYTES
     }
 
   }
@@ -293,15 +257,15 @@ data: $data""")
   /**
     * @param logger keep the reference to keep the weak reference to logger
     */
-  final class Context private[OpenCL] (val handle: Long, logger: AnyRef) extends CheckedCloseable {
+  final class Context private[OpenCL] (val handle: Address, logger: AnyRef) extends CheckedCloseable {
 
     def createProgramWithSource(sourceCode: TraversableOnce[CharSequence]): Program = {
       val stack = stackPush()
       try {
         val errorCodeBuffer = stack.ints(0)
-        val programHandle = clCreateProgramWithSource(handle, sourceCode.toArray, errorCodeBuffer)
+        val programHandle = clCreateProgramWithSource(handle.toLong, sourceCode.toArray, errorCodeBuffer)
         checkErrorCode(errorCodeBuffer.get(0))
-        new Program(programHandle)
+        new Program(Address(programHandle))
       } finally {
         stack.close()
       }
@@ -309,49 +273,95 @@ data: $data""")
 
     def createCommandQueue(device: Device, properties: Long): CommandQueue = {
       val a = Array(0)
-      val commandQueue = clCreateCommandQueue(handle, device.id, properties, a);
+      val commandQueue = clCreateCommandQueue(handle.toLong, device.id, properties, a);
       checkErrorCode(a(0))
-      new CommandQueue(commandQueue)
+      new CommandQueue(Address(commandQueue))
 
     }
 
     def duplicate(): Context = {
-      checkErrorCode(clRetainContext(handle))
+      checkErrorCode(clRetainContext(handle.toLong))
       new Context(handle, logger)
     }
 
     override protected def forceClose(): Unit = {
-      checkErrorCode(clReleaseContext(handle))
+      checkErrorCode(clReleaseContext(handle.toLong))
     }
 
-    def createBuffer[Element](size: Long)(implicit sizeOf: SizeOf[Element]): Buffer[Element] = {
+    def createBuffer[Element](size: Long)(implicit sizeOf: Memory[Element]): Buffer[Element] = {
       val stack = stackPush()
       try {
         val errorCodeBuffer = stack.ints(0)
-        val buffer = clCreateBuffer(handle, CL_MEM_READ_WRITE, sizeOf.numberOfBytes * size, errorCodeBuffer)
+        val buffer =
+          clCreateBuffer(handle.toLong, CL_MEM_READ_WRITE, sizeOf.numberOfBytesPerElement * size, errorCodeBuffer)
         checkErrorCode(errorCodeBuffer.get(0))
-        new Buffer(buffer)
+        new Buffer(Address(buffer))
       } finally {
         stack.pop()
       }
     }
 
   }
+  object NDRangeKernelEvent {
+    final case class Dimension(globalWorkOffset: Long, globalWorkSize: Long, localWorkSize: Long)
+  }
+  final class NDRangeKernelEvent(val handle: Address) extends Event[Unit] {
+    override protected def result: Unit = ()
+  }
 
-  final class CommandQueue private[OpenCL] (val handle: Long) extends CheckedCloseable {
+  final class CommandQueue private[OpenCL] (val handle: Address) extends CheckedCloseable {
 
     def duplicate(): CommandQueue = {
-      checkErrorCode(clRetainCommandQueue(handle))
+      checkErrorCode(clRetainCommandQueue(handle.toLong))
       new CommandQueue(handle)
     }
 
     override protected def forceClose(): Unit = {
-      checkErrorCode(clReleaseCommandQueue(handle))
+      checkErrorCode(clReleaseCommandQueue(handle.toLong))
     }
 
-    def readRaw[Element](buffer: Buffer[Element], preconditionEvents: Event[_]*)(
-        implicit sizeOf: SizeOf[Element]): ReadBuffer = {
+    def ndRangeKernel(kernel: Kernel,
+                      dimensions: TraversableOnce[NDRangeKernelEvent.Dimension],
+                      preconditionEvents: Event[_]*): NDRangeKernelEvent = {
 
+      val globalWorkOffsetBuffer = mutable.Buffer.empty[Long]
+      val globalWorkSizeBuffer = mutable.Buffer.empty[Long]
+      val localWorkSizeBuffer = mutable.Buffer.empty[Long]
+      for (dimension <- dimensions) {
+        globalWorkOffsetBuffer += dimension.globalWorkOffset
+        globalWorkSizeBuffer += dimension.globalWorkSize
+        localWorkSizeBuffer += dimension.localWorkSize
+      }
+      val stack = stackPush()
+      val outputEvent = try {
+        val inputEventBuffer = if (preconditionEvents.isEmpty) {
+          null
+        } else {
+          stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
+        }
+        val outputEventBuffer = stack.pointers(0L)
+        checkErrorCode(
+          clEnqueueNDRangeKernel(
+            handle.toLong,
+            kernel.handle.toLong,
+            globalWorkOffsetBuffer.length,
+            stack.pointers(globalWorkOffsetBuffer: _*),
+            stack.pointers(globalWorkSizeBuffer: _*),
+            stack.pointers(localWorkSizeBuffer: _*),
+            inputEventBuffer,
+            outputEventBuffer
+          )
+        )
+        outputEventBuffer.get(0)
+      } finally {
+        stack.close()
+      }
+      checkErrorCode(clFlush(handle.toLong))
+      new NDRangeKernelEvent(Address(outputEvent))
+    }
+
+    def readBuffer[Element](buffer: Buffer[Element], preconditionEvents: Event[_]*)(
+        implicit sizeOf: Memory[Element]): ReadBufferEvent = {
       val output: ByteBuffer = BufferUtils.createByteBuffer(buffer.numberOfBytes)
       val readBufferEvent = {
         val stack = stackPush()
@@ -359,40 +369,47 @@ data: $data""")
           val inputEventBuffer = if (preconditionEvents.isEmpty) {
             null
           } else {
-            stack.pointers(preconditionEvents.view.map(_.handle): _*)
+            stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
           }
           val outputEventBuffer = stack.pointers(0L)
           checkErrorCode(
-            clEnqueueReadBuffer(handle, buffer.handle, CL_FALSE, 0, output, inputEventBuffer, outputEventBuffer))
+            clEnqueueReadBuffer(handle.toLong,
+                                buffer.handle.toLong,
+                                CL_FALSE,
+                                0,
+                                output,
+                                inputEventBuffer,
+                                outputEventBuffer))
           outputEventBuffer.get(0)
         } finally {
           stack.close()
         }
       }
-      checkErrorCode(clFlush(handle))
-      new ReadBuffer(readBufferEvent, output)
+      checkErrorCode(clFlush(handle.toLong))
+      new ReadBufferEvent(Address(readBufferEvent), output)
     }
 
   }
 
-  final class ReadBuffer private[OpenCL] (override val handle: Long, protected val result: ByteBuffer)
+  // TODO: typed buffer
+  final class ReadBufferEvent private[OpenCL] (override val handle: Address, protected val result: ByteBuffer)
       extends Event[ByteBuffer] {
-    def duplicate(): ReadBuffer = {
-      checkErrorCode(clRetainEvent(handle))
-      new ReadBuffer(handle, result)
+    def duplicate(): ReadBufferEvent = {
+      checkErrorCode(clRetainEvent(handle.toLong))
+      new ReadBufferEvent(handle, result)
     }
   }
 
   trait Event[Result] extends CheckedCloseable with Future.Stateful[Result] {
-    val handle: Long
+    val handle: Address
 
     override protected def forceClose(): Unit = {
-      checkErrorCode(clReleaseEvent(handle))
+      checkErrorCode(clReleaseEvent(handle.toLong))
     }
 
     final protected def commandExecutionStatus: Int = {
       val a = Array(0)
-      checkErrorCode(clGetEventInfo(handle, CL_EVENT_COMMAND_EXECUTION_STATUS, a, null))
+      checkErrorCode(clGetEventInfo(handle.toLong, CL_EVENT_COMMAND_EXECUTION_STATUS, a, null))
       a(0)
     }
 
@@ -425,7 +442,7 @@ data: $data""")
       }
       checkErrorCode(
         clSetEventCallback(
-          handle,
+          handle.toLong,
           CL_COMPLETE,
           Callback.container,
           NULL
@@ -435,11 +452,24 @@ data: $data""")
     }
   }
 
-  final class Buffer[Element] private[OpenCL] (val handle: Long) extends CheckedCloseable {
+  object Buffer {
+
+    implicit def bufferBox[Element]: Box.Aux[Buffer[Element], Address] = new Box[Buffer[Element]] {
+      override type Raw = Address
+
+      override def box(raw: Raw): Buffer[Element] =
+        new Buffer[Element](raw)
+
+      override def unbox(boxed: Buffer[Element]): Raw = boxed.handle
+    }
+  }
+
+  // TODO: remove the `Element` type parameter
+  final class Buffer[Element] private[OpenCL] (val handle: Address) extends CheckedCloseable {
 
     def numberOfBytes: Int = {
       val sizeBuffer: Array[Long] = Array(0L)
-      checkErrorCode(clGetMemObjectInfo(handle, CL_MEM_SIZE, sizeBuffer, null))
+      checkErrorCode(clGetMemObjectInfo(handle.toLong, CL_MEM_SIZE, sizeBuffer, null))
       val Array(value) = sizeBuffer
       if (value.isValidInt) {
         value.toInt
@@ -449,12 +479,12 @@ data: $data""")
     }
 
     def duplicate(): Buffer[Element] = {
-      checkErrorCode(clRetainMemObject(handle))
+      checkErrorCode(clRetainMemObject(handle.toLong))
       new Buffer(handle)
     }
 
     override protected def forceClose(): Unit = {
-      checkErrorCode(clReleaseMemObject(handle))
+      checkErrorCode(clReleaseMemObject(handle.toLong))
     }
   }
 
@@ -468,15 +498,15 @@ data: $data""")
     }
   }
 
-  final class Program private[OpenCL] (val handle: Long) extends CheckedCloseable {
+  final class Program private[OpenCL] (val handle: Address) extends CheckedCloseable {
 
     def duplicate(): Program = {
-      checkErrorCode(clRetainProgram(handle))
+      checkErrorCode(clRetainProgram(handle.toLong))
       new Program(handle)
     }
 
     override protected def forceClose(): Unit = {
-      checkErrorCode(clReleaseProgram(handle))
+      checkErrorCode(clReleaseProgram(handle.toLong))
     }
 
     def build(devices: Seq[Device], options: CharSequence = ""): Future.Stateless[Unit] = new Future.Stateless[Unit] {
@@ -486,7 +516,7 @@ data: $data""")
         val stack = stackPush()
         try {
           checkErrorCode(
-            clBuildProgram(handle, stack.pointers(devices.map(_.id): _*), options, callback.container, NULL))
+            clBuildProgram(handle.toLong, stack.pointers(devices.map(_.id): _*), options, callback.container, NULL))
         } finally {
           stack.close()
         }
@@ -498,30 +528,43 @@ data: $data""")
       override def onComplete(handler: Unit => TailRec[Unit])(
           implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
         val callback = new Program.ManagedCallback(handler)
-        checkErrorCode(clBuildProgram(handle, null, options, callback.container, NULL))
+        checkErrorCode(clBuildProgram(handle.toLong, null, options, callback.container, NULL))
         TailCalls.done(())
       }
     }
 
     def build(): Future.Stateless[Unit] = build("")
 
-    def createKernel(kernelName: CharSequence) = {
+    def createKernel(kernelName: CharSequence): Kernel = {
       val errorCodeBuffer = Array(0)
-      val kernelHandle = clCreateKernel(handle, kernelName, errorCodeBuffer)
+      val kernelHandle = clCreateKernel(handle.toLong, kernelName, errorCodeBuffer)
       checkErrorCode(errorCodeBuffer(0))
-      new Kernel(kernelHandle)
+      new Kernel(Address(kernelHandle))
     }
 
   }
 
-  final class Kernel private[OpenCL] (val handle: Long) extends CheckedCloseable {
+  final class Kernel private[OpenCL] (val handle: Address) extends CheckedCloseable {
+
+    def setArg[A](argIndex: Int, a: A)(implicit memory: Memory[A]): Unit = {
+      val stack = stackPush()
+      try {
+        val byteBuffer = stack.malloc(memory.numberOfBytesPerElement)
+        memory.put(memory.fromByteBuffer(byteBuffer), 0, a)
+        checkErrorCode(nclSetKernelArg(handle.toLong, argIndex, byteBuffer.remaining, memAddress(byteBuffer)))
+      } finally {
+        stack.close()
+      }
+
+    }
+
     def duplicate(): Kernel = {
-      checkErrorCode(clRetainKernel(handle))
+      checkErrorCode(clRetainKernel(handle.toLong))
       new Kernel(handle)
     }
 
     override protected def forceClose(): Unit = {
-      checkErrorCode(clReleaseKernel(handle))
+      checkErrorCode(clReleaseKernel(handle.toLong))
     }
   }
 
