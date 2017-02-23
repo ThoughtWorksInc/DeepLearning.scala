@@ -25,7 +25,7 @@ object DifferentiableDouble {
 
     override type Delta = Double
 
-    protected final def monoid = implicitly[Monoid[Delta]]
+    protected final def monoid = cats.instances.double.catsKernelStdGroupForDouble
 
   }
 
