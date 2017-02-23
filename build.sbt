@@ -11,7 +11,7 @@ sbt.dsl.dependsOn(
   DifferentiableNothing
 )
 
-lazy val Layer = project.dependsOn(`stateless-future`)
+lazy val Layer = project.dependsOn(`stateless-future-util`)
 
 lazy val Lift = project.dependsOn(Layer)
 
