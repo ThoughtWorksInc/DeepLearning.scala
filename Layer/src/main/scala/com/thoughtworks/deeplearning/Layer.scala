@@ -1,5 +1,7 @@
 package com.thoughtworks.deeplearning
 
+import com.qifun.statelessFuture.Future
+
 import language.existentials
 import language.implicitConversions
 import language.higherKinds
@@ -50,16 +52,23 @@ object Layer {
     type Data
     type Delta
 
+    // TODO: rename to `duplicate`?
+    /**
+      * Returns a new [[Batch]] that shares the same [[value]] and [[backward]] behavior with this [[Batch]].
+      * @note The newly created [[Batch]] and this [[Batch]] must be [[close]]d independently.
+      */
     def addReference(): Batch.Aux[Data, Delta]
 
-    protected def forceBackward(delta: Delta): Unit
+    protected def forceBackward(delta: Delta): Future.Stateless[Unit]
 
     def isTrainable: Boolean
 
     @inline
-    final def backward(delta: => Delta): Unit = {
+    final def backward(delta: Delta): Future.Stateless[Unit] = {
       if (isTrainable) {
         forceBackward(delta)
+      } else {
+        Future(())
       }
     }
 
@@ -83,6 +92,6 @@ trait Layer {
 
   type Output <: Batch
 
-  def forward(input: Input): Output
+  def forward(input: Input): Future.Stateless[Output]
 
 }

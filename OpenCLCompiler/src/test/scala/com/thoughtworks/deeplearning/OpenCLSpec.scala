@@ -34,7 +34,7 @@ final class OpenCLSpec extends FreeSpec with Matchers {
 
     val f = DslFunction.Add(DslFunction.DoubleLiteral(1.5), DslFunction.DoubleLiteral(1.5), DslType.DslDouble)
     val kernel = Kernel("f", 1, f, DslType.DslHNil, DslType.DslDouble)
-    val cl = OpenCLCompiler.compile(kernel).toArray[CharSequence]
+    val cl = OpenCLCompiler.toSourceCode(kernel).toArray[CharSequence]
     cl should not be empty
 //    println(cl.mkString)
     val output = Array(0.0)
@@ -69,11 +69,12 @@ final class OpenCLSpec extends FreeSpec with Matchers {
         val deviceCapabilities = CL.createDeviceCapabilities(deviceId, platformCapabilities)
         deviceId -> deviceCapabilities
       }).maxBy((deviceRank _).tupled)
-      val contextProperties = stack.pointers(CL_CONTEXT_PLATFORM, platformId, 0)
 
       val callback = CLContextCallback.create(new CLContextCallbackI {
         override def invoke(errInfo: Long, privateInfo: Long, size: Long, userData: Long): Unit = {
-          println(memUTF8(errInfo))
+          println(memASCII(errInfo))
+          memByteBuffer(privateInfo, size.toInt)
+
         }
       })
       try {
@@ -81,6 +82,7 @@ final class OpenCLSpec extends FreeSpec with Matchers {
         stack.push()
         val context = try {
           val errorCode = stack.ints(0)
+          val contextProperties = stack.pointers(CL_CONTEXT_PLATFORM, platformId, 0)
           val context = clCreateContext(contextProperties, deviceId, callback, NULL, errorCode)
           checkCLError(errorCode.get(0))
           context
@@ -124,7 +126,6 @@ final class OpenCLSpec extends FreeSpec with Matchers {
                 }
                 try {
                   checkCLError(clSetKernelArg1p(kernel, 0, buffer))
-
                   stack.push()
                   val event = try {
                     val eventPointer = stack.pointers(0L)

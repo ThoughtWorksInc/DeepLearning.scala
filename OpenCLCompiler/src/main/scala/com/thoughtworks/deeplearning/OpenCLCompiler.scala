@@ -27,7 +27,7 @@ object OpenCLCompiler {
                                                   inputType: DslType[Input],
                                                   outputType: DslType[Output])
 
-  def compile(kernels: Kernel[_ <: HList, _]*): Fastring = {
+  def toSourceCode(kernels: Kernel[_ <: HList, _]*): Fastring = {
     var seed = 0
     def nextId() = {
       val id = seed
