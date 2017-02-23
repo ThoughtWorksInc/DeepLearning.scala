@@ -5,9 +5,9 @@ import java.io.Closeable
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait Releasable extends Closeable {
+trait CheckedCloseable extends Closeable {
 
-  protected def release(): Unit
+  protected def forceClose(): Unit
 
   private var isReleased = false
 
@@ -20,10 +20,16 @@ trait Releasable extends Closeable {
       wasRelease
     }
     if (!wasRelease) {
-      release()
+      forceClose()
     }
   }
 
-  override protected final def finalize(): Unit = close()
+}
+
+object CheckedCloseable {
+
+  trait FinallyCloseable extends Closeable {
+    override protected final def finalize(): Unit = close()
+  }
 
 }

@@ -7,13 +7,14 @@ import org.lwjgl.opencl._
 import CL10._
 import CL11._
 import CL12._
-import org.lwjgl.BufferUtils
 import org.lwjgl.system.MemoryUtil._
+import org.lwjgl.{BufferUtils, PointerBuffer}
 import org.lwjgl.system.MemoryStack._
 import org.lwjgl.system.Pointer._
 
 import scala.collection.mutable
 import com.qifun.statelessFuture.Future
+import org.lwjgl.system.{JNI, MemoryUtil}
 
 import scala.util.control.Exception.Catcher
 import scala.util.control.TailCalls
@@ -153,7 +154,7 @@ object OpenCL {
     }
   }
 
-  final case class Device(id: Long, capabilities: CLCapabilities) {
+  final case class Device private[OpenCL] (id: Long, capabilities: CLCapabilities) {
 
     def longInfo(paramName: Int): Long = {
       val buffer = Array[Long](0L)
@@ -164,7 +165,7 @@ object OpenCL {
 
     /**
       * Describes the command-queue properties supported by the device.
-      * @see [[CL_DEVICE_QUEUE_PROPERTIES]]
+      * @see [[org.lwjgl.opencl.CL10.CL_DEVICE_QUEUE_PROPERTIES]]
       * @return
       */
     def queueProperties: Long = longInfo(CL_DEVICE_QUEUE_PROPERTIES)
@@ -172,7 +173,40 @@ object OpenCL {
     def deviceType: Long = longInfo(CL_DEVICE_TYPE)
   }
 
-  final case class Platform(id: Long, capabilities: CLCapabilities) {
+  object Context {
+
+    override protected def finalize(): Unit = {
+      callback.close()
+    }
+
+    @volatile
+    var defaultLogger: (String, ByteBuffer) => Unit = { (errorInfo: String, data: ByteBuffer) =>
+      // TODO: Add a test for in the case that Context is closed
+      Console.err.println(raw"""An OpenCL notify comes out after its corresponding handler is freed
+message: $errorInfo
+data: $data""")
+    }
+
+    val callback: CLContextCallback = CLContextCallback.create(new CLContextCallbackI {
+      override def invoke(errInfo: Long, privateInfo: Long, size: Long, userData: Long): Unit = {
+        val errorInfo = memASCII(errInfo)
+        val data = memByteBuffer(privateInfo, size.toInt)
+        memGlobalRefToObject[(String, ByteBuffer) => Unit](userData) match {
+          case null =>
+            defaultLogger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
+          case logger =>
+            if (size.isValidInt) {
+              logger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
+            } else {
+              throw new IllegalArgumentException(s"numberOfBytes($size) is too large")
+            }
+        }
+      }
+    })
+
+  }
+
+  final case class Platform private[OpenCL] (id: Long, capabilities: CLCapabilities) {
 
     def cpus: Seq[Device] = devicesByType(CL_DEVICE_TYPE_CPU)
 
@@ -190,7 +224,6 @@ object OpenCL {
       }
       val stack = stackPush()
       try {
-
         val deviceIds = stack.mallocPointer(numberOfDevices)
         checkErrorCode(clGetDeviceIDs(Platform.this.id, deviceType, deviceIds, null: IntBuffer))
         for (i <- 0 until deviceIds.capacity()) yield {
@@ -209,25 +242,15 @@ object OpenCL {
         val errorCodeBuffer = stack.ints(0)
         val contextProperties = stack.pointers(CL_CONTEXT_PLATFORM, Platform.this.id, 0)
         val deviceIds = stack.pointers(devices.map(_.id): _*)
-        val callbackContainer = CLContextCallback.create(new ManagedContextCallbackI(logger))
-        val context = clCreateContext(contextProperties, deviceIds, callbackContainer, NULL, errorCodeBuffer)
+        val context =
+          clCreateContext(contextProperties, deviceIds, Context.callback, memNewWeakGlobalRef(logger), errorCodeBuffer)
         checkErrorCode(errorCodeBuffer.get(0))
-        new Context(context, callbackContainer)
+        new Context(context, logger)
       } finally {
         stack.close()
       }
     }
 
-  }
-
-  final class ManagedContextCallbackI(logger: (String, ByteBuffer) => Unit) extends CLContextCallbackI {
-    override def invoke(errInfo: Long, privateInfo: Long, size: Long, user_data: Long): Unit = {
-      if (size.isValidInt) {
-        logger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
-      } else {
-        throw new IllegalArgumentException(s"numberOfBytes($size) is too large")
-      }
-    }
   }
 
   trait SizeOf[T] {
@@ -267,7 +290,22 @@ object OpenCL {
 
   }
 
-  final class Context(val handle: Long, callback: CLContextCallback) extends Releasable {
+  /**
+    * @param logger keep the reference to keep the weak reference to logger
+    */
+  final class Context private[OpenCL] (val handle: Long, logger: AnyRef) extends CheckedCloseable {
+
+    def createProgramWithSource(sourceCode: TraversableOnce[CharSequence]): Program = {
+      val stack = stackPush()
+      try {
+        val errorCodeBuffer = stack.ints(0)
+        val programHandle = clCreateProgramWithSource(handle, sourceCode.toArray, errorCodeBuffer)
+        checkErrorCode(errorCodeBuffer.get(0))
+        new Program(programHandle)
+      } finally {
+        stack.close()
+      }
+    }
 
     def createCommandQueue(device: Device, properties: Long): CommandQueue = {
       val a = Array(0)
@@ -279,20 +317,11 @@ object OpenCL {
 
     def duplicate(): Context = {
       checkErrorCode(clRetainContext(handle))
-      new Context(handle, callback)
+      new Context(handle, logger)
     }
 
-    override protected def release(): Unit = {
-      val rcBuffer = Array(0)
-      checkErrorCode(clGetContextInfo(handle, CL_CONTEXT_REFERENCE_COUNT, rcBuffer, null))
-      rcBuffer match {
-        case Array(1) =>
-          // It's the last reference
-          checkErrorCode(clReleaseContext(handle))
-          callback.close()
-        case _ =>
-          checkErrorCode(clReleaseContext(handle))
-      }
+    override protected def forceClose(): Unit = {
+      checkErrorCode(clReleaseContext(handle))
     }
 
     def createBuffer[Element](size: Long)(implicit sizeOf: SizeOf[Element]): Buffer[Element] = {
@@ -309,14 +338,14 @@ object OpenCL {
 
   }
 
-  final class CommandQueue(val handle: Long) extends Releasable {
+  final class CommandQueue private[OpenCL] (val handle: Long) extends CheckedCloseable {
 
     def duplicate(): CommandQueue = {
       checkErrorCode(clRetainCommandQueue(handle))
       new CommandQueue(handle)
     }
 
-    override protected def release(): Unit = {
+    override protected def forceClose(): Unit = {
       checkErrorCode(clReleaseCommandQueue(handle))
     }
 
@@ -346,17 +375,18 @@ object OpenCL {
 
   }
 
-  final class ReadBuffer(override val handle: Long, protected val result: ByteBuffer) extends Event[ByteBuffer] {
+  final class ReadBuffer private[OpenCL] (override val handle: Long, protected val result: ByteBuffer)
+      extends Event[ByteBuffer] {
     def duplicate(): ReadBuffer = {
       checkErrorCode(clRetainEvent(handle))
       new ReadBuffer(handle, result)
     }
   }
 
-  trait Event[Result] extends Releasable with Future.Stateful[Result] {
+  trait Event[Result] extends CheckedCloseable with Future.Stateful[Result] {
     val handle: Long
 
-    override protected def release(): Unit = {
+    override protected def forceClose(): Unit = {
       checkErrorCode(clReleaseEvent(handle))
     }
 
@@ -405,7 +435,7 @@ object OpenCL {
     }
   }
 
-  final class Buffer[Element](val handle: Long) extends Releasable {
+  final class Buffer[Element] private[OpenCL] (val handle: Long) extends CheckedCloseable {
 
     def numberOfBytes: Int = {
       val sizeBuffer: Array[Long] = Array(0L)
@@ -423,8 +453,75 @@ object OpenCL {
       new Buffer(handle)
     }
 
-    override protected def release(): Unit = {
+    override protected def forceClose(): Unit = {
       checkErrorCode(clReleaseMemObject(handle))
+    }
+  }
+
+  object Program {
+    private[Program] final class ManagedCallback(handler: Unit => TailRec[Unit]) extends CLProgramCallbackI {
+      override def invoke(program: Long, user_data: Long): Unit = {
+        container.close()
+        handler(()).result
+      }
+      val container: CLProgramCallback = CLProgramCallback.create(this)
+    }
+  }
+
+  final class Program private[OpenCL] (val handle: Long) extends CheckedCloseable {
+
+    def duplicate(): Program = {
+      checkErrorCode(clRetainProgram(handle))
+      new Program(handle)
+    }
+
+    override protected def forceClose(): Unit = {
+      checkErrorCode(clReleaseProgram(handle))
+    }
+
+    def build(devices: Seq[Device], options: CharSequence = ""): Future.Stateless[Unit] = new Future.Stateless[Unit] {
+      override def onComplete(handler: Unit => TailRec[Unit])(
+          implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+        val callback = new Program.ManagedCallback(handler)
+        val stack = stackPush()
+        try {
+          checkErrorCode(
+            clBuildProgram(handle, stack.pointers(devices.map(_.id): _*), options, callback.container, NULL))
+        } finally {
+          stack.close()
+        }
+        TailCalls.done(())
+      }
+    }
+
+    def build(options: CharSequence): Future.Stateless[Unit] = new Future.Stateless[Unit] {
+      override def onComplete(handler: Unit => TailRec[Unit])(
+          implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+        val callback = new Program.ManagedCallback(handler)
+        checkErrorCode(clBuildProgram(handle, null, options, callback.container, NULL))
+        TailCalls.done(())
+      }
+    }
+
+    def build(): Future.Stateless[Unit] = build("")
+
+    def createKernel(kernelName: CharSequence) = {
+      val errorCodeBuffer = Array(0)
+      val kernelHandle = clCreateKernel(handle, kernelName, errorCodeBuffer)
+      checkErrorCode(errorCodeBuffer(0))
+      new Kernel(kernelHandle)
+    }
+
+  }
+
+  final class Kernel private[OpenCL] (val handle: Long) extends CheckedCloseable {
+    def duplicate(): Kernel = {
+      checkErrorCode(clRetainKernel(handle))
+      new Kernel(handle)
+    }
+
+    override protected def forceClose(): Unit = {
+      checkErrorCode(clReleaseKernel(handle))
     }
   }
 
