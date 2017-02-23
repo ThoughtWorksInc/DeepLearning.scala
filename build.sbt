@@ -68,7 +68,9 @@ lazy val DifferentiableOpenCLBuffer = project.dependsOn(OpenCL, OpenCLCompiler, 
 lazy val BufferedLayer = project.dependsOn(Layer)
 
 // Rename to OpenCLCompiler?
-lazy val OpenCLCompiler = project
+lazy val OpenCLCompiler = project.dependsOn(Memory)
+
+lazy val Memory = project
 
 lazy val Releasable = project
 
@@ -76,7 +78,7 @@ lazy val `stateless-future` = project
 
 lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
-lazy val OpenCL = project.dependsOn(Releasable, `stateless-future`)
+lazy val OpenCL = project.dependsOn(Releasable, `stateless-future`, Memory)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
