@@ -5,7 +5,7 @@ import java.util
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
 import com.thoughtworks.deeplearning.OpenCLCompiler.DslFunction.Value
-import shapeless.{HList, HNil}
+import shapeless._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -144,7 +144,10 @@ ${exportedFunctions.mkFastring}
     }
 
     final case class Unpacked(unpacked: Seq[Fastring]) extends Value {
-      override def packed = fast"{ ${unpacked.mkFastring(", ")} }"
+      override def packed = unpacked match {
+        case Seq(single) => single
+        case _ => fast"{ ${unpacked.mkFastring(", ")} }"
+      }
     }
 
     final case class Packed(packed: Fastring, numberOfFields: Int) extends Value {
@@ -152,6 +155,12 @@ ${exportedFunctions.mkFastring}
         for (i <- 0 until numberOfFields) yield {
           fast"$packed._$i"
         }
+      }
+    }
+
+    final case object HNilLiteral extends DslFunction[HList, HNil] {
+      override def toCode(context: Context): Code = {
+        Code(value = Unpacked(Nil))
       }
     }
 
@@ -182,6 +191,17 @@ ${exportedFunctions.mkFastring}
         )
       }
     }
+
+    final case class HCons[Input <: HList, Head, Tail <: HList](operand1: DslFunction[Input, Head],
+                                                                operand2: DslFunction[Input, Tail])
+        extends DslFunction[Input, Head :: Tail] {
+      override def toCode(context: Context): Code = {
+        Code(
+          value = Unpacked(context.getValue(operand1).unpacked ++ context.getValue(operand2).unpacked)
+        )
+      }
+    }
+
   }
 
   trait DslFunction[-Input <: HList, Output] {
@@ -191,6 +211,15 @@ ${exportedFunctions.mkFastring}
   }
 
   object DslType {
+
+    implicit def dslHCons[Head, Tail <: HList](implicit headType: DslType[Head],
+                                               tailType: DslType[Tail]): DslType[Head :: Tail] = {
+      new DslType[Head :: Tail] {
+        override def flatten: Seq[String] = {
+          headType.flatten ++ tailType.flatten
+        }
+      }
+    }
 
     implicit object DslHNil extends DslType[HNil] {
       override def flatten = Nil
