@@ -26,54 +26,36 @@ object DifferentiableOpenCLBuffer {
     override type Delta = OpenCL.Buffer[ElementDelta]
   }
 
-  trait KernelLayerCode {
-    type InputData
-    type OutputData
-    type OutputDelta
-    type InputDelta
-    type Upvalues <: HList
-    type Cache <: HList
-
-    def forward: OpenCLCompiler.DslFunction[InputData :: Upvalues, OutputData :: Cache :: HNil]
-    def backward: OpenCLCompiler.DslFunction[OutputDelta :: Cache :: HNil, InputDelta]
-
-    // TODO: DslType
-
-  }
-
-  object KernelLayerCode {
-    type Aux[InputData0, InputDelta0, OutputData0, OutputDelta0, Upvalues0 <: HList, Cache0 <: HList] =
-      KernelLayerCode {
-        type InputData = InputData0
-        type InputDelta = InputDelta0
-        type OutputData = OutputData0
-        type OutputDelta = OutputDelta0
-        type Upvalues = Upvalues0
-        type Cache = Cache0
-      }
-  }
-
   trait KernelLayer {
     type InputData
     type InputDelta
     type OutputData
     type OutputDelta
-    type UpvalueLayers <: HList
+//    type Upvalue <: HList
+    type Upvalue <: HList // List of OpenCL.Buffer
     type Cache <: HList
 
-    def code(context: OpenCLCompiler.Context)(
-        implicit outputDataMapper: shapeless.ops.hlist.Mapper[KernelLayer.OutputDataMapper.type, UpvalueLayers])
-      : KernelLayerCode.Aux[InputData, InputDelta, OutputData, OutputDelta, outputDataMapper.Out, Cache]
+    // TODO: upvalues
+
+    def forward: OpenCLCompiler.DslFunction[InputData :: Upvalue, OutputData :: Cache]
+    def backward: OpenCLCompiler.DslFunction[OutputDelta :: Cache, HNil]
+    def inputDataType: DslType[InputData]
+    def inputDeltaType: DslType[InputDelta]
+    def outputDataType: DslType[OutputData]
+    def outputDeltaType: DslType[OutputDelta]
+    def upvalueType: DslType[Upvalue]
+    def cacheType: DslType[Cache]
+
   }
 
   object KernelLayer {
-    type Aux[InputData0, InputDelta0, OutputData0, OutputDelta0, UpvalueLayers0 <: HList, Cache0 <: HList] =
+    type Aux[InputData0, InputDelta0, OutputData0, OutputDelta0, Upvalue0 <: HList, Cache0 <: HList] =
       KernelLayer {
         type InputData = InputData0
         type InputDelta = InputDelta0
         type OutputData = OutputData0
         type OutputDelta = OutputDelta0
-        type UpvalueLayers = UpvalueLayers0
+        type Upvalue = Upvalue0
         type Cache = Cache0
       }
 
@@ -89,52 +71,65 @@ object DifferentiableOpenCLBuffer {
   // TODO: Merge kernel layers into normal layers
   object KernelLayers {
 
-    final case class Literal[Data0](override val value: Data0) extends KernelLayer with Layer with Batch {
-
-      /**
-        * Returns a new [[Batch]] that shares the same [[value]] and [[backward]] behavior with this [[Batch]].
-        *
-        * @note The newly created [[Batch]] and this [[Batch]] must be [[close]]d independently.
-        */
-      override def addReference(): Batch.Aux[Data0, Delta] = this
-      override protected def forceBackward(delta: Delta): Stateless[Unit] = Future(())
-      override def isTrainable: Boolean = ???
-
-      override type Delta = Any
-      override type InputData = Any
-      override type InputDelta = Nothing
-
-      override type Input = Batch
-      override type Output = Batch.Aux[Data, Delta]
-
-      override type OutputData = Data
-      override type OutputDelta = Delta
-      override type Data = Data0
+    final case class FloatLiteral[InputData0, InputDelta0](value: Float,
+                                                           inputDataType: DslType[InputData0],
+                                                           inputDeltaType: DslType[InputDelta0])
+        extends KernelLayer {
+      override type InputData = InputData0
+      override type InputDelta = InputDelta0
+      override type OutputData = Float
+      override type OutputDelta = Float
       override type Cache = HNil
-      override type UpvalueLayers = HNil
-      override def code(context: Context)(implicit outputDataMapper: Mapper[OutputDataMapper.type, UpvalueLayers]) =
-        ???
+      override type Upvalue = HNil
 
-      override def forward(input: Input): Stateless[Output] = Future(this)
+      override def forward: DslFunction[InputData :: Upvalue, OutputData :: Cache] = {
+        OpenCLCompiler.DslFunction
+          .HCons(OpenCLCompiler.DslFunction.FloatLiteral(value), OpenCLCompiler.DslFunction.HNilLiteral)
+      }
 
-      override def close(): Unit = {}
+      override def backward: DslFunction[OutputDelta :: Cache, HNil] = ???
+
+      override def upvalueType: DslType.DslHNil.type = DslType.DslHNil
+
+      override def cacheType: DslType.DslHNil.type = DslType.DslHNil
+
+      override def outputDataType: DslType[Float] = DslType.DslFloat
+
+      override def outputDeltaType: DslType[Float] = DslType.DslFloat
     }
 
   }
 
   // TODO: closure and upvalue support
 
+  def floatLiteral[InputData0, InputDelta0](value: Float)(implicit inputDataType: DslType[InputData0],
+                                                          inputDeltaType: DslType[InputDelta0]) = {
+    new KernelLayers.FloatLiteral(value, inputDataType, inputDeltaType)
+  }
+
   object Layers {
-    final case class Fill[InputData,
-                          InputDelta,
-                          ElementData: Memory,
-                          ElementDelta,
-                          UpvalueLayers <: HList,
-                          Cache <: HList](
+
+    final case class Literal[InputData0, InputDelta0, OutputData0, OutputDelta0](value: OutputData0)
+        extends Layer
+        with Batch {
+      override type Input = Batch.Aux[InputData0, InputDelta0]
+      override type Output = Batch.Aux[OutputData0, OutputDelta0]
+      override type Data = OutputData0
+      override type Delta = OutputDelta0
+
+      override def forward(input: Input) = Future(this)
+      override def addReference() = this
+      override protected def forceBackward(delta: Delta) = Future(())
+      override def isTrainable: Boolean = false
+
+      override def close(): Unit = {}
+    }
+
+    final case class Fill[InputData, InputDelta, ElementData: Memory, ElementDelta, Upvalue <: HList, Cache <: HList](
         clContext: OpenCL.Context,
         clCommandQueue: OpenCL.CommandQueue,
         size: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[Int, Float]],
-        f: KernelLayer.Aux[InputData, InputDelta, ElementData, ElementDelta, UpvalueLayers, Cache] // TODO: replace f to a KernelLayer
+        differentiableKernel: KernelLayer.Aux[InputData, InputDelta, ElementData, ElementDelta, Upvalue, Cache]
     ) extends Layer {
       override type Input = Batch.Aux[InputData, InputDelta]
 
@@ -145,16 +140,23 @@ object DifferentiableOpenCLBuffer {
           val sizeBatch = size.forward(input).await
           val clBuffer = clContext.createBuffer[ElementData](sizeBatch.value)
 
-          val f = DslFunction.FloatLiteral(3.14f)
-          val kernelTree = Kernel("f", 1, f, DslType.DslHNil, DslType.DslFloat)
+          val forwardInputType = DslType.dslHCons(differentiableKernel.inputDataType, differentiableKernel.upvalueType)
+          val forwardReturnType = DslType.dslHCons(differentiableKernel.outputDataType, differentiableKernel.cacheType)
 
-          val code = OpenCLCompiler.toSourceCode(kernelTree)
-          val program = clContext.createProgramWithSource(code)
+          val forwordKernelTree = Kernel[InputData :: Upvalue, ElementData :: Cache]("f",
+                                                                                     1,
+                                                                                     differentiableKernel.forward,
+                                                                                     forwardInputType,
+                                                                                     forwardReturnType)
+
+          val forwardCode = OpenCLCompiler.toSourceCode(forwordKernelTree)
+//          println(forwardCode.mkString)
+          val program = clContext.createProgramWithSource(forwardCode)
           program.build().await
-          val kernel = program.createKernel("f")
-          kernel.setArg(0, clBuffer)
+          val forwordKernel = program.createKernel("f")
+          forwordKernel.setArg(0, clBuffer)
           clCommandQueue
-            .ndRangeKernel(kernel, Seq(Dimension(0L, sizeBatch.value.toLong, sizeBatch.value.toLong)))
+            .ndRangeKernel(forwordKernel, Seq(Dimension(0L, sizeBatch.value.toLong, sizeBatch.value.toLong)))
             .await
 
           // TODO: run kernel

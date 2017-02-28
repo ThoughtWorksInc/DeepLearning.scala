@@ -3,7 +3,6 @@ package com.thoughtworks.deeplearning
 import java.nio.ByteBuffer
 import OpenCL._
 import com.qifun.statelessFuture.Future
-import com.thoughtworks.deeplearning.DifferentiableOpenCLBuffer.KernelLayers.Literal
 import org.lwjgl.opencl.CL10._
 import org.lwjgl.opencl.{CL10, CL20}
 import org.scalatest._
@@ -40,7 +39,6 @@ final class DifferentiableOpenCLBufferSpec extends AsyncFreeSpec with Matchers {
           throw new IllegalStateException(s"clGetDeviceInfo error: $errorCode")
       }
     }
-    println(supportedProperties)
     val clContext = { () =>
       platform.createContext({ (errorInfo, data) =>
         println(errorInfo)
@@ -61,18 +59,18 @@ final class DifferentiableOpenCLBufferSpec extends AsyncFreeSpec with Matchers {
            } else { 0 })
       )
 
-    val fill = DifferentiableOpenCLBuffer.Layers.Fill[Any, Nothing, Float, Any, HNil, HNil](clContext,
-                                                                                            commandQueue,
-                                                                                            Literal(1),
-                                                                                            Literal(3.14f))
+    val fill = DifferentiableOpenCLBuffer.Layers.Fill[HNil, HNil, Float, Float, HNil, HNil](
+      clContext,
+      commandQueue,
+      DifferentiableOpenCLBuffer.Layers.Literal(1),
+      DifferentiableOpenCLBuffer.floatLiteral[HNil, HNil](3.14f))
 
     Future {
-      val outputBatch = fill.forward(Literal(new AnyRef)).await
+      val outputBatch = fill.forward(DifferentiableOpenCLBuffer.Layers.Literal(HNil)).await
       val r = commandQueue.readBuffer(outputBatch.value)
       r.await
       r.await
       val b = r.await
-      println("read end")
       val f = b.asFloatBuffer
       f.capacity should be(1)
       f.get(0) should be(3.14f)
