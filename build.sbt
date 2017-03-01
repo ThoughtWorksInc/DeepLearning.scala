@@ -57,7 +57,7 @@ lazy val DifferentiableNothing = project.dependsOn(Lift)
 lazy val DifferentiableSeq = project.dependsOn(DifferentiableInt)
 
 lazy val DifferentiableINDArray =
-  project.dependsOn(DifferentiableInt, DifferentiableDouble)
+  project.dependsOn(DifferentiableInt, DifferentiableDouble, DifferentiableSeq)
 
 lazy val DifferentiableHList = project.dependsOn(Poly)
 

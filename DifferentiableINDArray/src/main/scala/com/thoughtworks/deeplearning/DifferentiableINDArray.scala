@@ -8,18 +8,26 @@ import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods
+import com.thoughtworks.deeplearning.Poly.MathMethods.*
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.api.ops.impl.transforms.IsMax
+import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.indexing.BooleanIndexing
+import org.nd4j.linalg.indexing.conditions.Conditions
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.ops.transforms.Transforms.sign
+import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
 
 import language.higherKinds
 import language.implicitConversions
+import scala.collection.immutable.IndexedSeq
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -40,13 +48,13 @@ object DifferentiableINDArray {
 
   // TODO: Add a test for this method and auto-broadcasting on n-dimension arrays for n > 2
   private[DifferentiableINDArray] def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = {
-    val singleElementDimension = shape.view.zip(outputDeltaValue.shape).zipWithIndex.collect {
+    val singleElementDimension = (shape: Seq[Int]).view.zip(outputDeltaValue.shape).zipWithIndex.collect {
       case ((1, originSize), dimension) if originSize > 1 => dimension
     }
     if (singleElementDimension.isEmpty) {
       outputDeltaValue
     } else {
-      outputDeltaValue.sum(singleElementDimension: _*).reshape(shape: _*)
+      outputDeltaValue.sum(singleElementDimension.force: _*).reshape(shape: _*)
     }
   }
 
@@ -247,11 +255,12 @@ object DifferentiableINDArray {
           }
 
           override val value: Data = {
-            val ndarray = upstream.value
-            val doubleArray = ndarray.data.asDouble()
-            for (i <- (0 until ndarray.rows).view) yield {
-              doubleArray.view(i * ndarray.columns, (i + 1) * ndarray.columns)
-            }
+            val ndarray: INDArray = upstream.value
+            val doubleArray: Seq[Double] = ndarray.data.asDouble()
+            doubleArray.grouped(ndarray.columns).toSeq
+//            for (i <- (0 until ndarray.rows)) yield {
+//              doubleArray.view(i * ndarray.columns, (i + 1) * ndarray.columns)
+//            }
           }
         }
       }
@@ -298,7 +307,7 @@ object DifferentiableINDArray {
         override val isTrainable = upstreams.exists(_.exists(_.isTrainable))
 
         override protected def forceBackward(delta: INDArray): Unit = {
-          for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
+          for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.view.zipWithIndex) {
             upstream.backward(delta(i, j))
           }
 
@@ -545,6 +554,188 @@ object DifferentiableINDArray {
       }
     }
 
+    final case class Im2col[Input0 <: Batch](
+        operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+        kernel: Array[Int],
+        stride: Array[Int],
+        padding: Array[Int]
+    ) extends BufferedLayer.Unary {
+      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+
+      type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+
+          private val upstreamShape = {
+            upstream.value.shape()
+          }
+
+          val value = Convolution.im2col(upstream.value, kernel, stride, padding)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream.backward(Convolution.col2im(outputDelta, stride, padding, upstreamShape(2), upstreamShape(3)))
+          }
+        }
+      }
+    }
+
+    final case class Reshape[Input0 <: Batch](
+        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+        override val operand2: Layer.Aux[Input0, Batch.Aux[Seq[Int], (Int, Float)]])
+        extends BufferedLayer.Binary {
+      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+
+      override type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+
+          private val upstreamShape = {
+            upstream1.value.shape
+          }
+
+          override val value = upstream1.value.reshape(upstream2.value: _*)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream1.backward(outputDelta.reshape(upstreamShape: _*))
+          }
+        }
+      }
+    }
+
+    final case class Permute[Input0 <: Batch](
+        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+        override val operand2: Layer.Aux[Input0, Batch.Aux[Seq[Int], (Int, Float)]])
+        extends BufferedLayer.Binary {
+      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+
+      override type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+
+          private val upstreamShape: Seq[Int] = {
+            upstream1.value.shape()
+          }
+
+          override val value = upstream1.value.permute(upstream2.value: _*)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+
+            val indexSeq: IndexedSeq[Int] =
+              upstreamShape.indices
+                .map(
+                  index => upstream2.value.toSeq.indexOf(index)
+                )
+
+            upstream1.backward(
+              outputDelta.permute(indexSeq: _*)
+            )
+          }
+        }
+      }
+    }
+
+    final case class MaxPool[Input0 <: Batch](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+                                              dimensions: Int*)
+        extends BufferedLayer.Unary {
+      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+
+      override type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+
+          if (dimensions.length > 2) {
+            throw new UnsupportedOperationException("dimentions's length must <2")
+          }
+
+          private val upstreamShape = {
+            upstream.value.shape()
+          }
+
+          private val isReshape = {
+            dimensions.length > 1
+          }
+
+          private val lastShapeSize = {
+            upstreamShape.reverse
+              .take(dimensions.length)
+              .product
+          }
+
+          private val afterMaxPoolShape = {
+            upstreamShape.take(upstreamShape.length - dimensions.length)
+          }
+
+          private val reshapeTo = {
+            afterMaxPoolShape :+ lastShapeSize
+          }
+
+          override val value =
+            if (isReshape)
+              upstream.value
+                .reshape(reshapeTo: _*)
+                .max(dimensions(0))
+            else upstream.value.max(dimensions(0))
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            val a = upstream.value
+            val upStreamDup = a.dup()
+            val rows = ArrayUtil.prod(a.length())
+            val isMax: INDArray =
+              if (isReshape) {
+                Nd4j.getExecutioner
+                  .execAndReturn(new IsMax(upStreamDup.reshape(reshapeTo: _*), dimensions(0)))
+              } else {
+                Nd4j.getExecutioner
+                  .execAndReturn(new IsMax(upStreamDup, dimensions(0)))
+              }
+
+            val outputDelta1d = a
+//              (if (isReshape) {
+//                 outputDelta
+//                   .repeat(-1, Seq(upstreamShape(dimensions(1))): _*)
+//                   .permute(1, 0, 3, 2)
+//                   .repeat(-1, Seq(upstreamShape(dimensions(0))): _*)
+//                   .permute(1, 0, 3, 2)
+//              } else {
+//                 outputDelta.repeat(dimensions(0), Seq(lastShapeSize): _*)
+//              }).reshape('c', rows, 1)
+            upstream.backward(
+              isMax
+                .reshape('c', rows, 1)
+                .muliColumnVector(outputDelta1d)
+                .reshape(upstreamShape: _*)
+            )
+          }
+        }
+      }
+    }
+
+    final case class Shape[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends Layer {
+      override def forward(input: Input0): Output = {
+        val upstream = operand.forward(input)
+        try {
+          val upstreamShape = upstream.value.shape()
+          Literal[Seq[Int]](upstreamShape)
+        } finally {
+          upstream.close()
+        }
+      }
+      override type Input = Input0
+      override type Output = Literal[Seq[Int]]
+    }
+
   }
 
   import Layers._
@@ -685,6 +876,43 @@ object DifferentiableINDArray {
       Dot(operand, right)
     }
 
+    def im2col(kernel: Array[Int],
+               stride: Array[Int],
+               padding: Array[Int]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Im2col(operand, kernel, stride, padding)
+    }
+
+    def dynamicReshape(
+        newShape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Reshape(operand, newShape)
+    }
+
+    /**
+      * @usecase def reshape(newShape: Layer.Aux[Input, Batch.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      * @usecase def reshape(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      */
+    def reshape[Element](newShape: Element*)(
+        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Reshape(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
+    }
+
+    /**
+      * @usecase def permute(newShape: Layer.Aux[Input, Batch.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      * @usecase def permute(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      */
+    def permute[Element](newShape: Element*)(
+        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Permute(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
+    }
+
+    def maxPool(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      MaxPool(operand, dimensions: _*)
+    }
+
+    def shape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = {
+      Shape(operand)
+    }
+
     def unary_- : Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Negative(operand)
     }
@@ -705,7 +933,8 @@ object DifferentiableINDArray {
 
   implicit def toINDArrayLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
-      constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input, Batch.Aux[INDArray, INDArray]]
+      constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input,
+                                                                                    Batch.Aux[INDArray, INDArray]]
   ): INDArrayLayerOps[Input] = {
     new INDArrayLayerOps(constrait(toLayer(from)))
   }
@@ -717,7 +946,7 @@ object DifferentiableINDArray {
 
   implicit def toToINDArrayLayerOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
       implicit toLayer: ToLayer.OfPlaceholder[Element, Input, DoublePlaceholder]): ToINDArrayLayerOps[Input] = {
-    new ToINDArrayLayerOps(layerVector.view.map(_.view.map(toLayer(_))))
+    new ToINDArrayLayerOps(layerVector.map(_.map(toLayer(_))))
   }
 
   implicit final class INDArrayOps(ndArray: INDArray) {
