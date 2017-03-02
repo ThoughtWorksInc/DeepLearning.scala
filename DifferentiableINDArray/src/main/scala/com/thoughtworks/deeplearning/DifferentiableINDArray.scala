@@ -909,9 +909,8 @@ object DifferentiableINDArray {
     }
 
     private def toArray(tuple2: (Int, Int)): Array[Int] = {
-      tuple2 match {
-        case (one, two) => Array(one, two)
-      }
+      val (one, two) = tuple2
+      Array(one, two)
     }
 
     /**
@@ -945,22 +944,22 @@ object DifferentiableINDArray {
       //permute(0, 4, 5, 1, 2, 3)
       val permutedCol: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] = Permute(col, Literal(Seq(0, 4, 5, 1, 2, 3)))
 
-      val depth_kernel_kernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
+      val depthKernelKernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
         Times(
           Times(depth, Literal(kernel._1)),
           Literal(kernel._2)
         )
 
-      val count_x_y: Layer.Aux[Input, Batch.Aux[Int, Float]] = Times(Times(count, y_axis), x_axis)
+      val countXaxisYaxis: Layer.Aux[Input, Batch.Aux[Int, Float]] = Times(Times(count, y_axis), x_axis)
 
-      val aSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(count_x_y, depth_kernel_kernel)
+      val aSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(countXaxisYaxis, depthKernelKernel)
 
       val reshapeOperandTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(aSeq)
 
       //reshape(imageCount * inputSizeY * inputSizeX,(depth * KernelSize * KernelSize).toLayer)
       val operandCol2d = Reshape(permutedCol, reshapeOperandTo)
 
-      val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depth_kernel_kernel)
+      val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
 
       val reshapeWeightTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
 
@@ -974,11 +973,11 @@ object DifferentiableINDArray {
 
       val plusResult = PlusINDArray(dotResult, bias)
 
-      val count_y_x_kernelNumber: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] =
+      val SeqOfCountYaxisXaxisKernelNumber: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] =
         Seq(count, y_axis, x_axis, kernelNumber)
 
       val reshapeResultTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] =
-        DifferentiableSeq.Layers.ToSeq(count_y_x_kernelNumber)
+        DifferentiableSeq.Layers.ToSeq(SeqOfCountYaxisXaxisKernelNumber)
 
       //reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
       val reshapedResult = Reshape(plusResult, reshapeResultTo)
