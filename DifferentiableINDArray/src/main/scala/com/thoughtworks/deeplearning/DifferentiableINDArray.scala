@@ -8,6 +8,7 @@ import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableInt.Layers.Times
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
@@ -24,10 +25,12 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.ops.transforms.Transforms.sign
 import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
+import shapeless._
 
 import language.higherKinds
 import language.implicitConversions
 import scala.collection.immutable.IndexedSeq
+import scala.reflect.ClassTag
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -903,6 +906,87 @@ object DifferentiableINDArray {
     def permute[Element](newShape: Element*)(
         implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Permute(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
+    }
+
+    private def toArray(tuple2: (Int, Int)): Array[Int] = {
+      tuple2 match {
+        case (one, two) => Array(one, two)
+      }
+    }
+
+    /**
+      * calculate the convolution
+      * @param weight 4 dimensions weight
+      * @param bias 1 dimension bias
+      * @param kernel the kernel width and height
+      * @param stride the stride width and height
+      * @param padding the padding width and height
+      * @return convolution result
+      */
+    def convn(weight: Layer.Aux[Input, INDArrayPlaceholder.Batch],
+              bias: Layer.Aux[Input, INDArrayPlaceholder.Batch],
+              kernel: (Int, Int),
+              stride: (Int, Int),
+              padding: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      val shapeOfOperand = Shape(operand)
+      val count = DifferentiableSeq.Layers.Get(shapeOfOperand, 0)
+      val depth = DifferentiableSeq.Layers.Get(shapeOfOperand, 1)
+      val y_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 2)
+      val x_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 3)
+      val kernelNumber = DifferentiableSeq.Layers.Get(Shape(weight), 0)
+
+      //input
+      //  .im2col(Array(KernelSize, KernelSize),
+      //    Array(Stride, Stride),
+      //    Array(Padding, Padding))
+      val col: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] =
+        Im2col(operand, toArray(kernel), toArray(stride), toArray(padding))
+
+      //permute(0, 4, 5, 1, 2, 3)
+      val permutedCol: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] = Permute(col, Literal(Seq(0, 4, 5, 1, 2, 3)))
+
+      val depth_kernel_kernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
+        Times(
+          Times(depth, Literal(kernel._1)),
+          Literal(kernel._2)
+        )
+
+      val count_x_y: Layer.Aux[Input, Batch.Aux[Int, Float]] = Times(Times(count, y_axis), x_axis)
+
+      val aSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(count_x_y, depth_kernel_kernel)
+
+      val reshapeOperandTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(aSeq)
+
+      //reshape(imageCount * inputSizeY * inputSizeX,(depth * KernelSize * KernelSize).toLayer)
+      val operandCol2d = Reshape(permutedCol, reshapeOperandTo)
+
+      val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depth_kernel_kernel)
+
+      val reshapeWeightTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
+
+      //weight.reshape(kernelNumber, KernelSize * KernelSize * depth)
+      val reshapedWeight = Reshape(weight, reshapeWeightTo)
+
+      //permute(1, 0)
+      val permutedWeight = Permute(reshapedWeight, Literal(Seq(1, 0)))
+
+      val dotResult = Dot(operandCol2d, permutedWeight)
+
+      val plusResult = PlusINDArray(dotResult, bias)
+
+      val count_y_x_kernelNumber: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] =
+        Seq(count, y_axis, x_axis, kernelNumber)
+
+      val reshapeResultTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] =
+        DifferentiableSeq.Layers.ToSeq(count_y_x_kernelNumber)
+
+      //reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
+      val reshapedResult = Reshape(plusResult, reshapeResultTo)
+
+      val permuteResultTo = Literal(Seq(0, 3, 1, 2))
+
+      //permute(0, 3, 1, 2)
+      Permute(reshapedResult, permuteResultTo)
     }
 
     def maxPool(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {

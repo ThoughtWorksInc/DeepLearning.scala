@@ -492,4 +492,30 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     train()
   }
 
+  "INDArray convn INDArray" in {
+    val input = (1 to 16).toNDArray.reshape(1, 1, 4, 4)
+
+    def convolution(implicit input: From[INDArray]##T): To[INDArray]##T = {
+      val weight: To[INDArray]##T = Nd4j.ones(1, 1, 3, 3)
+      val bias = Nd4j.zeros(1)
+      input.convn(weight, bias, (3, 3), (1, 1), (1, 1))
+    }
+
+    val result: INDArray = convolution.predict(input)
+
+    val resultShape = result.shape.toSeq
+    //noinspection ZeroIndexToHead
+    resultShape(0) should be(1)
+    resultShape(1) should be(1)
+    resultShape(2) should be(4)
+    resultShape(3) should be(4)
+
+    val expectResult = Array(14.00, 24.00, 30.00, 22.00, 33.00, 54.00, 63.00, 45.00, 57.00, 90.00, 99.00, 69.00, 46.00,
+      72.00, 78.00, 54.00).toNDArray
+      .reshape(1, 1, 4, 4)
+
+    result.eq(expectResult).sumT should be(16)
+
+  }
+
 }
