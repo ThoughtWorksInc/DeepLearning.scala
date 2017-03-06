@@ -32,8 +32,10 @@ final class OpenCLSpec extends FreeSpec with Matchers {
 
   "Add" in {
 
-    val f = DslFunction.Add(DslFunction.DoubleLiteral(1.5), DslFunction.DoubleLiteral(1.5), DslType.DslDouble)
-    val kernel = Kernel("f", 1, f, DslType.DslHNil, DslType.DslDouble)
+    val f = DslFunction.HCons(
+      DslFunction.Add(DslFunction.DoubleLiteral(1.5), DslFunction.DoubleLiteral(1.5), DslType.DslDouble),
+      DslFunction.HNilLiteral)
+    val kernel = Kernel("f", 1, f, DslType.DslHNil, DslType.dslHCons(DslType.DslDouble, DslType.DslHNil))
     val cl = OpenCLCompiler.toSourceCode(kernel).toArray[CharSequence]
     cl should not be empty
 //    println(cl.mkString)

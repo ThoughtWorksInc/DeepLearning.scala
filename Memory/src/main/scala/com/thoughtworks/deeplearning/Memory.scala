@@ -4,6 +4,7 @@ import java.nio._
 
 import org.lwjgl.PointerBuffer
 import org.lwjgl.system.{CustomBuffer, MemoryUtil, Pointer}
+import shapeless.HNil
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -57,6 +58,20 @@ object Memory extends LowPriorityMemory {
 
     override def put(buffer: PointerBuffer, index: Int, value: Address): Unit = buffer.put(index, value.toLong)
 
+  }
+
+  implicit object HNilMemory extends NioMemory[HNil] {
+    override type Buffer = ByteBuffer
+
+    override def fromByteBuffer(byteBuffer: ByteBuffer): ByteBuffer = byteBuffer
+
+    override def numberOfBytesPerElement: Int = 0
+
+    override def address(buffer: ByteBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+
+    override def get(buffer: ByteBuffer, index: Int): HNil = HNil
+
+    override def put(buffer: ByteBuffer, index: Int, value: HNil): Unit = {}
   }
 
   implicit object IntMemory extends NioMemory[Int] {

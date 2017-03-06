@@ -66,14 +66,20 @@ final class DifferentiableOpenCLBufferSpec extends AsyncFreeSpec with Matchers {
       DifferentiableOpenCLBuffer.floatLiteral[HNil, HNil](3.14f))
 
     Future {
+      println("forward")
       val outputBatch = fill.forward(DifferentiableOpenCLBuffer.Layers.Literal(HNil)).await
-      val r = commandQueue.readBuffer(outputBatch.value)
-      r.await
-      r.await
-      val b = r.await
-      val f = b.asFloatBuffer
-      f.capacity should be(1)
-      f.get(0) should be(3.14f)
+      println("forward done")
+      try {
+        val r = commandQueue.readBuffer(outputBatch.value)
+        r.await
+        r.await
+        val b = r.await
+        val f = b.asFloatBuffer
+        f.capacity should be(1)
+        f.get(0) should be(3.14f)
+      } finally {
+        outputBatch.close()
+      }
     }
   }
 

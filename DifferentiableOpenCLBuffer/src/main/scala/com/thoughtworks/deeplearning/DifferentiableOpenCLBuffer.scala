@@ -15,6 +15,7 @@ import shapeless.{Data0, _}
 import shapeless.ops.hlist.Mapper
 import com.dongxiguo.fastring.Fastring.Implicits._
 import com.thoughtworks.deeplearning.OpenCL.NDRangeKernelEvent.Dimension
+import com.thoughtworks.deeplearning.OpenCLCompiler.DslType.HListType
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -43,8 +44,8 @@ object DifferentiableOpenCLBuffer {
     def inputDeltaType: DslType[InputDelta]
     def outputDataType: DslType[OutputData]
     def outputDeltaType: DslType[OutputDelta]
-    def upvalueType: DslType[Upvalue]
-    def cacheType: DslType[Cache]
+    def upvalueType: HListType[Upvalue]
+    def cacheType: HListType[Cache]
 
   }
 
@@ -87,7 +88,9 @@ object DifferentiableOpenCLBuffer {
           .HCons(OpenCLCompiler.DslFunction.FloatLiteral(value), OpenCLCompiler.DslFunction.HNilLiteral)
       }
 
-      override def backward: DslFunction[OutputDelta :: Cache, HNil] = ???
+      override def backward: DslFunction[OutputDelta :: Cache, HNil] = {
+        OpenCLCompiler.DslFunction.HNilLiteral
+      }
 
       override def upvalueType: DslType.DslHNil.type = DslType.DslHNil
 
@@ -140,23 +143,31 @@ object DifferentiableOpenCLBuffer {
           val sizeBatch = size.forward(input).await
           val clBuffer = clContext.createBuffer[ElementData](sizeBatch.value)
 
-          val forwardInputType = DslType.dslHCons(differentiableKernel.inputDataType, differentiableKernel.upvalueType)
-          val forwardReturnType = DslType.dslHCons(differentiableKernel.outputDataType, differentiableKernel.cacheType)
+          val forwardKernelTree =
+            Kernel(
+              name = "forward",
+              numberOfDimensions = 1,
+              dslFunction = differentiableKernel.forward,
+              inputType = DslType.dslHCons(differentiableKernel.inputDataType, differentiableKernel.upvalueType),
+              outputType = DslType.dslHCons(differentiableKernel.outputDataType, differentiableKernel.cacheType)
+            )
 
-          val forwordKernelTree = Kernel[InputData :: Upvalue, ElementData :: Cache]("f",
-                                                                                     1,
-                                                                                     differentiableKernel.forward,
-                                                                                     forwardInputType,
-                                                                                     forwardReturnType)
+          val backwardKernelTree = Kernel(
+            name = "backward",
+            numberOfDimensions = 1,
+            dslFunction = differentiableKernel.backward,
+            inputType = DslType.dslHCons(differentiableKernel.outputDeltaType, differentiableKernel.cacheType),
+            outputType = DslType.DslHNil
+          )
 
-          val forwardCode = OpenCLCompiler.toSourceCode(forwordKernelTree)
+          val forwardCode = OpenCLCompiler.toSourceCode(forwardKernelTree, backwardKernelTree)
 //          println(forwardCode.mkString)
           val program = clContext.createProgramWithSource(forwardCode)
           program.build().await
-          val forwordKernel = program.createKernel("f")
-          forwordKernel.setArg(0, clBuffer)
+          val forwardKernel = program.createKernel("forward")
+          forwardKernel.setArg(0, clBuffer)
           clCommandQueue
-            .ndRangeKernel(forwordKernel, Seq(Dimension(0L, sizeBatch.value.toLong, sizeBatch.value.toLong)))
+            .ndRangeKernel(forwardKernel, Seq(Dimension(0L, sizeBatch.value.toLong, sizeBatch.value.toLong)))
             .await
 
           // TODO: run kernel
@@ -168,16 +179,13 @@ object DifferentiableOpenCLBuffer {
               clBuffer
             }
 
-            /**
-              * Returns a new [[Batch]] that shares the same [[value]] and [[backward]] behavior with this [[Batch]].
-              *
-              * @note The newly created [[Batch]] and this [[Batch]] must be [[close]]d independently.
-              */
             override def addReference() = ???
 
-            override protected def forceBackward(delta: Buffer[ElementDelta]) = ???
+            override protected def forceBackward(delta: Buffer[ElementDelta]) = Future {}
 
-            override def close() = ???
+            override def close() = {
+              // TODO: close upvalues
+            }
           }
         }
       }

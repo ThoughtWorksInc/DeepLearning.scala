@@ -4,11 +4,14 @@ import java.util
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
-import com.thoughtworks.deeplearning.OpenCLCompiler.DslFunction.Value
+import com.thoughtworks.deeplearning.OpenCLCompiler.DslFunction.{Unpacked, Value}
+import com.thoughtworks.deeplearning.OpenCLCompiler.DslType.HListType
 import shapeless._
+import shapeless.ops.hlist.LiftAll
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.immutable.Queue
+import scala.collection.{SeqView, mutable}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -21,13 +24,14 @@ object OpenCLCompiler {
     def getPackedType(dslType: DslType[_]): Fastring
   }
 
-  final case class Kernel[Input <: HList, Output](name: String,
-                                                  numberOfDimensions: Int,
-                                                  dslFunction: DslFunction[Input, Output],
-                                                  inputType: DslType[Input],
-                                                  outputType: DslType[Output])
+  // TODO: Turn Kernel to a trait
+  final case class Kernel[Input <: HList, Output <: HList](name: String,
+                                                           numberOfDimensions: Int,
+                                                           dslFunction: DslFunction[Input, Output],
+                                                           inputType: HListType[Input],
+                                                           outputType: HListType[Output])
 
-  def toSourceCode(kernels: Kernel[_ <: HList, _]*): Fastring = {
+  def toSourceCode(kernels: Kernel[_ <: HList, _ <: HList]*): Fastring = {
     var seed = 0
     def nextId() = {
       val id = seed
@@ -100,22 +104,51 @@ struct $identifier {
       }
       val outputId = (for (i <- (0 until numberOfDimensions).view) yield fast"start${i}_$indexId").mkFastring("+")
 
+      // TODO: reference to input
       val result = functionContext.getValue(dslFunction)
-      val outputTypeName = functionContext.getPackedType(outputType)
-      val inputTypeName = functionContext.getPackedType(inputType)
 
-      val inputParameters = for ((inputType, i) <- inputType.flatten.view.zipWithIndex) yield {
-        fast"$inputType __input_$i"
+      val inputParameters = inputType.fieldTypes.view.zipWithIndex.foldLeft[Queue[Fastring]](Queue.empty) {
+        case (inputParameters, (inputFieldType, i)) =>
+          if (inputFieldType.flatten.isEmpty) {
+            inputParameters
+          } else {
+            val inputValueName = raw"""input_${nextId()}"""
+            val inputTypeName = functionContext.getPackedType(inputFieldType)
+            inputParameters.enqueue(fast"$inputTypeName $inputValueName")
+          }
       }
-      val outputValueName = raw"""output_${nextId()}"""
-      val outputParameter = fast"__global $outputTypeName * $outputValueName"
-      val allParameters = inputParameters :+ outputParameter
+
+      val (outputParameters, setters, _) = outputType.fieldTypes.view.zipWithIndex
+        .foldLeft[(Queue[Fastring], Queue[Fastring], SeqView[Fastring, Seq[_]])](Queue.empty,
+                                                                                 Queue.empty,
+                                                                                 result.unpacked.view) {
+          case ((outputParameters, setters, unpackedResults), (outputFieldType, i)) =>
+            outputFieldType.flatten.length match {
+              case 0 =>
+                (outputParameters, setters, unpackedResults)
+              case fieldSize =>
+                val outputValueName = raw"""output_${nextId()}"""
+                val outputTypeName = functionContext.getPackedType(outputFieldType)
+                val outputParameter = fast"__global $outputTypeName * $outputValueName"
+
+                val (unpackedField, restUnpackedResults) = unpackedResults.splitAt(fieldSize)
+
+                val returnValueName = raw"""return_${nextId()}"""
+                val setter = fast"""
+  ${functionContext.getPackedType(outputFieldType)} $returnValueName = ${Unpacked(unpackedField.force).packed};
+  $outputValueName[$outputId] = $returnValueName;
+"""
+                (outputParameters.enqueue(outputParameter), setters.enqueue(setter), restUnpackedResults)
+            }
+        }
+
+      val allParameters = inputParameters ++ outputParameters
       fastraw"""
 __kernel void $functionName(${allParameters.mkFastring(", ")}) {
   ${localDefinitions.mkFastring}
   ${sizes.mkFastring}
   ${starts.mkFastring}
-  $outputValueName[$outputId] = ${result.packed};
+  ${setters.mkFastring}
 }
 """
     }
@@ -152,8 +185,12 @@ ${exportedFunctions.mkFastring}
 
     final case class Packed(packed: Fastring, numberOfFields: Int) extends Value {
       override def unpacked: Seq[Fastring] = {
-        for (i <- 0 until numberOfFields) yield {
-          fast"$packed._$i"
+        if (numberOfFields == 1) {
+          Seq(packed)
+        } else {
+          for (i <- 0 until numberOfFields) yield {
+            fast"$packed._$i"
+          }
         }
       }
     }
@@ -213,29 +250,43 @@ ${exportedFunctions.mkFastring}
   object DslType {
 
     implicit def dslHCons[Head, Tail <: HList](implicit headType: DslType[Head],
-                                               tailType: DslType[Tail]): DslType[Head :: Tail] = {
-      new DslType[Head :: Tail] {
-        override def flatten: Seq[String] = {
-          headType.flatten ++ tailType.flatten
+                                               tailType: HListType[Tail]): HListType[Head :: Tail] = {
+      new HListType[Head :: Tail] {
+
+        override val flatten: Stream[String] = {
+          fieldTypes.toStream.flatMap(_.flatten)
+        }
+
+        override def fieldTypes = {
+          headType :: tailType.fieldTypes
         }
       }
     }
 
-    implicit object DslHNil extends DslType[HNil] {
+    implicit object DslHNil extends HListType[HNil] {
       override def flatten = Nil
+
+      override def fieldTypes = Nil
     }
 
     implicit object DslDouble extends DslType[Double] {
-      override val flatten = mutable.WrappedArray.make(Array("double"))
+      override val flatten = Seq("double")
     }
 
     implicit object DslFloat extends DslType[Float] {
-      override val flatten = mutable.WrappedArray.make(Array("float"))
+      override val flatten = Seq("float")
+    }
+
+    trait HListType[NativeType <: HList] extends DslType[NativeType] {
+      def fieldTypes: List[DslType[_]]
+
     }
 
   }
 
   trait DslType[NativeType] {
     def flatten: Seq[String]
+
   }
+
 }
