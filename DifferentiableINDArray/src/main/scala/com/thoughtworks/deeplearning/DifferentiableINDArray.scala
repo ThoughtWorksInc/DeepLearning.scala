@@ -94,11 +94,6 @@ object DifferentiableINDArray {
         )
         v.get
       }
-//
-//      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-//        v = delta + v * mu()
-//        super.updateNDArray(oldValue, v)
-//      }
     }
 
     trait NesterovMomentum extends Optimizer {
@@ -119,7 +114,7 @@ object DifferentiableINDArray {
 
     trait Adagrad extends Optimizer {
 
-      protected val eps: Double = 1e-4
+      protected def eps(): Double = 1e-4
 
       private var cache: Option[INDArray] = None
 
@@ -132,9 +127,9 @@ object DifferentiableINDArray {
 
     trait RMSprop extends Optimizer {
 
-      protected val decayRate: Double = 0.99
+      protected def decayRate(): Double = 0.99
 
-      protected val eps: Double = 1e-4
+      protected def eps(): Double = 1e-4
 
       private var cache: Option[INDArray] = None
 
@@ -145,14 +140,13 @@ object DifferentiableINDArray {
       }
     }
 
-    //TODO need bias
     trait Adam extends Optimizer {
 
-      protected val beta1 = 0.9
+      protected def beta1() = 0.9
 
-      protected val beta2 = 0.999
+      protected def beta2() = 0.999
 
-      protected val eps: Double = 1e-8
+      protected def eps(): Double = 1e-8
 
       private var m: Option[INDArray] = None
 
@@ -172,7 +166,11 @@ object DifferentiableINDArray {
           vValue * beta2 + delta * delta * (1 - beta2)
         )
 
-        super.currentDelta(oldValue, m.get) / (sqrt(v.get) + eps)
+        val coef1 = 1 - beta1()
+
+        val coef2 = math.sqrt(1 - beta2())
+
+        super.currentDelta(oldValue, m.get * (coef2 / coef1)) / (sqrt(v.get) + eps)
       }
     }
 
