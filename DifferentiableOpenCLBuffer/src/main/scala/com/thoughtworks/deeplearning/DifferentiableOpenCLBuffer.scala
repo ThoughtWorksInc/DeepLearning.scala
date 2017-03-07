@@ -128,7 +128,12 @@ object DifferentiableOpenCLBuffer {
       override def close(): Unit = {}
     }
 
-    final case class Fill[InputData, InputDelta, ElementData: Memory, ElementDelta, Upvalue <: HList, Cache <: HList](
+    final case class Fill[InputData: Memory,
+                          InputDelta,
+                          ElementData: Memory,
+                          ElementDelta,
+                          Upvalue <: HList,
+                          Cache <: HList](
         clContext: OpenCL.Context,
         clCommandQueue: OpenCL.CommandQueue,
         size: Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[Int, Float]],
@@ -165,7 +170,15 @@ object DifferentiableOpenCLBuffer {
           val program = clContext.createProgramWithSource(forwardCode)
           program.build().await
           val forwardKernel = program.createKernel("forward")
-          forwardKernel.setArg(0, clBuffer)
+
+          val i = if (Memory[InputData].numberOfBytesPerElement == 0) {
+            0
+          } else {
+            forwardKernel.setArg[InputData](0, input.value)
+            1
+          }
+
+          forwardKernel.setArg(i, clBuffer)
           clCommandQueue
             .ndRangeKernel(forwardKernel, Seq(Dimension(0L, sizeBatch.value.toLong, sizeBatch.value.toLong)))
             .await

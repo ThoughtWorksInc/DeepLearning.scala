@@ -22,6 +22,8 @@ trait Memory[Element] {
 
 object Memory extends LowPriorityMemory {
 
+  def apply[Element](implicit memory: Memory[Element]): memory.type = memory
+
   type Aux[Element, Buffer0] = Memory[Element] {
     type Buffer = Buffer0
   }
