@@ -59,15 +59,15 @@ final class DifferentiableOpenCLBufferSpec extends AsyncFreeSpec with Matchers {
            } else { 0 })
       )
 
-    val fill = DifferentiableOpenCLBuffer.Layers.Fill[HNil, HNil, Float, Float, HNil, HNil](
+    val fill = DifferentiableOpenCLBuffer.Layers.Fill[Float, HNil, Float, Float, HNil, HNil](
       clContext,
       commandQueue,
       DifferentiableOpenCLBuffer.Layers.Literal(1),
-      DifferentiableOpenCLBuffer.floatLiteral[HNil, HNil](3.14f))
+      DifferentiableOpenCLBuffer.floatLiteral[Float, HNil](3.14f))
 
     Future {
       println("forward")
-      val outputBatch = fill.forward(DifferentiableOpenCLBuffer.Layers.Literal(HNil)).await
+      val outputBatch = fill.forward(DifferentiableOpenCLBuffer.Layers.Literal(1.0f)).await
       println("forward done")
       try {
         val r = commandQueue.readBuffer(outputBatch.value)
