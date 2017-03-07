@@ -16,7 +16,7 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.Poly.MathMethods.*
 import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.api.ops.impl.transforms.IsMax
+import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
 import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.BooleanIndexing
@@ -26,11 +26,11 @@ import org.nd4j.linalg.ops.transforms.Transforms.sign
 import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
 import shapeless._
+import org.nd4j.linalg.ops.transforms.Transforms.sqrt
 
 import language.higherKinds
 import language.implicitConversions
 import scala.collection.immutable.IndexedSeq
-import scala.reflect.ClassTag
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -66,37 +66,130 @@ object DifferentiableINDArray {
 
   object Optimizers {
 
-    trait L1Regularization extends LearningRate {
+    trait L1Regularization extends Optimizer {
       protected def l1Regularization: Double
 
-      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-        super.updateNDArray(oldValue, delta) - sign(oldValue) * l1Regularization * currentLearningRate()
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        super.currentDelta(oldValue, delta + sign(oldValue) * l1Regularization)
       }
-
     }
 
-    trait L2Regularization extends LearningRate {
+    trait L2Regularization extends Optimizer {
       protected def l2Regularization: Double
 
-      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-        super.updateNDArray(oldValue, delta) - oldValue * l2Regularization * currentLearningRate()
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        super.currentDelta(oldValue, delta + oldValue * l2Regularization)
       }
+    }
 
+    trait Momentum extends Optimizer {
+      protected def mu(): Double = 0.9
+
+      private var v: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val vValue: INDArray = v.getOrElse(Nd4j.zeros(delta.shape: _*))
+        v = Some(
+          super.currentDelta(oldValue, delta) + vValue * mu()
+        )
+        v.get
+      }
+//
+//      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
+//        v = delta + v * mu()
+//        super.updateNDArray(oldValue, v)
+//      }
+    }
+
+    trait NesterovMomentum extends Optimizer {
+      protected def mu(): Double = 0.9
+
+      private var v: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val vValue: INDArray = v.getOrElse(Nd4j.zeros(delta.shape: _*))
+        val vPre = vValue
+        v = Some(
+          super.currentDelta(oldValue, delta) + vValue * mu()
+        )
+
+        vPre * (-mu()) + v.get * (1 + mu())
+      }
+    }
+
+    trait Adagrad extends Optimizer {
+
+      protected val eps: Double = 1e-4
+
+      private var cache: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val cacheValue = cache.getOrElse(Nd4j.zeros(delta.shape: _*))
+        cache = Some(cacheValue + delta * delta)
+        super.currentDelta(oldValue, delta) / (sqrt(cache.get) + eps)
+      }
+    }
+
+    trait RMSprop extends Optimizer {
+
+      protected val decayRate: Double = 0.99
+
+      protected val eps: Double = 1e-4
+
+      private var cache: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val cacheValue = cache.getOrElse(Nd4j.zeros(delta.shape: _*))
+        cache = Some(cacheValue * decayRate + delta * delta * (1 - decayRate))
+        super.currentDelta(oldValue, delta) / (sqrt(cache.get) + eps)
+      }
+    }
+
+    //TODO need bias
+    trait Adam extends Optimizer {
+
+      protected val beta1 = 0.9
+
+      protected val beta2 = 0.999
+
+      protected val eps: Double = 1e-8
+
+      private var m: Option[INDArray] = None
+
+      private var v: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+
+        val mValue = m.getOrElse(Nd4j.zeros(delta.shape: _*))
+
+        m = Some(
+          mValue * beta1 + delta * (1 - beta1)
+        )
+
+        val vValue = v.getOrElse(Nd4j.zeros(delta.shape: _*))
+
+        v = Some(
+          vValue * beta2 + delta * delta * (1 - beta2)
+        )
+
+        super.currentDelta(oldValue, m.get) / (sqrt(v.get) + eps)
+      }
     }
 
     trait Optimizer {
 
-      def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray
+      protected def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = delta
 
+      final def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
+        oldValue - currentDelta(oldValue, delta)
+      }
     }
 
     trait LearningRate extends Optimizer {
 
       protected def currentLearningRate(): Double
 
-      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-        oldValue - delta * currentLearningRate()
-      }
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = delta * currentLearningRate()
     }
 
   }
@@ -105,7 +198,7 @@ object DifferentiableINDArray {
 
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def ndArrayOptimizer(weight: Weight) = optimizer
+      override def ndArrayOptimizer(weight: Weight): Optimizer = optimizer
     }
   }
 

@@ -18,6 +18,7 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableCoproduct._
 import com.thoughtworks.deeplearning.DifferentiableAny._
+
 import language.implicitConversions
 import language.existentials
 import Predef.{any2stringadd => _, _}
@@ -35,11 +36,12 @@ final class XorSpec extends FreeSpec with Matchers {
   import org.nd4j.linalg.api.ndarray.INDArray
   import org.nd4j.linalg.factory.Nd4j
   import org.nd4j.linalg.ops.transforms.Transforms
+  import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.LearningRate
   import org.nd4j.linalg.factory.Nd4j
   import org.nd4s.Implicits._
 
   implicit val optimizer = new DifferentiableINDArray.Optimizers.L2Regularization
-  with DifferentiableDouble.Optimizers.L2Regularization {
+  with LearningRate{
     override protected def currentLearningRate() = 0.006
 
     override protected def l2Regularization = 0.01

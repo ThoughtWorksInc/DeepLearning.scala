@@ -1,11 +1,29 @@
 package com.thoughtworks.deeplearning
-//import org.nd4j.linalg.api.ndarray.INDArray
-//import org.nd4s.Implicits._
+import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.enableMembersIf
 import org.scalatest.{FreeSpec, Matchers}
+import shapeless._
+import com.thoughtworks.deeplearning.Poly._
+import com.thoughtworks.deeplearning.Poly.MathMethods.{*, /}
+import com.thoughtworks.deeplearning.Poly.MathOps
+import com.thoughtworks.deeplearning.Lift.Layers._
 
+@enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 final class CNNTest extends FreeSpec with Matchers {
+
+  import org.nd4j.linalg.api.ndarray.INDArray
+  import org.nd4s.Implicits._
+  import org.nd4j.linalg.api.ndarray.INDArray
+  import com.thoughtworks.deeplearning.DifferentiableHList._
+  import com.thoughtworks.deeplearning.DifferentiableDouble._
+  import com.thoughtworks.deeplearning.DifferentiableINDArray._
+  import com.thoughtworks.deeplearning.DifferentiableAny._
+  import com.thoughtworks.deeplearning.DifferentiableInt._
+  import com.thoughtworks.deeplearning.DifferentiableSeq._
+  import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
+
   "fix view error" in {
-/*    def assertClear(layer: Any): Unit = {
+    def assertClear(layer: Any): Unit = {
       layer match {
         case cached: BufferedLayer =>
           assert(cached.cache.isEmpty)
@@ -43,6 +61,6 @@ final class CNNTest extends FreeSpec with Matchers {
 
     assertClear(predictor)
     predictor.predict((1 to 1).toNDArray.reshape(1, 1))
-    assertClear(predictor)*/
+    assertClear(predictor)
   }
 }
