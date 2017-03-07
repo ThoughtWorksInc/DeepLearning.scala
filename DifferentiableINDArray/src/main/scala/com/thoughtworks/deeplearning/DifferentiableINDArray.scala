@@ -142,15 +142,17 @@ object DifferentiableINDArray {
 
     trait Adam extends Optimizer {
 
-      protected def beta1() = 0.9
+      protected def beta1 = 0.9
 
-      protected def beta2() = 0.999
+      protected def beta2 = 0.999
 
       protected def eps(): Double = 1e-8
 
       private var m: Option[INDArray] = None
 
       private var v: Option[INDArray] = None
+
+      private var times: Int = 0
 
       override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
 
@@ -166,9 +168,11 @@ object DifferentiableINDArray {
           vValue * beta2 + delta * delta * (1 - beta2)
         )
 
-        val coef1 = 1 - beta1()
+        times += 1
 
-        val coef2 = math.sqrt(1 - beta2())
+        val coef1 = 1 - math.pow(beta1, times)
+
+        val coef2 = math.sqrt(1 - math.pow(beta2, times))
 
         super.currentDelta(oldValue, m.get * (coef2 / coef1)) / (sqrt(v.get) + eps)
       }
