@@ -53,10 +53,19 @@ final class DifferentiableOpenCLBufferSpec extends AsyncFreeSpec with Matchers {
     val commandQueue =
       clContext.createCommandQueue(
         device,
-        (CL10.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE & supportedProperties) |
-          (if (device.capabilities.OpenCL20) {
-             CL20.CL_QUEUE_ON_DEVICE
-           } else { 0 })
+        Map(
+          CL_QUEUE_PROPERTIES -> {
+            {
+              CL10.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE & supportedProperties
+            } | {
+              if (device.capabilities.OpenCL20) {
+                CL20.CL_QUEUE_ON_DEVICE
+              } else {
+                0
+              }
+            }
+          }
+        )
       )
 
     val fill = DifferentiableOpenCLBuffer.Layers.Fill[Float, HNil, Float, Float, HNil, HNil](

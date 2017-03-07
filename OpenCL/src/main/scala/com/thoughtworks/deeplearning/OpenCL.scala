@@ -6,7 +6,7 @@ import java.nio.{ByteBuffer, IntBuffer}
 import org.lwjgl.opencl._
 import CL10._
 import CL11._
-import CL12._
+import CL20._
 import org.lwjgl.{BufferUtils, PointerBuffer}
 import org.lwjgl.system.MemoryUtil.{memASCII, _}
 import org.lwjgl.system.MemoryStack._
@@ -271,11 +271,20 @@ data: $data""")
       }
     }
 
-    def createCommandQueue(device: Device, properties: Long): CommandQueue = {
-      val a = Array(0)
-      val commandQueue = clCreateCommandQueue(handle.toLong, device.id, properties, a);
-      checkErrorCode(a(0))
-      new CommandQueue(Address(commandQueue))
+    def createCommandQueue(device: Device, properties: Map[Int, Long]): CommandQueue = {
+      if (device.capabilities.OpenCL20) {
+        val cl20Properties = ((properties.view.flatMap { case (key, value) => Seq(key, value) }) ++ Seq(0L)).toArray
+        val a = Array(0)
+        val commandQueue = clCreateCommandQueueWithProperties(handle.toLong, device.id, cl20Properties, a)
+        checkErrorCode(a(0))
+        new CommandQueue(Address(commandQueue))
+      } else {
+        val cl10Properties = properties.getOrElse(CL_QUEUE_PROPERTIES, 0L)
+        val a = Array(0)
+        val commandQueue = clCreateCommandQueue(handle.toLong, device.id, cl10Properties, a)
+        checkErrorCode(a(0))
+        new CommandQueue(Address(commandQueue))
+      }
 
     }
 
