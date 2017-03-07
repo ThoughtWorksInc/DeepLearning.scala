@@ -1,20 +1,11 @@
 package com.thoughtworks.deeplearning
 
-import cats.Eval
 import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.DifferentiableInt._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
-import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.{L2Regularization, LearningRate, Optimizer}
-import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
 import com.thoughtworks.deeplearning.Lift.Layers.Literal
-import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.convolution.Convolution
-import org.nd4s.Implicits._
 import org.scalatest._
-import shapeless._
 import com.thoughtworks.deeplearning
-import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
@@ -32,14 +23,10 @@ import com.thoughtworks.deeplearning.Poly.MathOps
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.cpu.nativecpu.NDArray
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.factory.Nd4j.PadMode
-import org.nd4j.linalg.factory.Nd4j.PadMode.EDGE
 import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import shapeless._
-import shapeless._
-import shapeless.OpticDefns.compose
 import scala.annotation.tailrec
 import scala.collection.immutable.IndexedSeq
 
@@ -50,11 +37,11 @@ import scala.collection.mutable
   */
 final class LayerSpec extends FreeSpec with Matchers with Inside {
 
-  implicit val learningRate = new LearningRate {
-    override def currentLearningRate() = 0.0003
-  }
-
   "INDArrayPlaceholder dot INDArrayPlaceholder" in {
+
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
 
     def makeNetwork(implicit x: From[INDArray]##T) = {
       val weightInitialValue =
@@ -95,6 +82,10 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder im2col (kernel,stride,padding) --forward" in {
 
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
+
     def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: From[INDArray]##T) = {
       val weightInitialValue = 1 to 54
       -weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.im2col(kernel, stride, padding)
@@ -129,22 +120,8 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder im2col (kernel,stride,padding) --backward" in {
 
-    implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
-      override def ndArrayOptimizer(weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
-        new DifferentiableINDArray.Optimizers.L2Regularization {
-          override protected def l2Regularization = 0.0000003
-
-          var learningRate = 1
-
-          override protected def currentLearningRate(): Double = {
-            learningRate
-          }
-
-          override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-            super.updateNDArray(oldValue, delta)
-          }
-        }
-      }
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
     }
 
     def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: From[INDArray]##T) = {
@@ -184,6 +161,10 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder reshape dimensions --forward" in {
 
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
+
     def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##T) = {
       val weightInitialValue = 1 to 54
       -weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.reshape(dimensions: _*)
@@ -218,22 +199,8 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder reshape dimensions --backward" in {
 
-    implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
-      override def ndArrayOptimizer(weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
-        new DifferentiableINDArray.Optimizers.L2Regularization {
-          override protected def l2Regularization = 0.0000003
-
-          var learningRate = 1
-
-          override protected def currentLearningRate(): Double = {
-            learningRate
-          }
-
-          override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-            super.updateNDArray(oldValue, delta)
-          }
-        }
-      }
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
     }
 
     def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##T) = {
@@ -273,6 +240,10 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder permute dimensions --forward" in {
 
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
+
     def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##T) = {
       val weightInitialValue = 1 to 54
       -weightInitialValue.toNDArray.reshape(2, 3, 9).toWeight.permute(dimensions: _*)
@@ -310,22 +281,8 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder permute dimensions --backward" in {
 
-    implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
-      override def ndArrayOptimizer(weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
-        new DifferentiableINDArray.Optimizers.L2Regularization {
-          override protected def l2Regularization = 0.0000003
-
-          var learningRate = 1
-
-          override protected def currentLearningRate(): Double = {
-            learningRate
-          }
-
-          override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-            super.updateNDArray(oldValue, delta)
-          }
-        }
-      }
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
     }
 
     def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##T) = {
@@ -363,6 +320,10 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
   }
 
   "INDArrayPlaceholder maxPool dimensions --one dimension" ignore {
+
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
 
     def makeNetwork(dimension: Int)(implicit x: From[INDArray]##T) = {
       val weightInitialValue = 1 to 54
@@ -403,6 +364,10 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder maxPool dimensions --two dimension" ignore {
 
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
+
     def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##T) = {
       val weightInitialValue = 1 to 54
       weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimensions: _*)
@@ -436,6 +401,10 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
   }
 
   "INDArrayPlaceholder maxPool dimensions --three dimension" ignore {
+
+    implicit val learningRate = new LearningRate {
+      override def currentLearningRate() = 0.0003
+    }
 
     def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##T) = {
       val weightInitialValue = 1 to 54
