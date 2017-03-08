@@ -1,10 +1,13 @@
 - text: Introduction
   url: /demo/
-- text: GettingStarted
-  url: /demo/GettingStarted.html
-- text: SoftmaxLinearClassifier
-  url: /demo/SoftmaxLinearClassifier.html
-- text: MiniBatchGradientDescent
-  url: /demo/MiniBatchGradientDescent.html
-- text: TwoLayerNet
-  url: /demo/TwoLayerNet.html
+  subitems:
+    - text: GettingStarted
+      url: /demo/GettingStarted.html
+    - text: SoftmaxLinearClassifier
+      url: /demo/SoftmaxLinearClassifier.html
+    - text: MiniBatchGradientDescent
+      url: /demo/MiniBatchGradientDescent.html
+    - text: TwoLayerNet
+      url: /demo/TwoLayerNet.html
+    - text: CNNs
+      url: /demo/CNNs.html
