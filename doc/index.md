@@ -19,7 +19,7 @@ You may also find the [original code of the demo](https://github.com/izhangzhiha
 
 # Get help
 
-Check the scaladoc first![![Scaladoc](https://javadoc.io/badge/com.thoughtworks.deeplearning/unidoc_2.11.svg?label=scaladoc)](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html)
+Check the [scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html) first!
 
 
 If you don't find what you're looking for, join our [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
