@@ -5,7 +5,6 @@
 			{% assign current = page.url | downcase | split: '/' %}
 			<li {% if current[1] == 'index.html' %}class='current'{% endif %}><a href="{{ site.github.url }}/index.html">Homepage</a></li>
 			<li {% if current[1] == 'doc' %}class='current'{% endif %}><a href="{{ site.github.url }}/doc">Documentation</a></li>
-			<li {% if current[1] == 'demo.html' %}class='current'{% endif %}><a href="{{ site.github.url }}/demo">Demo</a></li>
 			<li {% if current[1] == 'news' %}class='current'{% endif %}><a href="{{ site.github.url }}/news">News</a></li>
 			<li {% if current[1] == 'get-involved.html' %}class='current'{% endif %}><a href="{{ site.github.url }}/get-involved">Get Involved</a></li>
 		</ul>

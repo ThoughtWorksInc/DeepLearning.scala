@@ -1,13 +1,13 @@
 - text: Introduction
   url: /doc/
-#- text: Quick Start
-#  url: /doc/quick-start.html
-# - text: Scala.js for JavaScript developers
-#   url: /doc/sjs-for-js/
-#   subitems:
-#     - text: "From ES6 to Scala: Basics"
-#       url: /doc/sjs-for-js/es6-to-scala-part1.html
-#     - text: "From ES6 to Scala: Collections"
-#       url: /doc/sjs-for-js/es6-to-scala-part2.html
-#     - text: "From ES6 to Scala: Advanced"
-#       url: /doc/sjs-for-js/es6-to-scala-part3.html
+  subitems:
+    - text: GettingStarted
+      url: /demo/GettingStarted.html
+    - text: SoftmaxLinearClassifier
+      url: /demo/SoftmaxLinearClassifier.html
+    - text: MiniBatchGradientDescent
+      url: /demo/MiniBatchGradientDescent.html
+    - text: TwoLayerNet
+      url: /demo/TwoLayerNet.html
+    - text: CNNs
+      url: /demo/CNNs.html

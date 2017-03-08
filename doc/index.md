@@ -8,12 +8,12 @@ Prepare for DeepLearning.Scala
 # What you will need to install
 
 1. [IntelliJ Community Edition or higher](http://www.jetbrains.com/idea/) or other IDE you like
-2. sbt
+2. SBT [(download)](http://www.scala-sbt.org/0.13/tutorial/Setup.html)
 3. if you are using IntelliJ, you will need SBT , Scala & Scalafmt plugins
 
 # Tutorials
 
-Check out the [demo](../demo/) before your journey!
+Download the [demo](https://github.com/ThoughtWorksInc/DeepLearning.scala-website/archive/master.zip) before your journey!
 
 You may also find the [original code of the demo](https://github.com/izhangzhihao/deeplearning-tutorial)!
 
