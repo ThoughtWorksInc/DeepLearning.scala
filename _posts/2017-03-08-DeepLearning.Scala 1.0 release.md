@@ -1,6 +1,6 @@
 ---
-title: Sunt in culpa qui
-featured: images/pic02.jpg
+title: DeepLearning.Scala 1.0
+featured: images/pic01.jpg
 layout: post
 ---
 
