@@ -471,6 +471,28 @@ object DifferentiableINDArray {
       }
     }
 
+    final case class ReduceMean[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+        extends BufferedLayer.Unary {
+      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+
+      type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with DoubleMonoidBatch with MonoidBatch with UnaryBatch {
+
+          private val upstreamShape = upstream.value.shape()
+
+          val value = (upstream.value: INDArray).sumT / ArrayUtil.prod(upstreamShape: _*)
+
+          override protected def rawBackward(outputDelta: Double): Unit = {
+            upstream.backward(Nd4j.valueArrayOf(upstreamShape, outputDelta))
+          }
+        }
+      }
+    }
+
     final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
         extends BufferedLayer.Unary {
       type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
@@ -1101,6 +1123,10 @@ object DifferentiableINDArray {
 
     def sum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceSum(operand)
+    }
+
+    def mean: Layer.Aux[Input, DoublePlaceholder.Batch] = {
+      ReduceMean(operand)
     }
 
     def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
