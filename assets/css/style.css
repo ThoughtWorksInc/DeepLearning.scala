@@ -985,6 +985,7 @@
 
 	ul.contact li a:hover
 	{
+		fill: #fff !important;
 		color: #fff;
 	}
 
