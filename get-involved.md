@@ -4,74 +4,20 @@ title: Get Involved
 background: beach_cliffs.jpg
 ---
 
-## TODO for MVP
+## How can I get help?
 
-- hello-scalajs Activator template
-- hello-scalajs screenshot and link
-- add `latest` API mirror links  
-- add media section, with image downloads etc
+- Check the [scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html) first!
+- If you don't find what you're looking for, join our [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+ and ask for help.
 
-## Done
-- Scala.js for Scala developers, to be hidden for now
-- remove social media links from the template
-- Scala.js for JavaScript developers, intro text
-- libraries and skeleton index page content is missing
-- add "built with Scala.js" under community
-- add more intro text to community
-- front page icons for Correctness, Speed and Interoperability
-- Documentation landing page, more content
+## How can I help?
 
-## Doc content/struture plan
+### Report bugs
 
-- Quick start
+- If some unexpected happened , you can submit a issue [here](https://github.com/ThoughtWorksInc/DeepLearning.scala/issues)
 
-    Provide simple instructions to get started on developing with Scala.js (what to install, etc.)
-- Why Scala.js?
+### Contribute
 
-    Copy Hands-on "About Scala.js" almost as-is
-- Project setup
+- If you want to contribute this project (We appreciate that),please send us [pull requests](https://github.com/ThoughtWorksInc/DeepLearning.scala/pulls)!
 
-    Detailed instructions on setting up a Scala.js project
-
-    - Using SBT commands
-    - Dependencies
-    - Cross-building
-    - Client-server project
-
-        Using Play as an example server (makes the build.sbt simple)
-    - Eclipse and IntelliJ
-
-        How to import projects into popular IDEs
-    - Advanced features
-
-        Documenting less often used SBT plugin features
-- Interactive web pages
-    - HTML and DOM
-    - Scalatags
-    - Using Web services
-
-- Using JavaScript libraries
-    - Using JS facades
-    - Creating your own facades
-    - Exposing Scala.js code to JavaScript
-
-- Using Scala libraries
-    - Scala standard library
-    - Third party libraries
-    - Java libraries
-- Testing
-
-    How to test Scala.js apps. Unit tests, DOM tests, etc.
-
-- Debugging
-
-    Debugging in the browser. Source maps
-
-- Advanced
-
-    Take mostly from Hands-on
-
-    - Porting Scala and Java libraries to Scala.js
-    - Publishing Scala.js libraries
-    - JavaScript environments
-
+- If you would like to make a really big contribution, like develop a brand new feature of DeepLearning.Scala , please, consult us preliminary by [raising an issue](https://github.com/ThoughtWorksInc/DeepLearning.scala/issues). We value your cooperation and respect your time and thus want to ensure that we're ready for your work.
