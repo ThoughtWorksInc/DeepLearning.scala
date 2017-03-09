@@ -1,7 +1,6 @@
 /*
-	DeepLearning.scala by ThoughtWorks
-    templated.co @templatedco
-    Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+DeepLearning.scala by ThoughtWorks
+Released for free under the Apache 2.0 license (https://github.com/ThoughtWorksInc/DeepLearning.scala/blob/1.0.x/LICENSE)
 */
 function init_init(prefix) {
 	return skel.init({
@@ -56,4 +55,3 @@ function init_init(prefix) {
 
 	});
 }
-
