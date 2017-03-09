@@ -7,8 +7,8 @@ background: beach_cliffs.jpg
 ## How can I get help?
 
 - Check the [scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html) first!
-- If you don't find what you're looking for, join our [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
- and ask for help.
+
+- Or ask question on [stackOverflow](http://stackoverflow.com/questions/ask)
 
 ## How can I help?
 
@@ -17,6 +17,8 @@ background: beach_cliffs.jpg
 - If some unexpected happened , you can submit a issue [here](https://github.com/ThoughtWorksInc/DeepLearning.scala/issues)
 
 ### Contribute
+
+- If you want talk about DeepLearning.scala, join our [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 - If you want to contribute this project (We appreciate that),please send us [pull requests](https://github.com/ThoughtWorksInc/DeepLearning.scala/pulls)!
 
