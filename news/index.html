@@ -83,11 +83,13 @@ layout: default
 
 	<script type="text/javascript">
 
-function fixLaout(){
-	$("#skel-panels-pageWrapper").append($("#tweet"));
-	$("#skel-panels-pageWrapper").append($("#footer"));
-	$("#skel-panels-pageWrapper").append($("#copyright"));
-}
+	$(function() {
+		function fixLaout(){
+			$("#skel-panels-pageWrapper").append($("#tweet"));
+			$("#skel-panels-pageWrapper").append($("#footer"));
+			$("#skel-panels-pageWrapper").append($("#copyright"));
+		}
 
-	setTimeout(fixLaout(),1000)
+			setTimeout(fixLaout(),1000)
+});
 	</script>
