@@ -4,92 +4,78 @@ layout: default
 ---
 
 <!-- Main -->
-	<div id="main">
-		<div class="container">
-			{% for post in paginator.posts %}
-			<div class="row">
-				<section class="8u -2u">
-					<header>
-						<h2>{{ post.title }}</h2>
-					</header>
-					<strong>{{ post.date | date_to_long_string }}</strong>
-					<div class="normal-head">
-						{{ post.excerpt }}
-					</div>
-					<a href="{{ site.github.url }}{{ post.url }}" class="button button-style1">Read More</a>
-				</section>
-			</div>
-			{% endfor %}
-		</div>
+<div id="main">
+    <div class="container">
+        {% for post in paginator.posts %}
+        <div class="row">
+            <section class="8u -2u">
+                <header>
+                    <h2>{{ post.title }}</h2>
+                </header>
+                <strong>{{ post.date | date_to_long_string }}</strong>
+                <div class="normal-head">
+                    {{ post.excerpt }}
+                </div>
+                <a href="{{ site.github.url }}{{ post.url }}" class="button button-style1">Read More</a>
+            </section>
+        </div>
+        {% endfor %}
+    </div>
 
-		<div class="row">
-			<section class="8u -5u">
-		<!-- Pagination links -->
-		{% if paginator.total_pages > 1 %}
-		<nav class="pagination">
-			<ul class="pagination">
-				{% if paginator.previous_page %}
-				<li>
-					<a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}"
-					   aria-label="Previous">
-						<span aria-hidden="true">&laquo;</span>
-					</a>
-				</li>
-				{% else %}
-				<li class="disabled">
-					<span aria-hidden="true">&laquo;</span>
-				</li>
-				{% endif %}
+    <div class="row">
+        <section class="8u -5u">
+            <!-- Pagination links -->
+            {% if paginator.total_pages > 1 %}
+            <nav class="pagination">
+                <ul class="pagination">
+                    {% if paginator.previous_page %}
+                    <li>
+                        <a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="disabled">
+                        <span aria-hidden="true">&laquo;</span>
+                    </li>
+                    {% endif %}
 
-				{% for page in (1..paginator.total_pages) %}
-				{% if page == paginator.page %}
-				<li class="active">
-					<a href="#">{{ page }}</a>
-				</li>
-				{% elsif page == 1 %}
-				<li>
-					<a href="{{ site.paginate_path | prepend: site.baseurl | replace: 'page:num', '' }}">
-						{{ page }}
-					</a>
-				</li>
-				{% else %}
-				<li>
-					<a href="{{ site.paginate_path | prepend: site.baseurl | replace: '//', '/' | replace: ':num', page }}">
-						{{ page }}
-					</a>
-				</li>
-				{% endif %}
-				{% endfor %}
+                    {% for page in (1..paginator.total_pages) %}
+                    {% if page == paginator.page %}
+                    <li class="active">
+                        <a href="#">{{ page }}</a>
+                    </li>
+                    {% elsif page == 1 %}
+                    <li>
+                        <a href="{{ site.paginate_path | prepend: site.baseurl | replace: 'page:num', '' }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a href="{{ site.paginate_path | prepend: site.baseurl | replace: '//', '/' | replace: ':num', page }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
 
-				{% if paginator.next_page %}
-				<li>
-					<a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}"
-					   aria-label="Next">
-						<span aria-hidden="true">&raquo;</span>
-					</a>
-				</li>
-				{% else %}
-				<li class="disabled">
-					<span aria-hidden="true">&raquo;</span>
-				</li>
-				{% endif %}
-			</ul>
-		</nav>
-			</section>
-		</div>
-		{% endif %}
-	</div>
-
-
-	<script type="text/javascript">
-
-	$(function() {
-		function fixLaout(){
-			$("#skel-panels-pageWrapper").append($("#tweet"));
-			$("#skel-panels-pageWrapper").append($("#footer"));
-			$("#skel-panels-pageWrapper").append($("#copyright"));
-			console.log("error should be fixed!")
-		}
-		setTimeout(fixLaout(),1000)
-	});
-	</script>
+                    {% if paginator.next_page %}
+                    <li>
+                        <a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="disabled">
+                        <span aria-hidden="true">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </section>
+    </div>
+</div>
