@@ -993,6 +993,7 @@
 	}
 	ul.contact li a svg
 	{
+		vertical-align: bottom;
 		fill: #777;
 	}
 
