@@ -18,7 +18,7 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>构建一个多层卷积神经网络</p>
+<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p><a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。</p>
 
 </div>
 </div>
@@ -266,8 +266,10 @@ Compiling Utils.sc
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>5.<a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">Mini-Batch Gradient Descent</a>: 在大规模数据训练时，数据可以达到百万级量级。如果计算整个训练集，来获得仅仅一个参数的更新速度就太慢了。一个常用的方法是计算训练集中的小批量（batches）数据以提升参数更新速度。</p>
-<p>6.如果你使用IntelliJ或者eclipse等其它IDE，智能提示可能会失效，代码有部分可能会爆红，这是IDE的问题，代码本身并无问题。</p>
+<p>5.<a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">Mini-Batch Gradient Descent</a>: 在大规模数据训练时，数据可以达到百万级量级。如果计算整个训练集，来获得仅仅一个参数的更新速度就太慢了。一个常用的方法是计算训练集中的小批量（batches）数据以提升参数更新速度。
+[
+6.参考：<a href="http://cs231n.github.io/convolutional-networks/">convolutionalNetworks</a> &amp; <a href="https://zhuanlan.zhihu.com/p/22038289?refer=deeplearning.scala">卷积神经网络</a></p>
+<p>7.如果你使用IntelliJ或者eclipse等其它IDE，智能提示可能会失效，代码有部分可能会爆红，这是IDE的问题，代码本身并无问题。</p>
 
 </div>
 </div>
@@ -1025,10 +1027,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="bf1db1f4-551a-4127-a648-ec8240826b47"></div>
+<div id="0c0bf509-05e2-4234-af76-05a93845cb9b"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#bf1db1f4-551a-4127-a648-ec8240826b47');
+var element = $('#0c0bf509-05e2-4234-af76-05a93845cb9b');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
