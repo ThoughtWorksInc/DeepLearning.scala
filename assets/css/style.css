@@ -985,8 +985,15 @@
 
 	ul.contact li a:hover
 	{
-		fill: #fff !important;
 		color: #fff;
+	}
+	ul.contact li a:hover svg
+	{
+		fill: #fff;
+	}
+	ul.contact li a svg
+	{
+		fill: #777;
 	}
 
 /*********************************************************************************/
