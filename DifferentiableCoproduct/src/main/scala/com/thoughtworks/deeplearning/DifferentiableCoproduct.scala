@@ -287,21 +287,26 @@ object DifferentiableCoproduct {
     new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
 
-  implicit def liftCNil: ToLiteral.Aux[CNil, CNil, CNil] = ToLiteral.fromData
+  implicit def cnilToLiteral: ToLiteral.Aux[CNil, CNil, CNil] = ToLiteral.fromData
 
-  implicit def liftCCons[Head, HeadData, HeadDelta, Tail <: Coproduct, TailData <: Coproduct, TailDelta <: Coproduct](
-      implicit liftHead: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
-      liftTail: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
+  implicit def cconsToLiteral[Head,
+                              HeadData,
+                              HeadDelta,
+                              Tail <: Coproduct,
+                              TailData <: Coproduct,
+                              TailDelta <: Coproduct](
+      implicit headToLiteral: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
+      tailToLiteral: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
     : ToLiteral.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new ToLiteral[Head :+: Tail] {
     override type Data = HeadData :+: TailData
     override type Delta = HeadDelta :+: TailDelta
     override def apply(data: :+:[Head, Tail]): Literal[HeadData :+: TailData] = {
       data match {
         case shapeless.Inl(head) =>
-          val Literal(headData) = liftHead.value(head)
+          val Literal(headData) = headToLiteral.value(head)
           Literal(shapeless.Inl(headData))
         case shapeless.Inr(tail) =>
-          val Literal(tailData) = liftTail.value(tail)
+          val Literal(tailData) = tailToLiteral.value(tail)
           Literal(shapeless.Inr(tailData))
       }
     }

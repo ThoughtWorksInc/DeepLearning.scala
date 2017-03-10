@@ -189,7 +189,7 @@ object DifferentiableInt {
     }
   }
 
-  implicit def liftInt: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
+  implicit def intToLiteral: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
 
   /**
     * Returns a [[Poly.MathMethods.+.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]

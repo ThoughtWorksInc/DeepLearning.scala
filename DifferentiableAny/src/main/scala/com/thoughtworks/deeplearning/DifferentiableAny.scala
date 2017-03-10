@@ -154,9 +154,9 @@ object DifferentiableAny {
     new AnyLayerOps(toLayer(a))
   }
 
-  type ExistentialNothing = `@` forSome { type `@` >: Nothing <: Nothing }
+  type ExistentialNothing = T forSome { type T >: Nothing <: Nothing }
 
-  implicit def liftAny: ToLiteral.Aux[Any, Any, ExistentialNothing] = ToLiteral.fromData
+  implicit def anyToLiteral: ToLiteral.Aux[Any, Any, ExistentialNothing] = ToLiteral.fromData
 
   trait Trainable[-Data, +Delta] {
     def apply(data: Data): Delta

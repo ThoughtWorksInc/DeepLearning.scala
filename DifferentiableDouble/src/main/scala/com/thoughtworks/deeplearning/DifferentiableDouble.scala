@@ -313,7 +313,7 @@ object DifferentiableDouble {
   trait OptimizerFactory {
     def doubleOptimizer(weight: Weight): Optimizer
   }
-  implicit def liftDouble: ToLiteral.Aux[Double, Double, Double] = ToLiteral.fromData
+  implicit def doubleToLiteral: ToLiteral.Aux[Double, Double, Double] = ToLiteral.fromData
 
   /**
     * Returns a [[Poly.MathFunctions.min.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.min]]

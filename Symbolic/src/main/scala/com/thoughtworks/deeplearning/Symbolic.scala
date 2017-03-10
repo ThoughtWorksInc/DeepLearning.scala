@@ -150,7 +150,7 @@ object Symbolic extends LowPrioritySymbolic {
 
   implicit def to[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
       implicit inputPlaceHolder: Identity[InputData0, InputDelta0],
-      liftTo: ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]
+      toLiteral: ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]
   ): To.Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
     new To[NativeOutput] {
       type OutputData = OutputData0
@@ -261,13 +261,13 @@ object Symbolic extends LowPrioritySymbolic {
 
     implicit def placeholderToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
         implicit inputPlaceholder: Identity[InputData, InputDelta],
-        lift: ToLiteral.Aux[From, OutputData0, OutputDelta0])
+        toLiteral: ToLiteral.Aux[From, OutputData0, OutputDelta0])
       : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
         override type OutputData = OutputData0
         override type OutputDelta = OutputDelta0
 
-        override def apply(from: From) = lift(from)
+        override def apply(from: From) = toLiteral(from)
       }
     }
 

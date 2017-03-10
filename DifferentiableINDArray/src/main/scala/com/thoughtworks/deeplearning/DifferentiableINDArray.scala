@@ -1395,7 +1395,7 @@ object DifferentiableINDArray {
     }
   }
 
-  implicit def liftINDArray: ToLiteral.Aux[INDArray, INDArray, INDArray] = ToLiteral.fromData
+  implicit def indArrayToLiteral: ToLiteral.Aux[INDArray, INDArray, INDArray] = ToLiteral.fromData
 
   implicit def indArrayTrainable: Trainable[INDArray, INDArray] = new Trainable[INDArray, INDArray] {
     override def apply(data: INDArray): INDArray = Nd4j.ones(data.shape(): _*)
