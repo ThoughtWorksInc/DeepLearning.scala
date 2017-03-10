@@ -53,8 +53,8 @@ object DifferentiableAny {
   }
 
   /**
-    * ops for all layers
-    * {{{
+    * A helper that contains common ops for all layers
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableAny._
     * (input:From[INDArray]##T).compose(anotherLayer)
     * }}}
@@ -63,10 +63,11 @@ object DifferentiableAny {
       layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
     /**
-      * make output of another layer as input of this layer
-      * {{{
+      * Returns a [[Layer]] that accepts another layer's output as input of this layer
+      * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * layer.compose(anotherLayer)
+      * def composeNetwork(implicit thisLayer: Symbolic[INDArray]##T)(anotherLayer: Symbolic[INDArray]##T) = {
+      *   thisLayer.compose(anotherLayer)
       * }}}
       */
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
@@ -77,10 +78,13 @@ object DifferentiableAny {
     }
 
     /**
-      * If you want to test the accuracy of network assertions, you can not let your network backward, then you need to use `predict`
-      * {{{
+      * Return a [[Layer]] that accepts input and will only forward.
+      * If you want to test the accuracy of network assertions, you can not let your network backward, then you need to use `predict`.
+      * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * predicter.predict(testData)
+      * def composeNetwork(implicit input: Symbolic[INDArray]##T) =???
+      * val predictor=composeNetwork
+      * predictor.predict(testData)
       * }}}
       */
     def predict[InputData, InputDelta](inputData: InputData)(
@@ -92,10 +96,13 @@ object DifferentiableAny {
     }
 
     /**
-      * If you want to train your network,you need your network backward, then you need to use `train`
-      * {{{
+      * Return a [[Layer]] that accepts input and will forward & backward.
+      * If you want to train your network,you need your network backward, then you need to use `train`.
+      * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * yourNetwork.train(input)
+      * def composeNetwork(implicit input: Symbolic[INDArray]##T) =???
+      * val yourNetwork=composeNetwork
+      * yourNetwork.train(testData)
       * }}}
       */
     def train[InputData, InputDelta](inputData: InputData)(
@@ -118,8 +125,8 @@ object DifferentiableAny {
     /**
       * In DeepLearning.Scala,operation is not immediately run,
       * but first filled with placeholders, the entire network will be running ,then the real data will come into networks.
-      * So if you want to see some vars's intermediate state,you need to use `withOutputDataHook`
-      * {{{
+      * So if you want to see some vars's intermediate state,you need to use `withOutputDataHook`.
+      * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
       * (var:From[INDArray]##T).withOutputDataHook{ data => println(data) }
       * }}}
@@ -130,8 +137,8 @@ object DifferentiableAny {
   }
 
   /**
-    * Implicit conversions for all layers.
-    * {{{
+    * A helper that contains common boilerplate code for all layers.
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableAny._
     * }}}
     */
