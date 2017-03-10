@@ -173,7 +173,8 @@ trait BufferedLayer extends Layer {
 object BufferedLayer {
 
   /**
-    * Implement a unary operator layer
+    * A helper that contains common boilerplate code for layers of unary operator
+    *
     * {{{
     * final case class UnaryOps[Input0 <: Batch](
     * operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Unary {}
