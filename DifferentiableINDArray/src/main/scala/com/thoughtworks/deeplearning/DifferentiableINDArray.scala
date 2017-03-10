@@ -66,7 +66,8 @@ object DifferentiableINDArray {
 
   /**
     * Optimizers of NDArray
-    * {{{
+    *
+    * @example{{{
     * implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
     *   override def ndArrayOptimizer(weight: Weight): Optimizer = {
     *     new LearningRate with L2Regularization with Adam {
@@ -226,6 +227,7 @@ object DifferentiableINDArray {
 
   trait OptimizerFactory {
     def ndArrayOptimizer(weight: Weight): Optimizer
+
   }
 
   object Layers {
@@ -783,7 +785,7 @@ object DifferentiableINDArray {
       }
     }
 
-    //TODO : update nd4j version to 0.7.3
+    //TODO: update nd4j to 0.7.3
     final case class MaxPool[Input0 <: Batch](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
                                               dimensions: Int*)
         extends BufferedLayer.Unary {
@@ -882,10 +884,14 @@ object DifferentiableINDArray {
   import Layers._
 
   /**
-    * Do max ops for all NDArray elements,make sure all elements of NDArray >= the Double value
-    * {{{
+    * Returns a [[Poly.MathFunctions.max.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.max]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * max((convResult:To[INDArray]##T), 0.0)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.max(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `max(INDArray,Double)`[Left, Right, Input <: Batch]
@@ -895,10 +901,14 @@ object DifferentiableINDArray {
     max.at(MaxDouble(_, _))
 
   /**
-    * Element-by-element divided
-    * {{{
+    * Returns a [[Poly.MathMethods./.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray1:To[INDArray]##T)/(ndarray2:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathMethods./(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
     * }}}
     */
   implicit def `INDArray/INDArray`[Input <: Batch]
@@ -911,10 +921,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray divided Double
-    * {{{
+    * Returns a [[Poly.MathMethods./.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (double:To[Double]##T)/(ndarray2:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods./(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `Double/INDArray`[Input <: Batch]
@@ -927,10 +941,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray divided Double
-    * {{{
+    * Returns a [[Poly.MathMethods./.Case]] that accepts a INDArray [[Layer]]  and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray:To[INDArray]##T)/(double:To[Double]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods./(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `INDArray/Double`[Input <: Batch]
@@ -943,10 +961,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Element-by-element multiply
-    * {{{
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray1:To[INDArray]##T)*(ndarray2:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathMethods.*(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
     * }}}
     */
   implicit def `INDArray*INDArray`[Input <: Batch]
@@ -959,10 +981,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray multiply Double
-    * {{{
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray:To[INDArray]##T)*(double:To[Double]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.*(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `INDArray*Double`[Input <: Batch]
@@ -975,10 +1001,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray multiply Double
-    * {{{
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (double:To[Double]##T)*(ndarray:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.*(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `Double*INDArray`[Input <: Batch]
@@ -991,10 +1021,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Element-by-element subtraction
-    * {{{
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray1:To[INDArray]##T) - (ndarray2:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDarray]##T) = {
+    *   Poly.MathMethods.-(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
     * }}}
     */
   implicit def `INDArray-INDArray`[Input <: Batch]
@@ -1007,10 +1041,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray subtract Double
-    * {{{
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (double:To[Double]##T) - (ndarray:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.-(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `Double-INDArray`[Input <: Batch]
@@ -1023,10 +1061,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray subtract Double
-    * {{{
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray:To[INDArray]##T) - (double:To[Double]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.-(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `INDArray-Double`[Input <: Batch]
@@ -1039,10 +1081,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Element-by-element plus
-    * {{{
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray1:To[INDArray]##T) + (ndarray2:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDarray]##T) = {
+    *   Poly.MathMethods.+(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
     * }}}
     */
   implicit def `INDArray+INDArray`[Input <: Batch]
@@ -1055,10 +1101,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray plus Double
-    * {{{
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (ndarray:To[INDArray]##T) + (double:To[Double]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.+(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `INDArray+Double`[Input <: Batch]
@@ -1071,10 +1121,14 @@ object DifferentiableINDArray {
   }
 
   /**
-    * All elements of INDArray plus Double
-    * {{{
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * (double:To[Double]##T) + (ndarray:To[INDArray]##T)
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.+(inputINDArrayLayer,anotherDoubleLayer)
+    * }
     * }}}
     */
   implicit def `Double+INDArray`[Input <: Batch]
@@ -1087,11 +1141,20 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Extract for all elements of INDArray
-    * {{{
-    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * exp(double:To[Double]##T)
+    * Returns a [[Poly.MathFunctions.exp.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.exp]]
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.exp]]
+    *       for INDArray layers or any value able to convert to a INDArray layer
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray.`exp(INDArray)`
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def expNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathFunctions.exp(indArrayLayer)
+    * }
     * }}}
+    *
+    * @see [[Poly.LayerPoly1]]
     */
   implicit def `exp(INDArray)`[Input <: Batch]
     : exp.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
@@ -1104,7 +1167,7 @@ object DifferentiableINDArray {
     * @note Importing this method will enable [[Poly.MathFunctions.log]]
     *       for INDArray layers or any value able to convert to a INDArray layer
     *
-    * @example {{{
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray.`log(INDArray)`
     * import com.thoughtworks.deeplearning.Symbolic
     * def logNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
@@ -1120,11 +1183,20 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Abs for all elements of INDArray
-    * {{{
-    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * abs(double:To[Double]##T)
+    * Returns a [[Poly.MathFunctions.abs.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.abs]]
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.abs]]
+    *       for INDArray layers or any value able to convert to a INDArray layer
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray.`abs(INDArray)`
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def absNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathFunctions.abs(indArrayLayer)
+    * }
     * }}}
+    *
+    * @see [[Poly.LayerPoly1]]
     */
   implicit def `abs(INDArray)`[Input <: Batch]
     : abs.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
@@ -1253,7 +1325,7 @@ object DifferentiableINDArray {
     }
 
     /**
-      * @return shape of NDArray
+      * Return shape of NDArray
       */
     def shape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = {
       Shape(operand)
@@ -1268,21 +1340,21 @@ object DifferentiableINDArray {
     }
 
     /**
-      * @return sum of all elements of NDArray
+      * Return sum of all elements of NDArray
       */
     def sum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceSum(operand)
     }
 
     /**
-      * @return mean of all elements of NDArray
+      * Return mean of all elements of NDArray
       */
     def mean: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceMean(operand)
     }
 
     /**
-      * sum dimensions of NDArray,will return an INDArrayPlaceholder
+      * Return sum dimensions of NDArray,will return an INDArrayPlaceholder
       */
     def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Sum(operand, dimensions)
@@ -1291,8 +1363,9 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Implicit conversions for all NDArray layers.
-    * {{{
+    * A helper that contains common boilerplate code for all NDArray layers.
+
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableNDArray._
     * }}}
     */

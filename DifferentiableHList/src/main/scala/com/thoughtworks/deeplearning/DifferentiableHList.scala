@@ -161,8 +161,9 @@ object DifferentiableHList {
   }
 
   /**
-    * Implicit conversions for all HList layers.
-    * {{{
+    * A helper that contains common boilerplate code for all HList layers.
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableHList._
     * }}}
     */

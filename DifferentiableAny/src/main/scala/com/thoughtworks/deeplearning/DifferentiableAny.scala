@@ -54,6 +54,7 @@ object DifferentiableAny {
 
   /**
     * A helper that contains common ops for all layers
+    *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableAny._
     * (input:From[INDArray]##T).compose(anotherLayer)
@@ -64,6 +65,7 @@ object DifferentiableAny {
 
     /**
       * Returns a [[Layer]] that accepts another layer's output as input of this layer
+      *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
       * def composeNetwork(implicit thisLayer: Symbolic[INDArray]##T)(anotherLayer: Symbolic[INDArray]##T) = {
@@ -80,6 +82,7 @@ object DifferentiableAny {
     /**
       * Return a [[Layer]] that accepts input and will only forward.
       * If you want to test the accuracy of network assertions, you can not let your network backward, then you need to use `predict`.
+      *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
       * def composeNetwork(implicit input: Symbolic[INDArray]##T) =???
@@ -98,6 +101,7 @@ object DifferentiableAny {
     /**
       * Return a [[Layer]] that accepts input and will forward & backward.
       * If you want to train your network,you need your network backward, then you need to use `train`.
+      *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
       * def composeNetwork(implicit input: Symbolic[INDArray]##T) =???
@@ -126,6 +130,7 @@ object DifferentiableAny {
       * In DeepLearning.Scala,operation is not immediately run,
       * but first filled with placeholders, the entire network will be running ,then the real data will come into networks.
       * So if you want to see some vars's intermediate state,you need to use `withOutputDataHook`.
+      *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
       * (var:From[INDArray]##T).withOutputDataHook{ data => println(data) }
@@ -138,6 +143,7 @@ object DifferentiableAny {
 
   /**
     * A helper that contains common boilerplate code for all layers.
+    *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableAny._
     * }}}

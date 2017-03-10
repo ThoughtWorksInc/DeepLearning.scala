@@ -205,6 +205,7 @@ object BufferedLayer {
 
   /**
     * A helper that contains common boilerplate code for layers of binary operator layer
+    *
     * @example{{{
     * final case class BinaryOps[Input0 <: Batch](
     * operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],

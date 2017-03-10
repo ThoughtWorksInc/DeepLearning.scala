@@ -191,6 +191,17 @@ object DifferentiableInt {
 
   implicit def liftInt: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
 
+  /**
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableInt._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    *   Poly.MathMethods.+(inputIntLayer,anotherIntLayer)
+    * }
+    * }}}
+    */
   implicit def `Int+Int`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch]] = {
@@ -198,6 +209,17 @@ object DifferentiableInt {
     MathMethods.+.at(Plus(_, _))
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableInt._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    *   Poly.MathMethods.-(inputIntLayer,anotherIntLayer)
+    * }
+    * }}}
+    */
   implicit def `Int-Int`[Input <: Batch]: MathMethods.-.Case.Aux[Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch]] = {
@@ -207,6 +229,17 @@ object DifferentiableInt {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableInt._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    *   Poly.MathMethods.*(inputIntLayer,anotherIntLayer)
+    * }
+    * }}}
+    */
   implicit def `Int*Int`[Input <: Batch]: MathMethods.*.Case.Aux[Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch]] = {
@@ -214,6 +247,17 @@ object DifferentiableInt {
     MathMethods.*.at(Times(_, _))
   }
 
+  /**
+    * Returns a [[Poly.MathMethods./.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableInt._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    *   Poly.MathMethods./(inputIntLayer,anotherIntLayer)
+    * }
+    * }}}
+    */
   implicit def `Int/Int`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, IntPlaceholder.Batch],
                                                      Layer.Aux[Input, IntPlaceholder.Batch],
                                                      Layer.Aux[Input, IntPlaceholder.Batch]] = {

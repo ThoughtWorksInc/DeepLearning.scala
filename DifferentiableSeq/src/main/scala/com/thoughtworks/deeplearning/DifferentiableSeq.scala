@@ -102,6 +102,13 @@ object DifferentiableSeq {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all Seq layers.
+
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableSeq._
+    * }}}
+    */
   implicit def toSeqLayerOps[From, Input <: Batch, SeqData, SeqDelta, ElementData, ElementDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, SeqData, SeqDelta],
       toSeqLayer: Layer.Aux[Input, Batch.Aux[SeqData, SeqDelta]] <:< Layer.Aux[

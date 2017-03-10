@@ -94,8 +94,9 @@ object DifferentiableBoolean {
   private[deeplearning] val BooleanPlaceholder: BooleanPlaceholder = implicitly
 
   /**
-    * Ops for all Boolean layers
-    * {{{
+    * A helper that contains common boilerplate code for all Boolean layers.
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableBoolean._
     * }}}
     */
@@ -125,8 +126,9 @@ object DifferentiableBoolean {
   }
 
   /**
-    * Implicit conversions for all Boolean layers.
-    * {{{
+    * A helper that contains common boilerplate code for all Boolean layers.
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableBoolean._
     * }}}
     */

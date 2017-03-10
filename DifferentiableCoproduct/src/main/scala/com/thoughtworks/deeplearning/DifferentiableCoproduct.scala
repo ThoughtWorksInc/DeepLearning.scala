@@ -212,8 +212,9 @@ object DifferentiableCoproduct {
   }
 
   /**
-    * Ops for all Coproduct layers
-    * {{{
+    * A helper that contains common boilerplate code for all Coproduct layers
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
     * }}}
     */
@@ -264,8 +265,9 @@ object DifferentiableCoproduct {
   }
 
   /**
-    * Implicit conversions for all Coproduct layers.
-    * {{{
+    * A helper that contains common boilerplate code for all Coproduct layers.
+    *
+    * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
     * }}}
     */
