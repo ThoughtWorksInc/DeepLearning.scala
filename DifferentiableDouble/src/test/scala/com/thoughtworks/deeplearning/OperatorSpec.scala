@@ -7,6 +7,7 @@ import com.thoughtworks.deeplearning.Layer.Batch
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
+import shapeless._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -27,7 +28,7 @@ final class OperatorSpec extends FreeSpec with Matchers {
       layer4
     }
 
-    val doubleToDouble = FromTo[Double, Double]
+    val doubleToDouble = LayerOf[Double, Double]
     val layer: (Double <=> Double)##T = buildLayer
 
     (layer: doubleToDouble.T).train(1.0)
