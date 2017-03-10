@@ -1,4 +1,4 @@
-addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "1.0.0" % Test)
+addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "2.0.0" % Test)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 

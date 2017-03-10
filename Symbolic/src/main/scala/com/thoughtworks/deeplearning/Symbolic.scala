@@ -9,7 +9,7 @@ import scala.language.{existentials, implicitConversions}
 
 @implicitNotFound("Don't know how to make ${NativeOutput} differentiable")
 trait Symbolic[NativeOutput] {
-  type T
+  type `@`
 }
 
 private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
@@ -77,8 +77,8 @@ object Symbolic extends LowPrioritySymbolic {
 
       implicit def implicitlyApply[Data, Delta]: Identity[Data, Delta] = new Identity
 
-      private[deeplearning] type DataOf[T <: Identity[_, _]] = t.Data forSome { val t: T }
-      private[deeplearning] type DeltaOf[T <: Identity[_, _]] = t.Delta forSome { val t: T }
+      private[deeplearning] type DataOf[`@` <: Identity[_, _]] = t.Data forSome { val t: `@` }
+      private[deeplearning] type DeltaOf[`@` <: Identity[_, _]] = t.Delta forSome { val t: `@` }
 
       implicit def inputPlaceholderToLayer[InputData, InputDelta]
         : ToLayer.Aux[Identity[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
@@ -121,7 +121,7 @@ object Symbolic extends LowPrioritySymbolic {
     type InputData
     type InputDelta
     type ConcreteLayer = Layer.Aux[Batch.Aux[InputData, InputDelta], Batch.Aux[OutputData, OutputDelta]]
-    type T >: ConcreteLayer <: ConcreteLayer
+    type `@` >: ConcreteLayer <: ConcreteLayer
   }
 
   private[deeplearning] object IsLayer {
@@ -228,7 +228,7 @@ object Symbolic extends LowPrioritySymbolic {
 
     implicit def isLayerToLayer[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0]
       : ToLayer.Aux[
-        IsLayer.Aux[InputData0, InputDelta0, OutputData0, OutputDelta0]#T,
+        IsLayer.Aux[InputData0, InputDelta0, OutputData0, OutputDelta0]#`@`,
         Batch.Aux[InputData0, InputDelta0],
         OutputData0,
         OutputDelta0
@@ -289,9 +289,9 @@ object Symbolic extends LowPrioritySymbolic {
     type Data
     type Delta
 
-    type T = Identity[Data, Delta]
+    type `@` = Identity[Data, Delta]
 
-    type Out = T
+    type Out = `@`
 
     override def apply() = new Identity
 

@@ -14,7 +14,7 @@ import shapeless._
   */
 class DifferentiableAnySpec extends FreeSpec with Matchers {
   "withOutputDataHook" in {
-    def layer1(implicit x: From[Double]##T) = {
+    def layer1(implicit x: From[Double]##`@`) = {
       x + x
     }
 

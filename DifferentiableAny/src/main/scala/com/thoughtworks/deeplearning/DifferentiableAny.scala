@@ -57,7 +57,7 @@ object DifferentiableAny {
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableAny._
-    * (input:From[INDArray]##T).compose(anotherLayer)
+    * (input:From[INDArray]##`@`).compose(anotherLayer)
     * }}}
     */
   final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
@@ -68,7 +68,7 @@ object DifferentiableAny {
       *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * def composeNetwork(implicit thisLayer: Symbolic[INDArray]##T)(anotherLayer: Symbolic[INDArray]##T) = {
+      * def composeNetwork(implicit thisLayer: INDArray @Symbolic)(anotherLayer: INDArray @Symbolic) = {
       *   thisLayer.compose(anotherLayer)
       * }}}
       */
@@ -85,7 +85,7 @@ object DifferentiableAny {
       *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * def composeNetwork(implicit input: Symbolic[INDArray]##T) =???
+      * def composeNetwork(implicit input: INDArray @Symbolic) =???
       * val predictor=composeNetwork
       * predictor.predict(testData)
       * }}}
@@ -104,7 +104,7 @@ object DifferentiableAny {
       *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * def composeNetwork(implicit input: Symbolic[INDArray]##T) =???
+      * def composeNetwork(implicit input: INDArray @Symbolic) =???
       * val yourNetwork=composeNetwork
       * yourNetwork.train(testData)
       * }}}
@@ -133,7 +133,7 @@ object DifferentiableAny {
       *
       * @example{{{
       * import com.thoughtworks.deeplearning.DifferentiableAny._
-      * (var:From[INDArray]##T).withOutputDataHook{ data => println(data) }
+      * (var:From[INDArray]##`@`).withOutputDataHook{ data => println(data) }
       * }}}
       */
     def withOutputDataHook(hook: OutputData => Unit): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
@@ -154,7 +154,7 @@ object DifferentiableAny {
     new AnyLayerOps(toLayer(a))
   }
 
-  type ExistentialNothing = T forSome { type T >: Nothing <: Nothing }
+  type ExistentialNothing = `@` forSome { type `@` >: Nothing <: Nothing }
 
   implicit def liftAny: ToLiteral.Aux[Any, Any, ExistentialNothing] = ToLiteral.fromData
 

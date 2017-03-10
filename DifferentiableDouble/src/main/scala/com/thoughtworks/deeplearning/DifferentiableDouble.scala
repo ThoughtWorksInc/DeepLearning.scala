@@ -321,7 +321,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathFunctions.min(inputDoubleLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -342,7 +342,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathFunctions.max(inputDoubleLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -363,7 +363,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.-(inputDoubleLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -382,7 +382,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.+(inputDoubleLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -401,7 +401,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods./(inputDoubleLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -420,7 +420,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.*(inputDoubleLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -437,7 +437,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic) = {
     *   Poly.MathFunctions.log(inputDoubleLayer)
     * }
     * }}}
@@ -453,7 +453,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic) = {
     *   Poly.MathFunctions.exp(inputDoubleLayer)
     * }
     * }}}
@@ -469,7 +469,7 @@ object DifferentiableDouble {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputDoubleLayer: Double @Symbolic) = {
     *   Poly.MathFunctions.abs(inputDoubleLayer)
     * }
     * }}}

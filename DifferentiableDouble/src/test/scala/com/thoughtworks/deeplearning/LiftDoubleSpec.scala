@@ -13,10 +13,10 @@ import org.scalatest._
   */
 final class LiftDoubleSpec extends FreeSpec with Matchers {
   "ToLiteral[Double] should be a double batch" in {
-    """implicitly[shapeless.the.`ToLiteral[Double]`.T <:< Batch.Aux[Double, Double]]""" should compile
+    """implicitly[shapeless.the.`ToLiteral[Double]`.`@` <:< Batch.Aux[Double, Double]]""" should compile
   }
 
   "<=> should create Layers" in {
-    """implicitly[shapeless.the.`Double <=> Double`.T =:= Layer.Aux[Batch.Aux[Double, Double], Batch.Aux[Double, Double]]]""" should compile
+    """implicitly[shapeless.the.`Double <=> Double`.`@` =:= Layer.Aux[Batch.Aux[Double, Double], Batch.Aux[Double, Double]]]""" should compile
   }
 }
