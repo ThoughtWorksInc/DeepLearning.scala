@@ -46,6 +46,9 @@ object Layer {
 
   }
 
+  /**
+    * 在DeepLearning.Scala中，每个输入和输出都是一个Batch，即每个输入和输出都包含Data和Delta，
+    */
   trait Batch extends AutoCloseable {
     type Data
     type Delta
@@ -75,6 +78,11 @@ object Layer {
 
 }
 
+/**
+  * The layer of DeepLearning.Scala is similar to the layer of neural networks ,But there are some details on the difference
+  * The layer in the neural networks corresponds to a layer of network, but the layer in DeepLearning.Scala corresponds to each operation,
+  * it means every operation in DeepLearning.Scala is a layer. Every layer contains input,output and forward.
+  */
 trait Layer {
 
   import Layer._

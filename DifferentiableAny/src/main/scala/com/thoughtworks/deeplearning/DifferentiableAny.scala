@@ -52,9 +52,23 @@ object DifferentiableAny {
 
   }
 
+  /**
+    * ops for all layers
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableAny._
+    * (input:From[INDArray]##T).compose(anotherLayer)
+    * }}}
+    */
   final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
       layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
 
+    /**
+      * make output of another layer as input of this layer
+      * {{{
+      * import com.thoughtworks.deeplearning.DifferentiableAny._
+      * layer.compose(anotherLayer)
+      * }}}
+      */
     def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
         implicit toLayer: ToLayer.Aux[G, NewInput, InputData, InputDelta],
         toInput: Layer.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< Layer.Aux[NewInput, Input]
@@ -62,6 +76,13 @@ object DifferentiableAny {
       Compose(layer, toInput(toLayer(g)))
     }
 
+    /**
+      * If you want to test the accuracy of network assertions, you can not let your network backward, then you need to use `predict`
+      * {{{
+      * import com.thoughtworks.deeplearning.DifferentiableAny._
+      * predicter.predict(testData)
+      * }}}
+      */
     def predict[InputData, InputDelta](inputData: InputData)(
         implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
           Batch.Aux[InputData, InputDelta],
@@ -70,6 +91,13 @@ object DifferentiableAny {
       managed(layer.forward(Literal[InputData](inputData))).acquireAndGet(_.value)
     }
 
+    /**
+      * If you want to train your network,you need your network backward, then you need to use `train`
+      * {{{
+      * import com.thoughtworks.deeplearning.DifferentiableAny._
+      * yourNetwork.train(input)
+      * }}}
+      */
     def train[InputData, InputDelta](inputData: InputData)(
         implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
           Batch.Aux[InputData, InputDelta],
@@ -87,11 +115,26 @@ object DifferentiableAny {
 
     }
 
+    /**
+      * In DeepLearning.Scala,operation is not immediately run,
+      * but first filled with placeholders, the entire network will be running ,then the real data will come into networks.
+      * So if you want to see some vars's intermediate state,you need to use `withOutputDataHook`
+      * {{{
+      * import com.thoughtworks.deeplearning.DifferentiableAny._
+      * (var:From[INDArray]##T).withOutputDataHook{ data => println(data) }
+      * }}}
+      */
     def withOutputDataHook(hook: OutputData => Unit): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
       WithOutputDataHook(layer, hook)
     }
   }
 
+  /**
+    * Implicit conversions for all layers.
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableAny._
+    * }}}
+    */
   implicit def toAnyLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
       implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
     : AnyLayerOps[Input, OutputData, OutputDelta] = {

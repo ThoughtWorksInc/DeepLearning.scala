@@ -93,6 +93,12 @@ object DifferentiableBoolean {
   private[deeplearning] type BooleanPlaceholder = Placeholder[Boolean, Boolean]
   private[deeplearning] val BooleanPlaceholder: BooleanPlaceholder = implicitly
 
+  /**
+    * Ops for all Boolean layers
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableBoolean._
+    * }}}
+    */
   final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BooleanPlaceholder.Batch]) {
 
     def `if`[Then,
@@ -118,6 +124,12 @@ object DifferentiableBoolean {
 
   }
 
+  /**
+    * Implicit conversions for all Boolean layers.
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableBoolean._
+    * }}}
+    */
   implicit def toBooleanLayerOps[From, Input <: Batch](from: From)(
       implicit toLayer: ToLayer.OfPlaceholder[From, Input, BooleanPlaceholder]): BooleanLayerOps[Input] = {
     new BooleanLayerOps[Input](toLayer(from))
