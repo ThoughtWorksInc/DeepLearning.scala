@@ -43,14 +43,14 @@ All of the above features are statically type checked.
 
 ### v1.0
 
-Version 1.0 is the current version with all of the above features. The final version will be released in Janary 2017.
+Version 1.0 is the current version with all of the above features. The final version will be released in March 2017.
 
 ### v2.0
 
 * Support `for`/`while` and other higher-order functions on differenitable `Seq`s.
 * Support `for`/`while` and other higher-order functions on GPU-accelerated differenitable N-dimensional arrays.
 
-Version 2.0 will be released in March 2017.
+Version 2.0 will be released in Q2 2017.
 
 ### v3.0
 
