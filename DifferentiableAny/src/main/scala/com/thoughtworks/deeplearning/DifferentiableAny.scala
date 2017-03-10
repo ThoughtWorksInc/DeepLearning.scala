@@ -100,7 +100,7 @@ object DifferentiableAny {
 
   type ExistentialNothing = T forSome { type T >: Nothing <: Nothing }
 
-  implicit def liftAny: Lift.Aux[Any, Any, ExistentialNothing] = Lift.fromData
+  implicit def liftAny: ToLiteral.Aux[Any, Any, ExistentialNothing] = ToLiteral.fromData
 
   trait Trainable[-Data, +Delta] {
     def apply(data: Data): Delta

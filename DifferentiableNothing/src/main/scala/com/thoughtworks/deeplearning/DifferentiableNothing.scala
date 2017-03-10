@@ -10,7 +10,7 @@ object DifferentiableNothing {
 
   /** @template */
   private[deeplearning] type NothingPlaceholder = Placeholder[Nothing, Any]
-  private[deeplearning] val NothingPlaceholder: NothingPlaceholder = implicitly
+  private[deeplearning] val NothingPlaceholder: NothingPlaceholder = new Placeholder
 
   object Layers {
 

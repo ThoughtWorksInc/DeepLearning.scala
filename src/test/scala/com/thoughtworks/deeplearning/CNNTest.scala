@@ -38,18 +38,18 @@ final class CNNTest extends FreeSpec with Matchers {
       }
     }
 
-    def convolutionThenRelu(implicit input: From[INDArray]##T): To[INDArray]##T = {
+    def convolutionThenRelu(implicit input: Lift[INDArray]##T): Lift[INDArray]##T = {
       -input
     }
 
-    def convolutionThenRelu2(implicit input: From[INDArray]##T): To[INDArray]##T = {
+    def convolutionThenRelu2(implicit input: Lift[INDArray]##T): Lift[INDArray]##T = {
 
       val imageCount = input.shape(0)
 
       input.reshape(imageCount + 0, 1.toLayer)
     }
 
-    def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
+    def hiddenLayer(implicit input: Lift[INDArray]##T): Lift[INDArray]##T = {
       val layer1 = convolutionThenRelu2.compose(convolutionThenRelu)
 
       layer1

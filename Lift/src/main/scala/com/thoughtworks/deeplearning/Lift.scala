@@ -7,37 +7,89 @@ import shapeless._
 import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
-trait Lift[From] extends DepFn1[From] {
+@implicitNotFound("Don't know how to make ${NativeValue} differentiable")
+trait Lift[NativeOutput] {
+  type T
+}
 
-  type Data
-  type Delta
+trait LowPriorityLift { this: Lift.type =>
 
-  type Out = Literal[Data]
+  implicit def fromLiteral[NativeValue, Data0, Delta0](
+      implicit toLiteral: Lazy[ToLiteral.Aux[NativeValue, Data0, Delta0]]): From.Aux[NativeValue, Data0, Delta0] =
+    new From[NativeValue] {
+      type Data = Data0
+      type Delta = Delta0
+    }
 
 }
-object Lift {
 
-  def fromData[From <: Data0, Data0, Delta0] = new Lift[From] {
-    override type Data = Data0
-    override type Delta = Delta0
+object Lift extends LowPriorityLift {
 
-    override def apply(data: From) = Literal[Data](data)
+  trait ToLiteral[From] extends DepFn1[From] {
+
+    type Data
+    type Delta
+
+    type Out = Literal[Data]
+
   }
 
-  type Aux[From, Data0, Delta0] = Lift[From] {
-    type Data = Data0
-    type Delta = Delta0
+  object ToLiteral {
+
+    def fromData[From <: Data0, Data0, Delta0] = new ToLiteral[From] {
+      override type Data = Data0
+      override type Delta = Delta0
+
+      override def apply(data: From) = Literal[Data](data)
+    }
+
+    type Aux[From, Data0, Delta0] = ToLiteral[From] {
+      type Data = Data0
+      type Delta = Delta0
+    }
+
   }
 
   object Layers {
 
-    final case class Identity[Data, Delta]() extends Layer {
+    final case class Identity[Data0, Delta0]() extends Layer {
+
+      type Data = Data0
+      type Delta = Delta0
+
       type Input = Batch.Aux[Data, Delta]
       type Output = Batch.Aux[Data, Delta]
 
       override def forward(input: Input): Output = {
         input.addReference()
       }
+
+      private type ConcreteBatch = Batch.Aux[Data, Delta]
+
+      // Workaround for https://issues.scala-lang.org/browse/SI-10008
+      type Batch >: ConcreteBatch <: ConcreteBatch
+
+      private[deeplearning] type To[OutputPlaceholder <: Identity[_, _]] = Layer.Aux[Batch, OutputPlaceholder#Batch]
+
+    }
+
+    object Identity {
+
+      implicit def implicitlyApply[Data, Delta]: Identity[Data, Delta] = new Identity
+
+      private[deeplearning] type DataOf[T <: Identity[_, _]] = t.Data forSome { val t: T }
+      private[deeplearning] type DeltaOf[T <: Identity[_, _]] = t.Delta forSome { val t: T }
+
+      implicit def inputPlaceholderToLayer[InputData, InputDelta]
+        : ToLayer.Aux[Identity[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
+        new ToLayer[Identity[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
+          override type OutputData = InputData
+          override type OutputDelta = InputDelta
+
+          override def apply(input: Identity[InputData, InputDelta]) =
+            Identity[InputData, InputDelta]()
+        }
+
     }
 
     final case class Literal[Data0](value0: Data0) extends Layer with Batch {
@@ -63,7 +115,7 @@ object Lift {
 
   import Layers._
 
-  trait IsLayer {
+  private[deeplearning] trait IsLayer {
     type OutputData
     type OutputDelta
     type InputData
@@ -72,7 +124,7 @@ object Lift {
     type T >: ConcreteLayer <: ConcreteLayer
   }
 
-  object IsLayer {
+  private[deeplearning] object IsLayer {
 
     type Aux[InputData0, InputDelta0, OutputData0, OutputDelta0] = IsLayer {
       type OutputData = OutputData0
@@ -83,8 +135,9 @@ object Lift {
 
   }
 
-  trait To[NativeOutput] extends IsLayer
-  object To {
+  private[deeplearning] trait To[NativeOutput] extends Lift[NativeOutput] with IsLayer
+
+  private[deeplearning] object To {
     type Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] = To[NativeOutput] {
       type OutputData = OutputData0
       type OutputDelta = OutputDelta0
@@ -92,19 +145,19 @@ object Lift {
       type InputDelta = InputDelta0
     }
 
-    implicit def to[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-        implicit inputPlaceHolder: Placeholder[InputData0, InputDelta0],
-        liftTo: Lift.Aux[NativeOutput, OutputData0, OutputDelta0]
-    ): To.Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
-      new To[NativeOutput] {
-        type OutputData = OutputData0
-        type OutputDelta = OutputDelta0
-        type InputData = InputData0
-        type InputDelta = InputDelta0
-      }
-
     def apply[NativeOutput](implicit tc: To[NativeOutput]): tc.type = tc
   }
+
+  implicit def to[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+      implicit inputPlaceHolder: Identity[InputData0, InputDelta0],
+      liftTo: ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]
+  ): To.Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+    new To[NativeOutput] {
+      type OutputData = OutputData0
+      type OutputDelta = OutputDelta0
+      type InputData = InputData0
+      type InputDelta = InputDelta0
+    }
 
   trait FromTo[NativeInput, NativeOutput] extends IsLayer
 
@@ -123,8 +176,8 @@ object Lift {
       typeClass
 
     implicit def lift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-        implicit liftInput: Lazy[Lift.Aux[NativeInput, InputData0, InputDelta0]],
-        liftOutput: Lazy[Lift.Aux[NativeOutput, OutputData0, OutputDelta0]])
+        implicit liftInput: Lazy[ToLiteral.Aux[NativeInput, InputData0, InputDelta0]],
+        liftOutput: Lazy[ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]])
       : FromTo.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
       new FromTo[NativeInput, NativeOutput] {
         type InputData = InputData0
@@ -137,38 +190,9 @@ object Lift {
 
   type <=>[NativeInput, NativeOutput] = FromTo[NativeInput, NativeOutput]
 
-  // FIXME: rename to placeholder
-  final class Placeholder[Data0, Delta0] {
-    type Data = Data0
-    type Delta = Delta0
+  private[deeplearning] type Placeholder[Data, Delta] = Identity[Data, Delta]
 
-    private type ConcreteBatch = Batch.Aux[Data, Delta]
-
-    // Workaround for https://issues.scala-lang.org/browse/SI-10008
-    type Batch >: ConcreteBatch <: ConcreteBatch
-
-    private[deeplearning] type To[OutputPlaceholder <: Placeholder[_, _]] = Layer.Aux[Batch, OutputPlaceholder#Batch]
-
-  }
-
-  object Placeholder {
-
-    implicit def apply[Data, Delta]: Placeholder[Data, Delta] = new Placeholder
-
-    private[deeplearning] type DataOf[T <: Placeholder[_, _]] = t.Data forSome { val t: T }
-    private[deeplearning] type DeltaOf[T <: Placeholder[_, _]] = t.Delta forSome { val t: T }
-
-    implicit def inputPlaceholderToLayer[InputData, InputDelta]
-      : ToLayer.Aux[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta], InputData, InputDelta] =
-      new ToLayer[Placeholder[InputData, InputDelta], Batch.Aux[InputData, InputDelta]] {
-        override type OutputData = InputData
-        override type OutputDelta = InputDelta
-
-        override def apply(input: Placeholder[InputData, InputDelta]) =
-          Identity[InputData, InputDelta]()
-      }
-
-  }
+  private[deeplearning] val Placeholder = Identity
 
   implicit final class ToLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
       implicit typeClassInstance: ToLayer.Aux[From, Input, OutputData, OutputDelta]
@@ -179,7 +203,7 @@ object Lift {
   }
 
   implicit final class ToBatchOps[From, Data, Delta](from: From)(
-      implicit lift: Lift.Aux[From, Data, Delta]
+      implicit lift: ToLiteral.Aux[From, Data, Delta]
   ) {
 
     @inline
@@ -195,7 +219,7 @@ object Lift {
 
   private[deeplearning] sealed trait ToLayerLowPriorityImplicits { this: ToLayer.type =>
 
-    implicit def toLayerOfPlaceholder[Input0 <: Batch, OutputPlaceholder <: Placeholder[_, _]]
+    implicit def toLayerOfPlaceholder[Input0 <: Batch, OutputPlaceholder <: Identity[_, _]]
       : ToLayer.OfPlaceholder[Layer.Aux[Input0, OutputPlaceholder#Batch], Input0, OutputPlaceholder] = {
       ToLayer
         .layerToLayer[Input0, Placeholder.DataOf[OutputPlaceholder], Placeholder.DeltaOf[OutputPlaceholder]]
@@ -221,7 +245,7 @@ object Lift {
       type OutputDelta = OutputDelta0
     }
 
-    type OfPlaceholder[From, Input <: Batch, OutputPlaceholder <: Placeholder[_, _]] =
+    type OfPlaceholder[From, Input <: Batch, OutputPlaceholder <: Identity[_, _]] =
       ToLayer.Aux[From, Input, differentiablePlaceholder.Data, differentiablePlaceholder.Delta] forSome {
         val differentiablePlaceholder: OutputPlaceholder
       }
@@ -236,8 +260,8 @@ object Lift {
       }
 
     implicit def placeholderToLayer[From, InputData, InputDelta, OutputData0, OutputDelta0](
-        implicit inputPlaceholder: Placeholder[InputData, InputDelta],
-        lift: Lift.Aux[From, OutputData0, OutputDelta0])
+        implicit inputPlaceholder: Identity[InputData, InputDelta],
+        lift: ToLiteral.Aux[From, OutputData0, OutputDelta0])
       : ToLayer.Aux[From, Batch.Aux[InputData, InputDelta], OutputData0, OutputDelta0] = {
       new ToLayer[From, Batch.Aux[InputData, InputDelta]] {
         override type OutputData = OutputData0
@@ -260,21 +284,20 @@ object Lift {
     type Out = Layer.Aux[Input, Output]
   }
 
-  @implicitNotFound("Don't know how to make ${NativeValue} differentiable")
-  trait From[NativeValue] extends DepFn0 {
+  private[deeplearning] trait From[NativeValue] extends Lift[NativeValue] with DepFn0 {
 
     type Data
     type Delta
 
-    type T = Placeholder[Data, Delta]
+    type T = Identity[Data, Delta]
 
     type Out = T
 
-    override def apply() = new Placeholder
+    override def apply() = new Identity
 
   }
 
-  object From {
+  private[deeplearning] object From {
 
     /** @template */
     type Aux[NativeValue, Data0, Delta0] = From[NativeValue] {
@@ -283,13 +306,6 @@ object Lift {
     }
 
     def apply[NativeValue](implicit typeClass: From[NativeValue]): typeClass.type = typeClass
-
-    implicit def fromLift[NativeValue, Data0, Delta0](
-        implicit lift: Lazy[Lift.Aux[NativeValue, Data0, Delta0]]): From.Aux[NativeValue, Data0, Delta0] =
-      new From[NativeValue] {
-        type Data = Data0
-        type Delta = Delta0
-      }
 
   }
 

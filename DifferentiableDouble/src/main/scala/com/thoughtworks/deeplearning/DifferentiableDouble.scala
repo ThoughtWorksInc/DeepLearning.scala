@@ -304,7 +304,7 @@ object DifferentiableDouble {
   trait OptimizerFactory {
     def doubleOptimizer(weight: Weight): Optimizer
   }
-  implicit def liftDouble: Lift.Aux[Double, Double, Double] = Lift.fromData
+  implicit def liftDouble: ToLiteral.Aux[Double, Double, Double] = ToLiteral.fromData
 
   implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                                   Layer.Aux[Input, DoublePlaceholder.Batch],

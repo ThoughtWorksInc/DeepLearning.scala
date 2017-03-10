@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats._
 import cats.implicits._
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift.Placeholder
+import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.Poly.MathMethods./
@@ -16,7 +16,7 @@ import shapeless.the
 object DifferentiableInt {
 
   private[deeplearning] type IntPlaceholder = Placeholder[Int, Float]
-  private[deeplearning] val IntPlaceholder: IntPlaceholder = implicitly
+  private[deeplearning] val IntPlaceholder: IntPlaceholder = new Placeholder
 
   val Optimizers = DifferentiableDouble.Optimizers
 
@@ -189,7 +189,7 @@ object DifferentiableInt {
     }
   }
 
-  implicit def liftInt: Lift.Aux[Int, Int, Float] = Lift.fromData
+  implicit def liftInt: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
 
   implicit def `Int+Int`[Input <: Batch]: MathMethods.+.Case.Aux[Layer.Aux[Input, IntPlaceholder.Batch],
                                                                  Layer.Aux[Input, IntPlaceholder.Batch],

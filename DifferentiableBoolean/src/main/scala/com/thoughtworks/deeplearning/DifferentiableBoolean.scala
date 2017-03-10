@@ -123,6 +123,6 @@ object DifferentiableBoolean {
     new BooleanLayerOps[Input](toLayer(from))
   }
 
-  implicit def liftBoolean: Lift.Aux[Boolean, Boolean, Boolean] = Lift.fromData
+  implicit def liftBoolean: ToLiteral.Aux[Boolean, Boolean, Boolean] = ToLiteral.fromData
 
 }

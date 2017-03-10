@@ -273,12 +273,12 @@ object DifferentiableCoproduct {
     new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
 
-  implicit def liftCNil: Lift.Aux[CNil, CNil, CNil] = Lift.fromData
+  implicit def liftCNil: ToLiteral.Aux[CNil, CNil, CNil] = ToLiteral.fromData
 
   implicit def liftCCons[Head, HeadData, HeadDelta, Tail <: Coproduct, TailData <: Coproduct, TailDelta <: Coproduct](
-      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
-      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
-    : Lift.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new Lift[Head :+: Tail] {
+      implicit liftHead: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
+      liftTail: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
+    : ToLiteral.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new ToLiteral[Head :+: Tail] {
     override type Data = HeadData :+: TailData
     override type Delta = HeadDelta :+: TailDelta
     override def apply(data: :+:[Head, Tail]): Literal[HeadData :+: TailData] = {

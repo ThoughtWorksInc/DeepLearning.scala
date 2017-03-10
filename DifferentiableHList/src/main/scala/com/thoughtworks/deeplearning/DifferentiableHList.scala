@@ -191,12 +191,12 @@ object DifferentiableHList {
     new HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListLayer(toLayer(from)))
   }
 
-  implicit def liftHNil[From <: HNil]: Lift.Aux[From, HNil, CNil] = Lift.fromData
+  implicit def liftHNil[From <: HNil]: ToLiteral.Aux[From, HNil, CNil] = ToLiteral.fromData
 
   implicit def liftHCons[Head, HeadData, HeadDelta, Tail <: HList, TailData <: HList, TailDelta <: Coproduct](
-      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
-      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
-    : Lift.Aux[Head :: Tail, HeadData :: TailData, HeadDelta :+: TailDelta] = new Lift[Head :: Tail] {
+      implicit liftHead: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
+      liftTail: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
+    : ToLiteral.Aux[Head :: Tail, HeadData :: TailData, HeadDelta :+: TailDelta] = new ToLiteral[Head :: Tail] {
     override type Data = HeadData :: TailData
     override type Delta = HeadDelta :+: TailDelta
     override def apply(data: Head :: Tail): Literal[HeadData :: TailData] = {
