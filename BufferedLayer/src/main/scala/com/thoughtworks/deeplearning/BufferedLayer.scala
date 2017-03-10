@@ -172,6 +172,13 @@ trait BufferedLayer extends Layer {
 
 object BufferedLayer {
 
+  /**
+    * Implement a unary operator layer
+    * {{{
+    * final case class UnaryOps[Input0 <: Batch](
+    * operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Unary {}
+    * }}}
+    */
   trait Unary extends BufferedLayer {
 
     protected val operand: Layer.Aux[Input, _ <: Batch]
@@ -195,6 +202,14 @@ object BufferedLayer {
 
   }
 
+  /**
+    * Implement a binary operator layer
+    * {{{
+    * final case class BinaryOps[Input0 <: Batch](
+    * operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+    * operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Binary {}
+    * }}}
+    */
   trait Binary extends BufferedLayer {
 
     protected val operand1: Layer.Aux[Input, _ <: Batch]

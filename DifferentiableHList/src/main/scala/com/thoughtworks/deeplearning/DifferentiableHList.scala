@@ -160,6 +160,12 @@ object DifferentiableHList {
 
   }
 
+  /**
+    * Implicit conversions for all HList layers.
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableHList._
+    * }}}
+    */
   implicit def toHListLayerOps[From, Input <: Batch, TailData <: HList, TailDelta <: Coproduct](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, TailData, TailDelta]
   ): HListLayerOps[Input, TailData, TailDelta] = {

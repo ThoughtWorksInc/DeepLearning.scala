@@ -211,6 +211,12 @@ object DifferentiableCoproduct {
 
   }
 
+  /**
+    * Ops for all Coproduct layers
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
+    * }}}
+    */
   final class CConsLayerOps[
       Input <: Batch,
       HeadData,
@@ -257,6 +263,12 @@ object DifferentiableCoproduct {
 
   }
 
+  /**
+    * Implicit conversions for all Coproduct layers.
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
+    * }}}
+    */
   implicit def toCConsLayerOps[From,
                                Input <: Batch,
                                OutputData,

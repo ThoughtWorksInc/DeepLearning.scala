@@ -33,6 +33,9 @@ object DifferentiableDouble {
 
   private[deeplearning] val DoublePlaceholder: DoublePlaceholder = implicitly
 
+  /**
+    * Optimizers of Double
+    */
   object Optimizers {
 
     trait Optimizer {
@@ -43,6 +46,11 @@ object DifferentiableDouble {
 
       protected def currentLearningRate(): Double
 
+      /**
+        * Update double use learning rate
+        * @param oldValue double value before update
+        * @param delta delta
+        */
       override def updateDouble(oldValue: Double, delta: Double): Double = {
         oldValue - delta * currentLearningRate()
       }
@@ -391,6 +399,12 @@ object DifferentiableDouble {
 
   }
 
+  /**
+    * Implicit conversions for all Double layers.
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * }}}
+    */
   implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
       implicit toLayer: ToLayer.OfPlaceholder[From, Input, DoublePlaceholder]
   ): DoubleLayerOps[Input] = {

@@ -64,6 +64,26 @@ object DifferentiableINDArray {
   private[deeplearning] type INDArrayPlaceholder = Placeholder[INDArray, INDArray]
   private[deeplearning] val INDArrayPlaceholder: INDArrayPlaceholder = implicitly
 
+  /**
+    * Optimizers of NDArray
+    * {{{
+    * implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
+    *   override def ndArrayOptimizer(weight: Weight): Optimizer = {
+    *     new LearningRate with L2Regularization with Adam {
+    *
+    *       var learningRate = 0.00003
+    *
+    *       override protected def l2Regularization: Double = 0.00003
+    *
+    *       override protected def currentLearningRate(): Double = {
+    *       learningRate * 0.75
+    *       learningRate
+    *      }
+    *    }
+    *  }
+    * }
+    * }}}
+    */
   object Optimizers {
 
     trait L1Regularization extends Optimizer {
@@ -763,6 +783,7 @@ object DifferentiableINDArray {
       }
     }
 
+    //TODO : update nd4j version to 0.7.3
     final case class MaxPool[Input0 <: Batch](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
                                               dimensions: Int*)
         extends BufferedLayer.Unary {
@@ -860,12 +881,26 @@ object DifferentiableINDArray {
 
   import Layers._
 
+  /**
+    * Do max ops for all NDArray elements,make sure all elements of NDArray >= the Double value
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * max((convResult:To[INDArray]##T), 0.0)
+    * }}}
+    */
   implicit def `max(INDArray,Double)`[Left, Right, Input <: Batch]
     : max.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                    Layer.Aux[Input, DoublePlaceholder.Batch],
                    Layer.Aux[Input, INDArrayPlaceholder.Batch]] =
     max.at(MaxDouble(_, _))
 
+  /**
+    * Element-by-element divided
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray1:To[INDArray]##T)/(ndarray2:To[INDArray]##T)
+    * }}}
+    */
   implicit def `INDArray/INDArray`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -875,6 +910,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray divided Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (double:To[Double]##T)/(ndarray2:To[INDArray]##T)
+    * }}}
+    */
   implicit def `Double/INDArray`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -884,6 +926,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray divided Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray:To[INDArray]##T)/(double:To[Double]##T)
+    * }}}
+    */
   implicit def `INDArray/Double`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -893,6 +942,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Element-by-element multiply
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray1:To[INDArray]##T)*(ndarray2:To[INDArray]##T)
+    * }}}
+    */
   implicit def `INDArray*INDArray`[Input <: Batch]
     : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -902,6 +958,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray multiply Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray:To[INDArray]##T)*(double:To[Double]##T)
+    * }}}
+    */
   implicit def `INDArray*Double`[Input <: Batch]
     : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -911,6 +974,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray multiply Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (double:To[Double]##T)*(ndarray:To[INDArray]##T)
+    * }}}
+    */
   implicit def `Double*INDArray`[Input <: Batch]
     : MathMethods.*.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -920,6 +990,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Element-by-element subtraction
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray1:To[INDArray]##T) - (ndarray2:To[INDArray]##T)
+    * }}}
+    */
   implicit def `INDArray-INDArray`[Input <: Batch]
     : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -929,6 +1006,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray subtract Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (double:To[Double]##T) - (ndarray:To[INDArray]##T)
+    * }}}
+    */
   implicit def `Double-INDArray`[Input <: Batch]
     : MathMethods.-.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -938,6 +1022,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray subtract Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray:To[INDArray]##T) - (double:To[Double]##T)
+    * }}}
+    */
   implicit def `INDArray-Double`[Input <: Batch]
     : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -947,6 +1038,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Element-by-element plus
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray1:To[INDArray]##T) + (ndarray2:To[INDArray]##T)
+    * }}}
+    */
   implicit def `INDArray+INDArray`[Input <: Batch]
     : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -956,6 +1054,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray plus Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (ndarray:To[INDArray]##T) + (double:To[Double]##T)
+    * }}}
+    */
   implicit def `INDArray+Double`[Input <: Batch]
     : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -965,6 +1070,13 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * All elements of INDArray plus Double
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * (double:To[Double]##T) + (ndarray:To[INDArray]##T)
+    * }}}
+    */
   implicit def `Double+INDArray`[Input <: Batch]
     : MathMethods.+.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
