@@ -28,7 +28,7 @@ final class OperatorSpec extends FreeSpec with Matchers {
       layer4
     }
 
-    val doubleToDouble = LayerOf[Double, Double]
+    val doubleToDouble = FromTo[Double, Double]
     val layer: (Double => Double) @Symbolic = buildLayer
 
     (layer: doubleToDouble.`@`).train(1.0)

@@ -65,7 +65,7 @@ final class XorSpec extends FreeSpec with Matchers {
     sigmoid.compose((row dot w) + b)
   }
 
-  val ArrayToArray = LayerOf[INDArray, INDArray]
+  val ArrayToArray = FromTo[INDArray, INDArray]
 
   def hiddenLayers(implicit encodedInput: From[INDArray]##`@`): ArrayToArray.`@` = {
     fullyConnectedThenSigmoid(50, 3).compose(
