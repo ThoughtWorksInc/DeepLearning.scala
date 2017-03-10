@@ -14,7 +14,7 @@ trait Symbolic[NativeOutput] {
 
 private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
 
-  implicit def fromLiteral[NativeOutput, Data0, Delta0](
+  implicit def from[NativeOutput, Data0, Delta0](
       implicit toLiteral: Lazy[ToLiteral.Aux[NativeOutput, Data0, Delta0]]): From.Aux[NativeOutput, Data0, Delta0] =
     new From[NativeOutput] {
       type Data = Data0
@@ -179,7 +179,7 @@ object Symbolic extends LowPrioritySymbolic {
 
   }
 
-  implicit def layerOf[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+  implicit def fromTo[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
       implicit inputToLiteral: Lazy[ToLiteral.Aux[NativeInput, InputData0, InputDelta0]],
       outputToLiteral: Lazy[ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]])
     : FromTo.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
