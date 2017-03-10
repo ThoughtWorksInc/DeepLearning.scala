@@ -1099,11 +1099,19 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Log for all elements of INDArray
-    * {{{
-    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-    * log(double:To[Double]##T)
+    * Returns a [[Poly.MathFunctions.log.Case]] that accepts INDArray layers for the poly function [[Poly.MathFunctions.log]]
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.log]] for INDArray layers or any value able to convert to INDArray layer
+    *
+    * @example {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray.`log(INDArray)`
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def logNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathFunctions.log(indArrayLayer)
+    * }
     * }}}
+    *
+    * @see [[Poly.LayerPoly1]]
     */
   implicit def `log(INDArray)`[Input <: Batch]
     : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
