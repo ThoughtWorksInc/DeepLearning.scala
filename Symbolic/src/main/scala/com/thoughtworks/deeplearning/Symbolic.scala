@@ -159,7 +159,7 @@ object Symbolic extends LowPrioritySymbolic {
       type InputDelta = InputDelta0
     }
 
-  trait LayerOf[NativeInput, NativeOutput] extends IsLayer
+  trait LayerOf[NativeInput, NativeOutput] extends Symbolic[NativeInput => NativeOutput] with IsLayer
 
   object LayerOf {
 
@@ -175,20 +175,18 @@ object Symbolic extends LowPrioritySymbolic {
     def apply[NativeInput, NativeOutput](implicit typeClass: LayerOf[NativeInput, NativeOutput]): typeClass.type =
       typeClass
 
-    implicit def lift[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
-        implicit liftInput: Lazy[ToLiteral.Aux[NativeInput, InputData0, InputDelta0]],
-        liftOutput: Lazy[ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]])
-      : LayerOf.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
-      new LayerOf[NativeInput, NativeOutput] {
-        type InputData = InputData0
-        type InputDelta = InputDelta0
-        type OutputData = OutputData0
-        type OutputDelta = OutputDelta0
-      }
-
   }
 
-  type <=>[NativeInput, NativeOutput] = LayerOf[NativeInput, NativeOutput]
+  implicit def layerOf[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0](
+      implicit inputToLiteral: Lazy[ToLiteral.Aux[NativeInput, InputData0, InputDelta0]],
+      outputToLiteral: Lazy[ToLiteral.Aux[NativeOutput, OutputData0, OutputDelta0]])
+    : LayerOf.Aux[NativeInput, NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] =
+    new LayerOf[NativeInput, NativeOutput] {
+      type InputData = InputData0
+      type InputDelta = InputDelta0
+      type OutputData = OutputData0
+      type OutputDelta = OutputDelta0
+    }
 
   private[deeplearning] type Placeholder[Data, Delta] = Identity[Data, Delta]
 
