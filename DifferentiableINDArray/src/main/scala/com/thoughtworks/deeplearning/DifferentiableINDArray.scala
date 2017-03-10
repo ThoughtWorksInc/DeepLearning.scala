@@ -1099,9 +1099,10 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.log.Case]] that accepts INDArray layers for the poly function [[Poly.MathFunctions.log]]
+    * Returns a [[Poly.MathFunctions.log.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.log]]
     *
-    * @note Importing this method will enable [[Poly.MathFunctions.log]] for INDArray layers or any value able to convert to INDArray layer
+    * @note Importing this method will enable [[Poly.MathFunctions.log]]
+    *       for INDArray layers or any value able to convert to a INDArray layer
     *
     * @example {{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray.`log(INDArray)`
