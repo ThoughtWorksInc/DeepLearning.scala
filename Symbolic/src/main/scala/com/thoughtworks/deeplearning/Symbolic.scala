@@ -7,16 +7,16 @@ import shapeless._
 import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
-@implicitNotFound("Don't know how to make ${NativeValue} differentiable")
+@implicitNotFound("Don't know how to make ${NativeOutput} differentiable")
 trait Symbolic[NativeOutput] {
   type T
 }
 
 private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
 
-  implicit def fromLiteral[NativeValue, Data0, Delta0](
-      implicit toLiteral: Lazy[ToLiteral.Aux[NativeValue, Data0, Delta0]]): From.Aux[NativeValue, Data0, Delta0] =
-    new From[NativeValue] {
+  implicit def fromLiteral[NativeOutput, Data0, Delta0](
+      implicit toLiteral: Lazy[ToLiteral.Aux[NativeOutput, Data0, Delta0]]): From.Aux[NativeOutput, Data0, Delta0] =
+    new From[NativeOutput] {
       type Data = Data0
       type Delta = Delta0
     }
@@ -284,7 +284,7 @@ object Symbolic extends LowPrioritySymbolic {
     type Out = Layer.Aux[Input, Output]
   }
 
-  private[deeplearning] trait From[NativeValue] extends Symbolic[NativeValue] with DepFn0 {
+  private[deeplearning] trait From[NativeOutput] extends Symbolic[NativeOutput] with DepFn0 {
 
     type Data
     type Delta
@@ -300,12 +300,12 @@ object Symbolic extends LowPrioritySymbolic {
   private[deeplearning] object From {
 
     /** @template */
-    type Aux[NativeValue, Data0, Delta0] = From[NativeValue] {
+    type Aux[NativeOutput, Data0, Delta0] = From[NativeOutput] {
       type Data = Data0
       type Delta = Delta0
     }
 
-    def apply[NativeValue](implicit typeClass: From[NativeValue]): typeClass.type = typeClass
+    def apply[NativeOutput](implicit typeClass: From[NativeOutput]): typeClass.type = typeClass
 
   }
 
