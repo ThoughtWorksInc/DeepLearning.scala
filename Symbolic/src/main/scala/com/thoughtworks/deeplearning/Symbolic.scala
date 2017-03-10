@@ -1,18 +1,18 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless._
 
 import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
 @implicitNotFound("Don't know how to make ${NativeValue} differentiable")
-trait Lift[NativeOutput] {
+trait Symbolic[NativeOutput] {
   type T
 }
 
-trait LowPriorityLift { this: Lift.type =>
+private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
 
   implicit def fromLiteral[NativeValue, Data0, Delta0](
       implicit toLiteral: Lazy[ToLiteral.Aux[NativeValue, Data0, Delta0]]): From.Aux[NativeValue, Data0, Delta0] =
@@ -23,7 +23,7 @@ trait LowPriorityLift { this: Lift.type =>
 
 }
 
-object Lift extends LowPriorityLift {
+object Symbolic extends LowPrioritySymbolic {
 
   trait ToLiteral[From] extends DepFn1[From] {
 
@@ -135,7 +135,7 @@ object Lift extends LowPriorityLift {
 
   }
 
-  private[deeplearning] trait To[NativeOutput] extends Lift[NativeOutput] with IsLayer
+  private[deeplearning] trait To[NativeOutput] extends Symbolic[NativeOutput] with IsLayer
 
   private[deeplearning] object To {
     type Aux[NativeOutput, InputData0, InputDelta0, OutputData0, OutputDelta0] = To[NativeOutput] {
@@ -284,7 +284,7 @@ object Lift extends LowPriorityLift {
     type Out = Layer.Aux[Input, Output]
   }
 
-  private[deeplearning] trait From[NativeValue] extends Lift[NativeValue] with DepFn0 {
+  private[deeplearning] trait From[NativeValue] extends Symbolic[NativeValue] with DepFn0 {
 
     type Data
     type Delta

@@ -1,12 +1,12 @@
 package com.thoughtworks.deeplearning
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.enableMembersIf
 import org.scalatest.{FreeSpec, Matchers}
 import shapeless._
 import com.thoughtworks.deeplearning.Poly._
 import com.thoughtworks.deeplearning.Poly.MathMethods.{*, /}
 import com.thoughtworks.deeplearning.Poly.MathOps
-import com.thoughtworks.deeplearning.Lift.Layers._
+import com.thoughtworks.deeplearning.Symbolic.Layers._
 
 @enableMembersIf(!scala.util.Properties.versionNumberString.startsWith("2.12."))
 final class CNNTest extends FreeSpec with Matchers {
@@ -38,18 +38,18 @@ final class CNNTest extends FreeSpec with Matchers {
       }
     }
 
-    def convolutionThenRelu(implicit input: Lift[INDArray]##T): Lift[INDArray]##T = {
+    def convolutionThenRelu(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
       -input
     }
 
-    def convolutionThenRelu2(implicit input: Lift[INDArray]##T): Lift[INDArray]##T = {
+    def convolutionThenRelu2(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
 
       val imageCount = input.shape(0)
 
       input.reshape(imageCount + 0, 1.toLayer)
     }
 
-    def hiddenLayer(implicit input: Lift[INDArray]##T): Lift[INDArray]##T = {
+    def hiddenLayer(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
       val layer1 = convolutionThenRelu2.compose(convolutionThenRelu)
 
       layer1

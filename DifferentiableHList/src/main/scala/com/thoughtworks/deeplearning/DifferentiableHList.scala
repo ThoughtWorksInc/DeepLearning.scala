@@ -1,10 +1,10 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Lift.Placeholder.{DataOf, DeltaOf}
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic.Placeholder.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableHList.Layers._
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless._
 
 import language.implicitConversions

@@ -1,10 +1,10 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift.Layers.{Identity, Literal}
+import com.thoughtworks.deeplearning.Symbolic.Layers.{Identity, Literal}
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Poly.MathOps
 import com.thoughtworks.deeplearning.Poly.MathFunctions._

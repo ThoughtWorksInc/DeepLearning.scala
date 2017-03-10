@@ -3,13 +3,13 @@ import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
 import com.thoughtworks.deeplearning.DifferentiableBoolean.BooleanMonoidBatch
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.DifferentiableBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Poly.MathMethods
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless.the
 
 import language.implicitConversions

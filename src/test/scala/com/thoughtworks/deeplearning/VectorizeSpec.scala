@@ -2,7 +2,7 @@ package com.thoughtworks
 package deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import org.scalatest._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableDouble._

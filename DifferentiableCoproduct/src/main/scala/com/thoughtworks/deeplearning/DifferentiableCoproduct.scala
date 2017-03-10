@@ -2,12 +2,12 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Lift.Placeholder.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Symbolic.Placeholder.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.DifferentiableCoproduct.Layers._
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless.{:+:, CNil, Coproduct, Lazy, Lub}
 
 import language.existentials

@@ -4,13 +4,13 @@ import cats.implicits._
 import cats.{Applicative, Eval, Semigroup, Traverse}
 import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableInt.Layers.Times
 import com.thoughtworks.deeplearning.DifferentiableInt._
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods

@@ -13,7 +13,7 @@ sbt.dsl.dependsOn(
 
 lazy val Layer = project
 
-lazy val Lift = project.dependsOn(Layer)
+lazy val Symbolic = project.dependsOn(Layer)
 
 lazy val DifferentiableBoolean = project.dependsOn(Layer, BufferedLayer, Poly)
 
@@ -48,11 +48,11 @@ sourceGenerators in Compile in DifferentiableFloat += Def.task {
 lazy val DifferentiableInt =
   project.dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
 
-lazy val Poly = project.dependsOn(Lift)
+lazy val Poly = project.dependsOn(Symbolic)
 
-lazy val DifferentiableAny = project.dependsOn(Lift)
+lazy val DifferentiableAny = project.dependsOn(Symbolic)
 
-lazy val DifferentiableNothing = project.dependsOn(Lift)
+lazy val DifferentiableNothing = project.dependsOn(Symbolic)
 
 lazy val DifferentiableSeq = project.dependsOn(DifferentiableInt)
 

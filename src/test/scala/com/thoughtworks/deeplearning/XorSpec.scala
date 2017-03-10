@@ -15,7 +15,7 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableCoproduct._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 

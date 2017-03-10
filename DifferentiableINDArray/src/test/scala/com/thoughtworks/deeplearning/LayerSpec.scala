@@ -1,8 +1,8 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import org.nd4j.linalg.convolution.Convolution
 import org.scalatest._
 import com.thoughtworks.deeplearning
@@ -15,8 +15,8 @@ import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning._
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
-import com.thoughtworks.deeplearning.Lift.Layers.Identity
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods.{*, /}
 import com.thoughtworks.deeplearning.Poly.MathOps

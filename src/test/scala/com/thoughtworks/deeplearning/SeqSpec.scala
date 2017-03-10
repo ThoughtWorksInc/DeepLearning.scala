@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import cats.Eval
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
 import com.thoughtworks.deeplearning.DifferentiableDouble._

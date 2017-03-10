@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import shapeless.{Lazy, Poly1, Poly2}
 
 /**

@@ -2,8 +2,8 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.DifferentiableAny.Layers.{Compose, WithOutputDataHook}
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic._
 import resource.managed
 
 import language.implicitConversions
