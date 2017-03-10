@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import shapeless.{Lazy, Poly1, Poly2}
 
 /**
@@ -9,6 +9,11 @@ import shapeless.{Lazy, Poly1, Poly2}
   */
 object Poly {
 
+  /**
+    * A [[shapeless.Poly1 unary polymorphic function]] that accepts some kind of [[Layer]]s or values able to convert to those kind of layers.
+    *
+    * @see [[https://github.com/milessabin/shapeless/wiki/Feature-overview:-shapeless-2.0.0#polymorphic-function-values]]
+    */
   trait LayerPoly1 extends Poly1 {
     implicit def toLayerCase[Operand, Input <: Batch, OperandData, OperandDelta](
         implicit toLayer: ToLayer.Aux[Operand, Input, OperandData, OperandDelta],
@@ -20,6 +25,11 @@ object Poly {
     }
   }
 
+  /**
+    * A [[shapeless.Poly2 binary polymorphic function]] that accepts some kind of [[Layer]]s or values able to convert to those kind of layers.
+    *
+    * @see [[https://github.com/milessabin/shapeless/wiki/Feature-overview:-shapeless-2.0.0#polymorphic-function-values]]
+    */
   trait LayerPoly2 extends Poly2 {
     implicit def toLayerCase[LeftOperand, RightOperand, Input <: Batch, LeftData, LeftDelta, RightData, RightDelta](
         implicit leftToLayer: ToLayer.Aux[LeftOperand, Input, LeftData, LeftDelta],

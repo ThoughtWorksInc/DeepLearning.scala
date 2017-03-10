@@ -5,7 +5,7 @@ import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableAny._
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import language.existentials
 import shapeless._

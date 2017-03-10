@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -10,7 +10,7 @@ object DifferentiableNothing {
 
   /** @template */
   private[deeplearning] type NothingPlaceholder = Placeholder[Nothing, Any]
-  private[deeplearning] val NothingPlaceholder: NothingPlaceholder = implicitly
+  private[deeplearning] val NothingPlaceholder: NothingPlaceholder = new Placeholder
 
   object Layers {
 

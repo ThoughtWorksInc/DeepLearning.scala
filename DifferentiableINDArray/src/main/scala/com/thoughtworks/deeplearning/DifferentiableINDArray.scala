@@ -4,22 +4,33 @@ import cats.implicits._
 import cats.{Applicative, Eval, Semigroup, Traverse}
 import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.DifferentiableInt.Layers.Times
+import com.thoughtworks.deeplearning.DifferentiableInt._
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods
+import com.thoughtworks.deeplearning.Poly.MathMethods.*
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
+import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.indexing.BooleanIndexing
+import org.nd4j.linalg.indexing.conditions.Conditions
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.ops.transforms.Transforms.sign
+import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
+import shapeless._
+import org.nd4j.linalg.ops.transforms.Transforms.sqrt
 
 import language.higherKinds
 import language.implicitConversions
+import scala.collection.immutable.IndexedSeq
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -40,52 +51,168 @@ object DifferentiableINDArray {
 
   // TODO: Add a test for this method and auto-broadcasting on n-dimension arrays for n > 2
   private[DifferentiableINDArray] def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = {
-    val singleElementDimension = shape.view.zip(outputDeltaValue.shape).zipWithIndex.collect {
+    val singleElementDimension = (shape: Seq[Int]).view.zip(outputDeltaValue.shape).zipWithIndex.collect {
       case ((1, originSize), dimension) if originSize > 1 => dimension
     }
     if (singleElementDimension.isEmpty) {
       outputDeltaValue
     } else {
-      outputDeltaValue.sum(singleElementDimension: _*).reshape(shape: _*)
+      outputDeltaValue.sum(singleElementDimension.force: _*).reshape(shape: _*)
     }
   }
 
   private[deeplearning] type INDArrayPlaceholder = Placeholder[INDArray, INDArray]
   private[deeplearning] val INDArrayPlaceholder: INDArrayPlaceholder = implicitly
 
+  /**
+    * Optimizers of NDArray
+    *
+    * @example{{{
+    * implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
+    *   override def ndArrayOptimizer(weight: Weight): Optimizer = {
+    *     new LearningRate with L2Regularization with Adam {
+    *
+    *       var learningRate = 0.00003
+    *
+    *       override protected def l2Regularization: Double = 0.00003
+    *
+    *       override protected def currentLearningRate(): Double = {
+    *       learningRate * 0.75
+    *       learningRate
+    *      }
+    *    }
+    *  }
+    * }
+    * }}}
+    */
   object Optimizers {
 
-    trait L1Regularization extends LearningRate {
+    trait L1Regularization extends Optimizer {
       protected def l1Regularization: Double
 
-      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-        super.updateNDArray(oldValue, delta) - sign(oldValue) * l1Regularization * currentLearningRate()
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        super.currentDelta(oldValue, delta + sign(oldValue) * l1Regularization)
       }
-
     }
 
-    trait L2Regularization extends LearningRate {
+    trait L2Regularization extends Optimizer {
       protected def l2Regularization: Double
 
-      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-        super.updateNDArray(oldValue, delta) - oldValue * l2Regularization * currentLearningRate()
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        super.currentDelta(oldValue, delta + oldValue * l2Regularization)
       }
+    }
 
+    trait Momentum extends Optimizer {
+      protected def mu(): Double = 0.9
+
+      private var v: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val vValue: INDArray = v.getOrElse(Nd4j.zeros(delta.shape: _*))
+        v = Some(
+          super.currentDelta(oldValue, delta) + vValue * mu()
+        )
+        v.get
+      }
+    }
+
+    trait NesterovMomentum extends Optimizer {
+      protected def mu(): Double = 0.9
+
+      private var v: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val vValue: INDArray = v.getOrElse(Nd4j.zeros(delta.shape: _*))
+        val vPre = vValue
+        v = Some(
+          super.currentDelta(oldValue, delta) + vValue * mu()
+        )
+
+        vPre * (-mu()) + v.get * (1 + mu())
+      }
+    }
+
+    trait Adagrad extends Optimizer {
+
+      protected def eps(): Double = 1e-4
+
+      private var cache: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val cacheValue = cache.getOrElse(Nd4j.zeros(delta.shape: _*))
+        cache = Some(cacheValue + delta * delta)
+        super.currentDelta(oldValue, delta) / (sqrt(cache.get) + eps)
+      }
+    }
+
+    trait RMSprop extends Optimizer {
+
+      protected def decayRate(): Double = 0.99
+
+      protected def eps(): Double = 1e-4
+
+      private var cache: Option[INDArray] = None
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+        val cacheValue = cache.getOrElse(Nd4j.zeros(delta.shape: _*))
+        cache = Some(cacheValue * decayRate + delta * delta * (1 - decayRate))
+        super.currentDelta(oldValue, delta) / (sqrt(cache.get) + eps)
+      }
+    }
+
+    trait Adam extends Optimizer {
+
+      protected def beta1 = 0.9
+
+      protected def beta2 = 0.999
+
+      protected def eps(): Double = 1e-8
+
+      private var m: Option[INDArray] = None
+
+      private var v: Option[INDArray] = None
+
+      private var times: Int = 0
+
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = {
+
+        val mValue = m.getOrElse(Nd4j.zeros(delta.shape: _*))
+
+        m = Some(
+          mValue * beta1 + delta * (1 - beta1)
+        )
+
+        val vValue = v.getOrElse(Nd4j.zeros(delta.shape: _*))
+
+        v = Some(
+          vValue * beta2 + delta * delta * (1 - beta2)
+        )
+
+        times += 1
+
+        val coef1 = 1 - math.pow(beta1, times)
+
+        val coef2 = math.sqrt(1 - math.pow(beta2, times))
+
+        super.currentDelta(oldValue, m.get * (coef2 / coef1)) / (sqrt(v.get) + eps)
+      }
     }
 
     trait Optimizer {
 
-      def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray
+      protected def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = delta
 
+      final def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
+        oldValue - currentDelta(oldValue, delta)
+      }
     }
 
     trait LearningRate extends Optimizer {
 
       protected def currentLearningRate(): Double
 
-      override def updateNDArray(oldValue: INDArray, delta: INDArray): INDArray = {
-        oldValue - delta * currentLearningRate()
-      }
+      override def currentDelta(oldValue: INDArray, delta: INDArray): INDArray = delta * currentLearningRate()
     }
 
   }
@@ -94,12 +221,13 @@ object DifferentiableINDArray {
 
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def ndArrayOptimizer(weight: Weight) = optimizer
+      override def ndArrayOptimizer(weight: Weight): Optimizer = optimizer
     }
   }
 
   trait OptimizerFactory {
     def ndArrayOptimizer(weight: Weight): Optimizer
+
   }
 
   object Layers {
@@ -247,11 +375,12 @@ object DifferentiableINDArray {
           }
 
           override val value: Data = {
-            val ndarray = upstream.value
-            val doubleArray = ndarray.data.asDouble()
-            for (i <- (0 until ndarray.rows).view) yield {
-              doubleArray.view(i * ndarray.columns, (i + 1) * ndarray.columns)
-            }
+            val ndarray: INDArray = upstream.value
+            val doubleArray: Seq[Double] = ndarray.data.asDouble()
+            doubleArray.grouped(ndarray.columns).toSeq
+//            for (i <- (0 until ndarray.rows)) yield {
+//              doubleArray.view(i * ndarray.columns, (i + 1) * ndarray.columns)
+//            }
           }
         }
       }
@@ -298,7 +427,7 @@ object DifferentiableINDArray {
         override val isTrainable = upstreams.exists(_.exists(_.isTrainable))
 
         override protected def forceBackward(delta: INDArray): Unit = {
-          for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.zipWithIndex) {
+          for ((row, i) <- upstreams.view.zipWithIndex; (upstream, j) <- row.view.zipWithIndex) {
             upstream.backward(delta(i, j))
           }
 
@@ -359,6 +488,28 @@ object DifferentiableINDArray {
 
           override protected def rawBackward(outputDelta: Double): Unit = {
             upstream.backward(Nd4j.valueArrayOf(upstream.value.shape(), outputDelta))
+          }
+        }
+      }
+    }
+
+    final case class ReduceMean[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+        extends BufferedLayer.Unary {
+      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+
+      type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with DoubleMonoidBatch with MonoidBatch with UnaryBatch {
+
+          private val upstreamShape = upstream.value.shape()
+
+          val value = (upstream.value: INDArray).sumT / ArrayUtil.prod(upstreamShape: _*)
+
+          override protected def rawBackward(outputDelta: Double): Unit = {
+            upstream.backward(Nd4j.valueArrayOf(upstreamShape, outputDelta))
           }
         }
       }
@@ -545,16 +696,221 @@ object DifferentiableINDArray {
       }
     }
 
+    final case class Im2col[Input0 <: Batch](
+        operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+        kernel: Array[Int],
+        stride: Array[Int],
+        padding: Array[Int]
+    ) extends BufferedLayer.Unary {
+      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+
+      type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+
+          private val upstreamShape = {
+            upstream.value.shape()
+          }
+
+          val value = Convolution.im2col(upstream.value, kernel, stride, padding)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream.backward(Convolution.col2im(outputDelta, stride, padding, upstreamShape(2), upstreamShape(3)))
+          }
+        }
+      }
+    }
+
+    final case class Reshape[Input0 <: Batch](
+        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+        override val operand2: Layer.Aux[Input0, Batch.Aux[Seq[Int], (Int, Float)]])
+        extends BufferedLayer.Binary {
+      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+
+      override type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+
+          private val upstreamShape = {
+            upstream1.value.shape
+          }
+
+          override val value = upstream1.value.reshape(upstream2.value: _*)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            upstream1.backward(outputDelta.reshape(upstreamShape: _*))
+          }
+        }
+      }
+    }
+
+    final case class Permute[Input0 <: Batch](
+        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+        override val operand2: Layer.Aux[Input0, Batch.Aux[Seq[Int], (Int, Float)]])
+        extends BufferedLayer.Binary {
+      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+
+      override type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+
+          private val upstreamShape: Seq[Int] = {
+            upstream1.value.shape()
+          }
+
+          override val value = upstream1.value.permute(upstream2.value: _*)
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+
+            val indexSeq: IndexedSeq[Int] =
+              upstreamShape.indices
+                .map(
+                  index => upstream2.value.toSeq.indexOf(index)
+                )
+
+            upstream1.backward(
+              outputDelta.permute(indexSeq: _*)
+            )
+          }
+        }
+      }
+    }
+
+    //TODO: update nd4j to 0.7.3
+    final case class MaxPool[Input0 <: Batch](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+                                              dimensions: Int*)
+        extends BufferedLayer.Unary {
+      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+
+      override type Input = Input0
+
+      override protected def rawForward(input0: Input): BufferedBatch = {
+        new {
+          override val input = input0
+        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+
+          if (dimensions.length > 2) {
+            throw new UnsupportedOperationException("dimentions's length must <2")
+          }
+
+          private val upstreamShape = {
+            upstream.value.shape()
+          }
+
+          private val isReshape = {
+            dimensions.length > 1
+          }
+
+          private val lastShapeSize = {
+            upstreamShape.reverse
+              .take(dimensions.length)
+              .product
+          }
+
+          private val afterMaxPoolShape = {
+            upstreamShape.take(upstreamShape.length - dimensions.length)
+          }
+
+          private val reshapeTo = {
+            afterMaxPoolShape :+ lastShapeSize
+          }
+
+          override val value =
+            if (isReshape)
+              upstream.value
+                .reshape(reshapeTo: _*)
+                .max(dimensions(0))
+            else upstream.value.max(dimensions(0))
+
+          override protected def rawBackward(outputDelta: INDArray): Unit = {
+            val a = upstream.value
+            val upStreamDup = a.dup()
+            val rows = ArrayUtil.prod(a.length())
+            val isMax: INDArray =
+              if (isReshape) {
+                Nd4j.getExecutioner
+                  .execAndReturn(new IsMax(upStreamDup.reshape(reshapeTo: _*), dimensions(0)))
+              } else {
+                Nd4j.getExecutioner
+                  .execAndReturn(new IsMax(upStreamDup, dimensions(0)))
+              }
+
+            val outputDelta1d = a
+//              (if (isReshape) {
+//                 outputDelta
+//                   .repeat(-1, Seq(upstreamShape(dimensions(1))): _*)
+//                   .permute(1, 0, 3, 2)
+//                   .repeat(-1, Seq(upstreamShape(dimensions(0))): _*)
+//                   .permute(1, 0, 3, 2)
+//              } else {
+//                 outputDelta.repeat(dimensions(0), Seq(lastShapeSize): _*)
+//              }).reshape('c', rows, 1)
+            upstream.backward(
+              isMax
+                .reshape('c', rows, 1)
+                .muliColumnVector(outputDelta1d)
+                .reshape(upstreamShape: _*)
+            )
+          }
+        }
+      }
+    }
+
+    final case class Shape[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends Layer {
+      override def forward(input: Input0): Output = {
+        val upstream = operand.forward(input)
+        try {
+          val upstreamShape = upstream.value.shape()
+          Literal[Seq[Int]](upstreamShape)
+        } finally {
+          upstream.close()
+        }
+      }
+      override type Input = Input0
+      override type Output = Literal[Seq[Int]]
+    }
+
   }
 
   import Layers._
 
+  /**
+    * Returns a [[Poly.MathFunctions.max.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.max]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.max(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `max(INDArray,Double)`[Left, Right, Input <: Batch]
     : max.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                    Layer.Aux[Input, DoublePlaceholder.Batch],
                    Layer.Aux[Input, INDArrayPlaceholder.Batch]] =
     max.at(MaxDouble(_, _))
 
+  /**
+    * Returns a [[Poly.MathMethods./.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathMethods./(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray/INDArray`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -564,6 +920,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods./.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods./(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double/INDArray`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -573,6 +940,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods./.Case]] that accepts a INDArray [[Layer]]  and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods./(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray/Double`[Input <: Batch]
     : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -582,6 +960,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathMethods.*(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray*INDArray`[Input <: Batch]
     : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -591,6 +980,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.*(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray*Double`[Input <: Batch]
     : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -600,6 +1000,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.*(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double*INDArray`[Input <: Batch]
     : MathMethods.*.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -609,6 +1020,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDarray]##T) = {
+    *   Poly.MathMethods.-(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray-INDArray`[Input <: Batch]
     : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -618,6 +1040,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.-(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double-INDArray`[Input <: Batch]
     : MathMethods.-.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -627,6 +1060,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.-(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray-Double`[Input <: Batch]
     : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -636,6 +1080,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDarray]##T) = {
+    *   Poly.MathMethods.+(inputINDArrayLayer,anotherINDArrayLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray+INDArray`[Input <: Batch]
     : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -645,6 +1100,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.+(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `INDArray+Double`[Input <: Batch]
     : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
                              Layer.Aux[Input, DoublePlaceholder.Batch],
@@ -654,6 +1120,17 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.+(inputINDArrayLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double+INDArray`[Input <: Batch]
     : MathMethods.+.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                              Layer.Aux[Input, INDArrayPlaceholder.Batch],
@@ -663,16 +1140,64 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.exp.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.exp]]
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.exp]]
+    *       for INDArray layers or any value able to convert to a INDArray layer
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray.`exp(INDArray)`
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def expNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathFunctions.exp(indArrayLayer)
+    * }
+    * }}}
+    *
+    * @see [[Poly.LayerPoly1]]
+    */
   implicit def `exp(INDArray)`[Input <: Batch]
     : exp.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     exp.at(Exp(_))
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.log.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.log]]
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.log]]
+    *       for INDArray layers or any value able to convert to a INDArray layer
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray.`log(INDArray)`
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def logNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathFunctions.log(indArrayLayer)
+    * }
+    * }}}
+    *
+    * @see [[Poly.LayerPoly1]]
+    */
   implicit def `log(INDArray)`[Input <: Batch]
     : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     log.at(Log(_))
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.abs.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.abs]]
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.abs]]
+    *       for INDArray layers or any value able to convert to a INDArray layer
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray.`abs(INDArray)`
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def absNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    *   Poly.MathFunctions.abs(indArrayLayer)
+    * }
+    * }}}
+    *
+    * @see [[Poly.LayerPoly1]]
+    */
   implicit def `abs(INDArray)`[Input <: Batch]
     : abs.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     abs.at(Abs(_))
@@ -685,6 +1210,127 @@ object DifferentiableINDArray {
       Dot(operand, right)
     }
 
+    /**
+      * Im2col ops
+      * @param kernel kernel size / filter size
+      * @param stride stride size
+      * @param padding padding size
+      */
+    def im2col(kernel: Array[Int],
+               stride: Array[Int],
+               padding: Array[Int]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Im2col(operand, kernel, stride, padding)
+    }
+
+    /**
+      * @usecase def reshape(newShape: Layer.Aux[Input, Batch.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      * @usecase def reshape(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      */
+    def reshape[Element](newShape: Element*)(
+        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Reshape(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
+    }
+
+    /**
+      * @usecase def permute(newShape: Layer.Aux[Input, Batch.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      * @usecase def permute(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      */
+    def permute[Element](newShape: Element*)(
+        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      Permute(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
+    }
+
+    private def toArray(tuple2: (Int, Int)): Array[Int] = {
+      val (one, two) = tuple2
+      Array(one, two)
+    }
+
+    /**
+      * calculate the convolution
+      * @param weight 4 dimensions weight
+      * @param bias 1 dimension bias
+      * @param kernel the kernel/filter width and height
+      * @param stride the stride width and height
+      * @param padding the padding width and height
+      * @return convolution result
+      */
+    def convn(weight: Layer.Aux[Input, INDArrayPlaceholder.Batch],
+              bias: Layer.Aux[Input, INDArrayPlaceholder.Batch],
+              kernel: (Int, Int),
+              stride: (Int, Int),
+              padding: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      val shapeOfOperand = Shape(operand)
+      val count = DifferentiableSeq.Layers.Get(shapeOfOperand, 0)
+      val depth = DifferentiableSeq.Layers.Get(shapeOfOperand, 1)
+      val y_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 2)
+      val x_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 3)
+      val kernelNumber = DifferentiableSeq.Layers.Get(Shape(weight), 0)
+
+      //input
+      //  .im2col(Array(KernelSize, KernelSize),
+      //    Array(Stride, Stride),
+      //    Array(Padding, Padding))
+      val col: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] =
+        Im2col(operand, toArray(kernel), toArray(stride), toArray(padding))
+
+      //permute(0, 4, 5, 1, 2, 3)
+      val permutedCol: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] = Permute(col, Literal(Seq(0, 4, 5, 1, 2, 3)))
+
+      val depthKernelKernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
+        Times(
+          Times(depth, Literal(kernel._1)),
+          Literal(kernel._2)
+        )
+
+      val countXaxisYaxis: Layer.Aux[Input, Batch.Aux[Int, Float]] = Times(Times(count, y_axis), x_axis)
+
+      val aSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(countXaxisYaxis, depthKernelKernel)
+
+      val reshapeOperandTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(aSeq)
+
+      //reshape(imageCount * inputSizeY * inputSizeX,(depth * KernelSize * KernelSize).toLayer)
+      val operandCol2d = Reshape(permutedCol, reshapeOperandTo)
+
+      val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
+
+      val reshapeWeightTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
+
+      //weight.reshape(kernelNumber, KernelSize * KernelSize * depth)
+      val reshapedWeight = Reshape(weight, reshapeWeightTo)
+
+      //permute(1, 0)
+      val permutedWeight = Permute(reshapedWeight, Literal(Seq(1, 0)))
+
+      val dotResult = Dot(operandCol2d, permutedWeight)
+
+      val plusResult = PlusINDArray(dotResult, bias)
+
+      val SeqOfCountYaxisXaxisKernelNumber: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] =
+        Seq(count, y_axis, x_axis, kernelNumber)
+
+      val reshapeResultTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] =
+        DifferentiableSeq.Layers.ToSeq(SeqOfCountYaxisXaxisKernelNumber)
+
+      //reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
+      val reshapedResult = Reshape(plusResult, reshapeResultTo)
+
+      val permuteResultTo = Literal(Seq(0, 3, 1, 2))
+
+      //permute(0, 3, 1, 2)
+      Permute(reshapedResult, permuteResultTo)
+    }
+
+    def maxPool(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+      MaxPool(operand, dimensions: _*)
+    }
+
+    /**
+      * Return shape of NDArray
+      */
+    def shape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = {
+      Shape(operand)
+    }
+
     def unary_- : Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Negative(operand)
     }
@@ -693,19 +1339,40 @@ object DifferentiableINDArray {
       ToSeq(operand)
     }
 
+    /**
+      * Return sum of all elements of NDArray
+      */
     def sum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceSum(operand)
     }
 
+    /**
+      * Return mean of all elements of NDArray
+      */
+    def mean: Layer.Aux[Input, DoublePlaceholder.Batch] = {
+      ReduceMean(operand)
+    }
+
+    /**
+      * Return sum dimensions of NDArray,will return an INDArrayPlaceholder
+      */
     def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Sum(operand, dimensions)
     }
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all NDArray layers.
+
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableNDArray._
+    * }}}
+    */
   implicit def toINDArrayLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
-      constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input, Batch.Aux[INDArray, INDArray]]
+      constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input,
+                                                                                    Batch.Aux[INDArray, INDArray]]
   ): INDArrayLayerOps[Input] = {
     new INDArrayLayerOps(constrait(toLayer(from)))
   }
@@ -717,7 +1384,7 @@ object DifferentiableINDArray {
 
   implicit def toToINDArrayLayerOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
       implicit toLayer: ToLayer.OfPlaceholder[Element, Input, DoublePlaceholder]): ToINDArrayLayerOps[Input] = {
-    new ToINDArrayLayerOps(layerVector.view.map(_.view.map(toLayer(_))))
+    new ToINDArrayLayerOps(layerVector.map(_.map(toLayer(_))))
   }
 
   implicit final class INDArrayOps(ndArray: INDArray) {
@@ -728,7 +1395,7 @@ object DifferentiableINDArray {
     }
   }
 
-  implicit def liftINDArray: Lift.Aux[INDArray, INDArray, INDArray] = Lift.fromData
+  implicit def liftINDArray: ToLiteral.Aux[INDArray, INDArray, INDArray] = ToLiteral.fromData
 
   implicit def indArrayTrainable: Trainable[INDArray, INDArray] = new Trainable[INDArray, INDArray] {
     override def apply(data: INDArray): INDArray = Nd4j.ones(data.shape(): _*)

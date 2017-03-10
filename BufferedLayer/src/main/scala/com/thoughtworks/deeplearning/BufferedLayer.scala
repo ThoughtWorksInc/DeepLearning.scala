@@ -101,7 +101,7 @@ trait BufferedLayer extends Layer {
     private var currentDelta: Delta = monoid.empty
 
     /**
-      * Performs the underlying backward pass with all `upstreamDelta`s that previously received from [[#backward]].
+      * Performs the underlying backward pass with all `upstreamDelta`s that previously received from [[forceBackward]].
       */
     protected def rawBackward(delta: Delta): Unit
 
@@ -140,7 +140,7 @@ trait BufferedLayer extends Layer {
 
     override final protected def forceBackward(delta: Delta): Unit = {
       synchronized {
-        currentDelta = currentDelta |+| Some(delta)
+        currentDelta |+|= Some(delta)
       }
     }
   }
@@ -172,6 +172,14 @@ trait BufferedLayer extends Layer {
 
 object BufferedLayer {
 
+  /**
+    * A helper that contains common boilerplate code for layers of unary operator
+    *
+    * @example{{{
+    * final case class UnaryOps[Input0 <: Batch](
+    * operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Unary {}
+    * }}}
+    */
   trait Unary extends BufferedLayer {
 
     protected val operand: Layer.Aux[Input, _ <: Batch]
@@ -195,6 +203,15 @@ object BufferedLayer {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for layers of binary operator layer
+    *
+    * @example{{{
+    * final case class BinaryOps[Input0 <: Batch](
+    * operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+    * operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Binary {}
+    * }}}
+    */
   trait Binary extends BufferedLayer {
 
     protected val operand1: Layer.Aux[Input, _ <: Batch]

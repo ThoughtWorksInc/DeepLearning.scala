@@ -3,13 +3,13 @@ import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
 import com.thoughtworks.deeplearning.DifferentiableBoolean.BooleanMonoidBatch
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.DifferentiableBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Poly.MathMethods
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless.the
 
 import language.implicitConversions
@@ -33,6 +33,9 @@ object DifferentiableDouble {
 
   private[deeplearning] val DoublePlaceholder: DoublePlaceholder = implicitly
 
+  /**
+    * Optimizers of Double
+    */
   object Optimizers {
 
     trait Optimizer {
@@ -43,6 +46,12 @@ object DifferentiableDouble {
 
       protected def currentLearningRate(): Double
 
+      /**
+        * Update double use learning rate
+        *
+        * @param oldValue double value before update
+        * @param delta delta
+        */
       override def updateDouble(oldValue: Double, delta: Double): Double = {
         oldValue - delta * currentLearningRate()
       }
@@ -304,8 +313,19 @@ object DifferentiableDouble {
   trait OptimizerFactory {
     def doubleOptimizer(weight: Weight): Optimizer
   }
-  implicit def liftDouble: Lift.Aux[Double, Double, Double] = Lift.fromData
+  implicit def liftDouble: ToLiteral.Aux[Double, Double, Double] = ToLiteral.fromData
 
+  /**
+    * Returns a [[Poly.MathFunctions.min.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.min]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.min(inputDoubleLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                                   Layer.Aux[Input, DoublePlaceholder.Batch],
                                                                   Layer.Aux[Input, DoublePlaceholder.Batch]] = {
@@ -316,6 +336,17 @@ object DifferentiableDouble {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.max.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.max]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.max(inputDoubleLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                                   Layer.Aux[Input, DoublePlaceholder.Batch],
                                                                   Layer.Aux[Input, DoublePlaceholder.Batch]] = {
@@ -326,6 +357,17 @@ object DifferentiableDouble {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.-(inputDoubleLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch]] = {
@@ -334,6 +376,17 @@ object DifferentiableDouble {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.+(inputDoubleLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch]] = {
@@ -342,6 +395,17 @@ object DifferentiableDouble {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods./.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods./(inputDoubleLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch]] = {
@@ -350,22 +414,66 @@ object DifferentiableDouble {
     }
   }
 
+  /**
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathMethods.*(inputDoubleLayer,anotherDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch],
                                                            Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     *.at(Times(_, _))
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.log.Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.log]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.log(inputDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `log(Double)`[Input <: Batch]
     : log.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     log.at(Log(_))
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.exp.Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.exp]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.exp(inputDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `exp(Double)`[Input <: Batch]
     : exp.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     exp.at(Exp(_))
   }
 
+  /**
+    * Returns a [[Poly.MathFunctions.abs.Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.abs]]
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * import com.thoughtworks.deeplearning.Symbolic
+    * def myNetwork(implicit inputDoubleLayer: Symbolic[Double]##T) = {
+    *   Poly.MathFunctions.abs(inputDoubleLayer)
+    * }
+    * }}}
+    */
   implicit def `abs(Double)`[Input <: Batch]
     : abs.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
     abs.at { operand =>
@@ -391,6 +499,13 @@ object DifferentiableDouble {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all Double layers.
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableDouble._
+    * }}}
+    */
   implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
       implicit toLayer: ToLayer.OfPlaceholder[From, Input, DoublePlaceholder]
   ): DoubleLayerOps[Input] = {

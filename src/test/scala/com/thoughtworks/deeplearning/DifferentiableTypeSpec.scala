@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import shapeless._
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
 import com.thoughtworks.deeplearning.DifferentiableHList._
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import org.scalatest.{FreeSpec, Matchers}
 import cats._

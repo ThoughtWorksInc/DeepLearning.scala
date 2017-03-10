@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import shapeless.Lub
 
 import language.implicitConversions
@@ -93,6 +93,13 @@ object DifferentiableBoolean {
   private[deeplearning] type BooleanPlaceholder = Placeholder[Boolean, Boolean]
   private[deeplearning] val BooleanPlaceholder: BooleanPlaceholder = implicitly
 
+  /**
+    * A helper that contains common boilerplate code for all Boolean layers.
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableBoolean._
+    * }}}
+    */
   final class BooleanLayerOps[Input <: Batch](boolean: Layer.Aux[Input, BooleanPlaceholder.Batch]) {
 
     def `if`[Then,
@@ -118,11 +125,18 @@ object DifferentiableBoolean {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all Boolean layers.
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableBoolean._
+    * }}}
+    */
   implicit def toBooleanLayerOps[From, Input <: Batch](from: From)(
       implicit toLayer: ToLayer.OfPlaceholder[From, Input, BooleanPlaceholder]): BooleanLayerOps[Input] = {
     new BooleanLayerOps[Input](toLayer(from))
   }
 
-  implicit def liftBoolean: Lift.Aux[Boolean, Boolean, Boolean] = Lift.fromData
+  implicit def liftBoolean: ToLiteral.Aux[Boolean, Boolean, Boolean] = ToLiteral.fromData
 
 }

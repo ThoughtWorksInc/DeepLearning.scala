@@ -1,9 +1,9 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableSeq.Layers.{Get, ToSeq}
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless.Lazy
 
 import language.implicitConversions
@@ -102,6 +102,13 @@ object DifferentiableSeq {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all Seq layers.
+
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableSeq._
+    * }}}
+    */
   implicit def toSeqLayerOps[From, Input <: Batch, SeqData, SeqDelta, ElementData, ElementDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, SeqData, SeqDelta],
       toSeqLayer: Layer.Aux[Input, Batch.Aux[SeqData, SeqDelta]] <:< Layer.Aux[
@@ -112,14 +119,14 @@ object DifferentiableSeq {
   }
 
   implicit def seqToLayer[From, Input0 <: Batch, ElementData, ElementDelta](
-      implicit elementToLayer: Lazy[ToLayer.Aux[From, Input0, ElementData, ElementDelta]])
+      implicit elementToLayer: ToLayer.Aux[From, Input0, ElementData, ElementDelta])
     : ToLayer.Aux[Seq[From], Input0, Seq[ElementData], (Int, ElementDelta)] = {
     new ToLayer[Seq[From], Input0] {
       type OutputData = Seq[ElementData]
       type OutputDelta = (Int, ElementDelta)
 
       override def apply(layers: Seq[From]): Layer.Aux[Input0, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]] = {
-        ToSeq[Input0, ElementData, ElementDelta](layers.map(elementToLayer.value(_)))
+        ToSeq[Input0, ElementData, ElementDelta](layers.map(elementToLayer(_)))
       }
     }
   }

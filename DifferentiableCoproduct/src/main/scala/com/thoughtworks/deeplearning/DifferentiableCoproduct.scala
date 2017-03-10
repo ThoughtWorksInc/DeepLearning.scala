@@ -2,12 +2,12 @@ package com.thoughtworks.deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.DifferentiableBoolean._
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableBoolean.Layers.If
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Lift.Placeholder.{DataOf, DeltaOf}
+import com.thoughtworks.deeplearning.Symbolic.Placeholder.{DataOf, DeltaOf}
 import com.thoughtworks.deeplearning.DifferentiableCoproduct.Layers._
-import com.thoughtworks.deeplearning.Lift.Layers.Literal
+import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless.{:+:, CNil, Coproduct, Lazy, Lub}
 
 import language.existentials
@@ -211,6 +211,13 @@ object DifferentiableCoproduct {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all Coproduct layers
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
+    * }}}
+    */
   final class CConsLayerOps[
       Input <: Batch,
       HeadData,
@@ -257,6 +264,13 @@ object DifferentiableCoproduct {
 
   }
 
+  /**
+    * A helper that contains common boilerplate code for all Coproduct layers.
+    *
+    * @example{{{
+    * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
+    * }}}
+    */
   implicit def toCConsLayerOps[From,
                                Input <: Batch,
                                OutputData,
@@ -273,12 +287,12 @@ object DifferentiableCoproduct {
     new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }
 
-  implicit def liftCNil: Lift.Aux[CNil, CNil, CNil] = Lift.fromData
+  implicit def liftCNil: ToLiteral.Aux[CNil, CNil, CNil] = ToLiteral.fromData
 
   implicit def liftCCons[Head, HeadData, HeadDelta, Tail <: Coproduct, TailData <: Coproduct, TailDelta <: Coproduct](
-      implicit liftHead: Lazy[Lift.Aux[Head, HeadData, HeadDelta]],
-      liftTail: Lazy[Lift.Aux[Tail, TailData, TailDelta]])
-    : Lift.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new Lift[Head :+: Tail] {
+      implicit liftHead: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
+      liftTail: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
+    : ToLiteral.Aux[Head :+: Tail, HeadData :+: TailData, HeadDelta :+: TailDelta] = new ToLiteral[Head :+: Tail] {
     override type Data = HeadData :+: TailData
     override type Delta = HeadDelta :+: TailDelta
     override def apply(data: :+:[Head, Tail]): Literal[HeadData :+: TailData] = {
