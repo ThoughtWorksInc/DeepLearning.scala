@@ -1086,16 +1086,37 @@ object DifferentiableINDArray {
     }
   }
 
+  /**
+    * Extract for all elements of INDArray
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * exp(double:To[Double]##T)
+    * }}}
+    */
   implicit def `exp(INDArray)`[Input <: Batch]
     : exp.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     exp.at(Exp(_))
   }
 
+  /**
+    * Log for all elements of INDArray
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * log(double:To[Double]##T)
+    * }}}
+    */
   implicit def `log(INDArray)`[Input <: Batch]
     : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     log.at(Log(_))
   }
 
+  /**
+    * Abs for all elements of INDArray
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
+    * abs(double:To[Double]##T)
+    * }}}
+    */
   implicit def `abs(INDArray)`[Input <: Batch]
     : abs.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
     abs.at(Abs(_))
@@ -1108,15 +1129,16 @@ object DifferentiableINDArray {
       Dot(operand, right)
     }
 
+    /**
+      * Im2col ops
+      * @param kernel kernel size / filter size
+      * @param stride stride size
+      * @param padding padding size
+      */
     def im2col(kernel: Array[Int],
                stride: Array[Int],
                padding: Array[Int]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Im2col(operand, kernel, stride, padding)
-    }
-
-    def dynamicReshape(
-        newShape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
-      Reshape(operand, newShape)
     }
 
     /**
@@ -1146,7 +1168,7 @@ object DifferentiableINDArray {
       * calculate the convolution
       * @param weight 4 dimensions weight
       * @param bias 1 dimension bias
-      * @param kernel the kernel width and height
+      * @param kernel the kernel/filter width and height
       * @param stride the stride width and height
       * @param padding the padding width and height
       * @return convolution result
@@ -1221,6 +1243,9 @@ object DifferentiableINDArray {
       MaxPool(operand, dimensions: _*)
     }
 
+    /**
+      * @return shape of NDArray
+      */
     def shape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = {
       Shape(operand)
     }
@@ -1233,20 +1258,35 @@ object DifferentiableINDArray {
       ToSeq(operand)
     }
 
+    /**
+      * @return sum of all elements of NDArray
+      */
     def sum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceSum(operand)
     }
 
+    /**
+      * @return mean of all elements of NDArray
+      */
     def mean: Layer.Aux[Input, DoublePlaceholder.Batch] = {
       ReduceMean(operand)
     }
 
+    /**
+      * sum dimensions of NDArray,will return an INDArrayPlaceholder
+      */
     def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
       Sum(operand, dimensions)
     }
 
   }
 
+  /**
+    * Implicit conversions for all NDArray layers.
+    * {{{
+    * import com.thoughtworks.deeplearning.DifferentiableNDArray._
+    * }}}
+    */
   implicit def toINDArrayLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
       constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input,
