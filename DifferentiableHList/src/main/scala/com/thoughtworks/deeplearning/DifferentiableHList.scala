@@ -198,18 +198,18 @@ object DifferentiableHList {
     new HConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toHListLayer(toLayer(from)))
   }
 
-  implicit def liftHNil[From <: HNil]: ToLiteral.Aux[From, HNil, CNil] = ToLiteral.fromData
+  implicit def hnilToLiteral[From <: HNil]: ToLiteral.Aux[From, HNil, CNil] = ToLiteral.fromData
 
-  implicit def liftHCons[Head, HeadData, HeadDelta, Tail <: HList, TailData <: HList, TailDelta <: Coproduct](
-      implicit liftHead: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
-      liftTail: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
+  implicit def hconsToLiteral[Head, HeadData, HeadDelta, Tail <: HList, TailData <: HList, TailDelta <: Coproduct](
+      implicit headToLiteral: Lazy[ToLiteral.Aux[Head, HeadData, HeadDelta]],
+      tailToLiteral: Lazy[ToLiteral.Aux[Tail, TailData, TailDelta]])
     : ToLiteral.Aux[Head :: Tail, HeadData :: TailData, HeadDelta :+: TailDelta] = new ToLiteral[Head :: Tail] {
     override type Data = HeadData :: TailData
     override type Delta = HeadDelta :+: TailDelta
     override def apply(data: Head :: Tail): Literal[HeadData :: TailData] = {
       val head :: tail = data
-      val Literal(headData) = liftHead.value(head)
-      val Literal(tailData) = liftTail.value(tail)
+      val Literal(headData) = headToLiteral.value(head)
+      val Literal(tailData) = tailToLiteral.value(tail)
       Literal(headData :: tailData)
     }
   }

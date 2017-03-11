@@ -20,7 +20,7 @@ final class Issue8 extends FreeSpec with Matchers {
   import shapeless._
 
   "issue8" in {
-    def layer(implicit x: From[INDArray]##T) = {
+    def layer(implicit x: From[INDArray]##`@`) = {
       val x1 = (-x).withOutputDataHook { x: INDArray =>
         println(x)
       }

@@ -35,7 +35,7 @@ final class SeqSpec extends FreeSpec with Matchers {
   //TODO:compile error in scala version 2.12 --issues #11
   /*"Seq(Int).toLayer" in {
     //noinspection ScalaUnusedSymbol
-    def toLayerTest(implicit from: From[Double]##T) = {
+    def toLayerTest(implicit from: From[Double]##`@`) = {
       1.0.toLayer
       Seq(1.0).toLayer
       Seq(1.0.toLayer).toLayer
