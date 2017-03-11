@@ -65,16 +65,16 @@ fork := true</code></pre>
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:1.0.0`</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:2.0.0`</span>
 
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC6`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC6`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC7`</span>
 <span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.rauschig:jarchivelib:0.5.0`</span>
 
 <span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.0`</span>
@@ -94,8 +94,8 @@ fork := true</code></pre>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer.Batch.Aux</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer.</span><span class="o">{</span><span class="nc">Aux</span><span class="o">,</span> <span class="nc">Batch</span><span class="o">}</span>
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Lift.Layers.Identity</span>
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Lift._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic.Layers.Identity</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathFunctions._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathMethods.</span><span class="o">{*,</span> <span class="o">/}</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathOps</span>
@@ -201,9 +201,9 @@ Compiling Utils.sc
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Layer.{Aux, Batch}
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Lift.Layers.Identity
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Lift._
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Symbolic._
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Poly.MathFunctions._
 </span>
@@ -499,8 +499,8 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">convolutionThenRelu</span><span class="o">(</span><span class="n">numberOfInputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
                         <span class="n">numberOfOutputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span>
-    <span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
-  <span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span>
+    <span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span>
     <span class="o">(</span><span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span>
       <span class="nc">Array</span><span class="o">(</span><span class="n">numberOfOutputKernels</span><span class="o">,</span>
             <span class="n">numberOfInputKernels</span><span class="o">,</span>
@@ -554,7 +554,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]</span> <span class="o">#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">expScores</span> <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
   <span class="n">expScores</span> <span class="o">/</span> <span class="n">expScores</span><span class="o">.</span><span class="n">sum</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
 <span class="o">}</span>
@@ -599,7 +599,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">fullyConnectedThenSoftmax</span><span class="o">(</span><span class="n">inputSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span> <span class="n">outputSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span>
-    <span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">imageCount</span> <span class="k">=</span> <span class="n">input</span><span class="o">.</span><span class="n">shape</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span>
 
   <span class="k">val</span> <span class="n">weight</span> <span class="k">=</span>
@@ -649,11 +649,11 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">hiddenLayer</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">hiddenLayer</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="nd">@tailrec</span>
   <span class="k">def</span> <span class="n">convFunction</span><span class="o">(</span><span class="n">timesToRun</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
                    <span class="n">timesNow</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
-                   <span class="n">input2</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+                   <span class="n">input2</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">timesToRun</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
       <span class="n">input2</span>
     <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
@@ -719,7 +719,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">crossEntropyLossFunction</span><span class="o">(</span>
-    <span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">Double</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="o">(</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">)</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">score</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">head</span>
   <span class="k">val</span> <span class="n">label</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
   <span class="o">-(</span><span class="n">label</span> <span class="o">*</span> <span class="n">log</span><span class="o">(</span><span class="n">score</span> <span class="o">*</span> <span class="mf">0.9</span> <span class="o">+</span> <span class="mf">0.1</span><span class="o">)</span> <span class="o">+</span> <span class="o">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">label</span><span class="o">)</span> <span class="o">*</span> <span class="n">log</span><span class="o">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">score</span> <span class="o">*</span> <span class="mf">0.9</span><span class="o">)).</span><span class="n">mean</span>
@@ -765,10 +765,10 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">network</span><span class="o">(</span>
-    <span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">Double</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="o">(</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">)</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">input</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">head</span>
   <span class="k">val</span> <span class="n">label</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
-  <span class="k">val</span> <span class="n">score</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">compose</span><span class="o">(</span><span class="n">input</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">score</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">compose</span><span class="o">(</span><span class="n">input</span><span class="o">)</span>
   <span class="n">crossEntropyLossFunction</span><span class="o">.</span><span class="n">compose</span><span class="o">(</span><span class="n">score</span> <span class="o">::</span> <span class="n">label</span> <span class="o">::</span> <span class="nc">HNil</span><span class="o">.</span><span class="n">toLayer</span><span class="o">)</span>
 <span class="o">}</span>
 
@@ -1028,10 +1028,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="ea9bc85d-b852-40ce-8ec8-8037fd4e049f"></div>
+<div id="f202b207-5811-4329-92de-932b2faad00e"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#ea9bc85d-b852-40ce-8ec8-8037fd4e049f');
+var element = $('#f202b207-5811-4329-92de-932b2faad00e');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
