@@ -286,21 +286,7 @@ ${exportedFunctions.mkFastring}
     final case class Code(globalDeclarations: Fastring = Fastring.empty,
                           globalDefinitions: Fastring = Fastring.empty,
                           accessor: Accessor)
-
-    //
-//    def dslHCons(implicit headType: DslType, tailType: DslStructure): DslStructure = {
-//      new DslStructure {
-//
-//        override val unpacked: Stream[String] = {
-//          fieldTypes.toStream.flatMap(_.unpacked)
-//        }
-//
-//        override def fieldTypes = {
-//          headType :: tailType.fieldTypes
-//        }
-//      }
-//    }
-
+    
     final case class DslStructure(fieldTypes: List[DslType]) extends DslType {
       override def toCode(context: Context): DslType.Code = {
         fieldTypes match {
