@@ -16,7 +16,7 @@ import org.lwjgl.system.Pointer._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class OpenCLSpec extends FreeSpec with Matchers {
+final class OpenCLSpec extends FreeSpec with Matchers { // TODO: rename to OpenCLCodeGeneratorSpec
 
   private def checkCLError(errorCode: Int) = {
     if (errorCode != CL_SUCCESS) {
@@ -32,11 +32,20 @@ final class OpenCLSpec extends FreeSpec with Matchers {
 
   "Add" in {
 
-    val f = DslFunction.HCons(
-      DslFunction.Add(DslFunction.DoubleLiteral(1.5), DslFunction.DoubleLiteral(1.5), DslType.DslDouble),
-      DslFunction.HNilLiteral)
-    val kernel = Kernel("f", 1, f, DslType.DslHNil, DslType.dslHCons(DslType.DslDouble, DslType.DslHNil))
-    val cl = OpenCLCompiler.toSourceCode(kernel).toArray[CharSequence]
+    val kernel = OpenCLCompiler.Kernel(
+      "f",
+      Seq(Parameter('output, DslType.DslBuffer(DslType.DslStructure(List(DslType.DslDouble))))),
+      Seq(
+        DslEffect.Update(
+          DslExpression.Identifier('output),
+          DslExpression.GetGlobalId(DslExpression.IntLiteral(0)),
+          DslExpression.HCons(
+            DslExpression.Add(DslExpression.DoubleLiteral(1.5), DslExpression.DoubleLiteral(1.5), DslType.DslDouble),
+            DslExpression.HNilLiteral),
+          DslType.DslStructure(List(DslType.DslDouble))
+        ))
+    )
+    val cl = OpenCLCompiler.generateSourceCode(kernel).toArray[CharSequence]
     cl should not be empty
 //    println(cl.mkString)
     val output = Array(0.0)

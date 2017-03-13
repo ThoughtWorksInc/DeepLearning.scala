@@ -4,10 +4,7 @@ import java.util
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
-import com.thoughtworks.deeplearning.OpenCLCompiler.DslFunction.{Unpacked, Value}
-import com.thoughtworks.deeplearning.OpenCLCompiler.DslType.HListType
 import shapeless._
-import shapeless.ops.hlist.LiftAll
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Queue
@@ -16,67 +13,65 @@ import scala.collection.{SeqView, mutable}
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object OpenCLCompiler {
+object OpenCLCompiler { // TODO: rename to OpenCLCodeGenerator
 
   trait Context {
     def freshName(prefix: String): String
-    def getValue(dslFunction: DslFunction[_, _]): Value
-    def getPackedType(dslType: DslType[_]): Fastring
+
+    def resolve(id: AnyRef): DslExpression.Accessor
+
+    def get(dslFunction: DslExpression): DslExpression.Accessor
+    def get(dslType: DslType): DslType.Accessor
+    def get(effect: DslEffect): DslEffect.Statement
   }
 
-  // TODO: Turn Kernel to a trait
-  final case class Kernel[Input <: HList, Output <: HList](name: String,
-                                                           numberOfDimensions: Int,
-                                                           dslFunction: DslFunction[Input, Output],
-                                                           inputType: HListType[Input],
-                                                           outputType: HListType[Output])
+  final case class Parameter(id: AnyRef, dslType: DslType)
 
-  def toSourceCode(kernels: Kernel[_ <: HList, _ <: HList]*): Fastring = {
+  final case class Kernel(name: String, parameters: Seq[Parameter], effects: Seq[DslEffect])
+
+  def generateSourceCode(kernels: Kernel*): Fastring = {
     var seed = 0
     def nextId() = {
       val id = seed
       seed += 1
       id
     }
+
     val types = mutable.Set.empty[Seq[String]]
     val globalDeclarations = mutable.Buffer.empty[Fastring]
     val globalDefinitions = mutable.Buffer.empty[Fastring]
+    val typeCodeCache = mutable.HashMap.empty[DslType, DslType.Accessor]
 
     val exportedFunctions = for {
-      Kernel(functionName, numberOfDimensions, dslFunction, inputType, outputType) <- kernels
+      Kernel(functionName, parameters, effects) <- kernels
     } yield {
+
+      val parameterMap = new util.IdentityHashMap[AnyRef, (String, DslType)]().asScala
+
       val localDefinitions = mutable.Buffer.empty[Fastring]
 
-      val functionCodeCache = new util.IdentityHashMap[DslFunction[_, _], Value]().asScala
+      val expressionCodeCache = new util.IdentityHashMap[DslExpression, DslExpression.Accessor]().asScala
+      val effectCodeCache = new util.IdentityHashMap[DslEffect, Fastring]().asScala
 
       val functionContext = new Context {
-        override def getPackedType(dslType: DslType[_]): Fastring = {
-          dslType.flatten match {
-            case Seq(atom) => fast"$atom"
-            case flattenTypes =>
-              val identifier = fast"tuple_${flattenTypes.mkFastring("_")}"
-              if (!types(flattenTypes)) {
-                types += flattenTypes
-                globalDeclarations += fast"struct $identifier;"
-                globalDefinitions += fastraw"""
-struct $identifier {
-  ${(for ((t, i) <- flattenTypes.view.zipWithIndex) yield {
-                  fast"\n  $t _$i;"
-                }).mkFastring}
-};"""
-              }
-              fast"struct $identifier"
-          }
-        }
 
-        override def getValue(dslFunction: DslFunction[_, _]): Value = {
-          functionCodeCache.getOrElseUpdate(
-            dslFunction, {
-              val code = dslFunction.toCode(this)
+        override def get(dslType: DslType): DslType.Accessor = {
+          typeCodeCache.getOrElseUpdate(dslType, {
+            val code = dslType.toCode(this)
+            globalDeclarations += code.globalDeclarations
+            globalDefinitions += code.globalDefinitions
+            code.accessor
+
+          })
+        }
+        override def get(expression: DslExpression): DslExpression.Accessor = {
+          expressionCodeCache.getOrElseUpdate(
+            expression, {
+              val code = expression.toCode(this)
               localDefinitions += code.localDefinitions
               globalDeclarations += code.globalDeclarations
               globalDefinitions += code.globalDefinitions
-              code.value
+              code.accessor
             }
           )
         }
@@ -84,71 +79,40 @@ struct $identifier {
         override def freshName(prefix: String): String = {
           raw"""${prefix}_${nextId()}"""
         }
-      }
-      val indexId = nextId()
-      val sizes = for (i <- (1 until numberOfDimensions).reverse.view) yield {
-        val nextDimension = i + 1
-        if (nextDimension == numberOfDimensions) {
-          fast"\n  size_t size${i}_$indexId = get_global_size($i);"
-        } else {
-          fast"\n  size_t size${i}_$indexId = size$nextDimension * get_global_size($i);"
-        }
-      }
-      val starts = for (i <- (0 until numberOfDimensions).view) yield {
-        val nextDimension = i + 1
-        if (nextDimension == numberOfDimensions) {
-          fast"\n  size_t start${i}_$indexId = get_global_id($i);"
-        } else {
-          fast"\n  size_t start${i}_$indexId = get_global_id($i) * size$nextDimension;"
-        }
-      }
-      val outputId = (for (i <- (0 until numberOfDimensions).view) yield fast"start${i}_$indexId").mkFastring("+")
 
-      // TODO: reference to input
-      val result = functionContext.getValue(dslFunction)
-
-      val inputParameters = inputType.fieldTypes.view.zipWithIndex.foldLeft[Queue[Fastring]](Queue.empty) {
-        case (inputParameters, (inputFieldType, i)) =>
-          if (inputFieldType.flatten.isEmpty) {
-            inputParameters
-          } else {
-            val inputValueName = raw"""input_${nextId()}"""
-            val inputTypeName = functionContext.getPackedType(inputFieldType)
-            inputParameters.enqueue(fast"$inputTypeName $inputValueName")
-          }
-      }
-
-      val (outputParameters, setters, _) = outputType.fieldTypes.view.zipWithIndex
-        .foldLeft[(Queue[Fastring], Queue[Fastring], SeqView[Fastring, Seq[_]])](Queue.empty,
-                                                                                 Queue.empty,
-                                                                                 result.unpacked.view) {
-          case ((outputParameters, setters, unpackedResults), (outputFieldType, i)) =>
-            outputFieldType.flatten.length match {
-              case 0 =>
-                (outputParameters, setters, unpackedResults)
-              case fieldSize =>
-                val outputValueName = raw"""output_${nextId()}"""
-                val outputTypeName = functionContext.getPackedType(outputFieldType)
-                val outputParameter = fast"__global $outputTypeName * $outputValueName"
-
-                val (unpackedField, restUnpackedResults) = unpackedResults.splitAt(fieldSize)
-
-                val returnValueName = raw"""return_${nextId()}"""
-                val setter = fast"""
-  ${functionContext.getPackedType(outputFieldType)} $returnValueName = ${Unpacked(unpackedField.force).packed};
-  $outputValueName[$outputId] = $returnValueName;
-"""
-                (outputParameters.enqueue(outputParameter), setters.enqueue(setter), restUnpackedResults)
+        override def get(effect: DslEffect): Fastring = {
+          effectCodeCache.getOrElseUpdate(
+            effect, {
+              val code = effect.toCode(this)
+              localDefinitions += code.localDefinitions
+              globalDeclarations += code.globalDeclarations
+              globalDefinitions += code.globalDefinitions
+              code.statements
             }
+          )
         }
 
-      val allParameters = inputParameters ++ outputParameters
+        override def resolve(id: AnyRef) = {
+          val (name, dslType) = parameterMap(id)
+          DslExpression.Accessor.Packed(fast"$name", get(dslType).unpacked.length)
+        }
+      }
+
+      val parameterDeclarations = for (parameter <- parameters) yield {
+        val name = s"parameter_${nextId()}"
+        parameterMap(parameter.id) = name -> parameter.dslType
+        val typeName = functionContext.get(parameter.dslType).packed
+        fast"$typeName $name"
+      }
+
+      val effectStatements = for (effect <- effects) yield {
+        functionContext.get(effect)
+      }
+
       fastraw"""
-__kernel void $functionName(${allParameters.mkFastring(", ")}) {
+__kernel void $functionName(${parameterDeclarations.mkFastring(", ")}) {
   ${localDefinitions.mkFastring}
-  ${sizes.mkFastring}
-  ${starts.mkFastring}
-  ${setters.mkFastring}
+  ${effectStatements.mkFastring}
 }
 """
     }
@@ -160,132 +124,238 @@ ${exportedFunctions.mkFastring}
 
   }
 
-  object DslFunction {
+  object DslExpression {
 
     final case class Code(globalDeclarations: Fastring = Fastring.empty,
                           globalDefinitions: Fastring = Fastring.empty,
                           localDefinitions: Fastring = Fastring.empty,
-                          value: Value)
-    trait Value {
+                          accessor: Accessor)
+    trait Accessor {
       def unpacked: Seq[Fastring]
       def packed: Fastring
     }
 
-    final case class Atom(value: Fastring) extends Value {
-      override def packed: Fastring = value
-      override def unpacked = Seq(value)
-    }
+    object Accessor {
 
-    final case class Unpacked(unpacked: Seq[Fastring]) extends Value {
-      override def packed = unpacked match {
-        case Seq(single) => single
-        case _ => fast"{ ${unpacked.mkFastring(", ")} }"
+      final case class Atom(value: Fastring) extends Accessor {
+        override def packed: Fastring = value
+        override def unpacked = Seq(value)
       }
-    }
 
-    final case class Packed(packed: Fastring, numberOfFields: Int) extends Value {
-      override def unpacked: Seq[Fastring] = {
-        if (numberOfFields == 1) {
-          Seq(packed)
-        } else {
-          for (i <- 0 until numberOfFields) yield {
-            fast"$packed._$i"
+      final case class Unpacked(unpacked: Seq[Fastring]) extends Accessor {
+        override def packed = unpacked match {
+          case Seq(single) => single
+          case _ => fast"{ ${unpacked.mkFastring(", ")} }"
+        }
+      }
+
+      final case class Packed(packed: Fastring, numberOfFields: Int) extends Accessor {
+        override def unpacked: Seq[Fastring] = {
+          if (numberOfFields == 1) {
+            Seq(packed)
+          } else {
+            for (i <- 0 until numberOfFields) yield {
+              fast"$packed._$i"
+            }
           }
         }
       }
     }
 
-    final case object HNilLiteral extends DslFunction[HList, HNil] {
+    import Accessor._
+
+    final case object HNilLiteral extends DslExpression {
       override def toCode(context: Context): Code = {
-        Code(value = Unpacked(Nil))
+        Code(accessor = Unpacked(Nil))
       }
     }
 
-    final case class DoubleLiteral(data: Double) extends DslFunction[HList, Double] {
+    final case class DoubleLiteral(data: Double) extends DslExpression {
       override def toCode(context: Context): Code = {
-        Code(value = Atom(value = Fastring(data)))
-      }
-    }
-    final case class FloatLiteral(data: Float) extends DslFunction[HList, Float] {
-      override def toCode(context: Context): Code = {
-        Code(value = Atom(value = fast"${data}f"))
+        Code(accessor = Atom(value = Fastring(data)))
       }
     }
 
-    final case class Add[Input <: HList, Output](operand1: DslFunction[Input, Output],
-                                                 operand2: DslFunction[Input, Output],
-                                                 dslType: DslType[Output])
-        extends DslFunction[Input, Output] {
+    final case class IntLiteral(data: Int) extends DslExpression {
+      override def toCode(context: Context): Code = {
+        Code(accessor = Atom(value = Fastring(data)))
+      }
+    }
+
+    final case class FloatLiteral(data: Float) extends DslExpression {
+      override def toCode(context: Context): Code = {
+        Code(accessor = Atom(value = fast"${data}f"))
+      }
+    }
+
+    // Note the id is searched by `eq`, not `==`
+    final case class Identifier(id: AnyRef) extends DslExpression {
+      override def toCode(context: Context): Code = {
+        Code(accessor = context.resolve(id))
+      }
+    }
+
+    final case class GetGlobalId(dimensionIndex: DslExpression) extends DslExpression {
+      override def toCode(context: Context): Code = {
+        val i = context.get(dimensionIndex)
+        Code(
+          accessor = Atom(fast"get_global_id(${i.packed})")
+        )
+
+      }
+    }
+
+    final case class Add(operand1: DslExpression, operand2: DslExpression, dslType: DslType) extends DslExpression {
       override def toCode(context: Context): Code = {
         val name = context.freshName("plus")
-        val flattenType = dslType.flatten
-        val packedType = context.getPackedType(dslType)
+        val typeReference = context.get(dslType)
+        val packedType = typeReference.packed
         Code(
           localDefinitions = fastraw"""
-  $packedType $name = ${context.getValue(operand1).packed} + ${context.getValue(operand2).packed};
-""",
-          value = Packed(Fastring(name), flattenType.length)
+  $packedType $name = ${context.get(operand1).packed} + ${context.get(operand2).packed};""",
+          accessor = Packed(Fastring(name), typeReference.unpacked.length)
         )
       }
     }
 
-    final case class HCons[Input <: HList, Head, Tail <: HList](operand1: DslFunction[Input, Head],
-                                                                operand2: DslFunction[Input, Tail])
-        extends DslFunction[Input, Head :: Tail] {
+    final case class HCons(operand1: DslExpression, operand2: DslExpression) extends DslExpression {
       override def toCode(context: Context): Code = {
         Code(
-          value = Unpacked(context.getValue(operand1).unpacked ++ context.getValue(operand2).unpacked)
+          accessor = Unpacked(context.get(operand1).unpacked ++ context.get(operand2).unpacked)
         )
       }
     }
 
   }
 
-  trait DslFunction[-Input <: HList, Output] {
+  trait DslExpression {
 
-    def toCode(context: Context): DslFunction.Code
+    def toCode(context: Context): DslExpression.Code
+
+  }
+
+  trait DslEffect {
+
+    def toCode(context: Context): DslEffect.Code
+
+  }
+
+  object DslEffect {
+
+    type Statement = Fastring
+
+    final case class Code(globalDeclarations: Fastring = Fastring.empty,
+                          globalDefinitions: Fastring = Fastring.empty,
+                          localDefinitions: Fastring = Fastring.empty,
+                          statements: Fastring = Fastring.empty)
+
+    final case class Update(buffer: DslExpression, index: DslExpression, value: DslExpression, valueType: DslType)
+        extends DslEffect {
+      override def toCode(context: Context): Code = {
+        val valueName = context.freshName("update")
+        Code(
+          localDefinitions = fast"""
+  ${context.get(valueType).packed} $valueName = ${context.get(value).packed};""",
+          statements = fast"""
+  ${context.get(buffer).packed}[${context.get(index).packed}] = $valueName;"""
+        )
+      }
+    }
 
   }
 
   object DslType {
 
-    implicit def dslHCons[Head, Tail <: HList](implicit headType: DslType[Head],
-                                               tailType: HListType[Tail]): HListType[Head :: Tail] = {
-      new HListType[Head :: Tail] {
+    trait Accessor {
+      def packed: Fastring
+      def unpacked: Seq[String]
+    }
 
-        override val flatten: Stream[String] = {
-          fieldTypes.toStream.flatMap(_.flatten)
-        }
+    object Accessor {
+      final case class Structure(name: String, override val unpacked: Seq[String]) extends Accessor {
+        override def packed: Fastring = fast"struct $name"
+      }
 
-        override def fieldTypes = {
-          headType :: tailType.fieldTypes
+      final case class Atom(name: String) extends Accessor {
+        override def packed: Fastring = fast"$name"
+
+        override def unpacked: Seq[String] = Seq(name)
+      }
+    }
+    import Accessor._
+    final case class Code(globalDeclarations: Fastring = Fastring.empty,
+                          globalDefinitions: Fastring = Fastring.empty,
+                          accessor: Accessor)
+
+    //
+//    def dslHCons(implicit headType: DslType, tailType: DslStructure): DslStructure = {
+//      new DslStructure {
+//
+//        override val unpacked: Stream[String] = {
+//          fieldTypes.toStream.flatMap(_.unpacked)
+//        }
+//
+//        override def fieldTypes = {
+//          headType :: tailType.fieldTypes
+//        }
+//      }
+//    }
+
+    final case class DslStructure(fieldTypes: List[DslType]) extends DslType {
+      override def toCode(context: Context): DslType.Code = {
+        fieldTypes match {
+          case head +: Nil =>
+            Code(accessor = context.get(head))
+          case _ =>
+            val name = context.freshName("struct")
+            val flatten = fieldTypes.flatMap { fieldType =>
+              context.get(fieldType).unpacked
+            }
+            Code(
+              globalDeclarations = fast"struct $name;",
+              globalDefinitions = fastraw"""
+struct $name {
+  ${(for ((t, i) <- flatten.view.zipWithIndex) yield fast"\n  $t _$i;").mkFastring}
+};""",
+              Structure(name, flatten)
+            )
         }
       }
     }
 
-    implicit object DslHNil extends HListType[HNil] {
-      override def flatten = Nil
-
-      override def fieldTypes = Nil
+    case object DslDouble extends DslType {
+      override def toCode(context: Context): Code =
+        Code(accessor = Atom("double"))
     }
 
-    implicit object DslDouble extends DslType[Double] {
-      override val flatten = Seq("double")
+    case object DslFloat extends DslType {
+      override def toCode(context: Context): Code =
+        Code(accessor = Atom("float"))
     }
 
-    implicit object DslFloat extends DslType[Float] {
-      override val flatten = Seq("float")
+    case object DslInt extends DslType {
+      override def toCode(context: Context): Code =
+        Code(accessor = Atom("int"))
     }
 
-    trait HListType[NativeType <: HList] extends DslType[NativeType] {
-      def fieldTypes: List[DslType[_]]
+    final case class DslBuffer(elementType: DslType) extends DslType {
 
+      override def toCode(context: Context): Code = {
+        val name = context.freshName("buffer")
+        val element = context.get(elementType)
+        Code(
+          globalDeclarations = Fastring.empty,
+          globalDefinitions = fast"typedef global ${element.packed} * $name;",
+          Atom(name)
+        )
+      }
     }
 
   }
 
-  trait DslType[NativeType] {
-    def flatten: Seq[String]
+  trait DslType {
+
+    def toCode(context: Context): DslType.Code
 
   }
 
