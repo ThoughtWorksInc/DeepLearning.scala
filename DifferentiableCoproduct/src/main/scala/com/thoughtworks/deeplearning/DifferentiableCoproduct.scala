@@ -14,12 +14,6 @@ import language.existentials
 import language.implicitConversions
 
 /**
-  * Common ops for coproduct layers,import before using those ops
-  *
-  * @example{{{
-  * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
-  * }}}
-  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableCoproduct {

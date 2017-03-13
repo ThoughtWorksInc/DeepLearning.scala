@@ -8,10 +8,6 @@ import annotation.elidable
 
 // TODO: Review if the reference count works correctly
 /**
-  * BufferedLayer records whether the parameters in the Layer are in use by reference counting,
-  * in the `forward ()` ,parameters will be cached to `cache`,
-  * If a parameter is no longer used (ie `value` is `0`) will call `close ()` to release the resource (ie, remove the cached data from `cache`)
-  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 trait BufferedLayer extends Layer {

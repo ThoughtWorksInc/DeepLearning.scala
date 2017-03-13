@@ -12,12 +12,6 @@ import language.higherKinds
 // TODO: rename to sized
 
 /**
-  * Common ops for Seq layers,import before using those ops
-  *
-  * @example{{{
-  * import com.thoughtworks.deeplearning.DifferentiableSeq._
-  * }}}
-  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableSeq {

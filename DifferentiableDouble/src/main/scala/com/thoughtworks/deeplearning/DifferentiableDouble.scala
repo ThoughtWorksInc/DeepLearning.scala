@@ -15,12 +15,6 @@ import shapeless.the
 import language.implicitConversions
 
 /**
-  * Common ops for double layers,import before using those ops
-  *
-  * @example{{{
-  * import com.thoughtworks.deeplearning.DifferentiableDouble._
-  * }}}
-  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableDouble {

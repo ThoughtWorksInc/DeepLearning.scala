@@ -10,12 +10,6 @@ import language.implicitConversions
 import language.existentials
 
 /**
-  * Common ops for all layer,import before using those ops
-  *
-  * @example{{{
-  * import com.thoughtworks.deeplearning.DifferentiableAny._
-  * }}}
-  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableAny {

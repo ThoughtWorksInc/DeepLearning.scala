@@ -33,12 +33,6 @@ import language.implicitConversions
 import scala.collection.immutable.IndexedSeq
 
 /**
-  * Common ops for INDArray layers,import before using those ops
-  *
-  * @example{{{
-  * import com.thoughtworks.deeplearning.DifferentiableINDArray._
-  * }}}
-  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableINDArray {
