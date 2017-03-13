@@ -399,7 +399,7 @@ object DifferentiableINDArray {
       override type Input = Batch
       override type Output = Batch.Aux[Data, Delta]
 
-      override final val isTrainable = true
+      override final def isTrainable = true
 
       override final def addReference() = this
 
