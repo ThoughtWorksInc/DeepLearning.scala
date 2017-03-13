@@ -189,7 +189,7 @@ object DifferentiableInt {
     }
   }
 
-  implicit def liftInt: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
+  implicit def intToLiteral: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
 
   /**
     * Returns a [[Poly.MathMethods.+.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
@@ -197,7 +197,7 @@ object DifferentiableInt {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    * def myNetwork(implicit inputIntLayer: Int @Symbolic)(anotherIntLayer: Int @Symbolic) = {
     *   Poly.MathMethods.+(inputIntLayer,anotherIntLayer)
     * }
     * }}}
@@ -215,7 +215,7 @@ object DifferentiableInt {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    * def myNetwork(implicit inputIntLayer: Int @Symbolic)(anotherIntLayer: Int @Symbolic) = {
     *   Poly.MathMethods.-(inputIntLayer,anotherIntLayer)
     * }
     * }}}
@@ -235,7 +235,7 @@ object DifferentiableInt {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    * def myNetwork(implicit inputIntLayer: Int @Symbolic)(anotherIntLayer: Int @Symbolic) = {
     *   Poly.MathMethods.*(inputIntLayer,anotherIntLayer)
     * }
     * }}}
@@ -253,7 +253,7 @@ object DifferentiableInt {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputIntLayer: Symbolic[Int]##T)(anotherIntLayer: Symbolic[Int]##T) = {
+    * def myNetwork(implicit inputIntLayer: Int @Symbolic)(anotherIntLayer: Int @Symbolic) = {
     *   Poly.MathMethods./(inputIntLayer,anotherIntLayer)
     * }
     * }}}

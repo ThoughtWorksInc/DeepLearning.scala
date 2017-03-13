@@ -65,9 +65,9 @@ final class XorSpec extends FreeSpec with Matchers {
     sigmoid.compose((row dot w) + b)
   }
 
-  val ArrayToArray = LayerOf[INDArray, INDArray]
+  val ArrayToArray = FromTo[INDArray, INDArray]
 
-  def hiddenLayers(implicit encodedInput: From[INDArray]##T): ArrayToArray.T = {
+  def hiddenLayers(implicit encodedInput: From[INDArray]##`@`): ArrayToArray.`@` = {
     fullyConnectedThenSigmoid(50, 3).compose(
       fullyConnectedThenRelu(50, 50).compose(
         fullyConnectedThenRelu(50, 50).compose(fullyConnectedThenRelu(6, 50).compose(encodedInput))))
@@ -75,7 +75,7 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val hiddenLayersNetwork = hiddenLayers
 
-  def encode(implicit input: From[XorSpec.InputData]##T): To[INDArray]##T = {
+  def encode(implicit input: From[XorSpec.InputData]##`@`): To[INDArray]##`@` = {
     val field0 = input.head
     val rest0 = input.tail
     val field1 = rest0.head
@@ -129,20 +129,20 @@ final class XorSpec extends FreeSpec with Matchers {
 
   val encodeNetwork = encode
 
-  def decode(implicit row: From[INDArray]##T): To[XorSpec.OutputData]##T = {
+  def decode(implicit row: From[INDArray]##`@`): To[XorSpec.OutputData]##`@` = {
     val rowSeq = row.toSeq
     rowSeq(0)(0) :: rowSeq(0)(1) :: rowSeq(0)(2) :: shapeless.HNil.toLayer
   }
 
   val decodeNetwork = decode
 
-  def predict(implicit input: From[XorSpec.InputData]##T): To[XorSpec.OutputData]##T = {
+  def predict(implicit input: From[XorSpec.InputData]##`@`): To[XorSpec.OutputData]##`@` = {
     decodeNetwork.compose(hiddenLayersNetwork.compose(encodeNetwork.compose(input)))
   }
 
   val predictNetwork = predict
 
-  def loss(implicit pair: From[ExpectedLabelData :: INDArray :: HNil]##T): To[Double]##T = {
+  def loss(implicit pair: From[ExpectedLabelData :: INDArray :: HNil]##`@`): To[Double]##`@` = {
 
     val expectedLabel = pair.head
     val expectedField0 = expectedLabel.head
@@ -190,7 +190,7 @@ final class XorSpec extends FreeSpec with Matchers {
     loss0 + loss1 + loss2
   }
 
-  def train(implicit pair: From[ExpectedLabelData :: InputData :: HNil]##T): To[Double]##T = {
+  def train(implicit pair: From[ExpectedLabelData :: InputData :: HNil]##`@`): To[Double]##`@` = {
     val expectedLabel = pair.head
     val input = pair.tail.head
     loss.compose(expectedLabel :: hiddenLayersNetwork.compose(encodeNetwork.compose(input)) :: shapeless.HNil.toLayer)

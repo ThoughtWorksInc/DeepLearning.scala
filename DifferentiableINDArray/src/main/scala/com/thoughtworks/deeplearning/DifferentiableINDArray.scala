@@ -889,7 +889,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathFunctions.max(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -906,7 +906,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDArray]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherINDArrayLayer: INDArray @Symbolic) = {
     *   Poly.MathMethods./(inputINDArrayLayer,anotherINDArrayLayer)
     * }
     * }}}
@@ -926,7 +926,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods./(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -946,7 +946,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods./(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -966,7 +966,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDArray]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherINDArrayLayer: INDArray @Symbolic) = {
     *   Poly.MathMethods.*(inputINDArrayLayer,anotherINDArrayLayer)
     * }
     * }}}
@@ -986,7 +986,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.*(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -1006,7 +1006,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.*(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -1026,7 +1026,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDarray]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherINDArrayLayer: INDarray @Symbolic) = {
     *   Poly.MathMethods.-(inputINDArrayLayer,anotherINDArrayLayer)
     * }
     * }}}
@@ -1046,7 +1046,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.-(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -1066,7 +1066,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.-(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -1086,7 +1086,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherINDArrayLayer: Symbolic[INDarray]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherINDArrayLayer: INDarray @Symbolic) = {
     *   Poly.MathMethods.+(inputINDArrayLayer,anotherINDArrayLayer)
     * }
     * }}}
@@ -1106,7 +1106,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.+(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -1126,7 +1126,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * import com.thoughtworks.deeplearning.Symbolic
-    * def myNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T)(anotherDoubleLayer: Symbolic[Double]##T) = {
+    * def myNetwork(implicit inputINDArrayLayer: INDArray @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
     *   Poly.MathMethods.+(inputINDArrayLayer,anotherDoubleLayer)
     * }
     * }}}
@@ -1149,7 +1149,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray.`exp(INDArray)`
     * import com.thoughtworks.deeplearning.Symbolic
-    * def expNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    * def expNetwork(implicit inputINDArrayLayer: INDArray @Symbolic) = {
     *   Poly.MathFunctions.exp(indArrayLayer)
     * }
     * }}}
@@ -1170,7 +1170,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray.`log(INDArray)`
     * import com.thoughtworks.deeplearning.Symbolic
-    * def logNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    * def logNetwork(implicit inputINDArrayLayer: INDArray @Symbolic) = {
     *   Poly.MathFunctions.log(indArrayLayer)
     * }
     * }}}
@@ -1191,7 +1191,7 @@ object DifferentiableINDArray {
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray.`abs(INDArray)`
     * import com.thoughtworks.deeplearning.Symbolic
-    * def absNetwork(implicit inputINDArrayLayer: Symbolic[INDArray]##T) = {
+    * def absNetwork(implicit inputINDArrayLayer: INDArray @Symbolic) = {
     *   Poly.MathFunctions.abs(indArrayLayer)
     * }
     * }}}
@@ -1395,7 +1395,7 @@ object DifferentiableINDArray {
     }
   }
 
-  implicit def liftINDArray: ToLiteral.Aux[INDArray, INDArray, INDArray] = ToLiteral.fromData
+  implicit def indArrayToLiteral: ToLiteral.Aux[INDArray, INDArray, INDArray] = ToLiteral.fromData
 
   implicit def indArrayTrainable: Trainable[INDArray, INDArray] = new Trainable[INDArray, INDArray] {
     override def apply(data: INDArray): INDArray = Nd4j.ones(data.shape(): _*)

@@ -49,7 +49,7 @@ object Layer {
   }
 
   /**
-    * 在DeepLearning.Scala中，每个输入和输出都是一个Batch，即每个输入和输出都包含Data和Delta，
+    * Batch是对Data和Delta的封装，每个Batch都包含`backward()`,详细信息可参看[[Layer]]
     */
   trait Batch extends AutoCloseable {
     type Data
@@ -88,10 +88,25 @@ object Layer {
 }
 
 /**
-  * The layer of DeepLearning.Scala is similar to the layer of neural networks ,But there are some details is difference
-  * The layer in the neural networks means a layer of network, but the layer in DeepLearning.Scala means a operation,
-  * many operations could also compose together to be one layer(at this time , layer is means layer of neural networks).
-  * Every operation in DeepLearning.Scala is a layer. Every layer contains input,output and forward.
+  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Batch]],
+  * 而Batch包含[[com.thoughtworks.deeplearning.Layer.Batch.backward()]],所以Layer所组成的网络会包含输入和输出，正向传播和反向传播。
+  *
+  * @example{{{
+  *  val depthKernelKernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
+  *    Times(
+  *       Times(depth, Literal(kernel._1)),
+  *       Literal(kernel._2)
+  *     )
+  *  val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
+  *  val reshapeWeightTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
+  *  val reshapedWeight = Reshape(weight, reshapeWeightTo)
+  * }}}
+  *
+  * 以上代码等价于weight.reshape(kernelNumber,depth * KernelSize * KernelSize),
+  * 在DeepLearning.scala中，`Reshape()`和`reshape()`其实是等价的(可以参考[[com.thoughtworks.deeplearning.DifferentiableINDArray#reshape]]的具体实现),
+  * `reshape()`只是一个语法糖，其实最终还是调用`Reshape()`，调用`reshape()`会产生一个''case class''，而示例中的多个方法嵌套调用会生成类似这样的树：
+  * Reshape(Weight([1,2,3]),ToSeq(Times(Times(kernel._1,kernel._2),depth)))，然后forward就从最里面的Times()开始，直到最外面的Reshape(),
+  * 然后backward从Reshape()开始，直到最里面的Times()结束。
   */
 trait Layer {
 
