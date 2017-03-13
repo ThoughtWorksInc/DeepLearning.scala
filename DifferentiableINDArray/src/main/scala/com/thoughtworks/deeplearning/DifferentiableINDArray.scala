@@ -1366,7 +1366,7 @@ object DifferentiableINDArray {
     * A helper that contains common boilerplate code for all NDArray layers.
 
     * @example{{{
-    * import com.thoughtworks.deeplearning.DifferentiableNDArray._
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * }}}
     */
   implicit def toINDArrayLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
