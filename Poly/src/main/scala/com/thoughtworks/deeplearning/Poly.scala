@@ -5,6 +5,12 @@ import com.thoughtworks.deeplearning.Symbolic._
 import shapeless.{Lazy, Poly1, Poly2}
 
 /**
+  * Common math ops,import before using those ops
+  *
+  * @example{{{
+  * import com.thoughtworks.deeplearning.Poly._
+  * }}}
+  * 
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object Poly {

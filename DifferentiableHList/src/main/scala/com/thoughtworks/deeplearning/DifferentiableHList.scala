@@ -11,6 +11,12 @@ import language.implicitConversions
 import language.existentials
 
 /**
+  * Common ops for HList layers,import before using those ops
+  *
+  * @example{{{
+  * import com.thoughtworks.deeplearning.DifferentiableHList._
+  * }}}
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableHList {

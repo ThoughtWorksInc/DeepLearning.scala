@@ -11,6 +11,12 @@ import shapeless.PolyDefns.Case
 import shapeless.the
 
 /**
+  * Common ops for int layers,import before using those ops
+  *
+  * @example{{{
+  * import com.thoughtworks.deeplearning.DifferentiableInt._
+  * }}}
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableInt {

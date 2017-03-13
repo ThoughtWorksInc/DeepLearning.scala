@@ -9,6 +9,12 @@ import shapeless.Lub
 import language.implicitConversions
 
 /**
+  * Common ops for boolean layers,import before using those ops
+  *
+  * @example{{{
+  * import com.thoughtworks.deeplearning.DifferentiableBoolean._
+  * }}}
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableBoolean {
