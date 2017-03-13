@@ -16,7 +16,7 @@ import org.lwjgl.system.Pointer._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class OpenCLSpec extends FreeSpec with Matchers { // TODO: rename to OpenCLCodeGeneratorSpec
+final class OpenCLCodeGeneratorSpec extends FreeSpec with Matchers {
 
   private def checkCLError(errorCode: Int) = {
     if (errorCode != CL_SUCCESS) {
