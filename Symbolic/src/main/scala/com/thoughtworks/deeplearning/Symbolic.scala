@@ -7,6 +7,23 @@ import shapeless._
 import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
+/**
+  * `@Symbolic`有三种用法：第一种用在方法参数上，第二种是用在方法返回值上，第三种是作为layer的类型
+  *
+  * @example{{{
+  * def sumNetwork(implicit scores: INDArray @Symbolic): Double @Symbolic = {
+  *   expScores.sum
+  * }
+  *
+  * val predictor: (INDArray => Double) @Symbolic = sumNetwork
+  * }}}
+  *
+  * 首先讨论第一种用法：当作为方法参数时，`INDArray @Symbolic`等价于`From[INDArray]##`@``,又等价于`Identity[INDArray,INDArray]` 其实它们都是`Layer.Aux[Batch.Aux[INDArray,INDArray],Batch.Aux[INDArray,INDArray]]`；
+  * 第二种用法：当作为方法返回值时，`Double @Symbolic`等价于`To[Double]##`@``,等价于`(INDArray => Double) @Symbolic`,又等价于`Layer.Aux[Batch.Aux[INDArray,INDArray],Batch.Aux[Double,Double]]`,
+  * 这里的Layer.Aux[]中的两个Batch.Aux[],第一个对应Input，里面包含Data和Delta，第二个对应Output，里面包含Data和Delta，详情参考[[Batch.Aux]]；
+  * 第三种用法：作为Layer的类型: 这时`(INDArray => Double) @Symbolic`等价于`Layer.Aux[Batch.Aux[INDArray,INDArray],Batch.Aux[Double,Double]]`
+  *
+  */
 @implicitNotFound("Don't know how to make ${NativeOutput} differentiable")
 trait Symbolic[NativeOutput] {
   type `@`
