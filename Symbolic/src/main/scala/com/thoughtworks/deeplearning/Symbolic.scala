@@ -8,11 +8,11 @@ import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
 /**
-  * This trait provides `@Symbolic` annotation to create '''[[https://en.wikipedia.org/wiki/Symbolic_computation symbolic]] methods''', in which you can create [[Layer]]s from mathematical formulas.
+  * Provides `@Symbolic` annotation to create '''[[https://en.wikipedia.org/wiki/Symbolic_computation symbolic]] methods''', in which you can create [[Layer]]s from mathematical formulas.
   *
-  * This trait is a [[https://en.wikipedia.org/wiki/Dependent_type dependent]] [[https://en.wikipedia.org/wiki/Type_class type class]] that calculates a specific [[Layer]] type according to `NativeOutput`.
+  * `Symbolic` is a [[https://en.wikipedia.org/wiki/Dependent_type dependent]] [[https://en.wikipedia.org/wiki/Type_class type class]] that calculates a specific [[Layer]] type according to `NativeOutput`.
   * Combining with [[https://github.com/ThoughtWorksInc/implicit-dependent-type implicit-dependent-type]] compiler plugin,
-  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeOutput @Symbolic`, converting `NativeOutput` to a specific [[Layer]] type.
+  * it can be treated as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeOutput @Symbolic`, converting `NativeOutput` to a specific [[Layer]] type.
   *
   * == `@Symbolic` 的三种用法 ==
   *
