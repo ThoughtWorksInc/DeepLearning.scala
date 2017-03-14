@@ -19,7 +19,7 @@ import scala.language.{existentials, implicitConversions}
   *
   * === 用于符号方法的隐式参数类型 ===
   *
-  * 如果一个方法具有`@Symbolic`类型的隐式类型参数，那么这个方法就是符号方法。`@Symbolic`所标注的隐式参数类型是这个符号方法的'''输入类型'''。
+  * 如果某个方法的隐式类型参数标注了`@Symbolic`，那么这个方法就是符号方法，`@Symbolic`所标注的隐式参数类型是这个符号方法的'''输入类型'''。
   * 这种情况下，`NativeOutput @Symbolic`会被展开为`Identity[NativeOutput, NativeOutput的导数类型]`。
   *
   * 例如：
