@@ -32,13 +32,13 @@ final class DifferentiableINDArraySpec extends FreeSpec with Matchers {
     val inputData = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
 
     def train() = {
-      val outputBatch = network.forward(inputData.toBatch)
+      val outputTape = network.forward(inputData.toTape)
       try {
-        val loss = outputBatch.value.meanNumber.doubleValue
-        outputBatch.backward(outputBatch.value)
+        val loss = outputTape.value.meanNumber.doubleValue
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -66,13 +66,13 @@ final class DifferentiableINDArraySpec extends FreeSpec with Matchers {
     val inputData = (0 until (2 * 1 * 4 * 5)).toNDArray.reshape(2, 1, 4, 5)
 
     def train() = {
-      val outputBatch = network.forward(inputData.toBatch)
+      val outputTape = network.forward(inputData.toTape)
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 

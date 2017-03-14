@@ -34,7 +34,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       )
     }
 
-    def makeMinibatch = {
+    def makeMinitape = {
       import shapeless._
       val field0 :: field1 :: field2 :: field3 :: HNil = trainingData(Random.nextInt(trainingData.length))
 
@@ -89,7 +89,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
 
       predictAndPrint(predictionData0)
 
-      trainNetwork.train(makeMinibatch)
+      trainNetwork.train(makeMinitape)
       def assertClear(layer: Any): Unit = {
         layer match {
           case cached: BufferedLayer =>

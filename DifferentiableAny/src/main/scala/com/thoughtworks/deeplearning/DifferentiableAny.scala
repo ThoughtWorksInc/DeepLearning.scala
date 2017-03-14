@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.DifferentiableAny.Layers.{Compose, WithOutputDataHook}
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import com.thoughtworks.deeplearning.Symbolic._
 import resource.managed
@@ -19,7 +19,7 @@ object DifferentiableAny {
 
   object Layers {
 
-    final case class Compose[Input0 <: Batch, Temporary <: Batch, Output0 <: Batch](
+    final case class Compose[Input0 <: Tape, Temporary <: Tape, Output0 <: Tape](
         leftOperand: Layer.Aux[Temporary, Output0],
         rightOperand: Layer.Aux[Input0, Temporary])
         extends Layer {
@@ -27,21 +27,21 @@ object DifferentiableAny {
       override type Output = Output0
 
       override def forward(input: Input): Output = {
-        val tmpBatch = rightOperand.forward(input)
+        val tmpTape = rightOperand.forward(input)
         try {
-          leftOperand.forward(tmpBatch)
+          leftOperand.forward(tmpTape)
         } finally {
-          tmpBatch.close()
+          tmpTape.close()
         }
       }
     }
 
-    final case class WithOutputDataHook[Input0 <: Batch, OutputData, OutputDelta](
-        layer: Layer.Aux[Input0, Batch.Aux[OutputData, OutputDelta]],
+    final case class WithOutputDataHook[Input0 <: Tape, OutputData, OutputDelta](
+        layer: Layer.Aux[Input0, Tape.Aux[OutputData, OutputDelta]],
         hook: OutputData => Unit)
         extends Layer {
       override type Input = Input0
-      override type Output = Batch.Aux[OutputData, OutputDelta]
+      override type Output = Tape.Aux[OutputData, OutputDelta]
 
       override def forward(input: Input): Output = {
         val output = layer.forward(input)
@@ -60,8 +60,8 @@ object DifferentiableAny {
     * (input:From[INDArray]##`@`).compose(anotherLayer)
     * }}}
     */
-  final class AnyLayerOps[Input <: Batch, OutputData, OutputDelta](
-      layer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]]) {
+  final class AnyLayerOps[Input <: Tape, OutputData, OutputDelta](
+      layer: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]]) {
 
     /**
       * Returns a [[Layer]] that accepts another layer's output as input of this layer
@@ -72,10 +72,10 @@ object DifferentiableAny {
       *   thisLayer.compose(anotherLayer)
       * }}}
       */
-    def compose[G, NewInput <: Batch, InputData, InputDelta](g: G)(
+    def compose[G, NewInput <: Tape, InputData, InputDelta](g: G)(
         implicit toLayer: ToLayer.Aux[G, NewInput, InputData, InputDelta],
-        toInput: Layer.Aux[NewInput, Batch.Aux[InputData, InputDelta]] <:< Layer.Aux[NewInput, Input]
-    ): Layer.Aux[NewInput, Batch.Aux[OutputData, OutputDelta]] = {
+        toInput: Layer.Aux[NewInput, Tape.Aux[InputData, InputDelta]] <:< Layer.Aux[NewInput, Input]
+    ): Layer.Aux[NewInput, Tape.Aux[OutputData, OutputDelta]] = {
       Compose(layer, toInput(toLayer(g)))
     }
 
@@ -91,9 +91,9 @@ object DifferentiableAny {
       * }}}
       */
     def predict[InputData, InputDelta](inputData: InputData)(
-        implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
-          Batch.Aux[InputData, InputDelta],
-          Batch.Aux[OutputData, OutputDelta]]
+        implicit ev: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
+          Tape.Aux[InputData, InputDelta],
+          Tape.Aux[OutputData, OutputDelta]]
     ): OutputData = {
       managed(layer.forward(Literal[InputData](inputData))).acquireAndGet(_.value)
     }
@@ -110,18 +110,18 @@ object DifferentiableAny {
       * }}}
       */
     def train[InputData, InputDelta](inputData: InputData)(
-        implicit ev: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
-          Batch.Aux[InputData, InputDelta],
-          Batch.Aux[OutputData, OutputDelta]],
+        implicit ev: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
+          Tape.Aux[InputData, InputDelta],
+          Tape.Aux[OutputData, OutputDelta]],
         outputDataIsOutputDelta: Trainable[OutputData, OutputDelta]
     ): OutputData = {
-      val outputBatch = layer.forward(Literal[InputData](inputData))
+      val outputTape = layer.forward(Literal[InputData](inputData))
       try {
-        val loss = outputBatch.value
-        outputBatch.backward(outputDataIsOutputDelta(loss))
+        val loss = outputTape.value
+        outputTape.backward(outputDataIsOutputDelta(loss))
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
 
     }
@@ -136,7 +136,7 @@ object DifferentiableAny {
       * (var:From[INDArray]##`@`).withOutputDataHook{ data => println(data) }
       * }}}
       */
-    def withOutputDataHook(hook: OutputData => Unit): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+    def withOutputDataHook(hook: OutputData => Unit): Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] = {
       WithOutputDataHook(layer, hook)
     }
   }
@@ -148,7 +148,7 @@ object DifferentiableAny {
     * import com.thoughtworks.deeplearning.DifferentiableAny._
     * }}}
     */
-  implicit def toAnyLayerOps[A, Input <: Batch, OutputData, OutputDelta](a: A)(
+  implicit def toAnyLayerOps[A, Input <: Tape, OutputData, OutputDelta](a: A)(
       implicit toLayer: ToLayer.Aux[A, Input, OutputData, OutputDelta])
     : AnyLayerOps[Input, OutputData, OutputDelta] = {
     new AnyLayerOps(toLayer(a))

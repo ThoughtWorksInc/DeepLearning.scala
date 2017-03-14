@@ -7,7 +7,7 @@ import cats._
 import cats.implicits._
 import org.scalatest.{FreeSpec, Matchers}
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Layer.Batch._
+import com.thoughtworks.deeplearning.Layer.Tape._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.DifferentiableNothing._
 import com.thoughtworks.deeplearning.Poly.MathOps
