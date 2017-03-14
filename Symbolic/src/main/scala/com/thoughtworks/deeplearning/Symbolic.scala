@@ -6,11 +6,12 @@ import shapeless._
 
 import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
+
 /**
   * This trait is a [[https://en.wikipedia.org/wiki/Dependent_type dependent]] [[https://en.wikipedia.org/wiki/Type_class type class]] that calculates a specific [[Layer]] type according to `NativeOutput`.
   *
   * Combining with [[https://github.com/ThoughtWorksInc/implicit-dependent-type implicit-dependent-type]] compiler plugin,
-  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeType @Symbolic`, converting `NativeType` to a specific [[Layer]] type.
+  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeOutput @Symbolic`, converting `NativeOutput` to a specific [[Layer]] type.
   *
   * 而`@Symbolic`结合[[http://www.scala-lang.org/files/archive/spec/2.12/07-implicits.html#implicit-parameters 隐式参数]]还可以构造'''符号方法'''。符号方法支持[[https://en.wikipedia.org/wiki/Symbolic_computation 符号计算]]，可以在其中直接编写数学公式来创建[[Layer]]。
   *
@@ -19,7 +20,7 @@ import scala.language.{existentials, implicitConversions}
   * === 用于符号方法的隐式参数类型 ===
   *
   * 如果一个方法具有`@Symbolic`类型的隐式类型参数，那么这个方法就是符号方法。`@Symbolic`所标注的隐式参数类型是这个符号方法的'''输入类型'''。
-  * 这种情况下，`A @Symbolic`会被展开为`Identity[A, A的导数类型]`。
+  * 这种情况下，`NativeOutput @Symbolic`会被展开为`Identity[NativeOutput, NativeOutput的导数类型]`。
   *
   * 例如：
   *
@@ -33,7 +34,7 @@ import scala.language.{existentials, implicitConversions}
   *
   * === 用于符号方法内部变量和返回值 ===
   *
-  * 在符号方法内部和返回值处，`A @Symbolic`会被展开为`Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[A, A的导数类型]]`
+  * 在符号方法内部和返回值处，`NativeOutput @Symbolic`会被展开为`Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]`
   *
   * 例如：
   *
@@ -50,7 +51,7 @@ import scala.language.{existentials, implicitConversions}
   *
   * === 用于符号方法之外 ===
   *
-  * 在符号方法之外，`(A => B) @Symbolic`会被展开为`Layer.Aux[Tape.Aux[A, A的导数类型], Tape.Aux[B, B的导数类型]]`
+  * 在符号方法之外，`(NativeInput => NativeOutput) @Symbolic`会被展开为`Layer.Aux[Tape.Aux[NativeInput, NativeInput的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]`
   *
   * 例如：
   *
