@@ -15,7 +15,7 @@ package com.thoughtworks
   * If you want use some ops of Type T,you should import `import com.thoughtworks.deeplearning.DifferentiableT._` first,it means:
   * If you want use some ops of INDArray,you should import `import com.thoughtworks.deeplearning.DifferentiableINDArray._` first.
   *
-  * @example{{{
+  * {{{
   * def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
   *   val expScores = exp(scores)
   *   expScores / expScores.sum(1)
@@ -24,7 +24,7 @@ package com.thoughtworks
   *
   * If the compiler shows error : `Could not infer implicit value for com.thoughtworks.deeplearning.Symbolic[org.nd4j.linalg.api.ndarray.INDArray]...` ,you need add import this time :`import com.thoughtworks.deeplearning.DifferentiableINDArray._`
   *
-  * @example{{{
+  * {{{
   * def crossEntropyLossFunction(
   *   implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
   * : Double @Symbolic = {
