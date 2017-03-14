@@ -19,7 +19,8 @@ import scala.language.{existentials, implicitConversions}
   * === 用于符号方法的隐式参数类型 ===
   *
   * 如果某个方法的隐式类型参数标注了`@Symbolic`，那么这个方法就是符号方法，`@Symbolic`所标注的隐式参数类型是这个符号方法的'''输入类型'''。
-  * 这种情况下，`NativeOutput @Symbolic`会被展开为`Identity[NativeOutput, NativeOutput的导数类型]`。
+  * 这种情况下，`NativeOutput @Symbolic`会被展开为：
+  * {{{Identity[NativeOutput, NativeOutput的导数类型]}}}
   *
   * 例如：
   *
@@ -33,7 +34,8 @@ import scala.language.{existentials, implicitConversions}
   *
   * === 用于符号方法内部变量和返回值 ===
   *
-  * 在符号方法内部和返回值处，`NativeOutput @Symbolic`会被展开为`Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]`
+  * 在符号方法内部和返回值处，`NativeOutput @Symbolic`会被展开为：
+  * {{{Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]}}}
   *
   * 例如：
   *
@@ -45,12 +47,16 @@ import scala.language.{existentials, implicitConversions}
   * }
   * }}}
   *
-  * 上述代码中，`expScores`的类型`INDArray @Symbolic`展开后是`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray]]`。
-  * 而`result`的类型`Double @Symbolic`展开后是`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]`。
+  * 上述代码中，`expScores`的类型`INDArray @Symbolic`展开后是：
+  * {{{Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray]]}}}
+  *
+  * 而`result`的类型`Double @Symbolic`展开后是：
+  * {{{Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]}}}
   *
   * === 用于符号方法之外 ===
   *
-  * 在符号方法之外，`(NativeInput => NativeOutput) @Symbolic`会被展开为`Layer.Aux[Tape.Aux[NativeInput, NativeInput的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]`
+  * 在符号方法之外，`(NativeInput => NativeOutput) @Symbolic`会被展开为：
+  * {{{Layer.Aux[Tape.Aux[NativeInput, NativeInput的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]}}}
   *
   * 例如：
   *
@@ -58,7 +64,8 @@ import scala.language.{existentials, implicitConversions}
   * val predictor: (INDArray => Double) @Symbolic = sumNetwork
   * }}}
   *
-  * 上述代码中，`predictor`的类型`(INDArray => Double) @Symbolic`展开后是`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]`。
+  * 上述代码中，`predictor`的类型`(INDArray => Double) @Symbolic`展开后是：
+  * {{{Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]}}}
   *
   * == 定制符号类型 ==
   *
@@ -81,7 +88,8 @@ import scala.language.{existentials, implicitConversions}
   * val shortNetwork: (Short => Short) @Symbolic = makeShortNetwork
   * }}}
   *
-  * 这样一来`shortNetwork`的类型就会展开为`Layer.Aux[Tape.Aux[Short, Float], Tape.Aux[Short, Float]]`。
+  * 这样一来`shortNetwork`的类型就会展开为：
+  * {{{Layer.Aux[Tape.Aux[Short, Float], Tape.Aux[Short, Float]]}}}
   *
   * @see [[Symbolic.Layers.Identity]]
   * @see [[Symbolic.ToLiteral]]
