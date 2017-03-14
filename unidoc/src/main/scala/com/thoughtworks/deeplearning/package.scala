@@ -34,7 +34,7 @@ package com.thoughtworks
   * }
   * }}}
   *
-  * If the compiler shows error :` value * is not a member of com.thoughtworks.deeplearning.Layer.Aux[com.thoughtworks.deeplearning.Layer.Batch.Aux[org.nd4j.linalg.api.ndarray.INDArray,org.nd4j.linalg.api.ndarray.INDArray],com.thoughtworks.deeplearning.DifferentiableINDArray.INDArrayPlaceholder.Batch]val bias = Nd4j.ones(numberOfOutputKernels).toWeight * 0.1...`
+  * If the compiler shows error :` value * is not a member of com.thoughtworks.deeplearning.Layer.Aux[com.thoughtworks.deeplearning.Layer.Tape.Aux[org.nd4j.linalg.api.ndarray.INDArray,org.nd4j.linalg.api.ndarray.INDArray],com.thoughtworks.deeplearning.DifferentiableINDArray.INDArrayPlaceholder.Tape]val bias = Nd4j.ones(numberOfOutputKernels).toWeight * 0.1...`
   * you need add import this time :`import com.thoughtworks.deeplearning.Poly.MathMethods.*` and `import com.thoughtworks.deeplearning.DifferentiableINDArray._`；
   *
   *

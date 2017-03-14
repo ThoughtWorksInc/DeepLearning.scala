@@ -27,14 +27,14 @@ object DifferentiableCoproduct {
 
   object Layers {
 
-    final case class Head[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+    final case class Head[Input0 <: Tape, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
     TailDelta <: shapeless.Coproduct](
-        operand: Layer.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+        operand: Layer.Aux[Input0, Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
     ) extends Layer {
 
       final class Output private[Head] (
-          upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-          extends Batch
+          upstream: Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+          extends Tape
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
         override type Data = HeadData
         override type Delta = HeadDelta
@@ -65,14 +65,14 @@ object DifferentiableCoproduct {
 
     }
 
-    final case class Inl[Input0 <: Batch, HeadData, HeadDelta](
-        operand: Layer.Aux[Input0, Batch.Aux[HeadData, HeadDelta]])
+    final case class Inl[Input0 <: Tape, HeadData, HeadDelta](
+        operand: Layer.Aux[Input0, Tape.Aux[HeadData, HeadDelta]])
         extends Layer {
 
       type Input = Input0
 
-      final class Output private[Inl] (upstream: Batch.Aux[HeadData, HeadDelta])
-          extends Batch
+      final class Output private[Inl] (upstream: Tape.Aux[HeadData, HeadDelta])
+          extends Tape
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
 
         override val isTrainable = upstream.isTrainable
@@ -102,14 +102,14 @@ object DifferentiableCoproduct {
 
     }
 
-    final case class Inr[Input0 <: Batch, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
-        operand: Layer.Aux[Input0, Batch.Aux[TailData, TailDelta]])
+    final case class Inr[Input0 <: Tape, TailData <: shapeless.Coproduct, TailDelta <: shapeless.Coproduct](
+        operand: Layer.Aux[Input0, Tape.Aux[TailData, TailDelta]])
         extends Layer {
 
       type Input = Input0
 
-      final class Output private[Inr] (upstream: Batch.Aux[TailData, TailDelta])
-          extends Batch
+      final class Output private[Inr] (upstream: Tape.Aux[TailData, TailDelta])
+          extends Tape
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
 
         override val isTrainable = upstream.isTrainable
@@ -139,14 +139,14 @@ object DifferentiableCoproduct {
 
     }
 
-    final case class Tail[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+    final case class Tail[Input0 <: Tape, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
     TailDelta <: shapeless.Coproduct](
-        operand: Layer.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+        operand: Layer.Aux[Input0, Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
     ) extends Layer {
 
       final class Output private[Tail] (
-          upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-          extends Batch
+          upstream: Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+          extends Tape
           with com.thoughtworks.deeplearning.Layer.CloseableOnce {
 
         override type Data = TailData
@@ -175,15 +175,15 @@ object DifferentiableCoproduct {
 
     }
 
-    final case class IsInl[Input0 <: Batch, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
+    final case class IsInl[Input0 <: Tape, HeadData, HeadDelta, TailData <: shapeless.Coproduct,
     TailDelta <: shapeless.Coproduct](
-        operand: Layer.Aux[Input0, Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+        operand: Layer.Aux[Input0, Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
     ) extends Layer {
 
       final class Output private[IsInl] (
-          upstream: Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
-          extends BooleanMonoidBatch
-          with Batch
+          upstream: Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]])
+          extends BooleanMonoidTape
+          with Tape
           with CloseableOnce {
 
         override val isTrainable = upstream.isTrainable
@@ -219,7 +219,7 @@ object DifferentiableCoproduct {
     * }}}
     */
   final class CConsLayerOps[
-      Input <: Batch,
+      Input <: Tape,
       HeadData,
       HeadDelta,
       TailData <: shapeless.Coproduct,
@@ -227,14 +227,14 @@ object DifferentiableCoproduct {
   ](
       ccons: Layer.Aux[
         Input,
-        Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
+        Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]
       ]
   ) {
 
-    def head: Layer.Aux[Input, Batch.Aux[HeadData, HeadDelta]] =
+    def head: Layer.Aux[Input, Tape.Aux[HeadData, HeadDelta]] =
       Head[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
-    def tail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]] =
+    def tail: Layer.Aux[Input, Tape.Aux[TailData, TailDelta]] =
       Tail[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
     def choice[HeadCase,
@@ -245,21 +245,21 @@ object DifferentiableCoproduct {
                TailOutputDelta,
                NN,
                OutputData,
-               OutputDelta](caseHead: Layer.Aux[Input, Batch.Aux[HeadData, HeadDelta]] => HeadCase)(
-        caseTail: Layer.Aux[Input, Batch.Aux[TailData, TailDelta]] => TailCase)(
+               OutputDelta](caseHead: Layer.Aux[Input, Tape.Aux[HeadData, HeadDelta]] => HeadCase)(
+        caseTail: Layer.Aux[Input, Tape.Aux[TailData, TailDelta]] => TailCase)(
         implicit headToLayer: ToLayer.Aux[HeadCase, Input, HeadOutputData, HeadOutputDelta],
         tailToLayer: ToLayer.Aux[TailCase, Input, TailOutputData, TailOutputDelta],
-        lub: Lub[Layer.Aux[Input, Batch.Aux[HeadOutputData, HeadOutputDelta]],
-                 Layer.Aux[Input, Batch.Aux[TailOutputData, TailOutputDelta]],
+        lub: Lub[Layer.Aux[Input, Tape.Aux[HeadOutputData, HeadOutputDelta]],
+                 Layer.Aux[Input, Tape.Aux[TailOutputData, TailOutputDelta]],
                  NN],
         commonToLayer: ToLayer.Aux[NN, Input, OutputData, OutputDelta]
-    ): Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] = {
+    ): Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] = {
       If[Input, OutputData, OutputDelta](isInl,
                                          commonToLayer(lub.left(headToLayer(caseHead(head)))),
                                          commonToLayer(lub.right(tailToLayer(caseTail(tail)))))
     }
 
-    def isInl: Layer.Aux[Input, BooleanPlaceholder.Batch] =
+    def isInl: Layer.Aux[Input, BooleanPlaceholder.Tape] =
       IsInl[Input, HeadData, HeadDelta, TailData, TailDelta](ccons)
 
   }
@@ -272,7 +272,7 @@ object DifferentiableCoproduct {
     * }}}
     */
   implicit def toCConsLayerOps[From,
-                               Input <: Batch,
+                               Input <: Tape,
                                OutputData,
                                OutputDelta,
                                HeadData,
@@ -280,9 +280,9 @@ object DifferentiableCoproduct {
                                TailData <: shapeless.Coproduct,
                                TailDelta <: shapeless.Coproduct](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
-      toCoproductLayer: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
+      toCoproductLayer: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] <:< Layer.Aux[
         Input,
-        Batch.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
+        Tape.Aux[shapeless.:+:[HeadData, TailData], shapeless.:+:[HeadDelta, TailDelta]]]
   ): CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta] = {
     new CConsLayerOps[Input, HeadData, HeadDelta, TailData, TailDelta](toCoproductLayer(toLayer(from)))
   }

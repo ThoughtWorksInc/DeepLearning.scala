@@ -12,13 +12,13 @@ final class ToLayerSpec extends FreeSpec with Matchers {
   "ToLayer" in {
     """
     implicitly[
-      ToLayer.OfPlaceholder[Int, DoublePlaceholder.Batch, DoublePlaceholder] =:= ToLayer.Aux[Int, DoublePlaceholder.Batch, Double, Double]
+      ToLayer.OfPlaceholder[Int, DoublePlaceholder.Tape, DoublePlaceholder] =:= ToLayer.Aux[Int, DoublePlaceholder.Tape, Double, Double]
     ]
     """ should compile
 
     """
     implicitly[
-      ToLayer.Aux[Int, DoublePlaceholder.Batch, Double, Double] =:= ToLayer.OfPlaceholder[Int, DoublePlaceholder.Batch, DoublePlaceholder]
+      ToLayer.Aux[Int, DoublePlaceholder.Tape, Double, Double] =:= ToLayer.OfPlaceholder[Int, DoublePlaceholder.Tape, DoublePlaceholder]
     ]
     """ should compile
   }

@@ -11,7 +11,7 @@ final class Issue8 extends FreeSpec with Matchers {
 
   import com.thoughtworks.deeplearning.DifferentiableINDArray._
   import com.thoughtworks.deeplearning.DifferentiableAny._
-  import com.thoughtworks.deeplearning.Layer.Batch
+  import com.thoughtworks.deeplearning.Layer.Tape
   import com.thoughtworks.deeplearning.Symbolic._
   import com.thoughtworks.deeplearning.Poly.MathFunctions._
   import com.thoughtworks.deeplearning.Poly.MathOps

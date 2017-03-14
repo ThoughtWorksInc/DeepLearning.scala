@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Layer.{Batch, CloseableOnce}
+import com.thoughtworks.deeplearning.Layer.{Tape, CloseableOnce}
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableSeq.Layers.{Get, ToSeq}
 import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
@@ -18,12 +18,12 @@ object DifferentiableSeq {
 
   object Layers {
 
-    final case class Get[Input0 <: Batch, ElementData, ElementDelta](
-        operand0: Layer.Aux[Input0, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]],
+    final case class Get[Input0 <: Tape, ElementData, ElementDelta](
+        operand0: Layer.Aux[Input0, Tape.Aux[Seq[ElementData], (Int, ElementDelta)]],
         i: Int
     ) extends Layer {
 
-      final class Output private[Get] (upstream: Batch.Aux[Seq[ElementData], (Int, ElementDelta)]) extends Batch {
+      final class Output private[Get] (upstream: Tape.Aux[Seq[ElementData], (Int, ElementDelta)]) extends Tape {
 
         override val isTrainable = upstream.isTrainable
 
@@ -51,14 +51,14 @@ object DifferentiableSeq {
 
     }
 
-    final case class ToSeq[Input0 <: Batch, ElementData, ElementDelta](
-        operands: Seq[Layer.Aux[Input0, Batch.Aux[ElementData, ElementDelta]]])
+    final case class ToSeq[Input0 <: Tape, ElementData, ElementDelta](
+        operands: Seq[Layer.Aux[Input0, Tape.Aux[ElementData, ElementDelta]]])
         extends Layer {
 
       type Input = Input0
 
-      final class Output private[ToSeq] (upstreams: Seq[Batch.Aux[ElementData, ElementDelta]])
-          extends Batch
+      final class Output private[ToSeq] (upstreams: Seq[Tape.Aux[ElementData, ElementDelta]])
+          extends Tape
           with CloseableOnce {
 
         override type Data = Seq[ElementData]
@@ -93,10 +93,10 @@ object DifferentiableSeq {
   private[deeplearning] type SeqPlaceholder[A <: Placeholder[_, _]] =
     Placeholder[Seq[Placeholder.DataOf[A]], (Int, Placeholder.DeltaOf[A])]
 
-  final class SeqLayerOps[Input <: Batch, ElementData, ElementDelta](
-      seqLayer: Layer.Aux[Input, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]]) {
+  final class SeqLayerOps[Input <: Tape, ElementData, ElementDelta](
+      seqLayer: Layer.Aux[Input, Tape.Aux[Seq[ElementData], (Int, ElementDelta)]]) {
 
-    def apply(i: Int): Layer.Aux[Input, Batch.Aux[ElementData, ElementDelta]] = {
+    def apply(i: Int): Layer.Aux[Input, Tape.Aux[ElementData, ElementDelta]] = {
       Get[Input, ElementData, ElementDelta](seqLayer, i)
     }
 
@@ -109,23 +109,23 @@ object DifferentiableSeq {
     * import com.thoughtworks.deeplearning.DifferentiableSeq._
     * }}}
     */
-  implicit def toSeqLayerOps[From, Input <: Batch, SeqData, SeqDelta, ElementData, ElementDelta](from: From)(
+  implicit def toSeqLayerOps[From, Input <: Tape, SeqData, SeqDelta, ElementData, ElementDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, SeqData, SeqDelta],
-      toSeqLayer: Layer.Aux[Input, Batch.Aux[SeqData, SeqDelta]] <:< Layer.Aux[
+      toSeqLayer: Layer.Aux[Input, Tape.Aux[SeqData, SeqDelta]] <:< Layer.Aux[
         Input,
-        Batch.Aux[Seq[ElementData], (Int, ElementDelta)]]
+        Tape.Aux[Seq[ElementData], (Int, ElementDelta)]]
   ): SeqLayerOps[Input, ElementData, ElementDelta] = {
     new SeqLayerOps[Input, ElementData, ElementDelta](toSeqLayer(toLayer(from)))
   }
 
-  implicit def seqToLayer[From, Input0 <: Batch, ElementData, ElementDelta](
+  implicit def seqToLayer[From, Input0 <: Tape, ElementData, ElementDelta](
       implicit elementToLayer: ToLayer.Aux[From, Input0, ElementData, ElementDelta])
     : ToLayer.Aux[Seq[From], Input0, Seq[ElementData], (Int, ElementDelta)] = {
     new ToLayer[Seq[From], Input0] {
       type OutputData = Seq[ElementData]
       type OutputDelta = (Int, ElementDelta)
 
-      override def apply(layers: Seq[From]): Layer.Aux[Input0, Batch.Aux[Seq[ElementData], (Int, ElementDelta)]] = {
+      override def apply(layers: Seq[From]): Layer.Aux[Input0, Tape.Aux[Seq[ElementData], (Int, ElementDelta)]] = {
         ToSeq[Input0, ElementData, ElementDelta](layers.map(elementToLayer(_)))
       }
     }

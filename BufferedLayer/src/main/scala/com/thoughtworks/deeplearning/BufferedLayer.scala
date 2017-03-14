@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.Tape
 import cats._
 import cats.implicits._
 
@@ -17,13 +17,13 @@ import annotation.elidable
 trait BufferedLayer extends Layer {
 
   private[deeplearning] val cache =
-    java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[AnyRef, BufferedBatch](1))
+    java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[AnyRef, BufferedTape](1))
 
-  protected trait ReferenceCount extends Batch { this: BufferedBatch =>
+  protected trait ReferenceCount extends Tape { this: BufferedTape =>
 
-    // Returns a [[Batch]] able to detect error of closing more than once.
+    // Returns a [[Tape]] able to detect error of closing more than once.
     @elidable(elidable.ASSERTION)
-    private def checked = new Batch {
+    private def checked = new Tape {
       override type Delta = ReferenceCount.this.Delta
       override type Data = ReferenceCount.this.Data
 
@@ -58,7 +58,7 @@ trait BufferedLayer extends Layer {
     }
 
     /**
-      * Returns a wrapped [[com.thoughtworks.deeplearning.Layer.Batch Batch]] able to detect error of closing more than once if ASSERTION is enabled,
+      * Returns a wrapped [[com.thoughtworks.deeplearning.Layer.Tape Tape]] able to detect error of closing more than once if ASSERTION is enabled,
       * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
       */
     override final def addReference(): Self = {
@@ -71,9 +71,9 @@ trait BufferedLayer extends Layer {
       checkedIfCloseOnlyOnce
     }
 
-    private[BufferedLayer] type Self >: Batch.Aux[Data, Delta] <: Batch.Aux[Data, Delta]
+    private[BufferedLayer] type Self >: Tape.Aux[Data, Delta] <: Tape.Aux[Data, Delta]
 
-    private final def self: Self = this: Batch.Aux[Data, Delta]
+    private final def self: Self = this: Tape.Aux[Data, Delta]
 
     private[BufferedLayer] var count: Int = 1
 
@@ -91,8 +91,8 @@ trait BufferedLayer extends Layer {
       }
       assert(newCount >= 0)
       if (newCount == 0) {
-        val batch: BufferedBatch = cache.remove(input)
-        assert(batch eq (this: BufferedBatch))
+        val tape: BufferedTape = cache.remove(input)
+        assert(tape eq (this: BufferedTape))
         flush()
         closeUpstreams()
       }
@@ -100,7 +100,7 @@ trait BufferedLayer extends Layer {
 
   }
 
-  protected trait MonoidBatch extends ReferenceCount { this: BufferedBatch =>
+  protected trait MonoidTape extends ReferenceCount { this: BufferedTape =>
 
     private var currentDelta: Delta = monoid.empty
 
@@ -126,7 +126,7 @@ trait BufferedLayer extends Layer {
     }
   }
 
-  protected trait SemigroupBatch extends ReferenceCount { this: BufferedBatch =>
+  protected trait SemigroupTape extends ReferenceCount { this: BufferedTape =>
 
     private var currentDelta: Option[Delta] = None
 
@@ -150,26 +150,26 @@ trait BufferedLayer extends Layer {
   }
 
   /** @template */
-  type Output = BufferedBatch#Self
+  type Output = BufferedTape#Self
 
-  protected type BufferedBatch <: ReferenceCount
+  protected type BufferedTape <: ReferenceCount
 
   /**
     * Performs the underlying forward pass.
     *
-    * @return a [[com.thoughtworks.deeplearning.Layer.Batch Batch]] that will be cached for subsequent [[forward]]
+    * @return a [[com.thoughtworks.deeplearning.Layer.Tape Tape]] that will be cached for subsequent [[forward]]
     */
-  protected def rawForward(input: Input): BufferedBatch
+  protected def rawForward(input: Input): BufferedTape
 
   override final def forward(input: Input): Output = {
     cache.get(input) match {
       case null =>
-        val savedInput = input.addReference().asInstanceOf[Input] // FIXME: Add self type in Batch to avoid asInstanceOf
-        val batch = rawForward(savedInput)
-        cache.put(savedInput, batch).ensuring(_ == null)
-        batch.checkedIfCloseOnlyOnce
-      case sharedBatch =>
-        sharedBatch.addReference()
+        val savedInput = input.addReference().asInstanceOf[Input] // FIXME: Add self type in Tape to avoid asInstanceOf
+        val tape = rawForward(savedInput)
+        cache.put(savedInput, tape).ensuring(_ == null)
+        tape.checkedIfCloseOnlyOnce
+      case sharedTape =>
+        sharedTape.addReference()
     }
   }
 }
@@ -180,17 +180,17 @@ object BufferedLayer {
     * A helper that contains common boilerplate code for layers of unary operator
     *
     * @example{{{
-    * final case class UnaryOps[Input0 <: Batch](
-    * operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Unary {}
+    * final case class UnaryOps[Input0 <: Tape](
+    * operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape]) extends BufferedLayer.Unary {}
     * }}}
     */
   trait Unary extends BufferedLayer {
 
-    protected val operand: Layer.Aux[Input, _ <: Batch]
+    protected val operand: Layer.Aux[Input, _ <: Tape]
 
-    protected type BufferedBatch <: UnaryBatch
+    protected type BufferedTape <: UnaryTape
 
-    protected trait UnaryBatch extends ReferenceCount { this: BufferedBatch =>
+    protected trait UnaryTape extends ReferenceCount { this: BufferedTape =>
 
       override def input: Input
 
@@ -211,19 +211,19 @@ object BufferedLayer {
     * A helper that contains common boilerplate code for layers of binary operator layer
     *
     * @example{{{
-    * final case class BinaryOps[Input0 <: Batch](
-    * operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-    * operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends BufferedLayer.Binary {}
+    * final case class BinaryOps[Input0 <: Tape](
+    * operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+    * operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]) extends BufferedLayer.Binary {}
     * }}}
     */
   trait Binary extends BufferedLayer {
 
-    protected val operand1: Layer.Aux[Input, _ <: Batch]
-    protected val operand2: Layer.Aux[Input, _ <: Batch]
+    protected val operand1: Layer.Aux[Input, _ <: Tape]
+    protected val operand2: Layer.Aux[Input, _ <: Tape]
 
-    protected type BufferedBatch <: BinaryBatch
+    protected type BufferedTape <: BinaryTape
 
-    protected trait BinaryBatch extends ReferenceCount { this: BufferedBatch =>
+    protected trait BinaryTape extends ReferenceCount { this: BufferedTape =>
 
       override def input: Input
 

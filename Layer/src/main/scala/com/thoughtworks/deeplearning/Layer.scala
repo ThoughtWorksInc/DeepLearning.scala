@@ -36,10 +36,10 @@ object Layer {
     }
   }
 
-  object Batch {
+  object Tape {
 
     /** @template */
-    type Aux[+Data0, -Delta0] = Batch {
+    type Aux[+Data0, -Delta0] = Tape {
       type Data <: Data0
       type Delta >: Delta0
     }
@@ -47,13 +47,17 @@ object Layer {
   }
 
   /**
-    * Batch是对Data和Delta的封装，每个Batch都包含`backward()`,详细信息可参看[[Layer]]
+    * Tape是对Data和Delta的封装，每个Tape都包含`backward()`,详细信息可参看[[Layer]]
     */
-  trait Batch extends AutoCloseable {
+  trait Tape extends AutoCloseable {
     type Data
     type Delta
 
-    def addReference(): Batch.Aux[Data, Delta]
+    /**
+      * Returns a new [[Tape]] that shares the same [[value]] and [[backward]] behavior with this [[Tape]].
+      * @note The newly created [[Tape]] and this [[Tape]] must be [[close]]d independently.
+      */
+    def addReference(): Tape.Aux[Data, Delta]
 
     protected def forceBackward(delta: Delta): Unit
 
@@ -70,7 +74,7 @@ object Layer {
   }
 
   /** @template */
-  type Aux[-Input0 <: Batch, +Output0 <: Batch] =
+  type Aux[-Input0 <: Tape, +Output0 <: Tape] =
     Layer {
       type Input >: Input0
       type Output <: Output0
@@ -86,6 +90,18 @@ object Layer {
   * val myLayer: Layer.Aux[Batch.Aux[Double, Double], Batch.Aux[Double, Double]] = {
   *   Times(Plus(Literal(1.0), Identity[Double, Double]()), Literal(2.0))
   * }
+  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Tape]],
+  * 而Tape包含[[com.thoughtworks.deeplearning.Layer.Tape.backward()]],所以Layer所组成的网络会包含输入和输出，正向传播和反向传播。
+  *
+  * @example{{{
+  *  val depthKernelKernel: Layer.Aux[Input, Tape.Aux[Int, Float]] =
+  *    Times(
+  *       Times(depth, Literal(kernel._1)),
+  *       Literal(kernel._2)
+  *     )
+  *  val bSeq: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
+  *  val reshapeWeightTo: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
+  *  val reshapedWeight = Reshape(weight, reshapeWeightTo)
   * }}}
   *
   * 以上代码等价的数学公式可以用[[Symbolic]]风格API写作：`(1.0 + x) * 2.0`。
@@ -127,9 +143,9 @@ trait Layer {
 
   import Layer._
 
-  type Input <: Batch
+  type Input <: Tape
 
-  type Output <: Batch
+  type Output <: Tape
 
   def forward(input: Input): Output
 
