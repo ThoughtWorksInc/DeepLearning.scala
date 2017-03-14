@@ -65,7 +65,7 @@ import scala.language.{existentials, implicitConversions}
   * `@Symbolic`通过检查[[Symbolic.ToLiteral]]隐式值来确定原生类型和导数之间的映射关系。
   * 因此，只要定义[[Symbolic.ToLiteral]]类型的隐式值，`@Symbolic`就可以支持定制符号类型。
   *
-  * 比如，假如你希望支持`Short @Symbolic`，其中使用[[Float]]作为[[Short]]的导数类型，那么可以这样做：
+  * 比如，假如你希望支持`Short @Symbolic`，其中使用[[scala.Float Float]]作为[[scala.Short Short]]的导数类型，那么可以这样做：
   *
   * {{{
   * implicit object ShortToLiteral extends ToLiteral[Short] {
