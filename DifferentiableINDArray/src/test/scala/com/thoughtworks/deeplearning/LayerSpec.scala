@@ -467,7 +467,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     def convolution(implicit input: From[INDArray]##`@`): To[INDArray]##`@` = {
       val weight: To[INDArray]##`@` = Nd4j.ones(1, 1, 3, 3)
       val bias = Nd4j.zeros(1)
-      input.convn(weight, bias, (3, 3), (1, 1), (1, 1))
+      conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     }
 
     val result: INDArray = convolution.predict(input)
