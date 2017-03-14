@@ -8,26 +8,91 @@ import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
 
 /**
-  * `@Symbolic`有三种用法：第一种用在方法参数的类型，第二种是用在方法返回值的类型，第三种是作为layer的类型
+  * This trait is a [[https://en.wikipedia.org/wiki/Dependent_type dependent]] [[https://en.wikipedia.org/wiki/Type_class type class]] that calculates a specific [[Layer]] type according to `NativeOutput`.
   *
-  * @example{{{
-  * def sumNetwork(implicit scores: INDArray @Symbolic): Double @Symbolic = {
-  *   expScores.sum
+  * Combining with [[https://github.com/ThoughtWorksInc/implicit-dependent-type implicit-dependent-type]] compiler plugin,
+  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `@Symbolic`.
+  *
+  * `@Symbolic`可以用来把原生类型转换成[[Layer]]。
+  *
+  * 而`@Symbolic`结合[[http://www.scala-lang.org/files/archive/spec/2.12/07-implicits.html#implicit-parameters 隐式参数]]还可以构造'''符号方法'''。符号方法支持[[https://en.wikipedia.org/wiki/Symbolic_computation 符号计算]]，可以在其中直接编写数学公式来创建[[Layer]]。
+  *
+  * == `@Symbolic` 的三种用法 ==
+  *
+  * === 用于符号方法的隐式参数类型 ===
+  *
+  * 如果一个方法具有`@Symbolic`类型的隐式类型参数，那么这个方法就是符号方法。`@Symbolic`所标注的隐式参数类型是这个符号方法的'''输入类型'''。
+  * 这种情况下，`A @Symbolic`会被展开为`Identity[A, A的导数类型]`。
+  *
+  * 例如：
+  *
+  * {{{
+  * def sumNetwork(implicit scores: INDArray @Symbolic): Double = {
+  *   exp(scores).sum
   * }
+  * }}}
   *
+  * 上述代码中，由于`INDArray`的[[com.thoughtworks.deeplearning.Layer.Tape#Delta 导数类型]]也是`INDArray`，所以`sumNetwork`的输入类型`INDArray @Symbolic`展开后是`Identity[INDArray, INDArray]`。
+  *
+  * === 用于符号方法内部变量和返回值 ===
+  *
+  * 在符号方法内部和返回值处，`A @Symbolic`会被展开为Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[A, A的导数类型]]
+  *
+  * 例如：
+  *
+  * {{{
+  * def sumNetwork(implicit scores: INDArray @Symbolic): Double @Symbolic = {
+  *   val expScores: INDArray @Symbolic = exp(scores)
+  *   val result: Double @Symbolic = expScores.sum
+  *   result
+  * }
+  * }}}
+  *
+  * 上述代码中，`expScores`的类型`INDArray @Symbolic`展开后是`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray]]`。
+  * 而`result`的类型`Double @Symbolic`展开后是`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]`。
+  *
+  * === 用于符号方法之外 ===
+  *
+  * 在符号方法之外，`(A => B) @Symbolic`会被展开为`Layer.Aux[Tape.Aux[A, A的导数类型], Tape.Aux[B, B的导数类型]]`
+  *
+  * 例如：
+  *
+  * {{{
   * val predictor: (INDArray => Double) @Symbolic = sumNetwork
   * }}}
   *
-<<<<<<< HEAD
-  * 首先讨论第一种用法：当作为方法参数的类型时，`INDArray @Symbolic`等价于`From[INDArray]##`@``,又等价于`Identity[INDArray,INDArray]` 其实它们都是`Layer.Aux[Batch.Aux[INDArray,INDArray],Batch.Aux[INDArray,INDArray]]`；
-  * 第二种用法：当作为方法返回值的类型时，`Double @Symbolic`等价于`To[Double]##`@``,等价于`(INDArray => Double) @Symbolic`,又等价于`Layer.Aux[Batch.Aux[INDArray,INDArray],Batch.Aux[Double,Double]]`,
-  * 这里的Layer.Aux[]中的两个Batch.Aux[],第一个对应Input，里面包含Data和Delta，第二个对应Output，里面包含Data和Delta，详情参考[[Tape.Aux]]；
-  * 第三种用法：作为Layer的类型时: 这时`(INDArray => Double) @Symbolic`等价于`Layer.Aux[Batch.Aux[INDArray,INDArray],Batch.Aux[Double,Double]]`
+  * 上述代码中，`predictor`的类型`(INDArray => Double) @Symbolic`展开后是`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]`。
+  *
+  * == 定制符号类型 ==
+  *
+  * `@Symbolic`通过检查[[com.thoughtworks.deeplearning.Symbolic.ToLiteral ToLiteral]]隐式值来确定原生类型和导数之间的映射关系。
+  * 因此，只要定义[[com.thoughtworks.deeplearning.Symbolic.ToLiteral ToLiteral]]类型的隐式值，`@Symbolic`就可以支持定制符号类型。
+  *
+  * 比如，假如你希望支持`Short @Symbolic`，其中使用[[Float]]作为[[Short]]的导数类型，那么可以这样做：
+  *
+  * {{{
+  * implicit object ShortToLiteral extends ToLiteral[Short] {
+  *   override type Data = Short
+  *   override type Delta = Float
+  *   override def apply(data: Short) = Literal(data)
+  * }
+  *
+  * def makeShortNetwork(implicit input: Short @Symbolic): Short @Symbolic = {
+  *   input
+  * }
+  *
+  * val shortNetwork: (Short => Short) @Symbolic = makeShortNetwork
+  * }}}
+  *
+  * 这样一来`shortNetwork`的类型就会展开为`Layer.Aux[Tape.Aux[Short, Float], Tape.Aux[Short, Float]]`。
+  *
+  * @see [[com.thoughtworks.deeplearning.Symbolic.Layers.Identity]]
+  * @see [[com.thoughtworks.deeplearning.Symbolic.ToLiteral]]
   *
   */
 @implicitNotFound("Don't know how to make ${NativeOutput} differentiable")
 trait Symbolic[NativeOutput] {
-  type `@`
+  type `@` <: Layer
 }
 
 private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
