@@ -10,7 +10,7 @@ import scala.language.{existentials, implicitConversions}
   * This trait is a [[https://en.wikipedia.org/wiki/Dependent_type dependent]] [[https://en.wikipedia.org/wiki/Type_class type class]] that calculates a specific [[Layer]] type according to `NativeOutput`.
   *
   * Combining with [[https://github.com/ThoughtWorksInc/implicit-dependent-type implicit-dependent-type]] compiler plugin,
-  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeType @Symbolic`, converting `NativeType` to a specfic [[Layer]] type.
+  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeType @Symbolic`, converting `NativeType` to a specific [[Layer]] type.
   *
   * 而`@Symbolic`结合[[http://www.scala-lang.org/files/archive/spec/2.12/07-implicits.html#implicit-parameters 隐式参数]]还可以构造'''符号方法'''。符号方法支持[[https://en.wikipedia.org/wiki/Symbolic_computation 符号计算]]，可以在其中直接编写数学公式来创建[[Layer]]。
   *
