@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import cats.implicits._
 import cats.{Applicative, Eval, Semigroup, Traverse}
 import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
-import com.thoughtworks.deeplearning.Layer.{Aux, Batch, CloseableOnce}
+import com.thoughtworks.deeplearning.Layer.{Aux, Tape, CloseableOnce}
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
@@ -11,7 +11,7 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableInt.Layers.Times
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
-import com.thoughtworks.deeplearning.Layer.Batch.Aux
+import com.thoughtworks.deeplearning.Layer.Tape.Aux
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.Poly.MathMethods.*
@@ -37,7 +37,7 @@ import scala.collection.immutable.IndexedSeq
   */
 object DifferentiableINDArray {
 
-  private[deeplearning] trait INDArraySemigroupBatch extends Batch {
+  private[deeplearning] trait INDArraySemigroupTape extends Tape {
 
     override type Data = INDArray
 
@@ -241,19 +241,19 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MultiplyINDArray[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
+    final case class MultiplyINDArray[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           val value = {
             val aValue = upstream1.value
@@ -275,19 +275,19 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MaxDouble[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class MaxDouble[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           val value = Transforms.max(upstream1.value, upstream2.value)
 
@@ -301,19 +301,19 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class PlusINDArray[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
+    final case class PlusINDArray[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           val value = {
             val aValue = upstream1.value
@@ -331,7 +331,7 @@ object DifferentiableINDArray {
     }
 
     object ToSeq {
-      private[ToSeq] trait Seq2DBatch extends Batch {
+      private[ToSeq] trait Seq2DTape extends Tape {
         override type Data = Seq[Seq[Double]]
         override type Delta = (Int, (Int, Double))
       }
@@ -340,18 +340,18 @@ object DifferentiableINDArray {
     /**
       * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
       */
-    final case class ToSeq[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class ToSeq[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
       import ToSeq._
-      type BufferedBatch =
-        UnaryBatch with Seq2DBatch
+      type BufferedTape =
+        UnaryTape with Seq2DTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with UnaryBatch with Seq2DBatch {
+        } with UnaryTape with Seq2DTape {
 
           private def zeroDelta = Nd4j.zeros(upstream.value.shape: _*)
 
@@ -392,14 +392,14 @@ object DifferentiableINDArray {
       }
     }
 
-    abstract case class Weight(var value: INDArray) extends Layer with INDArraySemigroupBatch {
+    abstract case class Weight(var value: INDArray) extends Layer with INDArraySemigroupTape {
 
       protected def optimizer: Optimizer
 
-      override type Input = Batch
-      override type Output = Batch.Aux[Data, Delta]
+      override type Input = Tape
+      override type Output = Tape.Aux[Data, Delta]
 
-      override final val isTrainable = true
+      override final def isTrainable = true
 
       override final def addReference() = this
 
@@ -415,13 +415,13 @@ object DifferentiableINDArray {
 
     }
 
-    final case class ToINDArray[Input0 <: Batch](operands: Seq[Seq[Layer.Aux[Input0, Batch.Aux[Double, Double]]]])
+    final case class ToINDArray[Input0 <: Tape](operands: Seq[Seq[Layer.Aux[Input0, Tape.Aux[Double, Double]]]])
         extends Layer {
 
       type Input = Input0
 
-      final class Output private[ToINDArray] (upstreams: Seq[Seq[Batch.Aux[Double, Double]]])
-          extends INDArraySemigroupBatch
+      final class Output private[ToINDArray] (upstreams: Seq[Seq[Tape.Aux[Double, Double]]])
+          extends INDArraySemigroupTape
           with CloseableOnce {
 
         override val isTrainable = upstreams.exists(_.exists(_.isTrainable))
@@ -452,16 +452,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Sum[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch], dimensions: Seq[Int])
+    final case class Sum[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape], dimensions: Seq[Int])
         extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           val value = upstream.value.sum(dimensions: _*)
 
@@ -473,16 +473,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class ReduceSum[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class ReduceSum[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with DoubleMonoidBatch with MonoidBatch with UnaryBatch {
+        } with DoubleMonoidTape with MonoidTape with UnaryTape {
 
           val value = (upstream.value: INDArray).sumT
 
@@ -493,16 +493,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class ReduceMean[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class ReduceMean[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with DoubleMonoidBatch with MonoidBatch with UnaryBatch {
+        } with DoubleMonoidTape with MonoidTape with UnaryTape {
 
           private val upstreamShape = upstream.value.shape()
 
@@ -515,16 +515,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class Reciprocal[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           val value = upstream.value rdiv 1.0
 
@@ -536,19 +536,19 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class PlusDouble[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class PlusDouble[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
           val value = (upstream1.value: INDArray) + upstream2.value
 
           override protected def rawBackward(outputDelta: INDArray): Unit = {
@@ -559,16 +559,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class Negative[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           val value = -upstream.value
 
@@ -579,16 +579,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class Exp[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
           val value = Transforms.exp(upstream.value)
 
           override protected def rawBackward(outputDelta: INDArray): Unit = {
@@ -598,16 +598,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Abs[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class Abs[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           val value = Transforms.abs(upstream.value)
 
@@ -618,16 +618,16 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch])
+    final case class Log[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
         extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           val value = Transforms.log(upstream.value)
 
@@ -638,19 +638,19 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MultiplyDouble[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class MultiplyDouble[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           val value = (upstream1.value: INDArray) * upstream2.value
 
@@ -669,19 +669,19 @@ object DifferentiableINDArray {
 
     // TODO: Support n-dimension array when n > 2
     // See https://www.tensorflow.org/api_docs/python/math_ops/matrix_math_functions#matmul for the behavior
-    final case class Dot[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
+    final case class Dot[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           override val value = (upstream1.value: INDArray) dot upstream2.value
 
@@ -696,20 +696,20 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Im2col[Input0 <: Batch](
-        operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+    final case class Im2col[Input0 <: Tape](
+        operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         kernel: Array[Int],
         stride: Array[Int],
         padding: Array[Int]
     ) extends BufferedLayer.Unary {
-      type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           private val upstreamShape = {
             upstream.value.shape()
@@ -724,18 +724,18 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Reshape[Input0 <: Batch](
-        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        override val operand2: Layer.Aux[Input0, Batch.Aux[Seq[Int], (Int, Float)]])
+    final case class Reshape[Input0 <: Tape](
+        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        override val operand2: Layer.Aux[Input0, Tape.Aux[Seq[Int], (Int, Float)]])
         extends BufferedLayer.Binary {
-      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      override type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       override type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           private val upstreamShape = {
             upstream1.value.shape
@@ -750,18 +750,18 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Permute[Input0 <: Batch](
-        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
-        override val operand2: Layer.Aux[Input0, Batch.Aux[Seq[Int], (Int, Float)]])
+    final case class Permute[Input0 <: Tape](
+        override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+        override val operand2: Layer.Aux[Input0, Tape.Aux[Seq[Int], (Int, Float)]])
         extends BufferedLayer.Binary {
-      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+      override type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       override type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
 
           private val upstreamShape: Seq[Int] = {
             upstream1.value.shape()
@@ -786,17 +786,17 @@ object DifferentiableINDArray {
     }
 
     //TODO: update nd4j to 0.7.3
-    final case class MaxPool[Input0 <: Batch](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+    final case class MaxPool[Input0 <: Tape](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
                                               dimensions: Int*)
         extends BufferedLayer.Unary {
-      override type BufferedBatch = INDArraySemigroupBatch with SemigroupBatch with UnaryBatch
+      override type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       override type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override val input = input0
-        } with INDArraySemigroupBatch with SemigroupBatch with UnaryBatch {
+        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
 
           if (dimensions.length > 2) {
             throw new UnsupportedOperationException("dimentions's length must <2")
@@ -865,7 +865,7 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class Shape[Input0 <: Batch](operand: Layer.Aux[Input0, INDArrayPlaceholder.Batch]) extends Layer {
+    final case class Shape[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape]) extends Layer {
       override def forward(input: Input0): Output = {
         val upstream = operand.forward(input)
         try {
@@ -894,10 +894,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `max(INDArray,Double)`[Left, Right, Input <: Batch]
-    : max.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                   Layer.Aux[Input, DoublePlaceholder.Batch],
-                   Layer.Aux[Input, INDArrayPlaceholder.Batch]] =
+  implicit def `max(INDArray,Double)`[Left, Right, Input <: Tape]
+    : max.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                   Layer.Aux[Input, DoublePlaceholder.Tape],
+                   Layer.Aux[Input, INDArrayPlaceholder.Tape]] =
     max.at(MaxDouble(_, _))
 
   /**
@@ -911,10 +911,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray/INDArray`[Input <: Batch]
-    : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray/INDArray`[Input <: Tape]
+    : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyINDArray(leftLayer, Reciprocal(rightLayer))
     }
@@ -931,10 +931,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double/INDArray`[Input <: Batch]
-    : MathMethods./.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `Double/INDArray`[Input <: Tape]
+    : MathMethods./.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(Reciprocal(rightLayer), leftLayer)
     }
@@ -951,10 +951,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray/Double`[Input <: Batch]
-    : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray/Double`[Input <: Tape]
+    : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, DifferentiableDouble.Layers.Reciprocal(rightLayer))
     }
@@ -971,10 +971,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray*INDArray`[Input <: Batch]
-    : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray*INDArray`[Input <: Tape]
+    : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyINDArray(leftLayer, rightLayer)
     }
@@ -991,10 +991,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray*Double`[Input <: Batch]
-    : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray*Double`[Input <: Tape]
+    : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, rightLayer)
     }
@@ -1011,10 +1011,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double*INDArray`[Input <: Batch]
-    : MathMethods.*.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `Double*INDArray`[Input <: Tape]
+    : MathMethods.*.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(rightLayer, leftLayer)
     }
@@ -1031,10 +1031,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray-INDArray`[Input <: Batch]
-    : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray-INDArray`[Input <: Tape]
+    : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusINDArray(leftLayer, Negative(rightLayer))
     }
@@ -1051,10 +1051,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double-INDArray`[Input <: Batch]
-    : MathMethods.-.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `Double-INDArray`[Input <: Tape]
+    : MathMethods.-.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(Negative(rightLayer), leftLayer)
     }
@@ -1071,10 +1071,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray-Double`[Input <: Batch]
-    : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray-Double`[Input <: Tape]
+    : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, DifferentiableDouble.Layers.Negative(rightLayer))
     }
@@ -1091,10 +1091,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray+INDArray`[Input <: Batch]
-    : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray+INDArray`[Input <: Tape]
+    : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusINDArray(leftLayer, rightLayer)
     }
@@ -1111,10 +1111,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray+Double`[Input <: Batch]
-    : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `INDArray+Double`[Input <: Tape]
+    : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, rightLayer)
     }
@@ -1131,10 +1131,10 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double+INDArray`[Input <: Batch]
-    : MathMethods.+.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch],
-                             Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `Double+INDArray`[Input <: Tape]
+    : MathMethods.+.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(rightLayer, leftLayer)
     }
@@ -1156,8 +1156,8 @@ object DifferentiableINDArray {
     *
     * @see [[Poly.LayerPoly1]]
     */
-  implicit def `exp(INDArray)`[Input <: Batch]
-    : exp.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `exp(INDArray)`[Input <: Tape]
+    : exp.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape], Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     exp.at(Exp(_))
   }
 
@@ -1177,8 +1177,8 @@ object DifferentiableINDArray {
     *
     * @see [[Poly.LayerPoly1]]
     */
-  implicit def `log(INDArray)`[Input <: Batch]
-    : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `log(INDArray)`[Input <: Tape]
+    : log.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape], Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     log.at(Log(_))
   }
 
@@ -1198,15 +1198,98 @@ object DifferentiableINDArray {
     *
     * @see [[Poly.LayerPoly1]]
     */
-  implicit def `abs(INDArray)`[Input <: Batch]
-    : abs.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Batch], Layer.Aux[Input, INDArrayPlaceholder.Batch]] = {
+  implicit def `abs(INDArray)`[Input <: Tape]
+    : abs.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape], Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     abs.at(Abs(_))
   }
 
-  final class INDArrayLayerOps[Input <: Batch](operand: Layer.Aux[Input, INDArrayPlaceholder.Batch]) {
+  private def toArray(tuple2: (Int, Int)): Array[Int] = {
+    val (one, two) = tuple2
+    Array(one, two)
+  }
+
+  /**
+    * calculate the 2d convolution
+    *
+    * @param input 4 dimensions INDArray input
+    * @param weight 4 dimensions INDArray weight
+    * @param bias 1 dimension bias
+    * @param kernel the kernel/filter width and height
+    * @param stride the stride width and height
+    * @param padding the padding width and height
+    * @return convolution result
+    */
+  def conv2d[Input <: Tape](input: Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             weight: Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             bias: Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                             kernel: (Int, Int),
+                             stride: (Int, Int),
+                             padding: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
+    val shapeOfOperand = Shape(input)
+    val count = DifferentiableSeq.Layers.Get(shapeOfOperand, 0)
+    val depth = DifferentiableSeq.Layers.Get(shapeOfOperand, 1)
+    val y_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 2)
+    val x_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 3)
+    val kernelNumber = DifferentiableSeq.Layers.Get(Shape(weight), 0)
+
+    //input
+    //  .im2col(Array(KernelSize, KernelSize),
+    //    Array(Stride, Stride),
+    //    Array(Padding, Padding))
+    val col: Layer.Aux[Input, Tape.Aux[INDArray, INDArray]] =
+      Im2col(input, toArray(kernel), toArray(stride), toArray(padding))
+
+    //permute(0, 4, 5, 1, 2, 3)
+    val permutedCol: Layer.Aux[Input, Tape.Aux[INDArray, INDArray]] = Permute(col, Literal(Seq(0, 4, 5, 1, 2, 3)))
+
+    val depthKernelKernel: Layer.Aux[Input, Tape.Aux[Int, Float]] =
+      Times(
+        Times(depth, Literal(kernel._1)),
+        Literal(kernel._2)
+      )
+
+    val countXaxisYaxis: Layer.Aux[Input, Tape.Aux[Int, Float]] = Times(Times(count, y_axis), x_axis)
+
+    val aSeq: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] = Seq(countXaxisYaxis, depthKernelKernel)
+
+    val reshapeOperandTo: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(aSeq)
+
+    //reshape(imageCount * inputSizeY * inputSizeX,(depth * KernelSize * KernelSize).toLayer)
+    val operandCol2d = Reshape(permutedCol, reshapeOperandTo)
+
+    val bSeq: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
+
+    val reshapeWeightTo: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
+
+    //weight.reshape(kernelNumber, KernelSize * KernelSize * depth)
+    val reshapedWeight = Reshape(weight, reshapeWeightTo)
+
+    //permute(1, 0)
+    val permutedWeight = Permute(reshapedWeight, Literal(Seq(1, 0)))
+
+    val dotResult = Dot(operandCol2d, permutedWeight)
+
+    val plusResult = PlusINDArray(dotResult, bias)
+
+    val SeqOfCountYaxisXaxisKernelNumber: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] =
+      Seq(count, y_axis, x_axis, kernelNumber)
+
+    val reshapeResultTo: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] =
+      DifferentiableSeq.Layers.ToSeq(SeqOfCountYaxisXaxisKernelNumber)
+
+    //reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
+    val reshapedResult = Reshape(plusResult, reshapeResultTo)
+
+    val permuteResultTo = Literal(Seq(0, 3, 1, 2))
+
+    //permute(0, 3, 1, 2)
+    Permute(reshapedResult, permuteResultTo)
+  }
+
+  final class INDArrayLayerOps[Input <: Tape](operand: Layer.Aux[Input, INDArrayPlaceholder.Tape]) {
 
     // TODO: Considering if rename this method to `matmul`
-    def dot(right: Layer.Aux[Input, INDArrayPlaceholder.Batch]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+    def dot(right: Layer.Aux[Input, INDArrayPlaceholder.Tape]): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Dot(operand, right)
     }
 
@@ -1218,145 +1301,65 @@ object DifferentiableINDArray {
       */
     def im2col(kernel: Array[Int],
                stride: Array[Int],
-               padding: Array[Int]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+               padding: Array[Int]): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Im2col(operand, kernel, stride, padding)
     }
 
     /**
-      * @usecase def reshape(newShape: Layer.Aux[Input, Batch.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
-      * @usecase def reshape(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      * @usecase def reshape(newShape: Layer.Aux[Input, Tape.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = ???
+      * @usecase def reshape(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = ???
       */
     def reshape[Element](newShape: Element*)(
-        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Reshape(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
     }
 
     /**
-      * @usecase def permute(newShape: Layer.Aux[Input, Batch.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
-      * @usecase def permute(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = ???
+      * @usecase def permute(newShape: Layer.Aux[Input, Tape.Aux[Int, Float]]*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = ???
+      * @usecase def permute(newShape: Int*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = ???
       */
     def permute[Element](newShape: Element*)(
-        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+        implicit toLayer: ToLayer.Aux[Element, Input, Int, Float]): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Permute(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
     }
 
-    private def toArray(tuple2: (Int, Int)): Array[Int] = {
-      val (one, two) = tuple2
-      Array(one, two)
-    }
-
-    /**
-      * calculate the convolution
-      * @param weight 4 dimensions weight
-      * @param bias 1 dimension bias
-      * @param kernel the kernel/filter width and height
-      * @param stride the stride width and height
-      * @param padding the padding width and height
-      * @return convolution result
-      */
-    def convn(weight: Layer.Aux[Input, INDArrayPlaceholder.Batch],
-              bias: Layer.Aux[Input, INDArrayPlaceholder.Batch],
-              kernel: (Int, Int),
-              stride: (Int, Int),
-              padding: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
-      val shapeOfOperand = Shape(operand)
-      val count = DifferentiableSeq.Layers.Get(shapeOfOperand, 0)
-      val depth = DifferentiableSeq.Layers.Get(shapeOfOperand, 1)
-      val y_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 2)
-      val x_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 3)
-      val kernelNumber = DifferentiableSeq.Layers.Get(Shape(weight), 0)
-
-      //input
-      //  .im2col(Array(KernelSize, KernelSize),
-      //    Array(Stride, Stride),
-      //    Array(Padding, Padding))
-      val col: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] =
-        Im2col(operand, toArray(kernel), toArray(stride), toArray(padding))
-
-      //permute(0, 4, 5, 1, 2, 3)
-      val permutedCol: Layer.Aux[Input, Batch.Aux[INDArray, INDArray]] = Permute(col, Literal(Seq(0, 4, 5, 1, 2, 3)))
-
-      val depthKernelKernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
-        Times(
-          Times(depth, Literal(kernel._1)),
-          Literal(kernel._2)
-        )
-
-      val countXaxisYaxis: Layer.Aux[Input, Batch.Aux[Int, Float]] = Times(Times(count, y_axis), x_axis)
-
-      val aSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(countXaxisYaxis, depthKernelKernel)
-
-      val reshapeOperandTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(aSeq)
-
-      //reshape(imageCount * inputSizeY * inputSizeX,(depth * KernelSize * KernelSize).toLayer)
-      val operandCol2d = Reshape(permutedCol, reshapeOperandTo)
-
-      val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
-
-      val reshapeWeightTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
-
-      //weight.reshape(kernelNumber, KernelSize * KernelSize * depth)
-      val reshapedWeight = Reshape(weight, reshapeWeightTo)
-
-      //permute(1, 0)
-      val permutedWeight = Permute(reshapedWeight, Literal(Seq(1, 0)))
-
-      val dotResult = Dot(operandCol2d, permutedWeight)
-
-      val plusResult = PlusINDArray(dotResult, bias)
-
-      val SeqOfCountYaxisXaxisKernelNumber: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] =
-        Seq(count, y_axis, x_axis, kernelNumber)
-
-      val reshapeResultTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] =
-        DifferentiableSeq.Layers.ToSeq(SeqOfCountYaxisXaxisKernelNumber)
-
-      //reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
-      val reshapedResult = Reshape(plusResult, reshapeResultTo)
-
-      val permuteResultTo = Literal(Seq(0, 3, 1, 2))
-
-      //permute(0, 3, 1, 2)
-      Permute(reshapedResult, permuteResultTo)
-    }
-
-    def maxPool(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+    def maxPool(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       MaxPool(operand, dimensions: _*)
     }
 
     /**
       * Return shape of NDArray
       */
-    def shape: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = {
+    def shape: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = {
       Shape(operand)
     }
 
-    def unary_- : Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+    def unary_- : Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Negative(operand)
     }
 
-    def toSeq: Layer.Aux[Input, Batch.Aux[Seq[Seq[Double]], (Int, (Int, Double))]] = {
+    def toSeq: Layer.Aux[Input, Tape.Aux[Seq[Seq[Double]], (Int, (Int, Double))]] = {
       ToSeq(operand)
     }
 
     /**
       * Return sum of all elements of NDArray
       */
-    def sum: Layer.Aux[Input, DoublePlaceholder.Batch] = {
+    def sum: Layer.Aux[Input, DoublePlaceholder.Tape] = {
       ReduceSum(operand)
     }
 
     /**
       * Return mean of all elements of NDArray
       */
-    def mean: Layer.Aux[Input, DoublePlaceholder.Batch] = {
+    def mean: Layer.Aux[Input, DoublePlaceholder.Tape] = {
       ReduceMean(operand)
     }
 
     /**
       * Return sum dimensions of NDArray,will return an INDArrayPlaceholder
       */
-    def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Batch] = {
+    def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Sum(operand, dimensions)
     }
 
@@ -1366,23 +1369,23 @@ object DifferentiableINDArray {
     * A helper that contains common boilerplate code for all NDArray layers.
 
     * @example{{{
-    * import com.thoughtworks.deeplearning.DifferentiableNDArray._
+    * import com.thoughtworks.deeplearning.DifferentiableINDArray._
     * }}}
     */
-  implicit def toINDArrayLayerOps[From, Input <: Batch, OutputData, OutputDelta](from: From)(
+  implicit def toINDArrayLayerOps[From, Input <: Tape, OutputData, OutputDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
-      constrait: Layer.Aux[Input, Batch.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input,
-                                                                                    Batch.Aux[INDArray, INDArray]]
+      constrait: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input,
+                                                                                    Tape.Aux[INDArray, INDArray]]
   ): INDArrayLayerOps[Input] = {
     new INDArrayLayerOps(constrait(toLayer(from)))
   }
 
   // TODO: Support Array for better performance.
-  final class ToINDArrayLayerOps[Input <: Batch](layerVector: Seq[Seq[Layer.Aux[Input, Batch.Aux[Double, Double]]]]) {
-    def toINDArray: Layer.Aux[Input, INDArrayPlaceholder.Batch] = ToINDArray(layerVector)
+  final class ToINDArrayLayerOps[Input <: Tape](layerVector: Seq[Seq[Layer.Aux[Input, Tape.Aux[Double, Double]]]]) {
+    def toINDArray: Layer.Aux[Input, INDArrayPlaceholder.Tape] = ToINDArray(layerVector)
   }
 
-  implicit def toToINDArrayLayerOps[Element, Input <: Batch](layerVector: Seq[Seq[Element]])(
+  implicit def toToINDArrayLayerOps[Element, Input <: Tape](layerVector: Seq[Seq[Element]])(
       implicit toLayer: ToLayer.OfPlaceholder[Element, Input, DoublePlaceholder]): ToINDArrayLayerOps[Input] = {
     new ToINDArrayLayerOps(layerVector.map(_.map(toLayer(_))))
   }
@@ -1390,7 +1393,7 @@ object DifferentiableINDArray {
   implicit final class INDArrayOps(ndArray: INDArray) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Placeholder[InputData, InputDelta],
-        optimizerFactory: OptimizerFactory): Layer.Aux[Batch.Aux[InputData, InputDelta], INDArrayPlaceholder.Batch] = {
+        optimizerFactory: OptimizerFactory): Layer.Aux[Tape.Aux[InputData, InputDelta], INDArrayPlaceholder.Tape] = {
       Weight(ndArray)
     }
   }

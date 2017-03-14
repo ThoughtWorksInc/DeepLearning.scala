@@ -23,10 +23,10 @@ class DifferentiableTypeSpec extends FreeSpec with Matchers {
   "x" in {
     val inputSymbol: DoublePlaceholder :**: HNilPlaceholder = implicitly
 
-    implicitly[inputSymbol.Batch =:= (DoublePlaceholder :**: HNilPlaceholder)#Batch]
+    implicitly[inputSymbol.Tape =:= (DoublePlaceholder :**: HNilPlaceholder)#Tape]
     implicitly[Layer.Aux[
-      (DoublePlaceholder :**: HNilPlaceholder)#Batch,
-      (BooleanPlaceholder :**: HNilPlaceholder)#Batch] =:= inputSymbol.To[BooleanPlaceholder :**: HNilPlaceholder]]
+      (DoublePlaceholder :**: HNilPlaceholder)#Tape,
+      (BooleanPlaceholder :**: HNilPlaceholder)#Tape] =:= inputSymbol.To[BooleanPlaceholder :**: HNilPlaceholder]]
 
   }
 }

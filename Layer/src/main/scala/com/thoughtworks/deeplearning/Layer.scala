@@ -38,10 +38,10 @@ object Layer {
     }
   }
 
-  object Batch {
+  object Tape {
 
     /** @template */
-    type Aux[+Data0, -Delta0] = Batch {
+    type Aux[+Data0, -Delta0] = Tape {
       type Data <: Data0
       type Delta >: Delta0
     }
@@ -49,9 +49,9 @@ object Layer {
   }
 
   /**
-    * Batch是对Data和Delta的封装，每个Batch都包含`backward()`,详细信息可参看[[Layer]]
+    * Tape是对Data和Delta的封装，每个Tape都包含`backward()`,详细信息可参看[[Layer]]
     */
-  trait Batch extends AutoCloseable {
+  trait Tape extends AutoCloseable {
     type Data
     type Delta
 
@@ -60,7 +60,7 @@ object Layer {
       * Returns a new [[Batch]] that shares the same [[value]] and [[backward]] behavior with this [[Batch]].
       * @note The newly created [[Batch]] and this [[Batch]] must be [[close]]d independently.
       */
-    def addReference(): Batch.Aux[Data, Delta]
+    def addReference(): Tape.Aux[Data, Delta]
 
     protected def forceBackward(delta: Delta): Future.Stateless[Unit]
 
@@ -79,7 +79,7 @@ object Layer {
   }
 
   /** @template */
-  type Aux[-Input0 <: Batch, +Output0 <: Batch] =
+  type Aux[-Input0 <: Tape, +Output0 <: Tape] =
     Layer {
       type Input >: Input0
       type Output <: Output0
@@ -88,17 +88,17 @@ object Layer {
 }
 
 /**
-  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Batch]],
-  * 而Batch包含[[com.thoughtworks.deeplearning.Layer.Batch.backward()]],所以Layer所组成的网络会包含输入和输出，正向传播和反向传播。
+  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Tape]],
+  * 而Tape包含[[com.thoughtworks.deeplearning.Layer.Tape.backward()]],所以Layer所组成的网络会包含输入和输出，正向传播和反向传播。
   *
   * @example{{{
-  *  val depthKernelKernel: Layer.Aux[Input, Batch.Aux[Int, Float]] =
+  *  val depthKernelKernel: Layer.Aux[Input, Tape.Aux[Int, Float]] =
   *    Times(
   *       Times(depth, Literal(kernel._1)),
   *       Literal(kernel._2)
   *     )
-  *  val bSeq: Seq[Layer.Aux[Input, Batch.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
-  *  val reshapeWeightTo: Layer.Aux[Input, Batch.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
+  *  val bSeq: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
+  *  val reshapeWeightTo: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
   *  val reshapedWeight = Reshape(weight, reshapeWeightTo)
   * }}}
   *
@@ -112,9 +112,9 @@ trait Layer {
 
   import Layer._
 
-  type Input <: Batch
+  type Input <: Tape
 
-  type Output <: Batch
+  type Output <: Tape
 
   def forward(input: Input): Future.Stateless[Output]
 

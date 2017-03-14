@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Symbolic._
 
 /**
@@ -14,9 +14,9 @@ object DifferentiableNothing {
 
   object Layers {
 
-    final case class Throw(throwable: () => Throwable) extends Layer with Batch {
-      override type Input = Batch
-      override type Output = Batch.Aux[Nothing, Any]
+    final case class Throw(throwable: () => Throwable) extends Layer with Tape {
+      override type Input = Tape
+      override type Output = Tape.Aux[Nothing, Any]
       override type Data = Nothing
       override type Delta = Any
 
@@ -41,7 +41,7 @@ object DifferentiableNothing {
   import Layers._
 
   def `throw`[InputData, InputDelta](throwable: => Throwable)(implicit inputType: Placeholder[InputData, InputDelta])
-    : Layer.Aux[Batch.Aux[InputData, InputDelta], NothingPlaceholder.Batch] = {
+    : Layer.Aux[Tape.Aux[InputData, InputDelta], NothingPlaceholder.Tape] = {
     Throw(throwable _)
   }
 

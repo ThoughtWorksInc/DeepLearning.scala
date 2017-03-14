@@ -3,7 +3,7 @@ package deeplearning
 
 import cats.Eval
 import com.thoughtworks.deeplearning.Layer._
-import com.thoughtworks.deeplearning.Layer.Batch._
+import com.thoughtworks.deeplearning.Layer.Tape._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableBoolean._

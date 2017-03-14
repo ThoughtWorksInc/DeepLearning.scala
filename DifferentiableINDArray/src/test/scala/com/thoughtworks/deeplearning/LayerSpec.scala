@@ -12,9 +12,9 @@ import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.Layer.Batch.Aux
+import com.thoughtworks.deeplearning.Layer.Tape.Aux
 import com.thoughtworks.deeplearning._
-import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
+import com.thoughtworks.deeplearning.Layer.{Aux, Tape}
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -60,13 +60,13 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       )
 
     def train() = {
-      val outputBatch = network.forward(inputData.toNDArray.toBatch)
+      val outputTape = network.forward(inputData.toNDArray.toTape)
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -96,15 +96,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = 1 to 54
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = network.forward(
+        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
       )
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -138,15 +138,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       Convolution.im2col(inputNDArrayData, Array(2, 2), Array(1, 1), Array(1, 1))
 
     def train() = {
-      val outputBatch =
+      val outputTape =
         network
           .forward(
-            inputNDArrayData.toBatch
+            inputNDArrayData.toTape
           )
       try {
-        outputBatch.backward(backDelta)
+        outputTape.backward(backDelta)
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -175,15 +175,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = 1 to 54
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = network.forward(
+        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
       )
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -213,13 +213,13 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = (1 to 54).toNDArray.reshape(2, 3, 3, 3)
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toBatch
+      val outputTape = network.forward(
+        inputData.toTape
       )
       try {
-        outputBatch.backward(inputData)
+        outputTape.backward(inputData)
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -252,15 +252,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val network = makeNetwork(0, 2, 1)
 
     def train() = {
-      val outputBatch = network.forward(
-        (1 to 54).toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = network.forward(
+        (1 to 54).toNDArray.reshape(2, 3, 3, 3).toTape
       )
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -295,13 +295,13 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = (1 to 54 * 6).toNDArray.reshape(2, 6, 3, 9)
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toBatch
+      val outputTape = network.forward(
+        inputData.toTape
       )
       try {
-        outputBatch.backward(inputData)
+        outputTape.backward(inputData)
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -335,15 +335,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = 1 to 54
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = network.forward(
+        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
       )
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -378,15 +378,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = 1 to 54
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = network.forward(
+        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
       )
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -416,15 +416,15 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     val inputData = 1 to 54
 
     def train() = {
-      val outputBatch = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = network.forward(
+        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
       )
       try {
-        val loss = (outputBatch.value: INDArray).sumT
-        outputBatch.backward(outputBatch.value)
+        val loss = (outputTape.value: INDArray).sumT
+        outputTape.backward(outputTape.value)
         loss
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
     }
 
@@ -445,13 +445,13 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     }
 
     def train() = {
-      val outputBatch = makeNetwork.forward(
-        (1 to 54).toNDArray.reshape(2, 3, 3, 3).toBatch
+      val outputTape = makeNetwork.forward(
+        (1 to 54).toNDArray.reshape(2, 3, 3, 3).toTape
       )
       val seqShape = try {
-        outputBatch.value
+        outputTape.value
       } finally {
-        outputBatch.close()
+        outputTape.close()
       }
       seqShape(0) should be(2)
       seqShape(1) should be(3)
@@ -467,7 +467,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     def convolution(implicit input: From[INDArray]##`@`): To[INDArray]##`@` = {
       val weight: To[INDArray]##`@` = Nd4j.ones(1, 1, 3, 3)
       val bias = Nd4j.zeros(1)
-      input.convn(weight, bias, (3, 3), (1, 1), (1, 1))
+      conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     }
 
     val result: INDArray = convolution.predict(input)

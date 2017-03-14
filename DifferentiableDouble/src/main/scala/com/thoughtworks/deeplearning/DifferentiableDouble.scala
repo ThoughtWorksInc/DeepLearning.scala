@@ -2,12 +2,12 @@ package com.thoughtworks.deeplearning
 import cats.{Eval, Monoid}
 import cats.implicits._
 import com.thoughtworks.deeplearning.DifferentiableAny.Trainable
-import com.thoughtworks.deeplearning.DifferentiableBoolean.BooleanMonoidBatch
+import com.thoughtworks.deeplearning.DifferentiableBoolean.BooleanMonoidTape
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.DifferentiableBoolean.Layers.If
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Poly.MathMethods
 import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless.the
@@ -19,7 +19,7 @@ import language.implicitConversions
   */
 object DifferentiableDouble {
 
-  private[deeplearning] trait DoubleMonoidBatch extends Batch {
+  private[deeplearning] trait DoubleMonoidTape extends Tape {
 
     override type Data = Double
 
@@ -81,17 +81,17 @@ object DifferentiableDouble {
 
   object Layers {
 
-    final case class Exp[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
+    final case class Exp[Input0 <: Tape](operand: Layer.Aux[Input0, DoublePlaceholder.Tape])
         extends BufferedLayer.Unary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
       override protected def rawForward(input0: Input) =
         new {
           override final val input = input0
-        } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
+        } with MonoidTape with DoubleMonoidTape with UnaryTape {
 
           val value: Double = math.exp(upstream.value).toDouble
 
@@ -103,19 +103,19 @@ object DifferentiableDouble {
 
     }
 
-    final case class LessThan[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class LessThan[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = BooleanMonoidBatch with MonoidBatch with BinaryBatch
+      type BufferedTape = BooleanMonoidTape with MonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with BooleanMonoidBatch with MonoidBatch with BinaryBatch {
+        } with BooleanMonoidTape with MonoidTape with BinaryTape {
           override val value = upstream1.value < upstream2.value
 
           override protected def rawBackward(delta: Delta): Unit = {
@@ -125,17 +125,17 @@ object DifferentiableDouble {
       }
     }
 
-    final case class Log[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
+    final case class Log[Input0 <: Tape](operand: Layer.Aux[Input0, DoublePlaceholder.Tape])
         extends BufferedLayer.Unary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
       override protected def rawForward(input0: Input) =
         new {
           override final val input = input0
-        } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
+        } with MonoidTape with DoubleMonoidTape with UnaryTape {
 
           val value = math.log(upstream.value).toDouble
 
@@ -147,17 +147,17 @@ object DifferentiableDouble {
 
     }
 
-    final case class Negative[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
+    final case class Negative[Input0 <: Tape](operand: Layer.Aux[Input0, DoublePlaceholder.Tape])
         extends BufferedLayer.Unary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
       override protected def rawForward(input0: Input) =
         new {
           override final val input = input0
-        } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
+        } with MonoidTape with DoubleMonoidTape with UnaryTape {
 
           val value = -upstream.value
 
@@ -169,19 +169,19 @@ object DifferentiableDouble {
 
     }
 
-    final case class Plus[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class Plus[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with DoubleMonoidBatch with MonoidBatch with BinaryBatch {
+        } with DoubleMonoidTape with MonoidTape with BinaryTape {
 
           val value = upstream1.value + upstream2.value
 
@@ -194,17 +194,17 @@ object DifferentiableDouble {
       }
     }
 
-    final case class Reciprocal[Input0 <: Batch](operand: Layer.Aux[Input0, DoublePlaceholder.Batch])
+    final case class Reciprocal[Input0 <: Tape](operand: Layer.Aux[Input0, DoublePlaceholder.Tape])
         extends BufferedLayer.Unary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with UnaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
       override protected def rawForward(input0: Input) =
         new {
           override final val input = input0
-        } with MonoidBatch with DoubleMonoidBatch with UnaryBatch {
+        } with MonoidTape with DoubleMonoidTape with UnaryTape {
 
           val value = the[Numeric[Double]].one / upstream.value
 
@@ -218,19 +218,19 @@ object DifferentiableDouble {
 
     }
 
-    final case class Substract[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class Substract[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with DoubleMonoidBatch with MonoidBatch with BinaryBatch {
+        } with DoubleMonoidTape with MonoidTape with BinaryTape {
 
           val value = upstream1.value - upstream2.value
 
@@ -243,19 +243,19 @@ object DifferentiableDouble {
       }
     }
 
-    final case class Times[Input0 <: Batch](
-        operand1: Layer.Aux[Input0, DoublePlaceholder.Batch],
-        operand2: Layer.Aux[Input0, DoublePlaceholder.Batch]
+    final case class Times[Input0 <: Tape](
+        operand1: Layer.Aux[Input0, DoublePlaceholder.Tape],
+        operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
     ) extends BufferedLayer.Binary {
 
-      type BufferedBatch = DoubleMonoidBatch with MonoidBatch with BinaryBatch
+      type BufferedTape = DoubleMonoidTape with MonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedBatch = {
+      override protected def rawForward(input0: Input): BufferedTape = {
         new {
           override final val input = input0
-        } with DoubleMonoidBatch with MonoidBatch with BinaryBatch {
+        } with DoubleMonoidTape with MonoidTape with BinaryTape {
 
           override final val value = upstream1.value * upstream2.value
 
@@ -278,9 +278,9 @@ object DifferentiableDouble {
 
     }
 
-    abstract case class Weight(var value: Double) extends Layer with DoubleMonoidBatch {
-      override type Input = Batch
-      override type Output = Batch.Aux[Data, Delta]
+    abstract case class Weight(var value: Double) extends Layer with DoubleMonoidTape {
+      override type Input = Tape
+      override type Output = Tape.Aux[Data, Delta]
 
       override final def isTrainable = true
 
@@ -326,9 +326,9 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `min(Double,Double)`[Input <: Batch]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `min(Double,Double)`[Input <: Tape]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     min.at { (leftLayer, rightLayer) =>
       If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan[Input](leftLayer, rightLayer),
                                                                  leftLayer,
@@ -347,9 +347,9 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `max(Double,Double)`[Input <: Batch]: max.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `max(Double,Double)`[Input <: Tape]: max.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                  Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     max.at { (leftLayer, rightLayer) =>
       If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan[Input](leftLayer, rightLayer),
                                                                  rightLayer,
@@ -368,9 +368,9 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `Double-Double`[Input <: Batch]: -.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `Double-Double`[Input <: Tape]: -.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, Negative(rightLayer))
     }
@@ -387,9 +387,9 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `Double+Double`[Input <: Batch]: +.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `Double+Double`[Input <: Tape]: +.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, rightLayer)
     }
@@ -406,9 +406,9 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `Double/Double`[Input <: Batch]: /.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `Double/Double`[Input <: Tape]: /.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     /.at { (leftLayer, rightLayer) =>
       Times(leftLayer, Reciprocal(rightLayer))
     }
@@ -425,9 +425,9 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `Double*Double`[Input <: Batch]: *.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch],
-                                                           Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `Double*Double`[Input <: Tape]: *.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     *.at(Times(_, _))
   }
 
@@ -442,8 +442,8 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `log(Double)`[Input <: Batch]
-    : log.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `log(Double)`[Input <: Tape]
+    : log.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape], Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     log.at(Log(_))
   }
 
@@ -458,8 +458,8 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `exp(Double)`[Input <: Batch]
-    : exp.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `exp(Double)`[Input <: Tape]
+    : exp.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape], Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     exp.at(Exp(_))
   }
 
@@ -474,8 +474,8 @@ object DifferentiableDouble {
     * }
     * }}}
     */
-  implicit def `abs(Double)`[Input <: Batch]
-    : abs.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Batch], Layer.Aux[Input, DoublePlaceholder.Batch]] = {
+  implicit def `abs(Double)`[Input <: Tape]
+    : abs.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape], Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     abs.at { operand =>
       If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan(operand, Literal(the[Numeric[Double]].zero)),
                                                                  Negative(operand),
@@ -486,14 +486,14 @@ object DifferentiableDouble {
   implicit final class NativeDoubleOps(nativeDouble: Double) {
     def toWeight[InputData, InputDelta](
         implicit inputType: Placeholder[InputData, InputDelta],
-        optimizerFactory: OptimizerFactory): Layer.Aux[Batch.Aux[InputData, InputDelta], DoublePlaceholder.Batch] = {
+        optimizerFactory: OptimizerFactory): Layer.Aux[Tape.Aux[InputData, InputDelta], DoublePlaceholder.Tape] = {
       Weight(nativeDouble)
     }
   }
 
-  final class DoubleLayerOps[Input <: Batch](differentiable: Layer.Aux[Input, DoublePlaceholder.Batch]) {
+  final class DoubleLayerOps[Input <: Tape](differentiable: Layer.Aux[Input, DoublePlaceholder.Tape]) {
 
-    def unary_- : Layer.Aux[Input, DoublePlaceholder.Batch] = {
+    def unary_- : Layer.Aux[Input, DoublePlaceholder.Tape] = {
       Negative(differentiable)
     }
 
@@ -506,7 +506,7 @@ object DifferentiableDouble {
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * }}}
     */
-  implicit def toDoubleLayerOps[From, Input <: Batch](from: From)(
+  implicit def toDoubleLayerOps[From, Input <: Tape](from: From)(
       implicit toLayer: ToLayer.OfPlaceholder[From, Input, DoublePlaceholder]
   ): DoubleLayerOps[Input] = {
     new DoubleLayerOps(toLayer(from))
