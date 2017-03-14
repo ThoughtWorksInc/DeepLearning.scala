@@ -1,19 +1,16 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Layer.{Aux, Tape}
+import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
 import shapeless._
 
 import scala.annotation.implicitNotFound
 import scala.language.{existentials, implicitConversions}
-
 /**
   * This trait is a [[https://en.wikipedia.org/wiki/Dependent_type dependent]] [[https://en.wikipedia.org/wiki/Type_class type class]] that calculates a specific [[Layer]] type according to `NativeOutput`.
   *
   * Combining with [[https://github.com/ThoughtWorksInc/implicit-dependent-type implicit-dependent-type]] compiler plugin,
-  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `@Symbolic`.
-  *
-  * `@Symbolic`可以用来把原生类型转换成[[Layer]]。
+  * this trait can be used as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeType @Symbolic`, converting `NativeType` to a specfic [[Layer]] type.
   *
   * 而`@Symbolic`结合[[http://www.scala-lang.org/files/archive/spec/2.12/07-implicits.html#implicit-parameters 隐式参数]]还可以构造'''符号方法'''。符号方法支持[[https://en.wikipedia.org/wiki/Symbolic_computation 符号计算]]，可以在其中直接编写数学公式来创建[[Layer]]。
   *
@@ -32,11 +29,11 @@ import scala.language.{existentials, implicitConversions}
   * }
   * }}}
   *
-  * 上述代码中，由于`INDArray`的[[com.thoughtworks.deeplearning.Layer.Tape#Delta 导数类型]]也是`INDArray`，所以`sumNetwork`的输入类型`INDArray @Symbolic`展开后是`Identity[INDArray, INDArray]`。
+  * 上述代码中，由于`INDArray`的[[Layer.Tape#Delta 导数类型]]也是`INDArray`，所以`sumNetwork`的输入类型`INDArray @Symbolic`展开后是`Identity[INDArray, INDArray]`。
   *
   * === 用于符号方法内部变量和返回值 ===
   *
-  * 在符号方法内部和返回值处，`A @Symbolic`会被展开为Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[A, A的导数类型]]
+  * 在符号方法内部和返回值处，`A @Symbolic`会被展开为`Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[A, A的导数类型]]`
   *
   * 例如：
   *
@@ -65,8 +62,8 @@ import scala.language.{existentials, implicitConversions}
   *
   * == 定制符号类型 ==
   *
-  * `@Symbolic`通过检查[[com.thoughtworks.deeplearning.Symbolic.ToLiteral ToLiteral]]隐式值来确定原生类型和导数之间的映射关系。
-  * 因此，只要定义[[com.thoughtworks.deeplearning.Symbolic.ToLiteral ToLiteral]]类型的隐式值，`@Symbolic`就可以支持定制符号类型。
+  * `@Symbolic`通过检查[[Symbolic.ToLiteral]]隐式值来确定原生类型和导数之间的映射关系。
+  * 因此，只要定义[[Symbolic.ToLiteral]]类型的隐式值，`@Symbolic`就可以支持定制符号类型。
   *
   * 比如，假如你希望支持`Short @Symbolic`，其中使用[[Float]]作为[[Short]]的导数类型，那么可以这样做：
   *
@@ -86,8 +83,9 @@ import scala.language.{existentials, implicitConversions}
   *
   * 这样一来`shortNetwork`的类型就会展开为`Layer.Aux[Tape.Aux[Short, Float], Tape.Aux[Short, Float]]`。
   *
-  * @see [[com.thoughtworks.deeplearning.Symbolic.Layers.Identity]]
-  * @see [[com.thoughtworks.deeplearning.Symbolic.ToLiteral]]
+  * @see [[Symbolic.Layers.Identity]]
+  * @see [[Symbolic.ToLiteral]]
+  * @see [[Layer.Tape#Delta]]
   *
   */
 @implicitNotFound("Don't know how to make ${NativeOutput} differentiable")
