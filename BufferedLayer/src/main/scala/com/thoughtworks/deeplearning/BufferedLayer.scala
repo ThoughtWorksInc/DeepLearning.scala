@@ -104,49 +104,49 @@ trait BufferedLayer extends Layer {
 
   protected trait MonoidTape extends ReferenceCount { this: BufferedTape =>
 
-    private var currentDelta: Delta = monoid.empty
+    private var accumulatedDelta: Delta = monoid.empty
 
     /**
-      * Performs the underlying backward pass with all `upstreamDelta`s that previously received from [[forceBackward]].
+      * Performs the underlying backward pass with the accumulated `outputDelta`s previously received from several [[forceBackward]] calls.
       */
-    protected def rawBackward(delta: Delta): Unit
+    protected def rawBackward(accumulatedDelta: Delta): Unit
 
     implicit protected def monoid: Monoid[Delta]
 
     override protected final def flush(): Unit = {
       rawBackward(synchronized {
-        val delta = currentDelta
-        currentDelta = monoid.empty
+        val delta = accumulatedDelta
+        accumulatedDelta = monoid.empty
         delta
       })
     }
 
-    override final protected def forceBackward(delta: Delta): Unit = {
+    override protected final def forceBackward(outputDelta: Delta): Unit = {
       synchronized {
-        currentDelta = currentDelta |+| delta
+        accumulatedDelta |+|= outputDelta
       }
     }
   }
 
   protected trait SemigroupTape extends ReferenceCount { this: BufferedTape =>
 
-    private var currentDelta: Option[Delta] = None
+    private var accumulatedDelta: Option[Delta] = None
 
-    protected def rawBackward(delta: Delta): Unit
+    protected def rawBackward(accumulatedDelta: Delta): Unit
 
     implicit protected def semigroup: Semigroup[Delta]
 
     override protected final def flush(): Unit = {
       synchronized {
-        val delta = currentDelta
-        currentDelta = None
+        val delta = accumulatedDelta
+        accumulatedDelta = None
         delta
       }.foreach(rawBackward)
     }
 
-    override final protected def forceBackward(delta: Delta): Unit = {
+    override protected final def forceBackward(outputDelta: Delta): Unit = {
       synchronized {
-        currentDelta |+|= Some(delta)
+        accumulatedDelta |+|= Some(outputDelta)
       }
     }
   }
