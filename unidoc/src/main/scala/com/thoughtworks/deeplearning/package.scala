@@ -44,5 +44,10 @@ package com.thoughtworks
   *
   * Those `+ - * /` and `log exp abs max min` are defined at `MathMethods` and `MathFunctions` ，the method are been implemented at DifferentiableType，so you need to import the implicit of DifferentiableType
   *
+  * == Composability ==
+  *
+  * Neural networks created by DeepLearning.scala are composable. You can create large networks by combining smaller networks. If two larger networks share some sub-networks, the weights in shared sub-networks trained with one network affect the other network.
+  *
+  * @see [[com.thoughtworks.deeplearning.DifferentiableAny.Layers.Compose Compose]]
   */
 package object deeplearning {}
