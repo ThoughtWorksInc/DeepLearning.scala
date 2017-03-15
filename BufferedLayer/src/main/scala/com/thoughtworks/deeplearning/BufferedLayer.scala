@@ -21,7 +21,9 @@ trait BufferedLayer extends Layer {
 
   protected trait ReferenceCount extends Tape { this: BufferedTape =>
 
-    // Returns a [[Tape]] able to detect error of closing more than once.
+    /**
+      * Returns a [[Layer.Tape]] that prevents [[Layer.Tape#close]] being invoked more than once.
+      */
     @elidable(elidable.ASSERTION)
     private def checked = new Tape {
       override type Delta = ReferenceCount.this.Delta
