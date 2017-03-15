@@ -57,7 +57,7 @@ object Layer {
       * Returns a new [[Tape]] that shares the same [[value]] and [[backward]] behavior with this [[Tape]].
       * @note The newly created [[Tape]] and this [[Tape]] must be [[close]]d independently.
       */
-    def addReference(): Tape.Aux[Data, Delta]
+    def duplicate(): Tape.Aux[Data, Delta]
 
     protected def forceBackward(delta: Delta): Unit
 

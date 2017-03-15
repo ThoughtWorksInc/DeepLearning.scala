@@ -56,7 +56,7 @@ object DifferentiableHList {
         override type Data = HeadData :: TailData
         override type Delta = HeadDelta :+: TailDelta
 
-        override def addReference() = new Output(headTape.addReference(), tailTape.addReference())
+        override def duplicate() = new Output(headTape.duplicate(), tailTape.duplicate())
       }
 
       override def forward(input: Input) = new Output(head.forward(input), tail.forward(input))
@@ -92,7 +92,7 @@ object DifferentiableHList {
           upstream.close()
         }
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
       }
       override def forward(input: Input) = new Output(operand.forward(input))
 
@@ -126,7 +126,7 @@ object DifferentiableHList {
         override type Data = TailData
         override type Delta = TailDelta
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
       }
       override def forward(input: Input) = new Output(operand.forward(input))
 

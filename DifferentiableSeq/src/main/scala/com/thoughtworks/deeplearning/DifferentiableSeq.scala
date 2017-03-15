@@ -33,7 +33,7 @@ object DifferentiableSeq {
           upstream.backward((i, delta))
         }
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
 
         override def close(): Unit = {
           upstream.close()
@@ -80,7 +80,7 @@ object DifferentiableSeq {
           upstreams.foreach(_.close())
         }
 
-        override def addReference() = new Output(upstreams.map(_.addReference()))
+        override def duplicate() = new Output(upstreams.map(_.duplicate()))
 
       }
 

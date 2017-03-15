@@ -27,7 +27,7 @@ trait BufferedLayer extends Layer {
       override type Delta = ReferenceCount.this.Delta
       override type Data = ReferenceCount.this.Data
 
-      override final def addReference() = ReferenceCount.this.addReference()
+      override final def duplicate() = ReferenceCount.this.duplicate()
 
       override final protected def forceBackward(delta: Delta) = ReferenceCount.this.forceBackward(delta)
 
@@ -61,7 +61,7 @@ trait BufferedLayer extends Layer {
       * Returns a wrapped [[com.thoughtworks.deeplearning.Layer.Tape Tape]] able to detect error of closing more than once if ASSERTION is enabled,
       * or returns this [[ReferenceCount]] itself when ASSERTION is disabled hence no check.
       */
-    override final def addReference(): Self = {
+    override final def duplicate(): Self = {
       val newCount = synchronized {
         val newCount = count + 1
         count = newCount
@@ -164,12 +164,12 @@ trait BufferedLayer extends Layer {
   override final def forward(input: Input): Output = {
     cache.get(input) match {
       case null =>
-        val savedInput = input.addReference().asInstanceOf[Input] // FIXME: Add self type in Tape to avoid asInstanceOf
+        val savedInput = input.duplicate().asInstanceOf[Input] // FIXME: Add self type in Tape to avoid asInstanceOf
         val tape = rawForward(savedInput)
         cache.put(savedInput, tape).ensuring(_ == null)
         tape.checkedIfCloseOnlyOnce
       case sharedTape =>
-        sharedTape.addReference()
+        sharedTape.duplicate()
     }
   }
 }

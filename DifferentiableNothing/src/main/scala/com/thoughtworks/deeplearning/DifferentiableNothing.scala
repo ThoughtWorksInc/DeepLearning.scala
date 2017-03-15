@@ -30,7 +30,7 @@ object DifferentiableNothing {
 
       override def close(): Unit = {}
 
-      override def addReference() = this
+      override def duplicate() = this
 
       override def isTrainable = false
 

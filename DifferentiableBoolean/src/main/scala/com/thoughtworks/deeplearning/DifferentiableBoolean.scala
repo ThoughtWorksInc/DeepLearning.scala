@@ -80,7 +80,7 @@ object DifferentiableBoolean {
 
       override def close(): Unit = {}
 
-      override def addReference(): Weight[Input0] = this
+      override def duplicate(): Weight[Input0] = this
 
       override def isTrainable = true
 

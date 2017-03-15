@@ -161,7 +161,7 @@ object DifferentiableInt {
 
       override def isTrainable = true
 
-      override def addReference() = this
+      override def duplicate() = this
 
       override def forward(any: Input) = this
 

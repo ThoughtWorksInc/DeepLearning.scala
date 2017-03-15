@@ -150,7 +150,7 @@ object Symbolic extends LowPrioritySymbolic {
       type Output = Tape.Aux[Data, Delta]
 
       override def forward(input: Input): Output = {
-        input.addReference()
+        input.duplicate()
       }
 
       private type ConcreteTape = Tape.Aux[Data, Delta]
@@ -197,7 +197,7 @@ object Symbolic extends LowPrioritySymbolic {
 
       override def close(): Unit = {}
 
-      override def addReference() = this
+      override def duplicate() = this
     }
 
   }

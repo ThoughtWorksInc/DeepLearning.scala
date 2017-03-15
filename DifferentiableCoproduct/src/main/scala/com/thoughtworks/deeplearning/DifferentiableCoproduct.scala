@@ -53,8 +53,8 @@ object DifferentiableCoproduct {
           upstream.close()
         }
 
-        override def addReference() = {
-          new Output(upstream.addReference())
+        override def duplicate() = {
+          new Output(upstream.duplicate())
         }
 
       }
@@ -94,7 +94,7 @@ object DifferentiableCoproduct {
           upstream.close()
         }
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
 
       }
 
@@ -131,7 +131,7 @@ object DifferentiableCoproduct {
           upstream.close()
         }
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
 
       }
 
@@ -166,7 +166,7 @@ object DifferentiableCoproduct {
           upstream.close()
         }
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
       }
 
       type Input = Input0
@@ -200,7 +200,7 @@ object DifferentiableCoproduct {
           upstream.close()
         }
 
-        override def addReference() = new Output(upstream.addReference())
+        override def duplicate() = new Output(upstream.duplicate())
 
       }
 

@@ -401,7 +401,7 @@ object DifferentiableINDArray {
 
       override final def isTrainable = true
 
-      override final def addReference() = this
+      override final def duplicate() = this
 
       override final def forward(any: Input) = this
 
@@ -442,8 +442,8 @@ object DifferentiableINDArray {
           upstreams.foreach(_.foreach(_.close()))
         }
 
-        override def addReference(): Output = {
-          new Output(upstreams.map(_.map(_.addReference())))
+        override def duplicate(): Output = {
+          new Output(upstreams.map(_.map(_.duplicate())))
         }
       }
 

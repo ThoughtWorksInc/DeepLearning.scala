@@ -286,7 +286,7 @@ object DifferentiableDouble {
 
       protected def optimizer: Optimizer
 
-      override final def addReference() = this
+      override final def duplicate() = this
 
       override final def forward(any: Input) = this
 
