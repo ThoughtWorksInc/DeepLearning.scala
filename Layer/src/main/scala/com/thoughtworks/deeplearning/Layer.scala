@@ -47,7 +47,7 @@ object Layer {
   }
 
   /**
-    * Tape是对Data和Delta的封装，每个Tape都包含`backward()`,详细信息可参看[[Layer]]
+    * Tape is a wrapper for Data and Delta, and each Tape contains `backward ()`. For more information, see [[Layer]]
     */
   trait Tape extends AutoCloseable {
     type Data
@@ -84,60 +84,113 @@ object Layer {
 
 /**
   * 一个Layer表示一个神经网络。每个Layer可以作为子网络被包含在其它Layer中，构成更复杂的神经网络。Layer的嵌套结构可以用来表示数学公式或粗粒度神经网络结构。
-  * 当神经网络被编写完成后，其中大部分元素都是占位符，当网络开始运行时数据才真正进入到网络。
+  * 当神经网络被编写完成后，其中大部分元素都是占位符，当网络开始训练时数据才真正进入到网络。
   *
   * {{{
-  * val myLayer: Layer.Aux[Batch.Aux[Double, Double], Batch.Aux[Double, Double]] = {
-  *   Times(Plus(Literal(1.0), Identity[Double, Double]()), Literal(2.0))
+  * val myLayer: Layer.Aux[Tape.Aux[Double, Double], Tape.Aux[Double, Double]] = {
+  *   Times(Plus(Literal(1.0), Identity[Double, Double]()), Weight(2.0))
   * }
-  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Tape]],
-  * 而Tape包含[[com.thoughtworks.deeplearning.Layer.Tape.backward()]],所以Layer所组成的网络会包含输入和输出，正向传播和反向传播。
-  *
-  * @example{{{
-  *  val depthKernelKernel: Layer.Aux[Input, Tape.Aux[Int, Float]] =
-  *    Times(
-  *       Times(depth, Literal(kernel._1)),
-  *       Literal(kernel._2)
-  *     )
-  *  val bSeq: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] = Seq(kernelNumber, depthKernelKernel)
-  *  val reshapeWeightTo: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = DifferentiableSeq.Layers.ToSeq(bSeq)
-  *  val reshapedWeight = Reshape(weight, reshapeWeightTo)
   * }}}
   *
-  * 以上代码等价的数学公式可以用[[Symbolic]]风格API写作：`(1.0 + x) * 2.0`。
-  * [[com.thoughtworks.deeplearning.Double.Times]]、[[com.thoughtworks.deeplearning.Double.Plus]]都是 case class，因此myLayer是一个case class构成的嵌套结构的树。
+  * 以上代码等价的数学公式可以用[[Symbolic]]风格API写作：`(1.0 + x) * 2.0.toWeight`。（2.0.toWeight是变量的初始值，在神经网络迭代时，其值会更新）
+  * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Times Times]]、[[com.thoughtworks.deeplearning.DifferentiableDouble.Plus Plus]]都是 case class，
+  * 因此myLayer是一个case class构成的嵌套结构的树。`Times`和`Plus`都是占位符。
   *
-  * [[com.thoughtworks.deeplearning.Symbolic.Literal]]是一个包含常量的Layer。
-  * [[com.thoughtworks.deeplearning.Symbolic.Identity]]是一个输入和输出相同的Layer，它会将输入原样返回。Identity在这里是Input的占位符（Placeholder）
+  * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Weight Weight]]是一个包含权重的`Layer`，初始值是`2.0`。
+  * [[com.thoughtworks.deeplearning.Symbolic.Layers.Identity Identity]]是一个输入和输出相同的Layer，它会将输入原样返回。`Identity`在这里是`Input`的占位符。
+  * [[com.thoughtworks.deeplearning.Symbolic.Layers.Literal Literal]]是一个包含常量的`Layer`。
   *
-  * 对于一个`Layer.Aux[A,B]`，`A`是输入，`B`是输出，`A`和`B`都是一个[[com.thoughtworks.deeplearning.Layer.Batch]]，
-  * 给定一个a 其类型是 A，当网络开始运行时 a将被从最外层的Times一层一层向内传递最终传递给Identity，然后开始`forward`阶段，这时Times将从外向内一层一层递归调用`forward`，然后一层一层返回。
-  * `backward`阶段从最外层的Times开始，首先调用Times的outputBatch，Times的outputBatch就是Plus的outputBatch，Plus的outputBatch就是Identity的outputBatch，
-  * Identity的outputBatch最终是Input
+  * 网络每次训练称为一个迭代，分为[[forward]]和[[com.thoughtworks.deeplearning.Layer.Tape#backward backward]]两个阶段，构成一次完整的[[https://en.wikipedia.org/wiki/Backpropagation 反向传播]]流程。
+  *
+  * 在`Layer.Aux[A,B]`中调用[[forward]]时，`A`是输入类型，`B`是输出类型，`A`和`B`都是[[com.thoughtworks.deeplearning.Layer.Tape Tape]]。下面开始逐段解释代码：
+  *
+  * 例如：
+  * {{{
+  * val inputTape: Tape.Aux[Double, Double] = Literal(a)
+  * val outputTape = myLayer.forward(inputTape)
+  * }}}
+  *
+  *
+  * 当调用`myLayer.forward(inputData)`时，首先调用`Times`的`forward`，其伪代码如下：
+  * {{{
+  * final case class Times(operand1: Layer, operand2: Layer) extends Layer {
+  *   def forward(inputData: Tape): Output = {
+  *     val upstream1 = operand1.forward(input)
+  *     val upstream2 = operand2.forward(input)
+  *     new Output(upstream1, upstream2)//这里忽略具体实现，而关注递归细节
+  *   }
+  *   final class Output(upstream1: Tape, upstream2: Tape) extends Tape { ... }
+  * }
+  * }}}
+  *
+  * 在`myLayer.operand1`是`Plus`,`myLayer.operand2`是`Weight`，因此，upstream1和upstream2分别是`operand1`和`operand2` `forward` 的结果。
+  *
+  * 以此类推，`Plus`的`forward`代码与`Times`的`forward`类似，当调用`Plus`的`forward`时，[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus#operand1 operand1]]是`Literal`，[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus.operand2 operand2]]是`Identity`，这时会各自调用`Literal`和`Identity`的`forward`.
+  *
+  * 当调用`Literal`的`forward`时会原样返回输入。
+  *
+  * 当调用`Identity`的`forward`时会原样返回输入， `Identity`的`forward`的伪代码如下：
+  * {{{
+  * def forward(inputTape: Tape.Aux[Double, Double]) = inputTape
+  * }}}
+  *
+  * 当调用`Weight`的`forward`时会原样返回输入。
+  *
+  * myLayer.forward的返回值[[com.thoughtworks.deeplearning.DifferentiableDouble.Layer.Times.Output outputTape]] 是 [[com.thoughtworks.deeplearning.Layer.Tape Tape]]类型，所以最终会生成一棵[[com.thoughtworks.deeplearning.Layer.Tape Tape]]构成的树，结构和myLayer一样。
+  * 因此，通过层层传播 `myLayer.forward(inputTape)`最终被Identity原样返回，组合进新生成的Tape树。
+  *
+  * outputTape 的包含`forward` 的计算结果，计算结果可以用来 `backward` 比如
+  * {{{
+  *    try {
+  *      val loss = outputTape.value
+  *      outputTape.backward(loss)
+  *      loss
+  *    } finally {
+  *      outputTape.close()
+  *    }
+  * }}}
+  *
+  * outputTape.value 是数学公式 (1.0 + x) * 2.0.toWeight 的计算结果。
+  *
+  * outputTape.backward，即 Times.Output 的 backward ，伪代码如下：
+  * {{{
+  * case class Times(operand1: Layer, operand2: Layer) extends Layer {
+  *   def forward = ...
+  *   class Output(upstream1, upstream2) extends Tape {
+  *     private def upstreamDelta1(outputDelta: Double) = ???
+  *     private def upstreamDelta2(outputDelta: Double) = ???
+  *     override protected def backward(outputDelta: Double): Unit = {
+  *       upstream1.backward(upstreamDelta1(outputDelta))
+  *       upstream2.backward(upstreamDelta2(outputDelta))
+  *     }
+  *   }
+  * }
+  * }}}
+  *
+  * `outputTape.upstream1`和`outputTape.upstream2`分别是`operand1`和`operand2` `forward` 的结果。然后`outputTape.upstream1`和`outputTape.upstream2`分别进行`backward`。
+  *
+  * 以此类推，`Plus`的`backward`代码与`Times`的`backward`类似，当调用`Plus`的`backward`时，`upstream1`和`upstream2`分别是`Literal`和`Identity` `forward`的结果，这时会各自调用`upstream1`和`upstream2`的`backward`。
+  *
+  *
+  * `Weight`在`backward`时会更新`Weight`，参考[[com.thoughtworks.deeplearning.DifferentiableDouble.LearningRate#updateDouble updateDouble]]
+  *
   *
   * [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html Aux]]是一种实现了[[https://www.scala-lang.org/files/archive/spec/2.12/03-types.html type refinement]]的设计模式，可以用来限制类型参数的范围。
   *
-  * Times()`和`*`是等价的(可以参考[[com.thoughtworks.deeplearning.DifferentiableDouble#`Double*Double`]]的具体实现),
+  * `Times()`和`*`是等价的(可以参考[[com.thoughtworks.deeplearning.DifferentiableDouble#`Double*Double` `Double*Double`]]的具体实现),
   * `*`只是一个语法糖，其实最终还是调用`Times()`。嵌套方法调用是一种将多个Layer组合到一起的方法。
   *
-  * 将从最外面的Times()开始递归调用里面Plus()的forward方法，然后从里面的Plus()的Output开始递归调用外面Times()的backward方法。
-  *
-  * 当一个神经网络调用[[com.thoughtworks.deeplearning.DifferentiableAny#train]]时，会首先触发`forward`，开始一层一层递归调用内层网络的`forward`，
-  * `forward`调用结束后开始递归调用外层网络的`backward`，
-  *
-  * [[com.thoughtworks.deeplearning.DifferentiableAny#Compose]]是另外一种组合Layer的方法：
+  * [[com.thoughtworks.deeplearning.DifferentiableAny#Compose Compose]]是另外一种组合Layer的方法：
   *
   * {{{
   *  Compose(layer1,layer2)
   * }}}
   *
-  * 上述代码代表一种网络结构，layer2的output作为layer1的input然后组合成的新网络结构。
+  * 上述代码代表一种网络结构，layer2的output作为layer1的input然后组合成的新网络结构。在`forward`阶段，layer2会将其`forward`得到的`Output`返回给layer1，然后layer1开始`forward`，得到`Output`最终生成一棵case class组成的树。
+  * 在`backward`阶段，layer1的`Output`首先开始`backward`，然后layer2的`Output`开始`backward`。
   *
-  * layer2首先开始forward然后调用layer1的forward，backward则是先从layer1开始然后layer2开始backward。
-  *
-  *
-  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Batch]],
-  * 而Batch包含[[com.thoughtworks.deeplearning.Layer.Batch.backward()]],所以Layer所组成的神经网络会包含输入和输出，正向传播和反向传播。
+  * Layer包括Input，Output和forward，Input和Output都是[[com.thoughtworks.deeplearning.Layer.Tape Tape]],
+  * 而Tape包含[[com.thoughtworks.deeplearning.Layer.Tape#backward backward]],所以Layer所组成的神经网络会包含输入和输出，正向传播和反向传播。
   */
 trait Layer {
 
