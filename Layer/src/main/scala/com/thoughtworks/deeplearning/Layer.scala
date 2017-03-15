@@ -38,7 +38,12 @@ object Layer {
 
   object Tape {
 
-    /** @template */
+    /**
+      * A [[Tape]] whose [[Data]] and [[Delta]] are specified from type parameter `Data0` and `Delta0`.
+      *
+      * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
+      * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
+      */
     type Aux[+Data0, -Delta0] = Tape {
       type Data <: Data0
       type Delta >: Delta0
@@ -47,13 +52,20 @@ object Layer {
   }
 
   /**
-    * Tape是神经网络运行中的中间数据结构，它有包含四部分，数据(value)及其导数，`duplicate`和`backward`，
-    * `value`即`forward`的计算结果，`value`还有`backward`的功能
+    * Tape是神经网络运行中`forward`产生的中间数据结构,它包含`forward`的计算结果，并且可以用来`backward`。
     *
     * @see [[https://en.wikipedia.org/wiki/Automatic_differentiation tape auto differentiation]]
     */
   trait Tape extends AutoCloseable {
+
+    /**
+      * 限制`forward`的结果类型
+      */
     type Data
+
+    /**
+      * 限制导数的类型
+      */
     type Delta
 
     /**
@@ -62,8 +74,14 @@ object Layer {
       */
     def duplicate(): Tape.Aux[Data, Delta]
 
+    /**
+      * 传入导数进行`backward`
+      */
     protected def forceBackward(delta: Delta): Unit
 
+    /**
+      * 是否可以用来训练，可以训练的话就可以进行`backward`
+      */
     def isTrainable: Boolean
 
     @inline
@@ -73,10 +91,18 @@ object Layer {
       }
     }
 
+    /**
+      * `forward`的结果
+      */
     def value: Data
   }
 
-  /** @template */
+  /**
+    * A [[Layer]] whose [[Data]] and [[Delta]] are specified from type parameter `Data0` and `Delta0`.
+    *
+    * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
+    * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
+    */
   type Aux[-Input0 <: Tape, +Output0 <: Tape] =
     Layer {
       type Input >: Input0
@@ -102,8 +128,8 @@ object Layer {
   * }
   * }}}
   *
-  * 以上代码等价的数学公式可以用[[com.thoughtworks.deeplearning.Symbolic Symbolic API]]写作：`(1.0 + x) * 2.0.toWeight`。2.0.toWeight表示一个变量，其初始值是2，在神经网络迭代时，值会更新。
-  * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Times Times]]、[[com.thoughtworks.deeplearning.DifferentiableDouble.Plus Plus]]都是 case class，
+  * 以上代码等价的数学公式可以用[[Symbolic]]写作：`(1.0 + x) * 2.0.toWeight`。2.0.toWeight表示一个变量，其初始值是2，在神经网络迭代时，值会更新。
+  * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Times Times]]、[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus Plus]]都是 case class，
   * 因此myLayer是一个case class构成的嵌套结构的树。`Times`和`Plus`都是占位符。
   *
   * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Weight Weight]]是一个包含权重的`Layer`，初始值是`2.0`。
@@ -150,7 +176,7 @@ object Layer {
   *
   * 当调用`Weight`的`forward`时会原样返回输入。
   *
-  * myLayer.forward的返回值[[com.thoughtworks.deeplearning.DifferentiableDouble.Layer.Times.Output outputTape]] 是 [[com.thoughtworks.deeplearning.Layer.Tape Tape]]类型，所以最终会生成一棵[[com.thoughtworks.deeplearning.Layer.Tape Tape]]构成的树，结构和myLayer一样。
+  * myLayer.forward的返回值outputTape 是 [[com.thoughtworks.deeplearning.Layer.Tape Tape]]类型，所以最终会生成一棵[[com.thoughtworks.deeplearning.Layer.Tape Tape]]构成的树，结构和myLayer一样。
   * 因此，通过层层传播 `myLayer.forward(inputTape)`最终被Identity原样返回，组合进新生成的Tape树。
   *
   * outputTape 的包含`forward` 的计算结果，计算结果可以用来 `backward` 比如
@@ -187,22 +213,22 @@ object Layer {
   *
   * 以此类推，`Plus`的`backward`代码与`Times`的`backward`类似，当调用`Plus`的`backward`时，`upstream1`和`upstream2`分别是`Literal`和`Identity` `forward`的结果，这时会各自调用`upstream1`和`upstream2`的`backward`。
   *
-  * `Weight`在`backward`时会更新`Weight`，参考[[com.thoughtworks.deeplearning.DifferentiableDouble.LearningRate#updateDouble updateDouble]]
+  * `Weight`在`backward`时会更新`Weight`，参考[[com.thoughtworks.deeplearning.DifferentiableDouble.Optimizers.LearningRate#updateDouble updateDouble]]
   *
-  * === Aux & Symbolic API===
+  * === Aux & Symbolic API ===
   *
   * Layer.Aux[A,B]表示Input的类型是A，Output的类型是B。Tape.Aux[C,D]表示Data的类型是C，Delta的类型是D。
   * Layer.Aux和Type.Aux可以组合起来使用，比如Layer.Aux[Tape.Aux[A,B],Tape.Aux[C,D]]可以用来表示一个layer的输入类型是一个Tape，这个Tape的数据类型为A，delta类型为B，layer的输出类型是一个Tape，这个Tape的数据类型为C，delta类型为D。
   *
   * [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html Aux]]是一种实现了[[https://www.scala-lang.org/files/archive/spec/2.12/03-types.html type refinement]]的设计模式，可以用来限制类型参数的范围。
   *
-  * [[com.thoughtworks.deeplearning.Symbolic Symbolic API]]是一个语法糖，可以减少编写Aux的繁琐，详情请看[[com.thoughtworks.deeplearning.Symbolic Symbolic API]]
+  * 通常我们不会手写Aux类型，因为我们可以使用[[Symbolic]]实现同样的功能，例如在用于符号方法内部变量和返回值时：`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray]]` 和 `INDArray @Symbolic`
   *
   * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
   * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
   * @see [[https://www.scala-lang.org/files/archive/spec/2.12/03-types.html type refinement]]
   * @see [[https://en.wikipedia.org/wiki/Backpropagation Backpropagation]]
-  * @see [[com.thoughtworks.deeplearning.Symbolic Symbolic API]]
+  * @see [[Symbolic]]
   */
 trait Layer {
 
