@@ -1,84 +1,19 @@
 parallelExecution in Global := false
 
-sbt.dsl.dependsOn(
-  DifferentiableBoolean,
-  DifferentiableDouble,
-  DifferentiableINDArray,
-  DifferentiableHList,
-  DifferentiableCoproduct,
-  DifferentiableSeq,
-  DifferentiableAny,
-  DifferentiableNothing
-)
 
-lazy val Layer = project.dependsOn(`stateless-future-util`)
+lazy val DifferentiableKernel = project.dependsOn(OpenCL, OpenCLCodeGenerator)
 
-lazy val Symbolic = project.dependsOn(Layer)
-
-lazy val DifferentiableBoolean = project.dependsOn(Layer, BufferedLayer, Poly)
-
-lazy val DifferentiableDouble =
-  project.dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
-
-lazy val DifferentiableFloat =
-  project.dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
-
-val DoubleRegex = """(?i:double)""".r
-
-sourceGenerators in Compile in DifferentiableFloat += Def.task {
-  for {
-    doubleFile <- (unmanagedSources in Compile in DifferentiableDouble).value
-    relativeFile <- doubleFile.relativeTo((sourceDirectory in Compile in DifferentiableDouble).value)
-  } yield {
-    val doubleSource = IO.read(doubleFile, scala.io.Codec.UTF8.charSet)
-
-    val floatSource = DoubleRegex.replaceAllIn(doubleSource, { m =>
-      m.matched match {
-        case "Double" => "Float"
-        case "double" => "float"
-      }
-    })
-
-    val outputFile = (sourceManaged in Compile in DifferentiableFloat).value / relativeFile.getPath
-    IO.write(outputFile, floatSource, scala.io.Codec.UTF8.charSet)
-    outputFile
-  }
-}.taskValue
-
-lazy val DifferentiableInt =
-  project.dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
-
-lazy val Poly = project.dependsOn(Symbolic)
-
-lazy val DifferentiableAny = project.dependsOn(Symbolic)
-
-lazy val DifferentiableNothing = project.dependsOn(Symbolic)
-
-lazy val DifferentiableSeq = project.dependsOn(DifferentiableInt)
-
-lazy val DifferentiableINDArray =
-  project.dependsOn(DifferentiableInt, DifferentiableDouble, DifferentiableSeq)
-
-lazy val DifferentiableHList = project.dependsOn(Poly)
-
-lazy val DifferentiableCoproduct = project.dependsOn(DifferentiableBoolean)
-
-lazy val DifferentiableOpenCLBuffer = project.dependsOn(OpenCL, OpenCLCompiler, Layer)
-
-lazy val BufferedLayer = project.dependsOn(Layer)
-
-// Rename to OpenCLCompiler?
-lazy val OpenCLCompiler = project.dependsOn(Memory)
+lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
 lazy val Memory = project
 
-lazy val Releasable = project
+lazy val CheckedCloseable = project
 
 lazy val `stateless-future` = project
 
 lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
-lazy val OpenCL = project.dependsOn(Releasable, `stateless-future`, Memory)
+lazy val OpenCL = project.dependsOn(CheckedCloseable, `stateless-future`, Memory)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
@@ -95,14 +30,6 @@ publishArtifact := false
 lazy val unidoc = project
   .enablePlugins(TravisUnidocTitle)
   .settings(
-    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
-      import Ordering.Implicits._
-      if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
-        inAnyProject -- inProjects(DifferentiableINDArray)
-      } else {
-        inAnyProject
-      }
-    },
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )
 
