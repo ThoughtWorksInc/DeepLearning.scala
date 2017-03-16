@@ -86,19 +86,19 @@ fork := true</code></pre>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:1.0.0`</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:2.0.0`</span>
 
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC5`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC5`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC7`</span>
 
 <span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.0`</span>
 
@@ -107,7 +107,13 @@ fork := true</code></pre>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableAny._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._</span>
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Lift._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.</span><span class="o">{</span>
+  <span class="nc">DifferentiableHList</span><span class="o">,</span>
+  <span class="nc">DifferentiableINDArray</span><span class="o">,</span>
+  <span class="nc">Layer</span><span class="o">,</span>
+  <span class="nc">Symbolic</span>
+<span class="o">}</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathFunctions._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathOps</span>
 <span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
@@ -130,7 +136,7 @@ fork := true</code></pre>
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[1]:</div>
+<div class="prompt output_prompt">Out[22]:</div>
 
 
 
@@ -138,21 +144,21 @@ fork := true</code></pre>
 <pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$plugin.$                                                                             
 
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                           
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                               
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                           
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                              
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                             
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                             
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                 
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                    
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                   
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                  
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                  
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                      
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                     
 
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             
@@ -168,7 +174,14 @@ fork := true</code></pre>
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Lift._
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Symbolic._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.{
+  DifferentiableHList,
+  DifferentiableINDArray,
+  Layer,
+  Symbolic
+}
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Poly.MathFunctions._
 </span>
@@ -231,7 +244,7 @@ fork := true</code></pre>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Like a <code>scala.Function</code>, a neural network has its own input types and output types.</p>
-<p>For example, the type of the neural network that accepts an N-dimensional array and returns another N-dimensional array is <code>(INDArray &lt;=&gt; INDArray)##T</code>.</p>
+<p>For example, the type of the neural network that accepts an N-dimensional array and returns another N-dimensional array is <code>(INDArray &lt;=&gt; INDArray)@Symbolic</code>.</p>
 
 </div>
 </div>
@@ -241,7 +254,7 @@ fork := true</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>val myNeuralNetwork: (INDArray &lt;=&gt; INDArray)##T = ???</p>
+<p>val myNeuralNetwork = ???</p>
 
 </div>
 </div>
@@ -251,8 +264,8 @@ fork := true</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>In <code>(A &lt;=&gt; B)##T</code>, A is the input type, and B is the output type. For the example above, both the input type and the output type are <code>INDArray</code>.</p>
-<p><code>##T</code> is a syntactic sugar to create implicit dependent types. See <a href="https://github.com/ThoughtWorksInc/implicit-dependent-type">implicit-dependent-type</a> for more information about <code>##</code>.</p>
+<p>In <code>(A &lt;=&gt; B)@Symbolic</code>, A is the input type, and B is the output type. For the example above, both the input type and the output type are <code>INDArray</code>.</p>
+<p><code>@Symbolic</code> is a syntactic sugar to create implicit dependent types. See <a href="https://github.com/ThoughtWorksInc/implicit-dependent-type">implicit-dependent-type</a> for more information about <code>##</code>.</p>
 <p>The above code throws an <code>NotImplementedError</code> because we have not been implemtnted the neural network.
 In later sections of this article, you will replace <code>???</code> to a valid neural network.</p>
 
@@ -317,7 +330,7 @@ You can create weight variables via <code>toWeight</code> method, given its init
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">implicit</span> <span class="k">def</span> <span class="n">optimizer</span><span class="k">:</span> <span class="kt">Optimizer</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LearningRate</span> <span class="o">{</span>
@@ -334,7 +347,7 @@ You can create weight variables via <code>toWeight</code> method, given its init
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[2]:</div>
+<div class="prompt output_prompt">Out[23]:</div>
 
 
 
@@ -350,12 +363,12 @@ You can create weight variables via <code>toWeight</code> method, given its init
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">createMyNeuralNetwork</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">createMyNeuralNetwork</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">initialValueOfWeight</span> <span class="k">=</span> <span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">1</span><span class="o">)</span>
-  <span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">INDArray</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="n">initialValueOfWeight</span><span class="o">.</span><span class="n">toWeight</span>
+  <span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="n">initialValueOfWeight</span><span class="o">.</span><span class="n">toWeight</span>
   <span class="n">input</span> <span class="n">dot</span> <span class="n">weight</span>
 <span class="o">}</span>
 </pre></div>
@@ -369,7 +382,7 @@ You can create weight variables via <code>toWeight</code> method, given its init
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[3]:</div>
+<div class="prompt output_prompt">Out[24]:</div>
 
 
 
@@ -401,7 +414,7 @@ and <code>To</code> is the placeholder type for return values and other local va
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">myNeuralNetwork</span> <span class="k">=</span> <span class="n">createMyNeuralNetwork</span>
@@ -416,23 +429,12 @@ and <code>To</code> is the placeholder type for return values and other local va
 
 
 <div class="output_area">
-<div class="prompt"></div>
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>SLF4J: Failed to load class &#34;org.slf4j.impl.StaticLoggerBinder&#34;.
-SLF4J: Defaulting to no-operation (NOP) logger implementation
-SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-<div class="prompt output_prompt">Out[4]:</div>
+<div class="prompt output_prompt">Out[25]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">myNeuralNetwork</span>: (<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">T</span> = Dot(Identity(),Weight([0.76, -1.34, -1.45]))</pre>
+<pre><span class="ansi-cyan-fg">myNeuralNetwork</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">T</span> = Dot(Identity(),Weight([-0.68, 0.68, -1.38]))</pre>
 </div>
 
 </div>
@@ -460,10 +462,10 @@ and <code>myNeuralNetwork.predict(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">lossFunction</span><span class="o">(</span><span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="kt">From</span><span class="o">[</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">To</span><span class="o">[</span><span class="kt">Double</span><span class="o">]#</span><span class="k">#</span><span class="n">T</span> <span class="k">=</span> <span class="o">{</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">lossFunction</span><span class="o">(</span><span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="o">(</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">)</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">input</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">head</span>
   <span class="k">val</span> <span class="n">expectedOutput</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
   <span class="n">abs</span><span class="o">(</span><span class="n">myNeuralNetwork</span><span class="o">.</span><span class="n">compose</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="o">-</span> <span class="n">expectedOutput</span><span class="o">).</span><span class="n">sum</span>
@@ -479,7 +481,7 @@ and <code>myNeuralNetwork.predict(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[5]:</div>
+<div class="prompt output_prompt">Out[26]:</div>
 
 
 
@@ -508,7 +510,7 @@ The first array is the input data used to train the neural network, and the seco
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="nc">Array</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">6</span><span class="o">,</span> <span class="mi">9</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">13</span><span class="o">,</span> <span class="mi">15</span><span class="o">,</span> <span class="mi">17</span><span class="o">)).</span><span class="n">toNDArray</span>
@@ -524,7 +526,7 @@ The first array is the input data used to train the neural network, and the seco
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[6]:</div>
+<div class="prompt output_prompt">Out[27]:</div>
 
 
 
@@ -543,15 +545,15 @@ The first array is the input data used to train the neural network, and the seco
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span> <span class="k">for</span> <span class="o">(</span><span class="k">_</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">until</span> <span class="mi">30</span><span class="o">)</span> <span class="k">yield</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span> <span class="k">for</span> <span class="o">(</span><span class="k">_</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">until</span> <span class="mi">50</span><span class="o">)</span> <span class="k">yield</span>
   <span class="n">lossFunction</span><span class="o">.</span><span class="n">train</span><span class="o">(</span><span class="n">input</span> <span class="o">::</span> <span class="n">expectedOutput</span> <span class="o">::</span> <span class="nc">HNil</span><span class="o">)</span>
 <span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
 <span class="k">val</span> <span class="n">plot</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
   <span class="nc">Scatter</span><span class="o">(</span>
-   <span class="mi">0</span> <span class="n">until</span> <span class="mi">30</span> <span class="n">by</span> <span class="mi">1</span><span class="o">,</span>
+   <span class="mi">0</span> <span class="n">until</span> <span class="mi">50</span> <span class="n">by</span> <span class="mi">1</span><span class="o">,</span>
    <span class="n">lossSeq</span>
   <span class="o">)</span>
 <span class="o">)</span>
@@ -604,7 +606,7 @@ The first array is the input data used to train the neural network, and the seco
 
 
 <div class="output_html rendered_html output_subarea ">
-<div class="chart" id="plot-1466655355"></div>
+<div class="chart" id="plot-733358948"></div>
 </div>
 
 </div>
@@ -615,18 +617,18 @@ The first array is the input data used to train the neural network, and the seco
 
 
 
-<div id="a18c4794-9bee-4ac1-83c1-11cad8820f91"></div>
+<div id="81291d91-28c9-40b4-8eb4-6323458d6edd"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#a18c4794-9bee-4ac1-83c1-11cad8820f91');
+var element = $('#81291d91-28c9-40b4-8eb4-6323458d6edd');
 requirejs(["plotly"], function(Plotly) {
   (function () {
-  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0,96.0,97.0,98.0,99.0],"y":[63.65337371826172,62.12937927246094,60.60538101196289,59.08137893676758,57.5573844909668,56.03338623046875,54.50938415527344,52.985389709472656,51.461387634277344,49.9373893737793,48.41339111328125,46.8893928527832,45.365394592285156,43.84139633178711,42.31739807128906,40.79339599609375,39.2693977355957,37.745399475097656,36.221397399902344,34.69739532470703,33.17339324951172,31.649394989013672,30.12539291381836,28.60139274597168,27.077392578125,25.553390502929688,24.029390335083008,22.505390167236328,20.981388092041016,19.457387924194336,17.933387756347656,16.409385681152344,14.885384559631348,13.361383438110352,11.837384223937988,10.313384056091309,8.789382934570312,8.912578582763672,8.712579727172852,8.512578964233398,8.777383804321289,8.816577911376953,8.61658000946045,8.41657829284668,8.76538372039795,8.720579147338867,8.520580291748047,8.320578575134277,8.753385543823242,8.624579429626465,8.424579620361328,8.237385749816895,8.728580474853516,8.528579711914062,8.32857894897461,8.225387573242188,8.632579803466797,8.432579040527344,8.232580184936523,8.213388442993164,8.536581993103027,8.336580276489258,8.136580467224121,8.201388359069824,8.440581321716309,8.240579605102539,8.040580749511719,8.189390182495117,8.34458065032959,8.14457893371582,7.944580554962158,8.177389144897461,8.248580932617188,8.048580169677734,7.8485798835754395,8.165390014648438,8.152580261230469,7.952579975128174,7.752580165863037,8.153390884399414,8.05657958984375,7.856579780578613,7.656580924987793,8.141392707824707,7.960579872131348,7.760580062866211,7.625392436981201,8.064580917358398,7.8645806312561035,7.664580345153809,7.613393306732178,7.968580722808838,7.768580913543701,7.568580627441406,7.6013946533203125,7.872580051422119,7.672581195831299,7.472580909729004,7.589395523071289,7.776581764221191]};
+  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0],"y":[40.56621170043945,39.042213439941406,37.518211364746094,35.99421310424805,34.47021484375,32.94621276855469,31.422212600708008,29.898212432861328,28.37421417236328,26.85021209716797,25.326213836669922,23.80221176147461,22.27821159362793,20.75421142578125,19.230213165283203,17.706212997436523,16.182212829589844,14.65821647644043,13.13421630859375,11.610217094421387,10.08621883392334,8.562219619750977,7.038219928741455,5.51422119140625,4.454054832458496,4.494223594665527,4.758053779602051,4.5580549240112305,4.358057022094727,4.482222557067871,4.662055969238281,4.46205472946167,4.262053489685059,4.470221042633057,4.566054344177246,4.366055488586426,4.166055679321289,4.458223342895508,4.470055103302002,4.270053386688232,4.070054054260254,4.446221828460693,4.374053001403809,4.174055099487305,3.9740543365478516,4.434224605560303,4.2780537605285645,4.078053951263428,3.9182229042053223,4.382052421569824]};
 
   var data = [data0];
   var layout = {"title":"loss on time"};
 
-  Plotly.plot('plot-1466655355', data, layout);
+  Plotly.plot('plot-733358948', data, layout);
 })();
 });
       
@@ -636,23 +638,23 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[7]:</div>
+<div class="prompt output_prompt">Out[28]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">lossSeq</span>: <span class="ansi-green-fg">Seq</span>[<span class="ansi-green-fg">Double</span>] = <span class="ansi-yellow-fg">List</span>(
-  <span class="ansi-green-fg">63.65337371826172</span>,
-  <span class="ansi-green-fg">62.12937927246094</span>,
-  <span class="ansi-green-fg">60.60538101196289</span>,
-  <span class="ansi-green-fg">59.08137893676758</span>,
-  <span class="ansi-green-fg">57.5573844909668</span>,
-  <span class="ansi-green-fg">56.03338623046875</span>,
-  <span class="ansi-green-fg">54.50938415527344</span>,
-  <span class="ansi-green-fg">52.985389709472656</span>,
-  <span class="ansi-green-fg">51.461387634277344</span>,
-  <span class="ansi-green-fg">49.9373893737793</span>,
-  <span class="ansi-green-fg">48.41339111328125</span>,
+<pre><span class="ansi-cyan-fg">lossSeq</span>: <span class="ansi-green-fg">collection</span>.<span class="ansi-green-fg">immutable</span>.<span class="ansi-green-fg">IndexedSeq</span>[<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>.<span class="ansi-green-fg">&lt;refinement&gt;</span>.this.type.<span class="ansi-green-fg">OutputData</span>] = <span class="ansi-yellow-fg">Vector</span>(
+  <span class="ansi-green-fg">40.56621170043945</span>,
+  <span class="ansi-green-fg">39.042213439941406</span>,
+  <span class="ansi-green-fg">37.518211364746094</span>,
+  <span class="ansi-green-fg">35.99421310424805</span>,
+  <span class="ansi-green-fg">34.47021484375</span>,
+  <span class="ansi-green-fg">32.94621276855469</span>,
+  <span class="ansi-green-fg">31.422212600708008</span>,
+  <span class="ansi-green-fg">29.898212432861328</span>,
+  <span class="ansi-green-fg">28.37421417236328</span>,
+  <span class="ansi-green-fg">26.85021209716797</span>,
+  <span class="ansi-green-fg">25.326213836669922</span>,
 <span class="ansi-yellow-fg">...</span>
 <span class="ansi-cyan-fg">plot</span>: <span class="ansi-green-fg">Seq</span>[<span class="ansi-green-fg">Scatter</span>] = <span class="ansi-yellow-fg">List</span>(
   <span class="ansi-yellow-fg">Scatter</span>(
@@ -667,7 +669,7 @@ requirejs(["plotly"], function(Plotly) {
           <span class="ansi-green-fg">5.0</span>,
           <span class="ansi-green-fg">6.0</span>,
 <span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">res6_4</span>: <span class="ansi-green-fg">String</span> = <span class="ansi-green-fg">&#34;plot-1466655355&#34;</span></pre>
+<span class="ansi-cyan-fg">res27_3</span>: <span class="ansi-green-fg">String</span> = <span class="ansi-green-fg">&#34;plot-733358948&#34;</span></pre>
 </div>
 
 </div>
@@ -678,7 +680,7 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="c1">// The loss should close to zero</span>
@@ -697,7 +699,7 @@ requirejs(["plotly"], function(Plotly) {
 <div class="prompt"></div>
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>loss: 7.576580047607422
+<pre>loss: 4.18205451965332
 </pre>
 </div>
 </div>
@@ -708,7 +710,7 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="c1">// The prediction result should close to Array(Array(1), Array(0)).toNDArray</span>
@@ -727,7 +729,7 @@ requirejs(["plotly"], function(Plotly) {
 <div class="prompt"></div>
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>result: [-1.03, -2.04, 2.50]
+<pre>result: [-0.04, 0.50, 2.64]
 </pre>
 </div>
 </div>
