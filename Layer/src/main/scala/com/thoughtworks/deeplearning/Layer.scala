@@ -39,7 +39,7 @@ object Layer {
   object Tape {
 
     /**
-      * A [[Tape]] whose [[Data]] and [[Delta]] are specified from type parameter `Data0` and `Delta0`.
+      * A [[Tape]] whose [[Tape.Data Data]] and [[Tape.Delta Delta]] are specified from type parameter `Data0` and `Delta0`.
       *
       * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
       * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
@@ -107,7 +107,7 @@ object Layer {
   }
 
   /**
-    * A [[Layer]] whose [[Input]] and [[Output]] are specified from type parameter `Input0` and `Output0`.
+    * A [[Layer]] whose [[Layer.Input Input]] and [[Layer.Output Output]] are specified from type parameter `Input0` and `Output0`.
     *
     * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
     * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
@@ -174,18 +174,18 @@ object Layer {
   *
   * 在`myLayer.operand1`是`Plus`,`myLayer.operand2`是`Weight`，因此，`upstream1`和`upstream2`分别是`operand1`和`operand2` `forward` 的结果。
   *
-  * 以此类推，`Plus`的`forward`代码与`Times`的`forward`类似，当调用`Plus`的`forward`时，[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus#operand1 operand1]]是`Literal`，[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus.operand2 operand2]]是`Identity`，这时会各自调用`Literal`和`Identity`的`forward`.
+  * 以此类推，`Plus`的`forward`代码与`Times`的`forward`类似，当调用`Plus`的`forward`时，[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus#operand1 operand1]]是`Literal`，[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus.operand2 operand2]]是`Identity`，这时会各自调用`Literal`和`Identity`的`forward`。
   *
   * 当调用`Identity`的`forward`时会原样返回输入， `Identity`的`forward`的伪代码如下：
   * {{{
   * def forward(inputTape: Tape.Aux[Double, Double]) = inputTape
   * }}}
-  * 所以`Input`，即 数学公式`(1.0 + x) * 2.0.toWeight` 中的`x`，这样`Input`就被传递给了神经网络
+  * 所以`Input`即 数学公式`(1.0 + x) * 2.0.toWeight` 中的`x`，这样`Input`就被传递给了神经网络。
   *
   * `myLayer.forward`的返回值`outputTape` 是 `Tape`类型，所以最终会生成一棵`Tape`构成的树，结构和`myLayer`一样。
-  * 因此，通过层层传播 `myLayer.forward(inputTape)`最终被`Identity`原样返回，组合进新生成的[[com.thoughtworks.deeplearning.Layer.Tape Tape]]树。
+  * 因此，通过层层传播 `myLayer.forward(inputTape)`最终被`Identity`原样返回，组合进新生成的`Tape`树。
   *
-  * `outputTape` 的包含`forward` 的计算结果，计算结果可以用来 `backward` 比如
+  * `outputTape` 的包含`forward` 的计算结果，计算结果可以用来 `backward` 比如：
   * {{{
   *    try {
   *      val loss = outputTape.value
@@ -219,7 +219,7 @@ object Layer {
   *
   * 以此类推，`Plus`的`backward`代码与`Times`的`backward`类似，当调用`Plus`的`backward`时，`upstream1`和`upstream2`分别是`Literal`和`Identity` `forward`的结果，这时会各自调用`upstream1`和`upstream2`的`backward`。
   *
-  * `Weight`在`backward`时会更新`Weight`，参考[[com.thoughtworks.deeplearning.DifferentiableDouble.Optimizers.LearningRate#updateDouble updateDouble]]
+  * `Weight`在`backward`时会更新自己，参考[[com.thoughtworks.deeplearning.DifferentiableDouble.Optimizers.LearningRate#updateDouble updateDouble]]
   *
   * === Aux & Symbolic API ===
   *
@@ -228,7 +228,7 @@ object Layer {
   *
   * [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html Aux]]是一种实现了[[https://www.scala-lang.org/files/archive/spec/2.12/03-types.html type refinement]]的设计模式，可以用来限制类型参数的范围。
   *
-  * 通常我们不会手写Aux类型，因为我们可以使用`Symbolic`实现同样的功能，例如在用于符号方法内部变量和返回值时：`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray` 和 `INDArray @Symbolic` 是等价的，所以我们经常使用`Symbolic`来替代`Aux`的写法。
+  * 通常我们不会手写`Aux`类型，因为我们可以使用`Symbolic`实现同样的功能，例如在用于符号方法内部变量和返回值时：`Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray` 和 `INDArray @Symbolic` 是等价的，所以我们经常使用`Symbolic`来替代`Aux`的写法。
   *
   * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
   * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
