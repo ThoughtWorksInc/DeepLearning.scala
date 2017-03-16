@@ -19,6 +19,9 @@ filename: CNNs.ipynb
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p><a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。</p>
+<p>参考：
+<a href="http://cs231n.github.io/convolutional-networks/">convolutionalNetworks</a> &amp; <a href="https://zhuanlan.zhihu.com/p/22038289?refer=deeplearning.scala">卷积神经网络</a></p>
+<p><a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">Mini-Batch Gradient Descent</a>: 在大规模数据训练时，数据可以达到百万级量级。如果计算整个训练集，来获得仅仅一个参数的更新速度就太慢了。一个常用的方法是计算训练集中的小批量（batches）数据以提升参数更新速度。</p>
 
 </div>
 </div>
@@ -28,34 +31,17 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#20934;&#22791;&#24037;&#20316;">&#20934;&#22791;&#24037;&#20316;<a class="anchor-link" href="#&#20934;&#22791;&#24037;&#20316;">&#182;</a></h2><p>1.创建一个SBT项目，并引入相关依赖（参照<a href="https://github.com/ThoughtWorksInc/DeepLearning.scala/wiki/Getting-Started">Getting Started</a> 或者将下面的依赖引入build.sbt, 注意DeepLearning.scala暂不支持scala2.12.X，不久就会增加支持)</p>
+<h2 id="&#20934;&#22791;&#24037;&#20316;">&#20934;&#22791;&#24037;&#20316;<a class="anchor-link" href="#&#20934;&#22791;&#24037;&#20316;">&#182;</a></h2><p>参考<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/SoftmaxLinearClassifier.html#准备工作">SoftmaxLinearClassifier</a></p>
 
-<pre><code>libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablenothing" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableseq" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiabledouble" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablefloat" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablehlist" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablecoproduct" % "latest.release"
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableindarray" % "latest.release"
-
-addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "latest.release")
-
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-
-fork := true</code></pre>
-<p>2.<a href="https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz">下载CIFAR-10 binary version (suitable for C programs)</a>，文件大小162 MB，md5sum：c32a1d4ab5d03f1284b67883e8d87530</p>
-<p>3.将下载好的文件解压到src/main/resources目录。</p>
-<p>4.Scala类ReadCIFAR10ToNDArray用于从上面的文件中读取图片及其标签数据并做归一化处理（<a href="https://www.cs.toronto.edu/~kriz/cifar.html">更多信息</a>）</p>
-<p>5.Scala类Utils主要是一些工具方法</p>
-<p>5.参考资料：Convolutional Neural Networks <a href="http://cs231n.github.io/convolutional-networks/">English</a>，<a href="https://zhuanlan.zhihu.com/p/22038289?refer=intelligentunit">中文</a></p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2><p>import 所需的依赖</p>
 
 </div>
 </div>
@@ -91,9 +77,9 @@ fork := true</code></pre>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableInt._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableSeq._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._</span>
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer.Tape.Aux</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer.Batch.Aux</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning._</span>
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer.</span><span class="o">{</span><span class="nc">Aux</span><span class="o">,</span> <span class="nc">Tape</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer.</span><span class="o">{</span><span class="nc">Aux</span><span class="o">,</span> <span class="nc">Batch</span><span class="o">}</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic.Layers.Identity</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathFunctions._</span>
@@ -195,11 +181,11 @@ Compiling Utils.sc
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Layer.Tape.Aux
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Layer.Batch.Aux
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning._
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Layer.{Aux, Tape}
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Layer.{Aux, Batch}
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 </span>
@@ -267,21 +253,7 @@ Compiling Utils.sc
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>5.<a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">Mini-Batch Gradient Descent</a>: 在大规模数据训练时，数据可以达到百万级量级。如果计算整个训练集，来获得仅仅一个参数的更新速度就太慢了。一个常用的方法是计算训练集中的小批量（batches）数据以提升参数更新速度。
-[
-6.参考：<a href="http://cs231n.github.io/convolutional-networks/">convolutionalNetworks</a> &amp; <a href="https://zhuanlan.zhihu.com/p/22038289?refer=deeplearning.scala">卷积神经网络</a></p>
-<p>7.如果你使用IntelliJ或者eclipse等其它IDE，智能提示可能会失效，代码有部分可能会爆红，这是IDE的问题，代码本身并无问题。</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2><p>1.新建一个Scala object CNNs</p>
-<p>2.从CIFAR10 database中读取测试数据的图片和标签信息</p>
+<p>从CIFAR10 database中读取测试数据的图片和标签信息</p>
 
 </div>
 </div>
@@ -343,7 +315,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>3.分离和处理图像和标签数据,设置全局变量</p>
+<p>分离和处理图像和标签数据,设置全局变量</p>
 
 </div>
 </div>
@@ -426,7 +398,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>4.设置学习率，这里使用Adam和L2Regularization组合的方式</p>
+<p>设置学习率，这里使用Adam和L2Regularization组合的方式</p>
 
 </div>
 </div>
@@ -487,7 +459,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>5.编写卷积层,这是一个先进行卷积计算再计算Relu的layer</p>
+<p>编写卷积层,这是一个先进行卷积计算再计算Relu的layer</p>
 
 </div>
 </div>
@@ -544,7 +516,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>6.编写softmax函数</p>
+<p>编写softmax函数</p>
 
 </div>
 </div>
@@ -588,7 +560,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>7.编写一个全连接层，这是一个先计算全连接再计算softmax的layer</p>
+<p>编写一个全连接层，这是一个先计算全连接再计算softmax的layer</p>
 
 </div>
 </div>
@@ -639,7 +611,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>8.利用上面定义的layer，组合一个由多个卷积层，全连接层和softmax层组成的网络</p>
+<p>利用上面定义的layer，组合一个由多个卷积层，全连接层和softmax层组成的网络</p>
 
 </div>
 </div>
@@ -692,7 +664,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 <div class="output_text output_subarea output_execute_result">
 <pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">hiddenLayer</span>
-<span class="ansi-cyan-fg">predictor</span>: (<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">T</span> = Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum(Exp(Identity()),WrappedArray(1)))),PlusINDArray(Dot(Reshape(Identity(),ToSeq(ArrayBuffer(Get(Shape(Identity()),0), Literal(3072)))),Weight([[-0.47, -0.43, 0.14, 0.14, 0.64, 0.02, -0.10, 0.26, -0.35, 0.32],
+<span class="ansi-cyan-fg">predictor</span>: (<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">T</span> = Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum(Exp(Identity()),WrappedArray(1)))),PlusINDArray(Dot(Reshape(Identity(),ToSeq(ArrayBatch(Get(Shape(Identity()),0), Literal(3072)))),Weight([[-0.47, -0.43, 0.14, 0.14, 0.64, 0.02, -0.10, 0.26, -0.35, 0.32],
  [0.06, 0.36, 0.05, -0.21, 0.07, -0.39, 0.27, 0.39, -0.81, 0.18],
 <span class="ansi-yellow-fg">...</span></pre>
 </div>
@@ -708,7 +680,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>9.编写损失函数Loss Function，将此次判断的结果和真实结果进行计算得出cross-entropy loss并返回</p>
+<p>编写损失函数Loss Function，将此次判断的结果和真实结果进行计算得出cross-entropy loss并返回</p>
 
 </div>
 </div>
@@ -754,7 +726,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>10.组合输入层和隐含层</p>
+<p>组合输入层和隐含层</p>
 
 </div>
 </div>
@@ -804,7 +776,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>11.编写train神经网络的function</p>
+<p>编写train神经网络的function</p>
 
 </div>
 </div>
@@ -871,7 +843,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>12.开始训练神经网络并观察每次训练loss的变化，loss的变化趋势是降低，但是不是每次都降低(前途是光明的，道路是曲折的),注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参</p>
+<p>开始训练神经网络并观察每次训练loss的变化，loss的变化趋势是降低，但是不是每次都降低(前途是光明的，道路是曲折的),注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参</p>
 
 </div>
 </div>
@@ -939,7 +911,7 @@ train loss : 0.2774548053741455
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>13.使用trainLoss，trainAccuracy和testAccuracy绘图</p>
+<p>使用trainLoss，trainAccuracy和testAccuracy绘图</p>
 
 </div>
 </div>
@@ -1028,10 +1000,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="e189f730-6375-410d-bf70-a86d287af763"></div>
+<div id="778b7858-bbb2-431e-bf40-16bf404156f0"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#e189f730-6375-410d-bf70-a86d287af763');
+var element = $('#778b7858-bbb2-431e-bf40-16bf404156f0');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
