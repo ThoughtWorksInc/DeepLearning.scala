@@ -1,8 +1,10 @@
 parallelExecution in Global := false
 
-lazy val DifferentiableKernel = project.dependsOn(OpenCL, OpenCLCodeGenerator)
+lazy val DifferentiableKernel = project.dependsOn(OpenCL, OpenCLCodeGenerator, Layer)
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
+
+lazy val Layer = project.dependsOn(`stateless-future`)
 
 lazy val Memory = project
 
@@ -21,7 +23,10 @@ publishArtifact := false
 lazy val unidoc = project
   .enablePlugins(TravisUnidocTitle)
   .settings(
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value,
+    scalaOrganization := "org.typelevel",
+    scalacOptions += "-Yliteral-types"
   )
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
