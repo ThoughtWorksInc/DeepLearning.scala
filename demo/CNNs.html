@@ -28,7 +28,7 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2>
+<h2 id="&#24341;&#20837;&#20381;&#36182;">&#24341;&#20837;&#20381;&#36182;<a class="anchor-link" href="#&#24341;&#20837;&#20381;&#36182;">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -93,7 +93,7 @@ filename: CNNs.ipynb
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight</span>
 <span class="k">import</span> <span class="nn">scala.util.Random</span>
 
-<span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">5</span><span class="o">)</span><span class="c1">//减少输出的行数，避免页面输出太长</span>
+<span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">2</span><span class="o">)</span><span class="c1">//减少输出的行数，避免页面输出太长</span>
 
 <span class="k">import</span> <span class="nn">$file.ReadCIFAR10ToNDArray</span><span class="o">,</span><span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="k">_</span>
 <span class="k">import</span> <span class="nn">$file.Utils</span><span class="o">,</span><span class="nc">Utils</span><span class="o">.</span><span class="k">_</span>
@@ -234,6 +234,15 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;">&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;<a class="anchor-link" href="#&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <p>类似<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/TwoLayerNet.html">前一节</a>从CIFAR10 database中读取和处理测试数据的图片和标签信息</p>
 
 </div>
@@ -310,6 +319,24 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="&#35774;&#32622;&#23398;&#20064;&#29575;">&#35774;&#32622;&#23398;&#20064;&#29575;<a class="anchor-link" href="#&#35774;&#32622;&#23398;&#20064;&#29575;">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <p>跟前一节类似，这里使用<a href="https://en.wikipedia.org/wiki/Adam">Adam</a>和L2Regularization组合的方式设置学习率。</p>
 
 </div>
@@ -374,7 +401,16 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>编写卷积层,这是一个先进行卷积计算再计算Relu的神经网络，这里设置kernel size为3*3，padding和stride在两个方向都为1。</p>
+<h3 id="&#32534;&#20889;&#21367;&#31215;&#23618;">&#32534;&#20889;&#21367;&#31215;&#23618;<a class="anchor-link" href="#&#32534;&#20889;&#21367;&#31215;&#23618;">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>这是一个先进行卷积计算再计算Relu的神经网络，这里设置kernel size为3*3，padding和stride在两个方向都为1。</p>
 
 </div>
 </div>
@@ -440,6 +476,15 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">c
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="&#32534;&#20889;softmax&#20998;&#31867;&#22120;">&#32534;&#20889;softmax&#20998;&#31867;&#22120;<a class="anchor-link" href="#&#32534;&#20889;softmax&#20998;&#31867;&#22120;">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <p>跟上一节类似，编写softmax和全连接层。</p>
 
 </div>
@@ -491,6 +536,15 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="&#26500;&#24314;&#19968;&#20010;&#21253;&#21547;16&#20010;&#21367;&#31215;&#23618;&#30340;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#19968;&#20010;&#21253;&#21547;16&#20010;&#21367;&#31215;&#23618;&#30340;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#19968;&#20010;&#21253;&#21547;16&#20010;&#21367;&#31215;&#23618;&#30340;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h3>
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
@@ -581,8 +635,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">h
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>跟上一节相同，编写损失函数Loss Function并组合输入层和隐含层</p>
-
+<h3 id="&#32534;&#20889;LossFunction&#24182;&#32452;&#21512;&#36755;&#20837;&#23618;&#21644;&#38544;&#21547;&#23618;">&#32534;&#20889;LossFunction&#24182;&#32452;&#21512;&#36755;&#20837;&#23618;&#21644;&#38544;&#21547;&#23618;<a class="anchor-link" href="#&#32534;&#20889;LossFunction&#24182;&#32452;&#21512;&#36755;&#20837;&#23618;&#21644;&#38544;&#21547;&#23618;">&#182;</a></h3>
 </div>
 </div>
 </div>
@@ -633,6 +686,15 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">n
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#35757;&#32451;&#31070;&#32463;&#32593;&#32476;">&#35757;&#32451;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#35757;&#32451;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2>
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
@@ -870,10 +932,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="383b39b5-9b13-43c5-8b03-a08fd87c1c61"></div>
+<div id="3410b92b-5428-49c0-836b-9cd0ef78619c"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#383b39b5-9b13-43c5-8b03-a08fd87c1c61');
+var element = $('#3410b92b-5428-49c0-836b-9cd0ef78619c');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
@@ -920,6 +982,22 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#24635;&#32467;">&#24635;&#32467;<a class="anchor-link" href="#&#24635;&#32467;">&#182;</a></h2><p>在这节中我们学到了：</p>
+<ul>
+<li>卷积神经网络</li>
+<li>Adam</li>
+<li>输入层和隐含层</li>
+<li>构建一个深层神经网络</li>
+</ul>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
