@@ -9,15 +9,6 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="CNNs">CNNs<a class="anchor-link" href="#CNNs">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络。</p>
 <p>这一节我们会先定义一个包含16个卷积层的多层神经网络，然后使用<a href="https://www.cs.toronto.edu/~kriz/cifar.html">cifar10</a>的训练集来训练这个神经网络。最后使用测试集来测试神经网络的准确率。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。最终准确率可以达到55%以上。</p>
 
@@ -928,10 +919,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="2be6e986-5b93-4033-91fb-a4838e36fcd9"></div>
+<div id="c5beb44a-56c3-4aa9-8858-5e74a163ef13"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#2be6e986-5b93-4033-91fb-a4838e36fcd9');
+var element = $('#c5beb44a-56c3-4aa9-8858-5e74a163ef13');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
