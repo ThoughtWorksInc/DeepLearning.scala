@@ -10,7 +10,7 @@ filename: CNNs.ipynb
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络。</p>
-<p>这一节我们会先定义一个包含16个卷积层的多层神经网络，然后使用<a href="https://www.cs.toronto.edu/~kriz/cifar.html">cifar10</a>的训练集来训练这个神经网络。最后使用测试集来测试神经网络的准确率。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。最终准确率可以达到55%以上。</p>
+<p>这一节我们会先定义一个包含16个卷积层的多层神经网络，然后使用<a href="https://www.cs.toronto.edu/~kriz/cifar.html">cifar10</a>的训练集来训练这个神经网络。最后使用测试集来验证神经网络的准确率。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。最终准确率可以达到55%以上。</p>
 
 </div>
 </div>
@@ -85,7 +85,7 @@ filename: CNNs.ipynb
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight</span>
 <span class="k">import</span> <span class="nn">scala.util.Random</span>
 
-<span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">2</span><span class="o">)</span><span class="c1">//减少输出的行数，避免页面输出太长</span>
+<span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">2</span><span class="o">)</span>
 
 <span class="k">import</span> <span class="nn">$file.ReadCIFAR10ToNDArray</span><span class="o">,</span><span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="k">_</span>
 <span class="k">import</span> <span class="nn">$file.Utils</span><span class="o">,</span><span class="nc">Utils</span><span class="o">.</span><span class="k">_</span>
@@ -244,7 +244,7 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>跟前一节类似，这里使用<a href="https://en.wikipedia.org/wiki/Adam">Adam</a>和L2Regularization组合的方式设置学习率。</p>
+<p>跟前一节类似，这里使用<a href="https://en.wikipedia.org/wiki/Adam">Adam</a>和L2Regularization组合的方式设置学习率。为了让学习率在训练后期不至于相对过高导致loss下降较慢，我们需要设置一个flag <code>isAEpochDone</code>，每个epoch结束，学习率都会调整到原来的0.75倍。</p>
 
 </div>
 </div>
@@ -254,7 +254,7 @@ filename: CNNs.ipynb
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">var</span> <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">false</span> <span class="c1">//设置一个flag，在一个epoch执行完成后进行学习率调整和计算train／test准确率</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">var</span> <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">false</span>
 
 <span class="k">implicit</span> <span class="k">val</span> <span class="n">optimizerFactory</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DifferentiableINDArray</span><span class="o">.</span><span class="nc">OptimizerFactory</span> <span class="o">{</span>
   <span class="k">override</span> <span class="k">def</span> <span class="n">ndArrayOptimizer</span><span class="o">(</span><span class="n">weight</span><span class="k">:</span> <span class="kt">Weight</span><span class="o">)</span><span class="k">:</span> <span class="kt">Optimizer</span> <span class="o">=</span> <span class="o">{</span>
@@ -268,7 +268,7 @@ filename: CNNs.ipynb
       <span class="k">override</span> <span class="k">protected</span> <span class="k">def</span> <span class="n">currentLearningRate</span><span class="o">()</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="o">{</span>
         <span class="n">learningRate</span> <span class="k">=</span> <span class="k">if</span> <span class="o">(</span><span class="n">isAEpochDone</span><span class="o">)</span> <span class="o">{</span>
           <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">false</span>
-          <span class="n">learningRate</span> <span class="o">*</span> <span class="mf">0.75</span> <span class="c1">//每个epoch结束，学习率都会调整到原来的0.75倍</span>
+          <span class="n">learningRate</span> <span class="o">*</span> <span class="mf">0.75</span>
         <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
           <span class="n">learningRate</span>
         <span class="o">}</span>
@@ -327,11 +327,11 @@ filename: CNNs.ipynb
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="nc">Stride</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">// 步长</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="nc">Stride</span> <span class="k">=</span> <span class="mi">1</span>
 
-<span class="k">val</span> <span class="nc">Padding</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">//零填充数量</span>
+<span class="k">val</span> <span class="nc">Padding</span> <span class="k">=</span> <span class="mi">1</span>
 
-<span class="k">val</span> <span class="nc">KernelSize</span> <span class="k">=</span> <span class="mi">3</span> <span class="c1">//卷积核的空间尺寸</span>
+<span class="k">val</span> <span class="nc">KernelSize</span> <span class="k">=</span> <span class="mi">3</span>
 
 <span class="k">def</span> <span class="n">convolutionThenRelu</span><span class="o">(</span><span class="n">numberOfInputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
                         <span class="n">numberOfOutputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span>
@@ -458,7 +458,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>为了构建16层卷积的神经网络，我们需要利用上面定义的layer，组合一个由16个卷积层，全连接层和softmax层组成的网络</p>
+<p>为了构建16层卷积的神经网络，我们需要利用上面定义的layer，组合一个由16个卷积层，全连接层和softmax层组成的网络。</p>
 
 </div>
 </div>
@@ -472,9 +472,9 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
 
 <span class="k">val</span> <span class="nc">Depth</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span>
 
-<span class="k">val</span> <span class="nc">InputSize</span> <span class="k">=</span> <span class="mi">32</span> <span class="c1">// W 输入数据尺寸</span>
+<span class="k">val</span> <span class="nc">InputSize</span> <span class="k">=</span> <span class="mi">32</span>
 
-<span class="k">val</span> <span class="nc">KernelNumber</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span> <span class="c1">//卷积核的数量，这里简单的设置每层卷积核数量都为3</span>
+<span class="k">val</span> <span class="nc">KernelNumber</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span>
 
 <span class="k">val</span> <span class="n">random</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Random</span>
 
@@ -498,9 +498,9 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
     <span class="o">}</span>
   <span class="o">}</span>
 
-  <span class="k">val</span> <span class="n">recLayer</span> <span class="k">=</span> <span class="n">convFunction</span><span class="o">(</span><span class="mi">8</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">input</span><span class="o">)</span><span class="c1">//递归组合卷积层</span>
+  <span class="k">val</span> <span class="n">recLayer</span> <span class="k">=</span> <span class="n">convFunction</span><span class="o">(</span><span class="mi">8</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">input</span><span class="o">)</span>
 
-  <span class="n">fullyConnectedThenSoftmax</span><span class="o">(</span><span class="mi">32</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">10</span><span class="o">).</span><span class="n">compose</span><span class="o">(</span><span class="n">recLayer</span><span class="o">)</span><span class="c1">//将组合的卷积层和全连接层，softmax层组合起来</span>
+  <span class="n">fullyConnectedThenSoftmax</span><span class="o">(</span><span class="mi">32</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">10</span><span class="o">).</span><span class="n">compose</span><span class="o">(</span><span class="n">recLayer</span><span class="o">)</span>
 <span class="o">}</span>
 
 <span class="k">val</span> <span class="n">predictor</span> <span class="k">=</span> <span class="n">hiddenLayer</span>
@@ -617,7 +617,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">n
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>类似<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/TwoLayerNet.html">前一节</a>从CIFAR10 database中读取和处理测试集的图片和标签信息</p>
+<p>类似<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/TwoLayerNet.html">前一节</a>从CIFAR10 database中读取和处理测试集的图片和标签信息。</p>
 
 </div>
 </div>
@@ -627,13 +627,11 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">n
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="c1">//CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="c1">//10 label of CIFAR10 images(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)</span>
 <span class="k">val</span> <span class="nc">NumberOfClasses</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">10</span>
 
-<span class="c1">//加载100条测试数据</span>
 <span class="k">val</span> <span class="nc">NumberOfTestSize</span> <span class="k">=</span> <span class="mi">100</span>
 
-<span class="c1">//加载测试集，我们读取100条作为测试数据</span>
 <span class="k">val</span> <span class="n">testNDArray</span> <span class="k">=</span>
   <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/test_batch.bin&quot;</span><span class="o">,</span> <span class="nc">NumberOfTestSize</span><span class="o">)</span>
 
@@ -759,7 +757,8 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">t
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>开始训练神经网络并观察每次训练loss的变化,注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参</p>
+<p>开始训练神经网络并观察每次训练loss的变化,注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。
+在训练时每个epoch更新一次learningrate，计算一次train和test的准确率。</p>
 
 </div>
 </div>
@@ -773,7 +772,6 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">t
   <span class="o">(</span>
     <span class="k">for</span> <span class="o">(</span><span class="n">blocks</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">50</span><span class="o">)</span> <span class="k">yield</span> <span class="o">{</span>
       <span class="k">if</span> <span class="o">(</span><span class="n">blocks</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">blocks</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-        <span class="c1">//一个epoch更新一次learningrate，计算一次train和test的准确率</span>
         <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">true</span>
       <span class="o">}</span>
       <span class="k">val</span> <span class="n">randomIndex</span> <span class="k">=</span> <span class="n">random</span>
@@ -830,7 +828,7 @@ train loss : 0.2774548053741455
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>使用trainLoss，trainAccuracy和testAccuracy绘图</p>
+<p>使用trainLossSeq，trainAccuracySeq和testAccuracySeq绘图，观察trainLoss，trainAccuracy和testAccuracy的趋势。</p>
 
 </div>
 </div>
@@ -919,10 +917,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="74e98773-0f21-4d84-8923-cb622051f7f3"></div>
+<div id="05b6b365-2f04-46ca-a9b6-d587edfd17e8"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#74e98773-0f21-4d84-8923-cb622051f7f3');
+var element = $('#05b6b365-2f04-46ca-a9b6-d587edfd17e8');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
