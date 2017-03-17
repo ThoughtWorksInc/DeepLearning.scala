@@ -18,7 +18,8 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。最终准确率可以达到55%以上。</p>
+<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络。</p>
+<p>这一节我们会先定义一个包含16个卷积层的多层神经网络，然后使用<a href="https://www.cs.toronto.edu/~kriz/cifar.html">cifar10</a>的训练集来训练这个神经网络。最后使用测试集来测试神经网络的准确率。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。最终准确率可以达到55%以上。</p>
 
 </div>
 </div>
@@ -234,91 +235,6 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;">&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;<a class="anchor-link" href="#&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>类似<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/TwoLayerNet.html">前一节</a>从CIFAR10 database中读取和处理测试数据的图片和标签信息</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="c1">//CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)</span>
-<span class="k">val</span> <span class="nc">NumberOfClasses</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">10</span>
-
-<span class="c1">//加载100条测试数据</span>
-<span class="k">val</span> <span class="nc">NumberOfTestSize</span> <span class="k">=</span> <span class="mi">100</span>
-
-<span class="c1">//加载测试数据，我们读取100条作为测试数据</span>
-<span class="k">val</span> <span class="n">testNDArray</span> <span class="k">=</span>
-  <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/test_batch.bin&quot;</span><span class="o">,</span> <span class="nc">NumberOfTestSize</span><span class="o">)</span>
-
-<span class="k">val</span> <span class="n">testData</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">head</span>
-
-<span class="k">val</span> <span class="n">testExpectLabel</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
-
-<span class="k">val</span> <span class="n">testExpectLabelVectorized</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">testExpectLabel</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt"></div>
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>SLF4J: Failed to load class &#34;org.slf4j.impl.StaticLoggerBinder&#34;.
-SLF4J: Defaulting to no-operation (NOP) logger implementation
-SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-<div class="prompt output_prompt">Out[2]:</div>
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">NumberOfClasses</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">10</span>
-<span class="ansi-cyan-fg">NumberOfTestSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">100</span>
-<span class="ansi-cyan-fg">testNDArray</span>: <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">HNil</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45, 0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, 0.57, 0.55, 0.56, 0.53, 0.49, 0.46, 0.59, 0.59, 0.<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">testData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45, 0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, 0.57, 0.55, 0.56, 0.53, 0.49, 0.46, 0.59, 0.59, 0.<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">testExpectLabel</span>: <span class="ansi-green-fg">INDArray</span> = [3.00, 8.00, 8.00, 0.00, 6.00, 6.00, 1.00, 6.00, 3.00, 1.00, 0.00, 9.00, 5.00, 7.00, 9.00, 8.00, 5.00, 7.00, 8.00, 6.00, 7.00, 0.00, 4.00, 9.00, 5.00, 2.00, 4.00, 0.00, 9.00, 6.00, 6.00, 5.00, 4.00, 5.00, 9.00, 2.00, 4.00, 1.00, 9.00, 5.00, 4.00, 6.00, 5.00, 6.00, 0.00, 9.00, 3.00, 9.00, 7.00, 6.00, 9.00, 8.00, 0.00, 3.00, 8.00, 8.00, 7.00, 7.00, 4.00, 6.00, 7.00, 3.00, 6.00, 3.00, 6.00, 2.00, 1.0<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">testExpectLabelVectorized</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
- [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
- [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
- [1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
- [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00],
-<span class="ansi-yellow-fg">...</span></pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2>
 </div>
 </div>
@@ -344,7 +260,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">var</span> <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">false</span> <span class="c1">//设置一个flag，在一个epoch执行完成后进行学习率调整和计算train／test准确率</span>
@@ -381,13 +297,13 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[3]:</div>
+<div class="prompt output_prompt">Out[2]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
 <pre><span class="ansi-cyan-fg">isAEpochDone</span>: <span class="ansi-green-fg">Boolean</span> = <span class="ansi-green-fg">false</span>
-<span class="ansi-cyan-fg">optimizerFactory</span>: <span class="ansi-green-fg">AnyRef</span> with <span class="ansi-green-fg">OptimizerFactory</span> = $sess.cmd2Wrapper$Helper$$anon$2@6cee5f6f</pre>
+<span class="ansi-cyan-fg">optimizerFactory</span>: <span class="ansi-green-fg">AnyRef</span> with <span class="ansi-green-fg">OptimizerFactory</span> = $sess.cmd1Wrapper$Helper$$anon$2@58db475a</pre>
 </div>
 
 </div>
@@ -417,7 +333,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="nc">Stride</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">// 步长</span>
@@ -454,7 +370,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[4]:</div>
+<div class="prompt output_prompt">Out[3]:</div>
 
 
 
@@ -492,7 +408,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">c
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
@@ -522,7 +438,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">c
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[5]:</div>
+<div class="prompt output_prompt">Out[4]:</div>
 
 
 
@@ -558,7 +474,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="nc">MiniBatchSize</span> <span class="k">=</span> <span class="mi">64</span>
@@ -608,7 +524,18 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[6]:</div>
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>SLF4J: Failed to load class &#34;org.slf4j.impl.StaticLoggerBinder&#34;.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[5]:</div>
 
 
 
@@ -617,11 +544,9 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">f
 <span class="ansi-cyan-fg">Depth</span>: <span class="ansi-green-fg">List</span>[<span class="ansi-green-fg">Int</span>] = <span class="ansi-yellow-fg">List</span>(<span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>)
 <span class="ansi-cyan-fg">InputSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">32</span>
 <span class="ansi-cyan-fg">KernelNumber</span>: <span class="ansi-green-fg">List</span>[<span class="ansi-green-fg">Int</span>] = <span class="ansi-yellow-fg">List</span>(<span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>)
-<span class="ansi-cyan-fg">random</span>: <span class="ansi-green-fg">Random</span> = scala.util.Random@18c54e13
+<span class="ansi-cyan-fg">random</span>: <span class="ansi-green-fg">Random</span> = scala.util.Random@3c6fd99a
 defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">hiddenLayer</span>
-<span class="ansi-cyan-fg">predictor</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">@</span> = Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum(Exp(Identity()),WrappedArray(1)))),PlusINDArray(Dot(Reshape(Identity(),ToSeq(ArrayBuffer(Get(Shape(Identity()),0), Literal(3072)))),Weight([[-0.05, 0.01, -0.12, -0.06, -0.26, 0.56, -0.11, -0.04, 0.16, 0.05],
- [0.13, 0.65, -0.10, -0.49, -0.21, 0.10, 0.01, 0.05, 0.21, 0.20],
-<span class="ansi-yellow-fg">...</span></pre>
+<span class="ansi-cyan-fg">predictor</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">@</span> = Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum(Exp(Identity()),WrappedArray(1)))),PlusINDArray(Dot(Reshape(Identity(),ToSeq(ArrayBuffer(Get(Sha<span class="ansi-yellow-fg">...</span></pre>
 </div>
 
 </div>
@@ -641,7 +566,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">h
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">crossEntropyLossFunction</span><span class="o">(</span>
@@ -671,14 +596,85 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">h
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[7]:</div>
+<div class="prompt output_prompt">Out[6]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
 <pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">crossEntropyLossFunction</span>
 defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">network</span>
-<span class="ansi-cyan-fg">trainNetwork</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">Double</span>]{type OutputData = Double;type OutputDelta = Double;type InputData = shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.HNil]];type InputDelta = shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.CNil]]})#<span class="ansi-green-fg">@</span> = Compose(Negative(ReduceMean(PlusINDArray(MultiplyINDArray(Head(Tail(Identity())),Log(PlusDouble(MultiplyDouble(Head(Identity()),Literal(0.9)),Literal(0.1)))),MultiplyINDArray(PlusDouble(Negative(Head(Tail(Identity()))),Literal(1.0)),Log(PlusDouble(Negative(MultiplyDouble(Head(Identity()),Literal(0.9))),Literal(1.0))))))),HCons(Compose(Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum<span class="ansi-yellow-fg">...</span></pre>
+<span class="ansi-cyan-fg">trainNetwork</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">Double</span>]{type OutputData = Double;type OutputDelta = Double;type InputData = shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.HNil]];type InputDelta = shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.CNil]]})#<span class="ansi-green-fg">@</span> = Compose(Negative(ReduceMean(PlusINDArray(MultiplyINDArray(Head(Tail(Identity())),Log(PlusDouble(MultiplyDouble(Head(Identity()),Literal(0.9)),Literal(0.1)))),Mu<span class="ansi-yellow-fg">...</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;">&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;<a class="anchor-link" href="#&#35835;&#21462;&#21644;&#22788;&#29702;&#25968;&#25454;">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>类似<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/TwoLayerNet.html">前一节</a>从CIFAR10 database中读取和处理测试数据的图片和标签信息</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="c1">//CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)</span>
+<span class="k">val</span> <span class="nc">NumberOfClasses</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1">//加载100条测试数据</span>
+<span class="k">val</span> <span class="nc">NumberOfTestSize</span> <span class="k">=</span> <span class="mi">100</span>
+
+<span class="c1">//加载测试数据，我们读取100条作为测试数据</span>
+<span class="k">val</span> <span class="n">testNDArray</span> <span class="k">=</span>
+  <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/test_batch.bin&quot;</span><span class="o">,</span> <span class="nc">NumberOfTestSize</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">testData</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">testExpectLabel</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">testExpectLabelVectorized</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">testExpectLabel</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[7]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">NumberOfClasses</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">10</span>
+<span class="ansi-cyan-fg">NumberOfTestSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">100</span>
+<span class="ansi-cyan-fg">testNDArray</span>: <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">HNil</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testExpectLabel</span>: <span class="ansi-green-fg">INDArray</span> = [3.00, 8.00, 8.00, 0.00, 6.00, 6.00, 1.00, 6.00, 3.00, 1.00, 0.00, 9.00, 5.00, 7.00, 9.00, 8.00, 5.00, 7.00, 8.00, 6.00, 7.00, 0.00, 4.00, 9.00, 5.00, 2.00, 4.0<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testExpectLabelVectorized</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
+<span class="ansi-yellow-fg">...</span></pre>
 </div>
 
 </div>
@@ -932,10 +928,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="3410b92b-5428-49c0-836b-9cd0ef78619c"></div>
+<div id="2be6e986-5b93-4033-91fb-a4838e36fcd9"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#3410b92b-5428-49c0-836b-9cd0ef78619c');
+var element = $('#2be6e986-5b93-4033-91fb-a4838e36fcd9');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
