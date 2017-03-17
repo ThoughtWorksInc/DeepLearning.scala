@@ -18,7 +18,7 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。</p>
+<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。最终准确率可以达到55%以上。</p>
 
 </div>
 </div>
@@ -717,7 +717,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">t
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">resultTuple</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[(</span><span class="kt">Double</span>, <span class="kt">Double</span>, <span class="kt">Double</span><span class="o">)]</span> <span class="k">=</span>
@@ -749,7 +749,7 @@ defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">t
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[12]:</div>
+<div class="prompt output_prompt">Out[9]:</div>
 
 
 
@@ -788,7 +788,7 @@ train loss : 0.2774548053741455
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="o">(</span><span class="n">trainLossSeq</span><span class="o">,</span> <span class="n">trainAccuracySeq</span><span class="o">,</span> <span class="n">testAccuracySeq</span><span class="o">)</span> <span class="k">=</span>
@@ -870,10 +870,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="aa195dda-51fd-45a8-a170-e7c6f9b1fe6d"></div>
+<div id="383b39b5-9b13-43c5-8b03-a08fd87c1c61"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#aa195dda-51fd-45a8-a170-e7c6f9b1fe6d');
+var element = $('#383b39b5-9b13-43c5-8b03-a08fd87c1c61');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
@@ -893,7 +893,7 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[13]:</div>
+<div class="prompt output_prompt">Out[10]:</div>
 
 
 
