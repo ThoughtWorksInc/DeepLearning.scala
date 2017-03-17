@@ -18,10 +18,7 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p><a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。</p>
-<p>参考：</p>
-<p><a href="http://cs231n.github.io/convolutional-networks/">convolutionalNetworks</a> or <a href="https://zhuanlan.zhihu.com/p/22038289?refer=deeplearning.scala">卷积神经网络</a></p>
-<p><a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">Mini-Batch Gradient Descent</a>: 在大规模数据训练时，数据可以达到百万级量级。如果计算整个训练集，来获得仅仅一个参数的更新速度就太慢了。一个常用的方法是计算训练集中的小批量（batches）数据以提升参数更新速度。</p>
+<h2 id="&#32972;&#26223;">&#32972;&#26223;<a class="anchor-link" href="#&#32972;&#26223;">&#182;</a></h2><p>使用全连接构建的多层神经网络在层数增加时参数会快速增长，计算速度会变得很慢，极大影响了神经网络的训练。<a href="https://zh.wikipedia.org/zh/卷积">卷积</a>通过参数共享的方式避免了全连接层数量增加时参数爆炸式增长，减少了计算量，我们因此得以构建更深的神经网络，这一节我们就建一个包含16个卷积层的多层神经网络。注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参。</p>
 
 </div>
 </div>
@@ -31,18 +28,7 @@ filename: CNNs.ipynb
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#20934;&#22791;&#24037;&#20316;">&#20934;&#22791;&#24037;&#20316;<a class="anchor-link" href="#&#20934;&#22791;&#24037;&#20316;">&#182;</a></h2><p>参考<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/SoftmaxLinearClassifier.html#准备工作">SoftmaxLinearClassifier</a></p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2><p>import 所需的依赖</p>
-
+<h2 id="&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;<a class="anchor-link" href="#&#26500;&#24314;&#31070;&#32463;&#32593;&#32476;">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -105,6 +91,7 @@ filename: CNNs.ipynb
 <span class="k">import</span> <span class="nn">scala.collection.immutable.IndexedSeq</span>
 <span class="k">import</span> <span class="nn">Utils._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight</span>
+<span class="k">import</span> <span class="nn">scala.util.Random</span>
 
 <span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">5</span><span class="o">)</span><span class="c1">//减少输出的行数，避免页面输出太长</span>
 
@@ -121,16 +108,6 @@ filename: CNNs.ipynb
 
 
 <div class="output_area">
-<div class="prompt"></div>
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Compiling ReadCIFAR10ToNDArray.sc
-Compiling Utils.sc
-</pre>
-</div>
-</div>
-
-<div class="output_area">
 <div class="prompt output_prompt">Out[1]:</div>
 
 
@@ -139,21 +116,23 @@ Compiling Utils.sc
 <pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$plugin.$                                                                             
 
 </span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                           
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                               
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                           
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                              
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                             
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                             
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                 
+</span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                    
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                   
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                  
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                  
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                      
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                     
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                               
 
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             
@@ -235,6 +214,8 @@ Compiling Utils.sc
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">Utils._
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scala.util.Random
 
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$file.$                   ,ReadCIFAR10ToNDArray._
@@ -253,7 +234,7 @@ Compiling Utils.sc
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>从CIFAR10 database中读取测试数据的图片和标签信息</p>
+<p>类似<a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/TwoLayerNet.html">前一节</a>从CIFAR10 database中读取和处理测试数据的图片和标签信息</p>
 
 </div>
 </div>
@@ -272,6 +253,12 @@ Compiling Utils.sc
 <span class="c1">//加载测试数据，我们读取100条作为测试数据</span>
 <span class="k">val</span> <span class="n">testNDArray</span> <span class="k">=</span>
   <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/test_batch.bin&quot;</span><span class="o">,</span> <span class="nc">NumberOfTestSize</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">testData</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">testExpectLabel</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">testExpectLabelVectorized</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">testExpectLabel</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
 </pre></div>
 
 </div>
@@ -301,7 +288,15 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="output_text output_subarea output_execute_result">
 <pre><span class="ansi-cyan-fg">NumberOfClasses</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">10</span>
 <span class="ansi-cyan-fg">NumberOfTestSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">100</span>
-<span class="ansi-cyan-fg">testNDArray</span>: <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">HNil</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45, 0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, 0.57, 0.55, 0.56, 0.53, 0.49, 0.46, 0.59, 0.59, 0.<span class="ansi-yellow-fg">...</span></pre>
+<span class="ansi-cyan-fg">testNDArray</span>: <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">HNil</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45, 0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, 0.57, 0.55, 0.56, 0.53, 0.49, 0.46, 0.59, 0.59, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45, 0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, 0.57, 0.55, 0.56, 0.53, 0.49, 0.46, 0.59, 0.59, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testExpectLabel</span>: <span class="ansi-green-fg">INDArray</span> = [3.00, 8.00, 8.00, 0.00, 6.00, 6.00, 1.00, 6.00, 3.00, 1.00, 0.00, 9.00, 5.00, 7.00, 9.00, 8.00, 5.00, 7.00, 8.00, 6.00, 7.00, 0.00, 4.00, 9.00, 5.00, 2.00, 4.00, 0.00, 9.00, 6.00, 6.00, 5.00, 4.00, 5.00, 9.00, 2.00, 4.00, 1.00, 9.00, 5.00, 4.00, 6.00, 5.00, 6.00, 0.00, 9.00, 3.00, 9.00, 7.00, 6.00, 9.00, 8.00, 0.00, 3.00, 8.00, 8.00, 7.00, 7.00, 4.00, 6.00, 7.00, 3.00, 6.00, 3.00, 6.00, 2.00, 1.0<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testExpectLabelVectorized</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
+ [1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00],
+<span class="ansi-yellow-fg">...</span></pre>
 </div>
 
 </div>
@@ -315,7 +310,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>分离和处理图像和标签数据,设置全局变量</p>
+<p>跟前一节类似，这里使用<a href="https://en.wikipedia.org/wiki/Adam">Adam</a>和L2Regularization组合的方式设置学习率。</p>
 
 </div>
 </div>
@@ -325,90 +320,9 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">testData</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">head</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">var</span> <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">false</span> <span class="c1">//设置一个flag，在一个epoch执行完成后进行学习率调整和计算train／test准确率</span>
 
-<span class="k">val</span> <span class="n">testExpectLabel</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
-
-<span class="k">val</span> <span class="n">testExpectLabelVectorized</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">testExpectLabel</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
-
-<span class="k">val</span> <span class="nc">MiniBatchSize</span> <span class="k">=</span> <span class="mi">64</span>
-
-<span class="k">val</span> <span class="nc">Depth</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span>
-
-<span class="k">val</span> <span class="nc">InputSize</span> <span class="k">=</span> <span class="mi">32</span> <span class="c1">// W 输入数据尺寸</span>
-
-<span class="k">val</span> <span class="nc">KernelNumber</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span> <span class="c1">//卷积核的数量</span>
-
-<span class="k">val</span> <span class="nc">Stride</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">// 步长</span>
-
-<span class="k">val</span> <span class="nc">Padding</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">//零填充数量</span>
-
-<span class="k">val</span> <span class="nc">KernelSize</span> <span class="k">=</span> <span class="mi">3</span> <span class="c1">//F 卷积核的空间尺寸</span>
-
-<span class="k">var</span> <span class="n">isAEpochDone</span> <span class="k">=</span> <span class="kc">false</span> <span class="c1">//一个epoch执行完成后进行学习率调整和计算train／test准确率</span>
-
-<span class="k">val</span> <span class="n">reshapedTestData</span> <span class="k">=</span> <span class="n">testData</span><span class="o">.</span><span class="n">reshape</span><span class="o">(</span><span class="nc">NumberOfTestSize</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="nc">InputSize</span><span class="o">,</span> <span class="nc">InputSize</span><span class="o">)</span>
-
-<span class="k">val</span> <span class="n">random</span> <span class="k">=</span> <span class="k">new</span> <span class="n">util</span><span class="o">.</span><span class="nc">Random</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt output_prompt">Out[3]:</div>
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">testData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45, 0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, 0.57, 0.55, 0.56, 0.53, 0.49, 0.46, 0.59, 0.59, 0.<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">testExpectLabel</span>: <span class="ansi-green-fg">INDArray</span> = [3.00, 8.00, 8.00, 0.00, 6.00, 6.00, 1.00, 6.00, 3.00, 1.00, 0.00, 9.00, 5.00, 7.00, 9.00, 8.00, 5.00, 7.00, 8.00, 6.00, 7.00, 0.00, 4.00, 9.00, 5.00, 2.00, 4.00, 0.00, 9.00, 6.00, 6.00, 5.00, 4.00, 5.00, 9.00, 2.00, 4.00, 1.00, 9.00, 5.00, 4.00, 6.00, 5.00, 6.00, 0.00, 9.00, 3.00, 9.00, 7.00, 6.00, 9.00, 8.00, 0.00, 3.00, 8.00, 8.00, 7.00, 7.00, 4.00, 6.00, 7.00, 3.00, 6.00, 3.00, 6.00, 2.00, 1.0<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">testExpectLabelVectorized</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
- [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
- [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
- [1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
- [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00],
-<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">MiniBatchSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">64</span>
-<span class="ansi-cyan-fg">Depth</span>: <span class="ansi-green-fg">List</span>[<span class="ansi-green-fg">Int</span>] = <span class="ansi-yellow-fg">List</span>(<span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>)
-<span class="ansi-cyan-fg">InputSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">32</span>
-<span class="ansi-cyan-fg">KernelNumber</span>: <span class="ansi-green-fg">List</span>[<span class="ansi-green-fg">Int</span>] = <span class="ansi-yellow-fg">List</span>(<span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>)
-<span class="ansi-cyan-fg">Stride</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">1</span>
-<span class="ansi-cyan-fg">Padding</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">1</span>
-<span class="ansi-cyan-fg">KernelSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">3</span>
-<span class="ansi-cyan-fg">isAEpochDone</span>: <span class="ansi-green-fg">Boolean</span> = <span class="ansi-green-fg">false</span>
-<span class="ansi-cyan-fg">reshapedTestData</span>: <span class="ansi-green-fg">INDArray</span> = [[[[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45],
-   [0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, <span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">random</span>: <span class="ansi-green-fg">util</span>.<span class="ansi-green-fg">Random</span> = scala.util.Random@40ee93cd</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>设置学习率，这里使用Adam和L2Regularization组合的方式</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">implicit</span> <span class="k">val</span> <span class="n">optimizerFactory</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DifferentiableINDArray</span><span class="o">.</span><span class="nc">OptimizerFactory</span> <span class="o">{</span>
+<span class="k">implicit</span> <span class="k">val</span> <span class="n">optimizerFactory</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DifferentiableINDArray</span><span class="o">.</span><span class="nc">OptimizerFactory</span> <span class="o">{</span>
   <span class="k">override</span> <span class="k">def</span> <span class="n">ndArrayOptimizer</span><span class="o">(</span><span class="n">weight</span><span class="k">:</span> <span class="kt">Weight</span><span class="o">)</span><span class="k">:</span> <span class="kt">Optimizer</span> <span class="o">=</span> <span class="o">{</span>
 
     <span class="k">new</span> <span class="nc">LearningRate</span> <span class="k">with</span> <span class="n">L2Regularization</span> <span class="k">with</span> <span class="nc">Adam</span> <span class="o">{</span>
@@ -440,12 +354,13 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[4]:</div>
+<div class="prompt output_prompt">Out[3]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">optimizerFactory</span>: <span class="ansi-green-fg">AnyRef</span> with <span class="ansi-green-fg">OptimizerFactory</span> = $sess.cmd3Wrapper$Helper$$anon$2@2fc8bed5</pre>
+<pre><span class="ansi-cyan-fg">isAEpochDone</span>: <span class="ansi-green-fg">Boolean</span> = <span class="ansi-green-fg">false</span>
+<span class="ansi-cyan-fg">optimizerFactory</span>: <span class="ansi-green-fg">AnyRef</span> with <span class="ansi-green-fg">OptimizerFactory</span> = $sess.cmd2Wrapper$Helper$$anon$2@6cee5f6f</pre>
 </div>
 
 </div>
@@ -459,17 +374,23 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>编写卷积层,这是一个先进行卷积计算再计算Relu的layer，这里设置kernel size为3*3，padding和stride在两个方向都为1</p>
+<p>编写卷积层,这是一个先进行卷积计算再计算Relu的神经网络，这里设置kernel size为3*3，padding和stride在两个方向都为1。</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">convolutionThenRelu</span><span class="o">(</span><span class="n">numberOfInputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="nc">Stride</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">// 步长</span>
+
+<span class="k">val</span> <span class="nc">Padding</span> <span class="k">=</span> <span class="mi">1</span> <span class="c1">//零填充数量</span>
+
+<span class="k">val</span> <span class="nc">KernelSize</span> <span class="k">=</span> <span class="mi">3</span> <span class="c1">//卷积核的空间尺寸</span>
+
+<span class="k">def</span> <span class="n">convolutionThenRelu</span><span class="o">(</span><span class="n">numberOfInputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
                         <span class="n">numberOfOutputKernels</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span>
     <span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span>
@@ -483,7 +404,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
   <span class="k">val</span> <span class="n">bias</span> <span class="k">=</span> <span class="nc">Nd4j</span><span class="o">.</span><span class="n">ones</span><span class="o">(</span><span class="n">numberOfOutputKernels</span><span class="o">).</span><span class="n">toWeight</span> <span class="o">*</span> <span class="mf">0.1</span>
 
   <span class="k">val</span> <span class="n">convResult</span> <span class="k">=</span>
-    <span class="n">conv2d</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">weight</span><span class="o">,</span> <span class="n">bias</span><span class="o">,</span> <span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">),</span> <span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">1</span><span class="o">),</span> <span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">1</span><span class="o">))</span>
+    <span class="n">input</span><span class="o">.</span><span class="n">convn</span><span class="o">(</span><span class="n">weight</span><span class="o">,</span> <span class="n">bias</span><span class="o">,</span> <span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">),</span> <span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">1</span><span class="o">),</span> <span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">1</span><span class="o">))</span>
   <span class="n">max</span><span class="o">(</span><span class="n">convResult</span><span class="o">,</span> <span class="mf">0.0</span><span class="o">)</span>
 <span class="o">}</span>
 </pre></div>
@@ -497,12 +418,15 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[5]:</div>
+<div class="prompt output_prompt">Out[4]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">convolutionThenRelu</span></pre>
+<pre><span class="ansi-cyan-fg">Stride</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">1</span>
+<span class="ansi-cyan-fg">Padding</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">1</span>
+<span class="ansi-cyan-fg">KernelSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">3</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">convolutionThenRelu</span></pre>
 </div>
 
 </div>
@@ -516,61 +440,22 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>编写softmax函数</p>
+<p>跟上一节类似，编写softmax和全连接层。</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="k">implicit</span> <span class="n">scores</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">expScores</span> <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
   <span class="n">expScores</span> <span class="o">/</span> <span class="n">expScores</span><span class="o">.</span><span class="n">sum</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
 <span class="o">}</span>
-</pre></div>
 
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt output_prompt">Out[6]:</div>
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">softmax</span></pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>编写一个全连接层，这是一个先计算全连接再计算softmax的layer</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">fullyConnectedThenSoftmax</span><span class="o">(</span><span class="n">inputSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span> <span class="n">outputSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span>
+<span class="k">def</span> <span class="n">fullyConnectedThenSoftmax</span><span class="o">(</span><span class="n">inputSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span> <span class="n">outputSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span>
     <span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">imageCount</span> <span class="k">=</span> <span class="n">input</span><span class="o">.</span><span class="n">shape</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span>
 
@@ -592,12 +477,13 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[7]:</div>
+<div class="prompt output_prompt">Out[5]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">fullyConnectedThenSoftmax</span></pre>
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">softmax</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">fullyConnectedThenSoftmax</span></pre>
 </div>
 
 </div>
@@ -611,17 +497,27 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>利用上面定义的layer，组合一个由多个卷积层，全连接层和softmax层组成的网络</p>
+<p>为了构建16层卷积的神经网络，我们需要利用上面定义的layer，组合一个由16个卷积层，全连接层和softmax层组成的网络</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">hiddenLayer</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="nc">MiniBatchSize</span> <span class="k">=</span> <span class="mi">64</span>
+
+<span class="k">val</span> <span class="nc">Depth</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="nc">InputSize</span> <span class="k">=</span> <span class="mi">32</span> <span class="c1">// W 输入数据尺寸</span>
+
+<span class="k">val</span> <span class="nc">KernelNumber</span> <span class="k">=</span> <span class="nc">List</span><span class="o">.</span><span class="n">fill</span><span class="o">(</span><span class="mi">17</span><span class="o">)(</span><span class="mi">3</span><span class="o">)</span> <span class="c1">//卷积核的数量，这里简单的设置每层卷积核数量都为3</span>
+
+<span class="k">val</span> <span class="n">random</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Random</span>
+
+<span class="k">def</span> <span class="n">hiddenLayer</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="nd">@tailrec</span>
   <span class="k">def</span> <span class="n">convFunction</span><span class="o">(</span><span class="n">timesToRun</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
                    <span class="n">timesNow</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span>
@@ -658,14 +554,19 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[8]:</div>
+<div class="prompt output_prompt">Out[6]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">hiddenLayer</span>
-<span class="ansi-cyan-fg">predictor</span>: (<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">T</span> = Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum(Exp(Identity()),WrappedArray(1)))),PlusINDArray(Dot(Reshape(Identity(),ToSeq(ArrayBatch(Get(Shape(Identity()),0), Literal(3072)))),Weight([[-0.47, -0.43, 0.14, 0.14, 0.64, 0.02, -0.10, 0.26, -0.35, 0.32],
- [0.06, 0.36, 0.05, -0.21, 0.07, -0.39, 0.27, 0.39, -0.81, 0.18],
+<pre><span class="ansi-cyan-fg">MiniBatchSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">64</span>
+<span class="ansi-cyan-fg">Depth</span>: <span class="ansi-green-fg">List</span>[<span class="ansi-green-fg">Int</span>] = <span class="ansi-yellow-fg">List</span>(<span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>)
+<span class="ansi-cyan-fg">InputSize</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">32</span>
+<span class="ansi-cyan-fg">KernelNumber</span>: <span class="ansi-green-fg">List</span>[<span class="ansi-green-fg">Int</span>] = <span class="ansi-yellow-fg">List</span>(<span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>, <span class="ansi-green-fg">3</span>)
+<span class="ansi-cyan-fg">random</span>: <span class="ansi-green-fg">Random</span> = scala.util.Random@18c54e13
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">hiddenLayer</span>
+<span class="ansi-cyan-fg">predictor</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">@</span> = Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum(Exp(Identity()),WrappedArray(1)))),PlusINDArray(Dot(Reshape(Identity(),ToSeq(ArrayBuffer(Get(Shape(Identity()),0), Literal(3072)))),Weight([[-0.05, 0.01, -0.12, -0.06, -0.26, 0.56, -0.11, -0.04, 0.16, 0.05],
+ [0.13, 0.65, -0.10, -0.49, -0.21, 0.10, 0.01, 0.05, 0.21, 0.20],
 <span class="ansi-yellow-fg">...</span></pre>
 </div>
 
@@ -680,14 +581,14 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>编写损失函数Loss Function，将此次判断的结果和真实结果进行计算得出cross-entropy loss并返回</p>
+<p>跟上一节相同，编写损失函数Loss Function并组合输入层和隐含层</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">crossEntropyLossFunction</span><span class="o">(</span>
@@ -696,47 +597,8 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
   <span class="k">val</span> <span class="n">label</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
   <span class="o">-(</span><span class="n">label</span> <span class="o">*</span> <span class="n">log</span><span class="o">(</span><span class="n">score</span> <span class="o">*</span> <span class="mf">0.9</span> <span class="o">+</span> <span class="mf">0.1</span><span class="o">)</span> <span class="o">+</span> <span class="o">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">label</span><span class="o">)</span> <span class="o">*</span> <span class="n">log</span><span class="o">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">score</span> <span class="o">*</span> <span class="mf">0.9</span><span class="o">)).</span><span class="n">mean</span>
 <span class="o">}</span>
-</pre></div>
 
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt output_prompt">Out[9]:</div>
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">crossEntropyLossFunction</span></pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>组合输入层和隐含层</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">network</span><span class="o">(</span>
+<span class="k">def</span> <span class="n">network</span><span class="o">(</span>
     <span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="o">(</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">)</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">input</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">head</span>
   <span class="k">val</span> <span class="n">label</span> <span class="k">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
@@ -756,13 +618,14 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[10]:</div>
+<div class="prompt output_prompt">Out[7]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">network</span>
-<span class="ansi-cyan-fg">trainNetwork</span>: (<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">Double</span>]{type OutputData = Double;type OutputDelta = Double;type InputData = shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.HNil]];type InputDelta = shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.CNil]]})#<span class="ansi-green-fg">T</span> = Compose(Negative(ReduceMean(PlusINDArray(MultiplyINDArray(Head(Tail(Identity())),Log(PlusDouble(MultiplyDouble(Head(Identity()),Literal(0.9)),Literal(0.1)))),MultiplyINDArray(PlusDouble(Negative(Head(Tail(Identity()))),Literal(1.0)),Log(PlusDouble(Negative(MultiplyDouble(Head(Identity()),Literal(0.9))),Literal(1.0))))))),HCons(Compose(Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum<span class="ansi-yellow-fg">...</span></pre>
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">crossEntropyLossFunction</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">network</span>
+<span class="ansi-cyan-fg">trainNetwork</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">Double</span>]{type OutputData = Double;type OutputDelta = Double;type InputData = shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.::[org.nd4j.linalg.api.ndarray.INDArray,shapeless.HNil]];type InputDelta = shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.:+:[org.nd4j.linalg.api.ndarray.INDArray,shapeless.CNil]]})#<span class="ansi-green-fg">@</span> = Compose(Negative(ReduceMean(PlusINDArray(MultiplyINDArray(Head(Tail(Identity())),Log(PlusDouble(MultiplyDouble(Head(Identity()),Literal(0.9)),Literal(0.1)))),MultiplyINDArray(PlusDouble(Negative(Head(Tail(Identity()))),Literal(1.0)),Log(PlusDouble(Negative(MultiplyDouble(Head(Identity()),Literal(0.9))),Literal(1.0))))))),HCons(Compose(Compose(Compose(MultiplyINDArray(Exp(Identity()),Reciprocal(Sum<span class="ansi-yellow-fg">...</span></pre>
 </div>
 
 </div>
@@ -776,17 +639,19 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>编写train神经网络的function</p>
+<p>跟前一节类似，但是这里新增了一些检测测试和训练准确率的方法，在训练一个epoch后输出一下测试集预测准确率和训练集测试准确率。</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">trainData</span><span class="o">(</span><span class="n">randomIndexArray</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">],</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">reshapedTestData</span> <span class="k">=</span> <span class="n">testData</span><span class="o">.</span><span class="n">reshape</span><span class="o">(</span><span class="nc">NumberOfTestSize</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="nc">InputSize</span><span class="o">,</span> <span class="nc">InputSize</span><span class="o">)</span>
+
+<span class="k">def</span> <span class="n">trainData</span><span class="o">(</span><span class="n">randomIndexArray</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">],</span>
               <span class="n">isComputeAccuracy</span><span class="k">:</span> <span class="kt">Boolean</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Double</span><span class="o">,</span> <span class="kt">Double</span><span class="o">,</span> <span class="nc">Double</span><span class="o">)</span> <span class="k">=</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">trainNDArray</span> <span class="o">::</span> <span class="n">expectLabel</span> <span class="o">::</span> <span class="n">shapeless</span><span class="o">.</span><span class="nc">HNil</span> <span class="k">=</span>
     <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">getSGDTrainNDArray</span><span class="o">(</span><span class="n">randomIndexArray</span><span class="o">)</span>
@@ -824,12 +689,14 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[11]:</div>
+<div class="prompt output_prompt">Out[8]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">trainData</span></pre>
+<pre><span class="ansi-cyan-fg">reshapedTestData</span>: <span class="ansi-green-fg">INDArray</span> = [[[[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.55, 0.55, 0.56, 0.54, 0.49, 0.45],
+   [0.59, 0.59, 0.62, 0.65, 0.63, 0.62, 0.64, 0.63, 0.64, 0.61, 0.61, 0.62, 0.64, 0.66, 0.67, 0.67, 0.66, 0.62, 0.60, 0.59, 0.57, 0.54, 0.55, 0.55, 0.58, 0.57, <span class="ansi-yellow-fg">...</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">trainData</span></pre>
 </div>
 
 </div>
@@ -843,7 +710,7 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>开始训练神经网络并观察每次训练loss的变化，loss的变化趋势是降低，但是不是每次都降低(前途是光明的，道路是曲折的),注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参</p>
+<p>开始训练神经网络并观察每次训练loss的变化,注意：根据你机器的配置，这个训练需要运行若干个小时,需要根据loss下降的情况和准确率变化情况调节超参</p>
 
 </div>
 </div>
@@ -1003,10 +870,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="d36d4bd4-f4a2-47b2-bc22-148abc2d7921"></div>
+<div id="aa195dda-51fd-45a8-a170-e7c6f9b1fe6d"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#d36d4bd4-f4a2-47b2-bc22-148abc2d7921');
+var element = $('#aa195dda-51fd-45a8-a170-e7c6f9b1fe6d');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
@@ -1059,7 +926,7 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>14.<a href="https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/src/main/scala/com/thoughtworks/deeplearning/tutorial/CNNs.scala">完整代码</a></p>
+<p><a href="https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/src/main/scala/com/thoughtworks/deeplearning/tutorial/CNNs.scala">完整代码</a></p>
 
 </div>
 </div>
