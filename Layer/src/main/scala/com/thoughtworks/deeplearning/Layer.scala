@@ -9,35 +9,6 @@ import scala.annotation.elidable
 
 object Layer {
 
-  private[deeplearning] trait CloseableOnce extends AutoCloseable {
-
-    private[CloseableOnce] final class ClosingFlag {
-      var closed = false
-      @elidable(elidable.ASSERTION)
-      def close() = {
-        assert(!closed)
-        closed = true
-      }
-
-      @elidable(elidable.ASSERTION)
-      def assertClosed() = {
-        assert(closed)
-      }
-    }
-
-    // FIXME: @elidable should only be used for def
-    @elidable(elidable.ASSERTION)
-    private val closingFlag = new ClosingFlag
-
-    override def close() = {
-      closingFlag.close()
-    }
-
-    override protected def finalize(): Unit = {
-      closingFlag.assertClosed()
-    }
-  }
-
   object Tape {
 
     /** @template */
@@ -55,19 +26,18 @@ object Layer {
     type Data
     type Delta
 
-    // TODO: rename to `duplicate`?
     /**
       * Returns a new [[Tape]] that shares the same [[value]] and [[backward]] behavior with this [[Tape]].
       * @note The newly created [[Tape]] and this [[Tape]] must be [[close]]d independently.
       */
-    def addReference(): Tape.Aux[Data, Delta]
+    def duplicate(): Tape.Aux[Data, Delta]
 
-    protected def forceBackward(delta: Delta): Future.Stateless[Unit]
+    def forceBackward(delta: Delta): Future[Unit]
 
     def isTrainable: Boolean
 
     @inline
-    final def backward(delta: Delta): Future.Stateless[Unit] = {
+    final def backward(delta: Delta): Future[Unit] = {
       if (isTrainable) {
         forceBackward(delta)
       } else {
@@ -116,6 +86,6 @@ trait Layer {
 
   type Output <: Tape
 
-  def forward(input: Input): Future.Stateless[Output]
+  def forward(input: Input): Future[Output]
 
 }
