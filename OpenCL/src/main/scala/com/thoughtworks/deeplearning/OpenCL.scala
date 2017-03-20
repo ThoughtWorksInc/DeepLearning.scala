@@ -333,17 +333,8 @@ data: $data""")
     }
 
   }
-  object NDRangeKernelEvent {
+  object CommandQueue {
     final case class Dimension(globalWorkOffset: Long, globalWorkSize: Long, localWorkSize: Long)
-  }
-  final class NDRangeKernelEvent(override val handle: Address) extends Event[Unit] {
-    override protected def result: Unit = ()
-
-    def duplicate(): NDRangeKernelEvent = {
-      checkErrorCode(clRetainEvent(handle.toLong))
-      new NDRangeKernelEvent(handle)
-    }
-
   }
 
   final class CommandQueue private[OpenCL] (val handle: Address) extends IsClosed {
@@ -358,8 +349,8 @@ data: $data""")
     }
 
     def ndRangeKernel(kernel: Kernel,
-                      dimensions: TraversableOnce[NDRangeKernelEvent.Dimension],
-                      preconditionEvents: Event[_]*): NDRangeKernelEvent = {
+                      dimensions: TraversableOnce[CommandQueue.Dimension],
+                      preconditionEvents: Event*): Event = {
 
       val globalWorkOffsetBuffer = mutable.Buffer.empty[Long]
       val globalWorkSizeBuffer = mutable.Buffer.empty[Long]
@@ -394,12 +385,13 @@ data: $data""")
         stack.close()
       }
       checkErrorCode(clFlush(handle.toLong))
-      new NDRangeKernelEvent(Address(outputEvent))
+      new Event(Address(outputEvent))
     }
 
-    def readBuffer[Element](buffer: Buffer[Element], preconditionEvents: Event[_]*)(
-        implicit sizeOf: Memory[Element]): ReadBufferEvent = {
-      val output: ByteBuffer = BufferUtils.createByteBuffer(buffer.numberOfBytes)
+    def readBuffer[Element, Destination](
+        source: Buffer[Element],
+        destination: Destination,
+        preconditionEvents: Event*)(implicit memory: Memory.Aux[Element, Destination]): Event = {
       val readBufferEvent = {
         val stack = stackPush()
         try {
@@ -410,62 +402,56 @@ data: $data""")
           }
           val outputEventBuffer = stack.pointers(0L)
           checkErrorCode(
-            clEnqueueReadBuffer(handle.toLong,
-                                buffer.handle.toLong,
-                                CL_FALSE,
-                                0,
-                                output,
-                                inputEventBuffer,
-                                outputEventBuffer))
+            nclEnqueueReadBuffer(
+              handle.toLong,
+              source.handle.toLong,
+              CL_FALSE,
+              0,
+              memory.remainingBytes(destination),
+              memory.address(destination).toLong,
+              inputEventBuffer.remaining(),
+              inputEventBuffer.address(),
+              outputEventBuffer.address()
+            )
+          )
           outputEventBuffer.get(0)
         } finally {
           stack.close()
         }
       }
       checkErrorCode(clFlush(handle.toLong))
-      new ReadBufferEvent(Address(readBufferEvent), output)
+      new Event(Address(readBufferEvent))
     }
 
   }
 
-  // TODO: typed buffer
-  final class ReadBufferEvent private[OpenCL] (override val handle: Address, protected val result: ByteBuffer)
-      extends Event[ByteBuffer] {
-    def duplicate(): ReadBufferEvent = {
-      checkErrorCode(clRetainEvent(handle.toLong))
-      new ReadBufferEvent(handle, result)
-    }
-  }
+  final class Event(val handle: Address) extends IsClosed with Future.Stateful[Unit] {
 
-  trait Event[Result] extends IsClosed with Future.Stateful[Result] {
-    val handle: Address
+    def duplicate = new Event(handle)
 
     override protected def forceClose(): Unit = {
       checkErrorCode(clReleaseEvent(handle.toLong))
     }
 
-    final protected def commandExecutionStatus: Int = {
+    def commandExecutionStatus: Int = {
       val a = Array(0)
       checkErrorCode(clGetEventInfo(handle.toLong, CL_EVENT_COMMAND_EXECUTION_STATUS, a, null))
       a(0)
     }
 
-    protected def result: Result
-
-    override def value: Option[Try[Result]] = {
+    override def value: Option[Try[Unit]] = {
       commandExecutionStatus match {
         case CL_QUEUED => None
         case CL_SUBMITTED => None
         case CL_RUNNING => None
-        case CL_COMPLETE => Some(Success(result))
+        case CL_COMPLETE => Some(Success(()))
         case errorCode => Some(Failure(Exceptions.fromErrorCode(errorCode)))
       }
     }
 
-    override def onComplete(handler: Result => TailRec[Unit])(
-        implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
+    override def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
       object Callback extends CLEventCallbackI {
-        override final def invoke(event: Long, status: Int, user_data: Long): Unit = {
+        override final def invoke(event: Long, status: Int, userData: Long): Unit = {
           container.close()
           val Some(resultOrException) = value
           (resultOrException match {
