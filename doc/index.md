@@ -1,3 +1,8 @@
+---
+layout: doc
+title: Introduction
+---
+
 This documentation is a step-by-step tutorial about how to implement common machine learning algorithms with the help of DeepLearning.scala.
 
 ## Run this tutorial
