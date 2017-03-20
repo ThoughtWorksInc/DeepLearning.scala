@@ -338,6 +338,12 @@ data: $data""")
   }
   final class NDRangeKernelEvent(override val handle: Address) extends Event[Unit] {
     override protected def result: Unit = ()
+
+    def duplicate(): NDRangeKernelEvent = {
+      checkErrorCode(clRetainEvent(handle.toLong))
+      new NDRangeKernelEvent(handle)
+    }
+
   }
 
   final class CommandQueue private[OpenCL] (val handle: Address) extends IsClosed {
