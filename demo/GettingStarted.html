@@ -36,7 +36,7 @@ in which <code>2-1 = 1-0 = 1</code></p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Network-Design">Network Design<a class="anchor-link" href="#Network-Design">&#182;</a></h2>
+<h2 id="Install-DeepLearning.scala">Install DeepLearning.scala<a class="anchor-link" href="#Install-DeepLearning.scala">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -45,8 +45,75 @@ in which <code>2-1 = 1-0 = 1</code></p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Step-1:-Install-DeepLearning.scala">Step 1: Install DeepLearning.scala<a class="anchor-link" href="#Step-1:-Install-DeepLearning.scala">&#182;</a></h3><p>DeepLearning.scala is hosted on Maven Central repository.
-If you use <a href="http://www.scala-sbt.org">sbt</a>, please add the following settings in your <code>build.sbt</code>:</p>
+<p>DeepLearning.scala is hosted on Maven Central repository.</p>
+<p>You can use magic imports in <a href="https://github.com/alexarchambault/jupyter-scala">jupyter-scala</a> or <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite-REPL</a> to download DeepLearning.scala and its dependencies.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:2.0.0`</span>
+
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC7`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC7`</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[1]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$plugin.$                                                                             
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                           
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                               
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                           
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                              
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                             
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                             
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                 
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                </span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If you use <a href="http://www.scala-sbt.org">sbt</a>, please add the following settings into your <code>build.sbt</code>:</p>
 
 <pre><code>libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % "latest.release"
 
@@ -69,7 +136,8 @@ addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-depend
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 fork := true</code></pre>
-<p>Note that this example does not run on Scala 2.12 because <a href="http://nd4j.org/">nd4j</a> does not support Scala 2.12. Make sure there is not a setting like <code>scalaVersion := "2.12.1"</code> in your <code>build.sbt</code>.</p>
+<p>Note that this example does not run on Scala 2.12 because <a href="http://nd4j.org/scala">nd4s</a> does not support Scala 2.12. Make sure there is not a setting like <code>scalaVersion := "2.12.1"</code> in your <code>build.sbt</code>.</p>
+<p>See <a href="https://index.scala-lang.org/thoughtworksinc/deeplearning.scala">Scaladex</a> to install DeepLearning.scala in other build tools!</p>
 
 </div>
 </div>
@@ -79,52 +147,32 @@ fork := true</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>For <a href="https://github.com/alexarchambault/jupyter-scala">jupyter-scala</a> or <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite-REPL</a>, you can use magic imports, which will download DeepLearning.scala and its dependencies for you.</p>
+<p>Then, you may want to import classes in DeepLearning.scala and its dependencies.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:2.0.0`</span>
-
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC7`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC7`</span>
-
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.0`</span>
-
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableHList._</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableHList._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableDouble._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableAny._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic._</span>
-<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.</span><span class="o">{</span>
-  <span class="nc">DifferentiableHList</span><span class="o">,</span>
-  <span class="nc">DifferentiableINDArray</span><span class="o">,</span>
-  <span class="nc">Layer</span><span class="o">,</span>
-  <span class="nc">Symbolic</span>
-<span class="o">}</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableHList</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.DifferentiableINDArray</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Layer</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Symbolic</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathFunctions._</span>
 <span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Poly.MathOps</span>
 <span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
 <span class="k">import</span> <span class="nn">org.nd4j.linalg.factory.Nd4j</span>
 <span class="k">import</span> <span class="nn">org.nd4s.Implicits._</span>
 <span class="k">import</span> <span class="nn">shapeless._</span>
-
-<span class="k">import</span> <span class="nn">plotly._</span>
-<span class="k">import</span> <span class="nn">plotly.element._</span>
-<span class="k">import</span> <span class="nn">plotly.layout._</span>
-<span class="k">import</span> <span class="nn">plotly.JupyterScala._</span>
 </pre></div>
 
 </div>
@@ -136,35 +184,12 @@ fork := true</code></pre>
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[22]:</div>
+<div class="prompt output_prompt">Out[2]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$plugin.$                                                                             
-
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                    
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                   
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                  
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                  
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                      
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                     
-
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             
-
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableHList._
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableHList._
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableDouble._
 </span>
@@ -176,12 +201,13 @@ fork := true</code></pre>
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Symbolic._
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.{
-  DifferentiableHList,
-  DifferentiableINDArray,
-  Layer,
-  Symbolic
-}
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableHList
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.DifferentiableINDArray
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Layer
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Symbolic
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Poly.MathFunctions._
 </span>
@@ -193,16 +219,7 @@ fork := true</code></pre>
 </span>
 <span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4s.Implicits._
 </span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">shapeless._
-
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly._
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.element._
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.layout._
-</span>
-<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.JupyterScala._</span></pre>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">shapeless._</span></pre>
 </div>
 
 </div>
@@ -216,17 +233,7 @@ fork := true</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>See <a href="https://index.scala-lang.org/thoughtworksinc/deeplearning.scala">Scaladex</a> for settings of other build tools!</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Step-2:-Design-your-own-neural-network">Step 2: Design your own neural network<a class="anchor-link" href="#Step-2:-Design-your-own-neural-network">&#182;</a></h3><p>DeepLearning.scala is also a language that we can use to create complex neural networks.</p>
+<h2 id="Design-the-neural-network">Design the neural network<a class="anchor-link" href="#Design-the-neural-network">&#182;</a></h2><p>DeepLearning.scala is also a language that we can use to create complex neural networks.</p>
 <p>In the following sections, you will learn:</p>
 <ul>
 <li>how to define types for a neural network</li>
@@ -243,8 +250,59 @@ fork := true</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="The-type-of-neural-networks">The type of neural networks<a class="anchor-link" href="#The-type-of-neural-networks">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <p>Like a <code>scala.Function</code>, a neural network has its own input types and output types.</p>
-<p>For example, the type of the neural network that accepts an N-dimensional array and returns another N-dimensional array is <code>(INDArray &lt;=&gt; INDArray)@Symbolic</code>.</p>
+<p>For example, the type of the neural network that accepts an N-dimensional array and returns another N-dimensional array is <code>(INDArray =&gt; INDArray)@Symbolic</code>.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">var</span> <span class="n">myNeuralNetwork</span><span class="k">:</span> <span class="o">(</span><span class="kt">INDArray</span> <span class="o">=&gt;</span> <span class="kt">INDArray</span><span class="o">)</span><span class="nd">@Symbolic</span> <span class="k">=</span> <span class="k">_</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[3]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">myNeuralNetwork</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">FromTo</span>[<span class="ansi-green-fg">INDArray</span>, <span class="ansi-green-fg">INDArray</span>]{type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray;type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">@</span> = null</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In <code>(A =&gt; B)@Symbolic</code>, A is the input type, and B is the output type. For the example above, both the input type and the output type are <code>INDArray</code>.</p>
+<p><code>@Symbolic</code> is a syntactic sugar to create implicit dependent types. See <a href="https://github.com/ThoughtWorksInc/implicit-dependent-type">implicit-dependent-type</a> for more information.</p>
 
 </div>
 </div>
@@ -254,52 +312,72 @@ fork := true</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>val myNeuralNetwork = ???</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>In <code>(A &lt;=&gt; B)@Symbolic</code>, A is the input type, and B is the output type. For the example above, both the input type and the output type are <code>INDArray</code>.</p>
-<p><code>@Symbolic</code> is a syntactic sugar to create implicit dependent types. See <a href="https://github.com/ThoughtWorksInc/implicit-dependent-type">implicit-dependent-type</a> for more information about <code>##</code>.</p>
-<p>The above code throws an <code>NotImplementedError</code> because we have not been implemtnted the neural network.
-In later sections of this article, you will replace <code>???</code> to a valid neural network.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h4 id="2.2-Use-a-neural-network-as-a-predictor">2.2 Use a neural network as a predictor<a class="anchor-link" href="#2.2-Use-a-neural-network-as-a-predictor">&#182;</a></h4><p>Like a normal <code>scala.Function</code>, if you pass the input data to the neural network, it will return some results.
+<h3 id="Use-a-neural-network-as-a-predictor">Use a neural network as a predictor<a class="anchor-link" href="#Use-a-neural-network-as-a-predictor">&#182;</a></h3><p>Like a normal <code>scala.Function</code>, if you pass the input data to the neural network, it will return some results.
 You can use the <code>predict</code> method to invoke a neural network.</p>
 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
-val predictionResult: INDArray = myNeuralNetwork.predict(input)</p>
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="nc">Array</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">6</span><span class="o">,</span> <span class="mi">9</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">13</span><span class="o">,</span> <span class="mi">15</span><span class="o">,</span> <span class="mi">17</span><span class="o">)).</span><span class="n">toNDArray</span>
+<span class="k">val</span> <span class="n">predictionResult</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="n">myNeuralNetwork</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">input</span><span class="o">)</span>
+</pre></div>
 
 </div>
 </div>
 </div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>SLF4J: Failed to load class &#34;org.slf4j.impl.StaticLoggerBinder&#34;.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">java.lang.NullPointerException</span>
+  com.thoughtworks.deeplearning.DifferentiableAny$AnyLayerOps$$anonfun$predict$1.apply(<span class="ansi-green-fg">DifferentiableAny.scala</span>:<span class="ansi-green-fg">98</span>)
+  com.thoughtworks.deeplearning.DifferentiableAny$AnyLayerOps$$anonfun$predict$1.apply(<span class="ansi-green-fg">DifferentiableAny.scala</span>:<span class="ansi-green-fg">98</span>)
+  resource.DefaultManagedResource.open(<span class="ansi-green-fg">AbstractManagedResource.scala</span>:<span class="ansi-green-fg">110</span>)
+  resource.AbstractManagedResource.acquireFor(<span class="ansi-green-fg">AbstractManagedResource.scala</span>:<span class="ansi-green-fg">87</span>)
+  resource.ManagedResourceOperations$class.apply(<span class="ansi-green-fg">ManagedResourceOperations.scala</span>:<span class="ansi-green-fg">26</span>)
+  resource.AbstractManagedResource.apply(<span class="ansi-green-fg">AbstractManagedResource.scala</span>:<span class="ansi-green-fg">50</span>)
+  resource.ManagedResourceOperations$class.acquireAndGet(<span class="ansi-green-fg">ManagedResourceOperations.scala</span>:<span class="ansi-green-fg">25</span>)
+  resource.AbstractManagedResource.acquireAndGet(<span class="ansi-green-fg">AbstractManagedResource.scala</span>:<span class="ansi-green-fg">50</span>)
+  com.thoughtworks.deeplearning.DifferentiableAny$AnyLayerOps.predict(<span class="ansi-green-fg">DifferentiableAny.scala</span>:<span class="ansi-green-fg">98</span>)
+  $sess.cmd3Wrapper$Helper.&lt;init&gt;(<span class="ansi-green-fg">cmd3.sc</span>:<span class="ansi-green-fg">2</span>)
+  $sess.cmd3Wrapper.&lt;init&gt;(<span class="ansi-green-fg">cmd3.sc</span>:<span class="ansi-green-fg">509</span>)
+  $sess.cmd3$.&lt;init&gt;(<span class="ansi-green-fg">cmd3.sc</span>:<span class="ansi-green-fg">486</span>)
+  $sess.cmd3$.&lt;clinit&gt;(<span class="ansi-green-fg">cmd3.sc</span>:<span class="ansi-green-fg">-1</span>)</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The above code throws an <code>NotImplementedError</code> because <code>myNeuralNetwork</code> has not been implemented.
+<p>The above code throws a <code>NullPointerException</code> because <code>myNeuralNetwork</code> has not been initialized.
 We will fix the problem by creating a valid neural network.</p>
 
 </div>
@@ -310,7 +388,7 @@ We will fix the problem by creating a valid neural network.</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h4 id="2.3-Create-a-neural-network">2.3 Create a neural network<a class="anchor-link" href="#2.3-Create-a-neural-network">&#182;</a></h4><p>Same as the definition of a normal Scala function, the definition of neural network consists of a type definition for its parameter, a type definition for its return value, and a body that contains mathematical formulas, function-calls, and control flows.</p>
+<h3 id="Create-a-neural-network">Create a neural network<a class="anchor-link" href="#Create-a-neural-network">&#182;</a></h3><p>Same as the definition of a normal Scala function, the definition of neural network consists of a type definition for its parameter, a type definition for its return value, and a body that contains mathematical formulas, function-calls, and control flows.</p>
 
 </div>
 </div>
@@ -320,7 +398,7 @@ We will fix the problem by creating a valid neural network.</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h5 id="2.3.1--Weight-Intialization">2.3.1  Weight Intialization<a class="anchor-link" href="#2.3.1--Weight-Intialization">&#182;</a></h5><p>A neural network is trainable.
+<h4 id="Weight-Intialization">Weight Intialization<a class="anchor-link" href="#Weight-Intialization">&#182;</a></h4><p>A neural network is trainable.
 It means that some variables in the neural network can be changed automatically according to some goals. Those variables are called <code>weight</code>.
 You can create weight variables via <code>toWeight</code> method, given its initial value.</p>
 <p>In order to create a weight, you must create an <code>Optimizer</code>, which contains the rule that manages how the weight changes. See <a href="https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableINDArray$$Optimizers$.html">Scaladoc</a> for a list of built-in optimizers.</p>
@@ -330,7 +408,7 @@ You can create weight variables via <code>toWeight</code> method, given its init
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">implicit</span> <span class="k">def</span> <span class="n">optimizer</span><span class="k">:</span> <span class="kt">Optimizer</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LearningRate</span> <span class="o">{</span>
@@ -347,7 +425,7 @@ You can create weight variables via <code>toWeight</code> method, given its init
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[23]:</div>
+<div class="prompt output_prompt">Out[5]:</div>
 
 
 
@@ -361,13 +439,22 @@ You can create weight variables via <code>toWeight</code> method, given its init
 </div>
 
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="@Symbolic-placeholders"><code>@Symbolic</code> placeholders<a class="anchor-link" href="#@Symbolic-placeholders">&#182;</a></h4>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">createMyNeuralNetwork</span><span class="o">(</span><span class="k">implicit</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
-  <span class="k">val</span> <span class="n">initialValueOfWeight</span> <span class="k">=</span> <span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">1</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">initialValueOfWeight</span> <span class="k">=</span> <span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">1</span><span class="o">)</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="o">(</span><span class="mf">3.0</span><span class="o">)</span>
   <span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="n">initialValueOfWeight</span><span class="o">.</span><span class="n">toWeight</span>
   <span class="n">input</span> <span class="n">dot</span> <span class="n">weight</span>
 <span class="o">}</span>
@@ -382,7 +469,7 @@ You can create weight variables via <code>toWeight</code> method, given its init
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[24]:</div>
+<div class="prompt output_prompt">Out[6]:</div>
 
 
 
@@ -401,44 +488,42 @@ You can create weight variables via <code>toWeight</code> method, given its init
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h5 id="2.3.2-From-and-To-placeholders">2.3.2 <code>From</code> and <code>To</code> placeholders<a class="anchor-link" href="#2.3.2-From-and-To-placeholders">&#182;</a></h5><p>When you create a neural network, you have not actually evaluated it yet.
+<p>The <code>createMyNeuralNetwork</code> method is a <strong>symbolic method</strong>
+When you call the method neural network, you have not actually evaluated it yet.
 In fact, you only build its structure.
 Variables in the neural network are placeholders,
 which will be replaced with actual values in the future training or prediction process.</p>
-<p><code>From</code> is the placeholder type for input parameter,
-and <code>To</code> is the placeholder type for return values and other local variables.</p>
-<p><code>From</code> must be <code>implicit</code> so that it is automatically generated when you create the neural network. Otherwise, you have to manually pass the <code>From</code> placeholder to <code>createMyNeuralNetwork</code>.</p>
+<p>Generally, any method that contains an <code>implicit</code> parameter that has a <code>@Symbolic</code> type is a <strong>symbolic method</strong>.
+You can create symbolic methods in the following form:</p>
+
+<pre><code>def yourSymbolicMethod(implicit input: InputType @Symbolic): OutputType @Symbolic = {
+  ???
+}</code></pre>
+<p>The <code>@Symbolic</code> annotations in symbolic methods create placeholder types for parameters, return values and other local variables.</p>
+<p>Note that the input parameter must be <code>implicit</code> so that it is automatically generated when you invoke the the symbolic method. Otherwise, you have to manually pass the <code>@Symbolic</code> annotated placeholder to it.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now we create a new neural network and assign it to <code>myNeuralNetwork</code>.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">myNeuralNetwork</span> <span class="k">=</span> <span class="n">createMyNeuralNetwork</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="n">myNeuralNetwork</span> <span class="k">=</span> <span class="n">createMyNeuralNetwork</span>
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt output_prompt">Out[25]:</div>
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">myNeuralNetwork</span>: (<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>[<span class="ansi-green-fg">INDArray</span>]{type OutputData = org.nd4j.linalg.api.ndarray.INDArray;type OutputDelta = org.nd4j.linalg.api.ndarray.INDArray;type InputData = org.nd4j.linalg.api.ndarray.INDArray;type InputDelta = org.nd4j.linalg.api.ndarray.INDArray})#<span class="ansi-green-fg">T</span> = Dot(Identity(),Weight([-0.68, 0.68, -1.38]))</pre>
-</div>
-
-</div>
-
 </div>
 </div>
 
@@ -448,7 +533,7 @@ and <code>To</code> is the placeholder type for return values and other local va
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Step-3:-Train-your-Neuro-Network">Step 3: Train your Neuro Network<a class="anchor-link" href="#Step-3:-Train-your-Neuro-Network">&#182;</a></h3><p>You have learned that weight will be automatically changed due to some goals.</p>
+<h2 id="Train-your-Neural-Network">Train your Neural Network<a class="anchor-link" href="#Train-your-Neural-Network">&#182;</a></h2><p>You have learned that weight will be automatically changed due to some goals.</p>
 <p>In DeepLearning.scala, when we train a neural network, our goal should always be minimizing the absolute of the return value.</p>
 <p>For example, if someone repeatedly call <code>myNeuralNetwork.train(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray)</code>,
 the neural network would try to minimize <code>input dot weight</code>.
@@ -462,7 +547,7 @@ and <code>myNeuralNetwork.predict(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">lossFunction</span><span class="o">(</span><span class="k">implicit</span> <span class="n">pair</span><span class="k">:</span> <span class="o">(</span><span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">INDArray</span> <span class="kt">::</span> <span class="kt">HNil</span><span class="o">)</span> <span class="kt">@Symbolic</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="kt">@Symbolic</span> <span class="o">=</span> <span class="o">{</span>
@@ -481,7 +566,7 @@ and <code>myNeuralNetwork.predict(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[26]:</div>
+<div class="prompt output_prompt">Out[8]:</div>
 
 
 
@@ -508,13 +593,29 @@ The first array is the input data used to train the neural network, and the seco
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, we hard-code some data to train the network:</p>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="nc">Array</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">6</span><span class="o">,</span> <span class="mi">9</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">13</span><span class="o">,</span> <span class="mi">15</span><span class="o">,</span> <span class="mi">17</span><span class="o">)).</span><span class="n">toNDArray</span>
 <span class="k">val</span> <span class="n">expectedOutput</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="nc">Array</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">3</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">2</span><span class="o">)).</span><span class="n">toNDArray</span>
+
+<span class="k">val</span> <span class="nc">NumberOfIterations</span> <span class="k">=</span> <span class="mi">400</span>
+
+<span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span> <span class="k">for</span> <span class="o">(</span><span class="n">iteration</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">until</span> <span class="nc">NumberOfIterations</span><span class="o">)</span> <span class="k">yield</span> <span class="o">{</span>
+  <span class="n">lossFunction</span><span class="o">.</span><span class="n">train</span><span class="o">(</span><span class="n">input</span> <span class="o">::</span> <span class="n">expectedOutput</span> <span class="o">::</span> <span class="nc">HNil</span><span class="o">)</span>
+<span class="o">}</span>
 </pre></div>
 
 </div>
@@ -526,7 +627,7 @@ The first array is the input data used to train the neural network, and the seco
 
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[27]:</div>
+<div class="prompt output_prompt">Out[9]:</div>
 
 
 
@@ -534,7 +635,140 @@ The first array is the input data used to train the neural network, and the seco
 <pre><span class="ansi-cyan-fg">input</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 1.00, 2.00],
  [3.00, 6.00, 9.00],
  [13.00, 15.00, 17.00]]
-<span class="ansi-cyan-fg">expectedOutput</span>: <span class="ansi-green-fg">INDArray</span> = [1.00, 3.00, 2.00]</pre>
+<span class="ansi-cyan-fg">expectedOutput</span>: <span class="ansi-green-fg">INDArray</span> = [1.00, 3.00, 2.00]
+<span class="ansi-cyan-fg">NumberOfIterations</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">400</span>
+<span class="ansi-cyan-fg">lossSeq</span>: <span class="ansi-green-fg">collection</span>.<span class="ansi-green-fg">immutable</span>.<span class="ansi-green-fg">IndexedSeq</span>[<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>.<span class="ansi-green-fg">&lt;refinement&gt;</span>.this.type.<span class="ansi-green-fg">OutputData</span>] = <span class="ansi-yellow-fg">Vector</span>(
+  <span class="ansi-green-fg">14.453048706054688</span>,
+  <span class="ansi-green-fg">12.929048538208008</span>,
+  <span class="ansi-green-fg">11.405047416687012</span>,
+  <span class="ansi-green-fg">9.881048202514648</span>,
+  <span class="ansi-green-fg">8.357048988342285</span>,
+  <span class="ansi-green-fg">6.8330464363098145</span>,
+  <span class="ansi-green-fg">5.309046745300293</span>,
+  <span class="ansi-green-fg">3.7850468158721924</span>,
+  <span class="ansi-green-fg">2.2610464096069336</span>,
+  <span class="ansi-green-fg">0.7370456457138062</span>,
+  <span class="ansi-green-fg">1.211989402770996</span>,
+<span class="ansi-yellow-fg">...</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>After those iterations, the loss should close to zero.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">println</span><span class="o">(</span><span class="s">s&quot;loss: </span><span class="si">${</span> <span class="n">lossFunction</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">input</span> <span class="o">::</span> <span class="n">expectedOutput</span> <span class="o">::</span> <span class="nc">HNil</span><span class="o">)</span> <span class="si">}</span><span class="s">&quot;</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>loss: 0.32903075218200684
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The prediction result should close to Array(Array(0), Array(3), Array(1)).toNDArray</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">println</span><span class="o">(</span><span class="s">s&quot;result: </span><span class="si">${</span> <span class="n">myNeuralNetwork</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="si">}</span><span class="s">&quot;</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>result: [0.93, 2.80, 1.94]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Then we create a plot showing the loss changes during iterations.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.0`</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[12]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             </span></pre>
 </div>
 
 </div>
@@ -545,20 +779,58 @@ The first array is the input data used to train the neural network, and the seco
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span> <span class="k">for</span> <span class="o">(</span><span class="k">_</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">until</span> <span class="mi">50</span><span class="o">)</span> <span class="k">yield</span>
-  <span class="n">lossFunction</span><span class="o">.</span><span class="n">train</span><span class="o">(</span><span class="n">input</span> <span class="o">::</span> <span class="n">expectedOutput</span> <span class="o">::</span> <span class="nc">HNil</span><span class="o">)</span>
-<span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">plotly._</span>
+<span class="k">import</span> <span class="nn">plotly.element._</span>
+<span class="k">import</span> <span class="nn">plotly.layout._</span>
+<span class="k">import</span> <span class="nn">plotly.JupyterScala._</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[13]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.element._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.layout._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.JupyterScala._</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
 <span class="k">val</span> <span class="n">plot</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
   <span class="nc">Scatter</span><span class="o">(</span>
-   <span class="mi">0</span> <span class="n">until</span> <span class="mi">50</span> <span class="n">by</span> <span class="mi">1</span><span class="o">,</span>
+   <span class="mi">0</span> <span class="n">until</span> <span class="nc">NumberOfIterations</span><span class="o">,</span>
    <span class="n">lossSeq</span>
   <span class="o">)</span>
 <span class="o">)</span>
 <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="o">(</span>
-  <span class="n">title</span> <span class="k">=</span> <span class="s">&quot;loss on time&quot;</span>
+  <span class="n">title</span> <span class="k">=</span> <span class="s">&quot;loss by time&quot;</span>
 <span class="o">)</span>
 </pre></div>
 
@@ -606,7 +878,7 @@ The first array is the input data used to train the neural network, and the seco
 
 
 <div class="output_html rendered_html output_subarea ">
-<div class="chart" id="plot-733358948"></div>
+<div class="chart" id="plot-2135828128"></div>
 </div>
 
 </div>
@@ -617,18 +889,18 @@ The first array is the input data used to train the neural network, and the seco
 
 
 
-<div id="81291d91-28c9-40b4-8eb4-6323458d6edd"></div>
+<div id="c140c0f2-85dc-4dd2-9c0f-a1e335aa7216"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#81291d91-28c9-40b4-8eb4-6323458d6edd');
+var element = $('#c140c0f2-85dc-4dd2-9c0f-a1e335aa7216');
 requirejs(["plotly"], function(Plotly) {
   (function () {
-  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0],"y":[40.56621170043945,39.042213439941406,37.518211364746094,35.99421310424805,34.47021484375,32.94621276855469,31.422212600708008,29.898212432861328,28.37421417236328,26.85021209716797,25.326213836669922,23.80221176147461,22.27821159362793,20.75421142578125,19.230213165283203,17.706212997436523,16.182212829589844,14.65821647644043,13.13421630859375,11.610217094421387,10.08621883392334,8.562219619750977,7.038219928741455,5.51422119140625,4.454054832458496,4.494223594665527,4.758053779602051,4.5580549240112305,4.358057022094727,4.482222557067871,4.662055969238281,4.46205472946167,4.262053489685059,4.470221042633057,4.566054344177246,4.366055488586426,4.166055679321289,4.458223342895508,4.470055103302002,4.270053386688232,4.070054054260254,4.446221828460693,4.374053001403809,4.174055099487305,3.9740543365478516,4.434224605560303,4.2780537605285645,4.078053951263428,3.9182229042053223,4.382052421569824]};
+  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0,96.0,97.0,98.0,99.0,100.0,101.0,102.0,103.0,104.0,105.0,106.0,107.0,108.0,109.0,110.0,111.0,112.0,113.0,114.0,115.0,116.0,117.0,118.0,119.0,120.0,121.0,122.0,123.0,124.0,125.0,126.0,127.0,128.0,129.0,130.0,131.0,132.0,133.0,134.0,135.0,136.0,137.0,138.0,139.0,140.0,141.0,142.0,143.0,144.0,145.0,146.0,147.0,148.0,149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0,203.0,204.0,205.0,206.0,207.0,208.0,209.0,210.0,211.0,212.0,213.0,214.0,215.0,216.0,217.0,218.0,219.0,220.0,221.0,222.0,223.0,224.0,225.0,226.0,227.0,228.0,229.0,230.0,231.0,232.0,233.0,234.0,235.0,236.0,237.0,238.0,239.0,240.0,241.0,242.0,243.0,244.0,245.0,246.0,247.0,248.0,249.0,250.0,251.0,252.0,253.0,254.0,255.0,256.0,257.0,258.0,259.0,260.0,261.0,262.0,263.0,264.0,265.0,266.0,267.0,268.0,269.0,270.0,271.0,272.0,273.0,274.0,275.0,276.0,277.0,278.0,279.0,280.0,281.0,282.0,283.0,284.0,285.0,286.0,287.0,288.0,289.0,290.0,291.0,292.0,293.0,294.0,295.0,296.0,297.0,298.0,299.0,300.0,301.0,302.0,303.0,304.0,305.0,306.0,307.0,308.0,309.0,310.0,311.0,312.0,313.0,314.0,315.0,316.0,317.0,318.0,319.0,320.0,321.0,322.0,323.0,324.0,325.0,326.0,327.0,328.0,329.0,330.0,331.0,332.0,333.0,334.0,335.0,336.0,337.0,338.0,339.0,340.0,341.0,342.0,343.0,344.0,345.0,346.0,347.0,348.0,349.0,350.0,351.0,352.0,353.0,354.0,355.0,356.0,357.0,358.0,359.0,360.0,361.0,362.0,363.0,364.0,365.0,366.0,367.0,368.0,369.0,370.0,371.0,372.0,373.0,374.0,375.0,376.0,377.0,378.0,379.0,380.0,381.0,382.0,383.0,384.0,385.0,386.0,387.0,388.0,389.0,390.0,391.0,392.0,393.0,394.0,395.0,396.0,397.0,398.0,399.0],"y":[14.453048706054688,12.929048538208008,11.405047416687012,9.881048202514648,8.357048988342285,6.8330464363098145,5.309046745300293,3.7850468158721924,2.2610464096069336,0.7370456457138062,1.211989402770996,1.0119894742965698,0.8119896650314331,0.7250434160232544,1.115989089012146,0.9159895181655884,0.7159899473190308,0.7130406498908997,1.0199905633926392,0.8199905157089233,0.6199901700019836,0.7010385990142822,0.965445876121521,0.5450382232666016,1.1014454364776611,0.49999165534973145,0.8930372595787048,0.8039910793304443,0.6039910316467285,0.4039904475212097,0.881034255027771,0.7494487762451172,0.7250348329544067,0.8854486346244812,0.5690339803695679,1.0214496850967407,0.41303330659866333,1.1574496030807495,0.36399221420288086,0.7610323429107666,0.8294501900672913,0.6050319671630859,0.9654505252838135,0.4490320086479187,1.1014513969421387,0.29303181171417236,1.2374513149261475,0.32399308681488037,0.641029953956604,0.9094523191452026,0.48503023386001587,1.0454522371292114,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415,0.32903075218200684,1.1949697732925415]};
 
   var data = [data0];
-  var layout = {"title":"loss on time"};
+  var layout = {"title":"loss by time"};
 
-  Plotly.plot('plot-733358948', data, layout);
+  Plotly.plot('plot-2135828128', data, layout);
 })();
 });
       
@@ -638,25 +910,12 @@ requirejs(["plotly"], function(Plotly) {
 </div>
 
 <div class="output_area">
-<div class="prompt output_prompt">Out[28]:</div>
+<div class="prompt output_prompt">Out[14]:</div>
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre><span class="ansi-cyan-fg">lossSeq</span>: <span class="ansi-green-fg">collection</span>.<span class="ansi-green-fg">immutable</span>.<span class="ansi-green-fg">IndexedSeq</span>[<span class="ansi-green-fg">Symbolic</span>.<span class="ansi-green-fg">To</span>.<span class="ansi-green-fg">&lt;refinement&gt;</span>.this.type.<span class="ansi-green-fg">OutputData</span>] = <span class="ansi-yellow-fg">Vector</span>(
-  <span class="ansi-green-fg">40.56621170043945</span>,
-  <span class="ansi-green-fg">39.042213439941406</span>,
-  <span class="ansi-green-fg">37.518211364746094</span>,
-  <span class="ansi-green-fg">35.99421310424805</span>,
-  <span class="ansi-green-fg">34.47021484375</span>,
-  <span class="ansi-green-fg">32.94621276855469</span>,
-  <span class="ansi-green-fg">31.422212600708008</span>,
-  <span class="ansi-green-fg">29.898212432861328</span>,
-  <span class="ansi-green-fg">28.37421417236328</span>,
-  <span class="ansi-green-fg">26.85021209716797</span>,
-  <span class="ansi-green-fg">25.326213836669922</span>,
-<span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">plot</span>: <span class="ansi-green-fg">Seq</span>[<span class="ansi-green-fg">Scatter</span>] = <span class="ansi-yellow-fg">List</span>(
+<pre><span class="ansi-cyan-fg">plot</span>: <span class="ansi-green-fg">Seq</span>[<span class="ansi-green-fg">Scatter</span>] = <span class="ansi-yellow-fg">List</span>(
   <span class="ansi-yellow-fg">Scatter</span>(
     <span class="ansi-yellow-fg">Some</span>(
       <span class="ansi-yellow-fg">Doubles</span>(
@@ -669,69 +928,9 @@ requirejs(["plotly"], function(Plotly) {
           <span class="ansi-green-fg">5.0</span>,
           <span class="ansi-green-fg">6.0</span>,
 <span class="ansi-yellow-fg">...</span>
-<span class="ansi-cyan-fg">res27_3</span>: <span class="ansi-green-fg">String</span> = <span class="ansi-green-fg">&#34;plot-733358948&#34;</span></pre>
+<span class="ansi-cyan-fg">res13_2</span>: <span class="ansi-green-fg">String</span> = <span class="ansi-green-fg">&#34;plot-2135828128&#34;</span></pre>
 </div>
 
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="c1">// The loss should close to zero</span>
-<span class="n">println</span><span class="o">(</span><span class="s">s&quot;loss: </span><span class="si">${</span> <span class="n">lossFunction</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">input</span> <span class="o">::</span> <span class="n">expectedOutput</span> <span class="o">::</span> <span class="nc">HNil</span><span class="o">)</span> <span class="si">}</span><span class="s">&quot;</span><span class="o">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt"></div>
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>loss: 4.18205451965332
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[30]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-scala"><pre><span></span><span class="c1">// The prediction result should close to Array(Array(1), Array(0)).toNDArray</span>
-<span class="n">println</span><span class="o">(</span><span class="s">s&quot;result: </span><span class="si">${</span> <span class="n">myNeuralNetwork</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="si">}</span><span class="s">&quot;</span><span class="o">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-<div class="prompt"></div>
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>result: [-0.04, 0.50, 2.64]
-</pre>
-</div>
 </div>
 
 </div>
