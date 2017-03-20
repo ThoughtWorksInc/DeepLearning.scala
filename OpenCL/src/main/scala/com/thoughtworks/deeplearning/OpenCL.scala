@@ -388,10 +388,11 @@ data: $data""")
       val readBufferEvent = {
         val stack = stackPush()
         try {
-          val inputEventBuffer = if (preconditionEvents.isEmpty) {
-            null
+          val (inputEventBufferSize, inputEventBufferAddress) = if (preconditionEvents.isEmpty) {
+            (0, NULL)
           } else {
-            stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
+            val inputEventBuffer = stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
+            (preconditionEvents.length, inputEventBuffer.address())
           }
           val outputEventBuffer = stack.pointers(0L)
           checkErrorCode(
@@ -402,8 +403,8 @@ data: $data""")
               0,
               memory.remainingBytes(destination),
               memory.address(destination).toLong,
-              inputEventBuffer.remaining(),
-              inputEventBuffer.address(),
+              inputEventBufferSize,
+              inputEventBufferAddress,
               outputEventBuffer.address()
             )
           )
