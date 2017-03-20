@@ -21,6 +21,8 @@ lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
 lazy val OpenCL = project.dependsOn(IsClosed, `stateless-future`, Memory)
 
+lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
+
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 publishArtifact := false
