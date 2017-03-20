@@ -4,7 +4,12 @@ lazy val DifferentiableKernel = project.dependsOn(OpenCL, OpenCLCodeGenerator, L
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
+// TODO: Create a separate Tape library?
 lazy val Layer = project.dependsOn(`stateless-future`)
+
+lazy val CumulativeTape = project.dependsOn(Layer)
+
+lazy val CheckedTape = project.dependsOn(Layer, IsClosed)
 
 lazy val Memory = project
 
