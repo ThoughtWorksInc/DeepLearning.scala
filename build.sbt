@@ -8,13 +8,13 @@ lazy val Layer = project.dependsOn(`stateless-future`)
 
 lazy val Memory = project
 
-lazy val CheckedCloseable = project
+lazy val IsClosed = project
 
 lazy val `stateless-future` = project
 
 lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
-lazy val OpenCL = project.dependsOn(CheckedCloseable, `stateless-future`, Memory)
+lazy val OpenCL = project.dependsOn(IsClosed, `stateless-future`, Memory)
 
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 

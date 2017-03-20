@@ -257,7 +257,7 @@ data: $data""")
   /**
     * @param logger keep the reference to keep the weak reference to logger
     */
-  final class Context private[OpenCL] (val handle: Address, logger: AnyRef) extends CheckedCloseable {
+  final class Context private[OpenCL] (val handle: Address, logger: AnyRef) extends IsClosed {
 
     def createProgramWithSource(sourceCode: TraversableOnce[CharSequence]): Program = {
       val stack = stackPush()
@@ -314,11 +314,11 @@ data: $data""")
   object NDRangeKernelEvent {
     final case class Dimension(globalWorkOffset: Long, globalWorkSize: Long, localWorkSize: Long)
   }
-  final class NDRangeKernelEvent(val handle: Address) extends Event[Unit] {
+  final class NDRangeKernelEvent(override val handle: Address) extends Event[Unit] {
     override protected def result: Unit = ()
   }
 
-  final class CommandQueue private[OpenCL] (val handle: Address) extends CheckedCloseable {
+  final class CommandQueue private[OpenCL] (val handle: Address) extends IsClosed {
 
     def duplicate(): CommandQueue = {
       checkErrorCode(clRetainCommandQueue(handle.toLong))
@@ -409,7 +409,7 @@ data: $data""")
     }
   }
 
-  trait Event[Result] extends CheckedCloseable with Future.Stateful[Result] {
+  trait Event[Result] extends IsClosed with Future.Stateful[Result] {
     val handle: Address
 
     override protected def forceClose(): Unit = {
@@ -474,7 +474,7 @@ data: $data""")
   }
 
   // TODO: remove the `Element` type parameter
-  final class Buffer[Element] private[OpenCL] (val handle: Address) extends CheckedCloseable {
+  final class Buffer[Element] private[OpenCL] (val handle: Address) extends IsClosed {
 
     def numberOfBytes: Int = {
       val sizeBuffer: Array[Long] = Array(0L)
@@ -507,7 +507,7 @@ data: $data""")
     }
   }
 
-  final class Program private[OpenCL] (val handle: Address) extends CheckedCloseable {
+  final class Program private[OpenCL] (val handle: Address) extends IsClosed {
 
     def duplicate(): Program = {
       checkErrorCode(clRetainProgram(handle.toLong))
@@ -553,7 +553,7 @@ data: $data""")
 
   }
 
-  final class Kernel private[OpenCL] (val handle: Address) extends CheckedCloseable {
+  final class Kernel private[OpenCL] (val handle: Address) extends IsClosed {
 
     def setArg[A](argIndex: Int, a: A)(implicit memory: Memory[A]): Unit = {
       val stack = stackPush()
