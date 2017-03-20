@@ -159,18 +159,11 @@ object OpenCL {
 
     def maxWorkItemDimensions: Int = intInfo(CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS)
 
-    def maxWorkItemSizes: Array[Long] = {
-      val stack = stackPush()
-      try {
-        val size = maxWorkItemDimensions
-        val pointerBuffer = stack.mallocPointer(size)
-        checkErrorCode(clGetDeviceInfo(id, CL_DEVICE_MAX_WORK_ITEM_SIZES, pointerBuffer, null))
-        val result = Array.ofDim[Long](size)
-        pointerBuffer.get(result)
-        result
-      } finally {
-        stack.close()
-      }
+    def maxWorkItemSizes: PointerBuffer = {
+      val size = maxWorkItemDimensions
+      val buffer = BufferUtils.createPointerBuffer(size)
+      checkErrorCode(clGetDeviceInfo(id, CL_DEVICE_MAX_WORK_ITEM_SIZES, buffer, null))
+      buffer
     }
 
     def intInfo(paramName: Int): Int = {
