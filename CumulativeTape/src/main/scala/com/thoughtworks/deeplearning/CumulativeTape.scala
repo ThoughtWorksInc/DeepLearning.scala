@@ -48,7 +48,7 @@ object CumulativeTape {
 
   trait MonoidTape extends CumulativeTape {
 
-    private var currentDelta: Delta = monoid.empty
+    private var deltaAccumulator: Delta = monoid.empty
 
     /**
       * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
@@ -59,15 +59,15 @@ object CumulativeTape {
 
     override protected final def flush(): Unit = {
       rawBackward(synchronized {
-        val delta = currentDelta
-        currentDelta = monoid.empty
+        val delta = deltaAccumulator
+        deltaAccumulator = monoid.empty
         delta
       })
     }
 
     override final def forceBackward(outputDelta: Delta) = {
       synchronized {
-        currentDelta = currentDelta |+| outputDelta
+        deltaAccumulator = deltaAccumulator |+| outputDelta
       }
       Future(())
     }
@@ -75,7 +75,7 @@ object CumulativeTape {
 
   trait SemigroupTape extends CumulativeTape {
 
-    private var currentDelta: Option[Delta] = None
+    private var deltaAccumulator: Option[Delta] = None
 
     /**
       * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
@@ -86,15 +86,15 @@ object CumulativeTape {
 
     override protected final def flush(): Unit = {
       synchronized {
-        val delta = currentDelta
-        currentDelta = None
+        val delta = deltaAccumulator
+        deltaAccumulator = None
         delta
       }.foreach(rawBackward)
     }
 
     override final def forceBackward(outputDelta: Delta) = {
       synchronized {
-        currentDelta |+|= Some(outputDelta)
+        deltaAccumulator |+|= Some(outputDelta)
       }
       Future(())
     }
