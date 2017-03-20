@@ -19,3 +19,9 @@ libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.1" % Test
 libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.1" % Test /* Runtime */ classifier lwjglNatives
 
 fork := true
+
+scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value
+
+scalaOrganization := "org.typelevel"
+
+scalacOptions += "-Yliteral-types"
