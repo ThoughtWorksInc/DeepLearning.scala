@@ -1,6 +1,7 @@
 parallelExecution in Global := false
 
-lazy val DifferentiableKernel = project.dependsOn(OpenCL, OpenCLCodeGenerator, Layer)
+lazy val DifferentiableKernel =
+  project.dependsOn(OpenCL, OpenCLCodeGenerator, Layer, `stateless-future-util`, Symbolic % Test)
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
@@ -14,6 +15,9 @@ lazy val CheckedTape = project.dependsOn(Layer, IsClosed)
 lazy val Memory = project
 
 lazy val IsClosed = project
+
+// TODO: Rename to ToLiteral?
+lazy val Symbolic = project.dependsOn(Layer)
 
 lazy val `stateless-future` = project
 
