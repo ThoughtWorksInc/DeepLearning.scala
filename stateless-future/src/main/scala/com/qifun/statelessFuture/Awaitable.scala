@@ -86,7 +86,7 @@ sealed trait Awaitable[+AwaitResult, TailRecResult] extends Any { outer =>
    * The new [[Awaitable.Stateless]] will pass the original result to `condition` when the original asynchronous operation being completed,
    * or pass the exception to `catcher` when the original asynchronous operation being failed.
    *
-   * @throws java.util.NoSuchElementException Passes to `catcher` if the `condition` returns `false`.
+   * @throws scala.NoSuchElementException Passes to `catcher` if the `condition` returns `false`.
    */
   final def withFilter(condition: AwaitResult => Boolean) = new Awaitable.Stateless[AwaitResult, TailRecResult] {
     def onComplete(k: AwaitResult => TailRec[TailRecResult])(implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult] = {

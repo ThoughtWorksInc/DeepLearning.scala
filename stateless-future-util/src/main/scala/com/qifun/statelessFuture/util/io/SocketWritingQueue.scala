@@ -47,7 +47,7 @@ private object SocketWritingQueue {
     val buffers: List[ByteBuffer]) extends State
 
   /**
-   * 表示[[socket.close]]已经调用过
+   * 表示`socket.close()`已经调用过
    */
   private case object Closed extends State
 
