@@ -18,18 +18,18 @@ object OpenCLCodeGenerator { // TODO: rename to OpenCLCodeGenerator
   trait Context {
     def freshName(prefix: String): String
 
-    def resolve(id: AnyRef): DslExpression.Accessor
+    def resolve(id: Any): DslExpression.Accessor
 
     def get(dslFunction: DslExpression): DslExpression.Accessor
     def get(dslType: DslType): DslType.Accessor
     def get(effect: DslEffect): DslEffect.Statement
   }
 
-  final case class Parameter(id: AnyRef, dslType: DslType)
+  final case class Parameter(id: Any, dslType: DslType)
 
-  final case class Kernel(name: String, parameters: Seq[Parameter], effects: Seq[DslEffect])
+  final case class KernelDefinition(name: String, parameters: Seq[Parameter], effects: Seq[DslEffect])
 
-  def generateSourceCode(kernels: Kernel*): Fastring = {
+  def generateSourceCode(kernels: KernelDefinition*): Fastring = {
     var seed = 0
     def nextId() = {
       val id = seed
@@ -43,10 +43,10 @@ object OpenCLCodeGenerator { // TODO: rename to OpenCLCodeGenerator
     val typeCodeCache = mutable.HashMap.empty[DslType, DslType.Accessor]
 
     val exportedFunctions = for {
-      Kernel(functionName, parameters, effects) <- kernels
+      KernelDefinition(functionName, parameters, effects) <- kernels
     } yield {
 
-      val parameterMap = new util.IdentityHashMap[AnyRef, (String, DslType)]().asScala
+      val parameterMap = mutable.Map.empty[Any, (String, DslType)]
 
       val localDefinitions = mutable.Buffer.empty[Fastring]
 
@@ -92,7 +92,7 @@ object OpenCLCodeGenerator { // TODO: rename to OpenCLCodeGenerator
           )
         }
 
-        override def resolve(id: AnyRef) = {
+        override def resolve(id: Any) = {
           val (name, dslType) = parameterMap(id)
           DslExpression.Accessor.Packed(fast"$name", get(dslType).unpacked.length)
         }
@@ -188,8 +188,7 @@ ${exportedFunctions.mkFastring}
       }
     }
 
-    // Note the id is searched by `eq`, not `==`
-    final case class Identifier(id: AnyRef) extends DslExpression {
+    final case class Identifier(id: Any) extends DslExpression {
       override def toCode(context: Context): Code = {
         Code(accessor = context.resolve(id))
       }
@@ -286,7 +285,7 @@ ${exportedFunctions.mkFastring}
     final case class Code(globalDeclarations: Fastring = Fastring.empty,
                           globalDefinitions: Fastring = Fastring.empty,
                           accessor: Accessor)
-    
+
     final case class DslStructure(fieldTypes: List[DslType]) extends DslType {
       override def toCode(context: Context): DslType.Code = {
         fieldTypes match {

@@ -32,7 +32,7 @@ final class OpenCLCodeGeneratorSpec extends FreeSpec with Matchers {
 
   "Add" in {
 
-    val kernel = OpenCLCodeGenerator.Kernel(
+    val kernel = OpenCLCodeGenerator.KernelDefinition(
       "f",
       Seq(Parameter('output, DslType.DslBuffer(DslType.DslStructure(List(DslType.DslDouble))))),
       Seq(
