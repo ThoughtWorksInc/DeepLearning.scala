@@ -6,4 +6,6 @@ package object util {
 
   type Sleep = CancellableFuture[Unit]
 
+  type JumpInto = Future.Stateless[Unit]
+
 }
