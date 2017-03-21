@@ -512,7 +512,7 @@ data: $data""")
     override def onComplete(handler: Unit => TailRec[Unit])(implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
       object Callback extends CLEventCallbackI {
         override final def invoke(event: Long, status: Int, userData: Long): Unit = {
-          container.close()
+//           container.close()
           val Some(resultOrException) = value
           (resultOrException match {
             case Success(result) =>
