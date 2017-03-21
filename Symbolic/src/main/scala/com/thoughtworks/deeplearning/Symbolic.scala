@@ -112,6 +112,34 @@ private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
 
 }
 
+/**
+  * There are two ways to convert a value to [[Layer]].
+  *
+  * The first way is invoke [[Symbolic.ToLayer toLayer]], such as:
+  * {{{
+  * def createMyNeuralNetwork(implicit input: Float @Symbolic): Float @Symbolic = {
+  *   val floatLayer: Float @Symbolic = 1.0f.toLayer
+  *   floatLayer
+  * }
+  *}}}
+  *
+  * The second way is [[Symbolic.autoToLayer autoToLayer]], such as:
+  * {{{
+  * def createMyNeuralNetwork(implicit input: Float @Symbolic): Float @Symbolic = {
+  *   val floatLayer: Float @Symbolic = 1.0f
+  *   floatLayer
+  * }
+  * }}}
+  *
+  * In order to compile the above code through, you will need:
+  *
+  * {{{
+  * import com.thoughtworks.deeplearning.Symbolic._
+  * import com.thoughtworks.deeplearning.Symbolic
+  * import com.thoughtworks.deeplearning.DifferentiableFloat._
+  * }}}
+  *
+  */
 object Symbolic extends LowPrioritySymbolic {
 
   trait ToLiteral[From] extends DepFn1[From] {

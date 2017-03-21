@@ -9,6 +9,11 @@ import shapeless.Lub
 import language.implicitConversions
 
 /**
+  * A namespace of common operators for Boolean layers.
+  *
+  * After importing `DifferentiableBoolean._`, the following methods will be available on Boolean layers.
+  *  - [[DifferentiableBoolean.BooleanLayerOps.if if]]
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableBoolean {
@@ -94,13 +99,13 @@ object DifferentiableBoolean {
   private[deeplearning] val BooleanPlaceholder: BooleanPlaceholder = implicitly
 
   /**
-    * A helper that contains common boilerplate code for all Boolean layers.
+    * A helper that contains methods for all Boolean layers.
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableBoolean._
     * }}}
     */
-  final class BooleanLayerOps[Input <: Tape](boolean: Layer.Aux[Input, BooleanPlaceholder.Tape]) {
+  final class BooleanLayerOps[Input <: Tape](booleanLayer: Layer.Aux[Input, BooleanPlaceholder.Tape]) {
 
     def `if`[Then,
              Else,
@@ -118,7 +123,7 @@ object DifferentiableBoolean {
                  NN],
         commonToLayer: ToLayer.Aux[NN, Input, OutputData, OutputDelta]
     ): Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] = {
-      If[Input, OutputData, OutputDelta](boolean,
+      If[Input, OutputData, OutputDelta](booleanLayer,
                                          commonToLayer(lub.left(thenToLayer(`then`))),
                                          commonToLayer(lub.right(elseToLayer(`else`))))
     }
@@ -126,7 +131,7 @@ object DifferentiableBoolean {
   }
 
   /**
-    * A helper that contains common boilerplate code for all Boolean layers.
+    * Implicitly converts any layer to [[BooleanLayerOps]], which enables common methods for Boolean layers.
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableBoolean._

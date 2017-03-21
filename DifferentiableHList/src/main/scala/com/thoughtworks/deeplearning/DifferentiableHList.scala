@@ -11,6 +11,11 @@ import language.implicitConversions
 import language.existentials
 
 /**
+  * A namespace of common operators for [[shapeless.HList HList]] layers.
+  *
+  * After importing `DifferentiableHList._`, the following methods will be available on HList layers.
+  *  - [[DifferentiableHList.HListLayerOps.:: ::]]
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableHList {
@@ -134,13 +139,10 @@ object DifferentiableHList {
 
   }
 
-  /** @template */
   private[deeplearning] type HListPlaceholder = Placeholder[_ <: HList, _ <: Coproduct]
 
-  /** @template */
   private[deeplearning] type HNilPlaceholder = Placeholder[HNil, CNil]
 
-  /** @template */
   private[deeplearning] type :**:[Head <: Placeholder[_, _], Tail <: HListPlaceholder] =
     Placeholder[::[DataOf[Head], DataOf[Tail]], :+:[DeltaOf[Head], DeltaOf[Tail]]]
 
@@ -152,16 +154,10 @@ object DifferentiableHList {
       HCons[Input, HeadData, HeadDelta, TailData, TailDelta](headToLayer(head), tail)
     }
 
-    def :**:[Head, HeadData, HeadDelta](head: Head)(
-        implicit headToLayer: ToLayer.Aux[Head, Input, HeadData, HeadDelta])
-      : Layer.Aux[Input, Tape.Aux[::[HeadData, TailData], :+:[HeadDelta, TailDelta]]] = {
-      HCons[Input, HeadData, HeadDelta, TailData, TailDelta](headToLayer(head), tail)
-    }
-
   }
 
   /**
-    * A helper that contains common boilerplate code for all HList layers.
+    * Implicitly converts any layer to [[HListLayerOps]], which enables common methods for HList layers.
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableHList._

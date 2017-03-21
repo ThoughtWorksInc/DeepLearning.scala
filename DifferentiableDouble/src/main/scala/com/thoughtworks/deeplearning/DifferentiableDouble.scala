@@ -15,6 +15,8 @@ import shapeless.the
 import language.implicitConversions
 
 /**
+  * A namespace of common operators for Double layers.
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableDouble {
@@ -34,45 +36,57 @@ object DifferentiableDouble {
   private[deeplearning] val DoublePlaceholder: DoublePlaceholder = implicitly
 
   /**
-    * Optimizers of Double
+    * Optimizers of Double.
+    *
+    * @example{{{
+    * implicit val optimizerFactory = new DifferentiableDouble.OptimizerFactory {
+    *   override def doubleOptimizer(weight: Weight): Optimizer = {
+    *     new LearningRate with L2Regularization {
+    *
+    *       var learningRate = 0.00003
+    *
+    *       override protected def l2Regularization: Double = 0.003
+    *
+    *       override protected def currentLearningRate(): Double = {
+    *       learningRate * 0.75
+    *       learningRate
+    *      }
+    *    }
+    *  }
+    * }
+    * }}}
     */
   object Optimizers {
 
     trait Optimizer {
-      def updateDouble(oldValue: Double, delta: Double): Double
+      def currentDelta(oldValue: Double, delta: Double): Double = delta
+
+      final def updateDouble(oldValue: Double, delta: Double): Double = {
+        oldValue - currentDelta(oldValue, delta)
+      }
     }
 
     trait LearningRate extends Optimizer {
 
       protected def currentLearningRate(): Double
 
-      /**
-        * Update double use learning rate
-        *
-        * @param oldValue double value before update
-        * @param delta delta
-        */
-      override def updateDouble(oldValue: Double, delta: Double): Double = {
-        oldValue - delta * currentLearningRate()
-      }
+      override def currentDelta(oldValue: Double, delta: Double): Double = delta * currentLearningRate()
     }
 
-    trait L1Regularization extends LearningRate {
+    trait L1Regularization extends Optimizer {
       protected def l1Regularization: Double
 
-      override def updateDouble(oldValue: Double, delta: Double): Double = {
-        super.updateDouble(oldValue, delta) - math.signum(oldValue) * l1Regularization * currentLearningRate()
+      override def currentDelta(oldValue: Double, delta: Double): Double = {
+        super.currentDelta(oldValue, delta + math.signum(oldValue) * l1Regularization)
       }
-
     }
 
-    trait L2Regularization extends LearningRate {
+    trait L2Regularization extends Optimizer {
       protected def l2Regularization: Double
 
-      override def updateDouble(oldValue: Double, delta: Double): Double = {
-        super.updateDouble(oldValue, delta) - l2Regularization * oldValue * currentLearningRate()
+      override def currentDelta(oldValue: Double, delta: Double): Double = {
+        super.currentDelta(oldValue, delta + oldValue * l2Regularization)
       }
-
     }
 
   }
@@ -313,10 +327,11 @@ object DifferentiableDouble {
   trait OptimizerFactory {
     def doubleOptimizer(weight: Weight): Optimizer
   }
+
   implicit def doubleToLiteral: ToLiteral.Aux[Double, Double, Double] = ToLiteral.fromData
 
   /**
-    * Returns a [[Poly.MathFunctions.min.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.min]]
+    * Returns a [[Poly.MathFunctions.min.Case  Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.min min]]
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -327,8 +342,8 @@ object DifferentiableDouble {
     * }}}
     */
   implicit def `min(Double,Double)`[Input <: Tape]: min.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Tape]] = {
+                                                                 Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                 Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     min.at { (leftLayer, rightLayer) =>
       If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan[Input](leftLayer, rightLayer),
                                                                  leftLayer,
@@ -337,7 +352,7 @@ object DifferentiableDouble {
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.max.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.max]]
+    * Returns a [[Poly.MathFunctions.max.Case Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathFunctions.max max]]
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -348,8 +363,8 @@ object DifferentiableDouble {
     * }}}
     */
   implicit def `max(Double,Double)`[Input <: Tape]: max.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                                  Layer.Aux[Input, DoublePlaceholder.Tape]] = {
+                                                                 Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                 Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     max.at { (leftLayer, rightLayer) =>
       If[Input, DoublePlaceholder.Data, DoublePlaceholder.Delta](LessThan[Input](leftLayer, rightLayer),
                                                                  rightLayer,
@@ -358,7 +373,9 @@ object DifferentiableDouble {
   }
 
   /**
-    * Returns a [[Poly.MathMethods.-.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    * Returns a [[Poly.MathMethods.-.Case Case]] that accepts two Double [[Layer]]s.
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.- -]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -369,15 +386,18 @@ object DifferentiableDouble {
     * }}}
     */
   implicit def `Double-Double`[Input <: Tape]: -.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, Negative(rightLayer))
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.+.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    * Returns a [[Poly.MathMethods.+.Case Case]] that accepts two Double [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.+ +]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -388,15 +408,18 @@ object DifferentiableDouble {
     * }}}
     */
   implicit def `Double+Double`[Input <: Tape]: +.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, rightLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods./.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    * Returns a [[Poly.MathMethods./.Case Case]] that accepts two Double [[Layer]]s.
+    *
+    * The returned `Case` is used by the  polymorphic function [[Poly.MathMethods./ /]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -407,32 +430,35 @@ object DifferentiableDouble {
     * }}}
     */
   implicit def `Double/Double`[Input <: Tape]: /.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     /.at { (leftLayer, rightLayer) =>
       Times(leftLayer, Reciprocal(rightLayer))
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.*.Case]] that accepts two Double [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    * Returns a [[Poly.MathMethods.*.Case Case]] that accepts two Double [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.* *]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
     * import com.thoughtworks.deeplearning.Symbolic
     * def myNetwork(implicit inputDoubleLayer: Double @Symbolic)(anotherDoubleLayer: Double @Symbolic) = {
-    *   Poly.MathMethods.*(inputDoubleLayer,anotherDoubleLayer)
+    *   inputDoubleLayer * anotherDoubleLayer
     * }
     * }}}
     */
   implicit def `Double*Double`[Input <: Tape]: *.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape],
-                                                           Layer.Aux[Input, DoublePlaceholder.Tape]] = {
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                          Layer.Aux[Input, DoublePlaceholder.Tape]] = {
     *.at(Times(_, _))
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.log.Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.log]]
+    * Returns a [[Poly.MathFunctions.log.Case Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.log log]]
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -448,7 +474,7 @@ object DifferentiableDouble {
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.exp.Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.exp]]
+    * Returns a [[Poly.MathFunctions.exp.Case Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.exp exp]]
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -464,7 +490,7 @@ object DifferentiableDouble {
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.abs.Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.abs]]
+    * Returns a [[Poly.MathFunctions.abs.Case Case]] that accepts Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.abs abs]]
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -493,6 +519,9 @@ object DifferentiableDouble {
 
   final class DoubleLayerOps[Input <: Tape](differentiable: Layer.Aux[Input, DoublePlaceholder.Tape]) {
 
+    /**
+      * Opposite number
+      */
     def unary_- : Layer.Aux[Input, DoublePlaceholder.Tape] = {
       Negative(differentiable)
     }
@@ -500,7 +529,7 @@ object DifferentiableDouble {
   }
 
   /**
-    * A helper that contains common boilerplate code for all Double layers.
+    * Implicitly converts any layer to [[DoubleLayerOps]], which enables common methods for Double layers.
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableDouble._
@@ -512,6 +541,9 @@ object DifferentiableDouble {
     new DoubleLayerOps(toLayer(from))
   }
 
+  /**
+    * @see [[com.thoughtworks.deeplearning.DifferentiableAny.Trainable Trainable]]
+    */
   implicit def doubleTrainable: Trainable[Double, Double] = new Trainable[Double, Double] {
     def apply(data: Double): Double = the[Numeric[Double]].one
   }

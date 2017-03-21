@@ -6,11 +6,14 @@ import cats.implicits._
 
 import annotation.elidable
 
-// TODO: Review if the reference count works correctly
 /**
-  * BufferedLayer records whether the parameters in the Layer are in use by reference counting,
-  * in the `forward ()` ,parameters will be cached to `cache`,
-  * If a parameter is no longer used (ie `value` is `0`) will call `close ()` to release the resource (ie, remove the cached data from `cache`)
+  * A [[Layer]] that minimizes the computation during both [[forward]] pass and [[Tape.backward backward]] pass.
+  *
+  * For [[forward]] pass, the result will be cached.
+  *
+  * For [[Tape.backward backward]] pass, the [[Tape]] is accumulated until [[Tape.flush flush]].
+  *
+  * @see [[Layer.Output]]
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -22,7 +25,7 @@ trait BufferedLayer extends Layer {
   protected trait ReferenceCount extends Tape { this: BufferedTape =>
 
     /**
-      * Returns a [[Layer.Tape]] that prevents [[Layer.Tape#close]] being invoked more than once.
+      * Returns a [[Layer.Tape Tape]] that prevents [[Layer.Tape#close close]] being invoked more than once.
       */
     @elidable(elidable.ASSERTION)
     private def checked = new Tape {
@@ -151,18 +154,37 @@ trait BufferedLayer extends Layer {
     }
   }
 
-  /** @template */
+  /**
+    * A cumulative [[Tape]] returned by [[forward]].
+    *
+    * When this [[Output]] is [[Tape.backward backward]]ing,
+    * the `delta` parameter will not be back-propagated to its upstreams immediately.
+    * Instead, the `delta` parameter will be accumulated internally.
+    * Then, when this [[Output]] is [[flush]]ing,
+    * the delta accumulator will be processed and back-propagated to its upstreams.
+    *
+    * This [[Output]] is reference counted.
+    * When the last instance of all this [[Output]]'s [[duplicate]]s is [[close]]d,
+    * [[flush]] will be called and all the upstreams will be closed as well.
+    *
+    * @template */
   type Output = BufferedTape#Self
 
   protected type BufferedTape <: ReferenceCount
 
   /**
-    * Performs the underlying forward pass.
+    * Performs the underlying [[forward]] pass.
     *
     * @return a [[com.thoughtworks.deeplearning.Layer.Tape Tape]] that will be cached for subsequent [[forward]]
     */
   protected def rawForward(input: Input): BufferedTape
 
+  /**
+    * Returns the returns the result of [[rawForward]].
+    *
+    * If this method is called more than once with the same `input` parameter, during one iteration,
+    * the result will be cached and the [[rawForward]] will be executed only once.
+    */
   override final def forward(input: Input): Output = {
     cache.get(input) match {
       case null =>
@@ -179,12 +201,7 @@ trait BufferedLayer extends Layer {
 object BufferedLayer {
 
   /**
-    * A helper that contains common boilerplate code for layers of unary operator
-    *
-    * @example{{{
-    * final case class UnaryOps[Input0 <: Tape](
-    * operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape]) extends BufferedLayer.Unary {}
-    * }}}
+    * A helper that contains common boilerplate code for layers of unary operator.
     */
   trait Unary extends BufferedLayer {
 
@@ -210,13 +227,7 @@ object BufferedLayer {
   }
 
   /**
-    * A helper that contains common boilerplate code for layers of binary operator layer
-    *
-    * @example{{{
-    * final case class BinaryOps[Input0 <: Tape](
-    * operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
-    * operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]) extends BufferedLayer.Binary {}
-    * }}}
+    * A helper that contains common boilerplate code for layers of binary operator.
     */
   trait Binary extends BufferedLayer {
 

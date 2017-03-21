@@ -43,7 +43,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(implicit x: INDArray @Symbolic) = {
       val weightInitialValue =
         Array(
           Array(0.0, 5.0)
@@ -86,7 +86,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = 1 to 54
       -weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.im2col(kernel, stride, padding)
     }
@@ -124,7 +124,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       def currentLearningRate() = 1
     }
 
-    def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = Array.fill(54)(0).toNDArray.reshape(2, 3, 3, 3)
       val weight = weightInitialValue.toWeight
       weight.im2col(kernel, stride, padding)
@@ -165,7 +165,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = 1 to 54
       -weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.reshape(dimensions: _*)
     }
@@ -203,7 +203,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       def currentLearningRate() = 1
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = Array.fill(54)(0).toNDArray.reshape(dimensions: _*)
       weightInitialValue.toWeight.reshape(2, 3, 3, 3)
     }
@@ -244,7 +244,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = 1 to 54
       -weightInitialValue.toNDArray.reshape(2, 3, 9).toWeight.permute(dimensions: _*)
     }
@@ -285,7 +285,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       def currentLearningRate() = 1
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = Array.fill(54 * 6)(0).toNDArray.reshape(2, 6, 3, 9) //.permute(dimensions: _*)
       weightInitialValue.toWeight.permute(dimensions: _*)
     }
@@ -325,7 +325,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(dimension: Int)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimension: Int)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = 1 to 54
       weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimension)
     }
@@ -368,7 +368,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = 1 to 54
       weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimensions: _*)
     }
@@ -406,7 +406,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
       val weightInitialValue = 1 to 54
       weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimensions: _*)
     }
@@ -440,7 +440,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   "INDArrayPlaceholder shape --only forward no backward" in {
 
-    def makeNetwork(implicit x: From[INDArray]##`@`) = {
+    def makeNetwork(implicit x: INDArray @Symbolic) = {
       x.shape
     }
 
@@ -464,8 +464,8 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
   "INDArray convn INDArray" in {
     val input = (1 to 16).toNDArray.reshape(1, 1, 4, 4)
 
-    def convolution(implicit input: From[INDArray]##`@`): To[INDArray]##`@` = {
-      val weight: To[INDArray]##`@` = Nd4j.ones(1, 1, 3, 3)
+    def convolution(implicit input: INDArray @Symbolic): INDArray @Symbolic = {
+      val weight: INDArray @Symbolic = Nd4j.ones(1, 1, 3, 3)
       val bias = Nd4j.zeros(1)
       conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     }

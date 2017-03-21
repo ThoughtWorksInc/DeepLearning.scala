@@ -4,6 +4,8 @@ import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Symbolic._
 
 /**
+  * A namespace of common operators for all layers.
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableNothing {

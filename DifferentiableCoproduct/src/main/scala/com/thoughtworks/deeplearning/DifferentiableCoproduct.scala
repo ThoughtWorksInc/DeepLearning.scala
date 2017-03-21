@@ -14,6 +14,14 @@ import language.existentials
 import language.implicitConversions
 
 /**
+  * A namespace of common operators for [[shapeless.Coproduct Coproduct]] layers.
+  *
+  * After importing `DifferentiableCoproduct._`, the following methods will be available on Coproduct layers.
+  *  - [[DifferentiableCoproduct.CConsLayerOps.head head]]
+  *  - [[DifferentiableCoproduct.CConsLayerOps.tail tail]]
+  *  - [[DifferentiableCoproduct.CConsLayerOps.isInl isInl]]
+  *  - [[DifferentiableCoproduct.CConsLayerOps.choice choice]]
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableCoproduct {
@@ -212,7 +220,7 @@ object DifferentiableCoproduct {
   }
 
   /**
-    * A helper that contains common boilerplate code for all Coproduct layers
+    * A helper that contains common boilerplate code for all [[shapeless.Coproduct Coproduct]] layers.
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableCoproduct._
@@ -265,7 +273,7 @@ object DifferentiableCoproduct {
   }
 
   /**
-    * A helper that contains common boilerplate code for all Coproduct layers.
+    * Implicitly converts any layer to [[CConsLayerOps]], which enables common methods for CConsLayerOps layers.
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableCoproduct._

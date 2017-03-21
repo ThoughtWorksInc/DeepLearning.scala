@@ -75,8 +75,8 @@ object Layer {
     type Delta
 
     /**
-      * Returns a new [[Tape]] that shares the same [[value]] and [[backward]] behavior with this [[Tape]].
-      * @note The newly created [[Tape]] and this [[Tape]] must be [[close]]d independently.
+      * Returns a new [[Layer.Tape Tape]] that shares the same [[value]] and [[backward]] behavior with this `Tape`.
+      * @note The newly created `Tape` and this `Tape` must be [[close]]d independently.
       */
     def duplicate(): Tape.Aux[Data, Delta]
 
@@ -87,7 +87,7 @@ object Layer {
     def isTrainable: Boolean
 
     /**
-      * invoke `forceBackward` if [[Tape.isTrainable]] is `true`
+      * invoke `forceBackward` if [[Tape.isTrainable isTrainable]] is `true`
       *
       * @see [[Delta]]
       */
@@ -137,7 +137,7 @@ object Layer {
   * }
   * }}}
   *
-  * 以上代码等价的数学公式可以用[[Symbolic]]写作：`(1.0 + x) * 2.0.toWeight`。`2.0.toWeight`表示一个变量，其初始值是`2`，在神经网络迭代时，值会更新。
+  * 以上代码等价的数学公式可以用[[Symbolic]]写作：`(1.0 + x) * 2.0.toWeight`。`2.0.toWeight`表示一个变量，其初始值是`2`，在神经网络迭代时，其值会更新。
   * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Times Times]]、[[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus Plus]]都是 case class，
   * 因此`myLayer`是一个case class构成的嵌套结构的树。`Times`和`Plus`都是占位符。
   *
@@ -200,7 +200,7 @@ object Layer {
   *
   * ==== backward ====
   *
-  * `outputTape.backward`，即`Times.Output` 的 `backward` ，伪代码如下：
+  * `outputTape.backward`即`Times.Output`的`backward` ，伪代码如下：
   * {{{
   * case class Times(operand1: Layer, operand2: Layer) extends Layer {
   *   def forward = ...

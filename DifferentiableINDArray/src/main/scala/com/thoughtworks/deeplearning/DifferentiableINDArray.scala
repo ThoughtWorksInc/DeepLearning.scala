@@ -33,6 +33,22 @@ import language.implicitConversions
 import scala.collection.immutable.IndexedSeq
 
 /**
+  * A namespace of common operators for [[org.nd4j.linalg.api.ndarray.INDArray INDArray]] layers.
+  *
+  * After importing `DifferentiableINDArray._`,
+  *
+  * You will able to use [[Poly.MathFunctions MathFunctions]],like
+  *  - [[DifferentiableINDArray.log(INDArray) log]]
+  *
+  * You will able to use [[Poly.MathMethods MathMethods]],like
+  *  - [[DifferentiableINDArray.INDArray+Double +]]
+  *
+  * You will able to use [[DifferentiableINDArray.INDArrayLayerOps INDArrayLayerOps]],like
+  *  - [[DifferentiableINDArray.INDArrayLayerOps.im2col im2col]]
+  *
+  * You will able to use some methods like [[DifferentiableINDArray.conv2d conv2d]]
+  *
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableINDArray {
@@ -65,25 +81,10 @@ object DifferentiableINDArray {
   private[deeplearning] val INDArrayPlaceholder: INDArrayPlaceholder = implicitly
 
   /**
-    * Optimizers of NDArray
+    * A namespaces contains [[Optimizer]]s for [[org.nd4j.linalg.api.ndarray.INDArray INDArray]].
     *
-    * @example{{{
-    * implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
-    *   override def ndArrayOptimizer(weight: Weight): Optimizer = {
-    *     new LearningRate with L2Regularization with Adam {
+    * @see [[DifferentiableINDArray.Layers.Weight Weight]]
     *
-    *       var learningRate = 0.00003
-    *
-    *       override protected def l2Regularization: Double = 0.00003
-    *
-    *       override protected def currentLearningRate(): Double = {
-    *       learningRate * 0.75
-    *       learningRate
-    *      }
-    *    }
-    *  }
-    * }
-    * }}}
     */
   object Optimizers {
 
@@ -219,15 +220,45 @@ object DifferentiableINDArray {
 
   import Optimizers._
 
+  /**
+    * If you write something like this:
+    * {{{
+    * implicit def optimizer: Optimizer = new LearningRate {
+    *   def currentLearningRate() = 0.001
+    * }
+    * }}}
+    * the learningRate will shared with all layers. If a [[DifferentiableINDArray.Optimizers.Optimizer Optimizer]] has state, then learningRate can NOT been shared.
+    *
+    */
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
       override def ndArrayOptimizer(weight: Weight): Optimizer = optimizer
     }
   }
 
+  /**
+    * If a [[DifferentiableINDArray.Optimizers.Optimizer Optimizer]] has state, then learningRate can NOT been shared, such as [[DifferentiableINDArray.Optimizers.Adam Adam]], so you will need:
+    *
+    * @example{{{
+    * implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
+    *   override def ndArrayOptimizer(weight: Weight): Optimizer = {
+    *     new LearningRate with L2Regularization with Adam {
+    *
+    *       var learningRate = 0.00003
+    *
+    *       override protected def l2Regularization: Double = 0.00003
+    *
+    *       override protected def currentLearningRate(): Double = {
+    *       learningRate * 0.75
+    *       learningRate
+    *      }
+    *    }
+    *  }
+    * }
+    * }}}
+    */
   trait OptimizerFactory {
     def ndArrayOptimizer(weight: Weight): Optimizer
-
   }
 
   object Layers {
@@ -785,9 +816,9 @@ object DifferentiableINDArray {
       }
     }
 
-    //TODO: update nd4j to 0.7.3
+    //TODO: update nd4j to 0.8.0
     final case class MaxPool[Input0 <: Tape](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
-                                              dimensions: Int*)
+                                             dimensions: Int*)
         extends BufferedLayer.Unary {
       override type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
@@ -884,7 +915,7 @@ object DifferentiableINDArray {
   import Layers._
 
   /**
-    * Returns a [[Poly.MathFunctions.max.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.max]]
+    * Returns a [[Poly.MathFunctions.max.Case Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathFunctions.max max]]
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -901,7 +932,10 @@ object DifferentiableINDArray {
     max.at(MaxDouble(_, _))
 
   /**
-    * Returns a [[Poly.MathMethods./.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    * Returns a [[Poly.MathMethods./.Case Case]] that accepts two INDArray [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods./ /]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -921,7 +955,10 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathMethods./.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods./]]
+    * Returns a [[Poly.MathMethods./.Case Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods./ /]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -931,17 +968,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double/INDArray`[Input <: Tape]
-    : MathMethods./.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `Double/INDArray`[Input <: Tape]: MathMethods./.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(Reciprocal(rightLayer), leftLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods./.Case]] that accepts a INDArray [[Layer]]  and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods./]]
+    * Returns a [[Poly.MathMethods./.Case Case]] that accepts a INDArray [[Layer]]  and a Double [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods./ /]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -951,17 +990,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray/Double`[Input <: Tape]
-    : MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `INDArray/Double`[Input <: Tape]: MathMethods./.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods./.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, DifferentiableDouble.Layers.Reciprocal(rightLayer))
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.*.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    * Returns a [[Poly.MathMethods.*.Case Case]] that accepts two INDArray [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.* *]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -981,7 +1022,10 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathMethods.*.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.*]]
+    * Returns a [[Poly.MathMethods.*.Case Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.* *]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -991,17 +1035,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray*Double`[Input <: Tape]
-    : MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `INDArray*Double`[Input <: Tape]: MathMethods.*.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(leftLayer, rightLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.*.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.*]]
+    * Returns a [[Poly.MathMethods.*.Case Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.* *]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1011,17 +1057,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double*INDArray`[Input <: Tape]
-    : MathMethods.*.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `Double*INDArray`[Input <: Tape]: MathMethods.*.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.*.at { (leftLayer, rightLayer) =>
       MultiplyDouble(rightLayer, leftLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.-.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    * Returns a [[Poly.MathMethods.-.Case Case]] that accepts two INDArray [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.- -]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1041,7 +1089,10 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathMethods.-.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.-]]
+    * Returns a [[Poly.MathMethods.-.Case Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.- -]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1051,17 +1102,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double-INDArray`[Input <: Tape]
-    : MathMethods.-.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `Double-INDArray`[Input <: Tape]: MathMethods.-.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(Negative(rightLayer), leftLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.-.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.-]]
+    * Returns a [[Poly.MathMethods.-.Case Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.- -]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1071,17 +1124,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray-Double`[Input <: Tape]
-    : MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `INDArray-Double`[Input <: Tape]: MathMethods.-.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.-.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, DifferentiableDouble.Layers.Negative(rightLayer))
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.+.Case]] that accepts two INDArray [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    * Returns a [[Poly.MathMethods.+.Case Case]] that accepts two INDArray [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.+ +]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1101,7 +1156,10 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathMethods.+.Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]] for the polymorphic function [[Poly.MathMethods.+]]
+    * Returns a [[Poly.MathMethods.+.Case Case]] that accepts a INDArray [[Layer]] and a Double [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.+ +]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1111,17 +1169,19 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `INDArray+Double`[Input <: Tape]
-    : MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `INDArray+Double`[Input <: Tape]: MathMethods.+.Case.Aux[Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(leftLayer, rightLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathMethods.+.Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]] for the polymorphic function [[Poly.MathMethods.+]]
+    * Returns a [[Poly.MathMethods.+.Case Case]] that accepts a Double [[Layer]] and a INDArray [[Layer]].
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.+ +]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1131,19 +1191,21 @@ object DifferentiableINDArray {
     * }
     * }}}
     */
-  implicit def `Double+INDArray`[Input <: Tape]
-    : MathMethods.+.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
+  implicit def `Double+INDArray`[Input <: Tape]: MathMethods.+.Case.Aux[Layer.Aux[Input, DoublePlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape],
+                                                                        Layer.Aux[Input, INDArrayPlaceholder.Tape]] = {
     MathMethods.+.at { (leftLayer, rightLayer) =>
       PlusDouble(rightLayer, leftLayer)
     }
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.exp.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.exp]]
+    * Returns a [[Poly.MathFunctions.exp.Case Case]] that accepts INDArray [[Layer]]s.
     *
-    * @note Importing this method will enable [[Poly.MathFunctions.exp]]
+    * The returned `Case` is used by the polymorphic function [[Poly.MathFunctions.exp exp]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
+    *
+    * @note Importing this method will enable [[Poly.MathFunctions.exp exp]]
     *       for INDArray layers or any value able to convert to a INDArray layer
     *
     * @example{{{
@@ -1162,9 +1224,9 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.log.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.log]]
+    * Returns a [[Poly.MathFunctions.log.Case Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.log log]]
     *
-    * @note Importing this method will enable [[Poly.MathFunctions.log]]
+    * @note Importing this method will enable [[Poly.MathFunctions.log log]]
     *       for INDArray layers or any value able to convert to a INDArray layer
     *
     * @example{{{
@@ -1183,9 +1245,9 @@ object DifferentiableINDArray {
   }
 
   /**
-    * Returns a [[Poly.MathFunctions.abs.Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.abs]]
+    * Returns a [[Poly.MathFunctions.abs.Case Case]] that accepts INDArray [[Layer]]s for the polymorphic function [[Poly.MathFunctions.abs abs]]
     *
-    * @note Importing this method will enable [[Poly.MathFunctions.abs]]
+    * @note Importing this method will enable [[Poly.MathFunctions.abs abs]]
     *       for INDArray layers or any value able to convert to a INDArray layer
     *
     * @example{{{
@@ -1209,9 +1271,9 @@ object DifferentiableINDArray {
   }
 
   /**
-    * calculate the 2d convolution
+    * Calculates the 2D convolution
     *
-    * @param input 4 dimensions INDArray input
+    * @param layer 4 dimensions INDArray input
     * @param weight 4 dimensions INDArray weight
     * @param bias 1 dimension bias
     * @param kernel the kernel/filter width and height
@@ -1219,25 +1281,29 @@ object DifferentiableINDArray {
     * @param padding the padding width and height
     * @return convolution result
     */
-  def conv2d[Input <: Tape](input: Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             weight: Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             bias: Layer.Aux[Input, INDArrayPlaceholder.Tape],
-                             kernel: (Int, Int),
-                             stride: (Int, Int),
-                             padding: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
-    val shapeOfOperand = Shape(input)
+  def conv2d[Layer, Weight, Bias, Input <: Tape](layer: Layer,
+                                                 weight: Weight,
+                                                 bias: Bias,
+                                                 kernel: (Int, Int),
+                                                 stride: (Int, Int),
+                                                 padding: (Int, Int))(
+      implicit layerToLayer: ToLayer.Aux[Layer, Input, INDArray, INDArray],
+      weightToLayer: ToLayer.Aux[Weight, Input, INDArray, INDArray],
+      biasToLayer: ToLayer.Aux[Bias, Input, INDArray, INDArray]): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
+    val layerOfInput = layerToLayer(layer)
+    val shapeOfOperand = Shape(layerOfInput)
     val count = DifferentiableSeq.Layers.Get(shapeOfOperand, 0)
     val depth = DifferentiableSeq.Layers.Get(shapeOfOperand, 1)
     val y_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 2)
     val x_axis = DifferentiableSeq.Layers.Get(shapeOfOperand, 3)
-    val kernelNumber = DifferentiableSeq.Layers.Get(Shape(weight), 0)
+    val kernelNumber = DifferentiableSeq.Layers.Get(Shape(weightToLayer(weight)), 0)
 
     //input
     //  .im2col(Array(KernelSize, KernelSize),
     //    Array(Stride, Stride),
     //    Array(Padding, Padding))
     val col: Layer.Aux[Input, Tape.Aux[INDArray, INDArray]] =
-      Im2col(input, toArray(kernel), toArray(stride), toArray(padding))
+      Im2col(layerOfInput, toArray(kernel), toArray(stride), toArray(padding))
 
     //permute(0, 4, 5, 1, 2, 3)
     val permutedCol: Layer.Aux[Input, Tape.Aux[INDArray, INDArray]] = Permute(col, Literal(Seq(0, 4, 5, 1, 2, 3)))
@@ -1269,7 +1335,7 @@ object DifferentiableINDArray {
 
     val dotResult = Dot(operandCol2d, permutedWeight)
 
-    val plusResult = PlusINDArray(dotResult, bias)
+    val plusResult = PlusINDArray(dotResult, biasToLayer(bias))
 
     val SeqOfCountYaxisXaxisKernelNumber: Seq[Layer.Aux[Input, Tape.Aux[Int, Float]]] =
       Seq(count, y_axis, x_axis, kernelNumber)
@@ -1289,8 +1355,9 @@ object DifferentiableINDArray {
   final class INDArrayLayerOps[Input <: Tape](operand: Layer.Aux[Input, INDArrayPlaceholder.Tape]) {
 
     // TODO: Considering if rename this method to `matmul`
-    def dot(right: Layer.Aux[Input, INDArrayPlaceholder.Tape]): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
-      Dot(operand, right)
+    def dot[Right](right: Right)(implicit rightToLayer: ToLayer.Aux[Right, Input, INDArray, INDArray])
+      : Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
+      Dot(operand, rightToLayer(right))
     }
 
     /**
@@ -1328,12 +1395,15 @@ object DifferentiableINDArray {
     }
 
     /**
-      * Return shape of NDArray
+      * Returns shape of INDArray
       */
     def shape: Layer.Aux[Input, Tape.Aux[Seq[Int], (Int, Float)]] = {
       Shape(operand)
     }
 
+    /**
+      * Returns opposite of all elements
+      */
     def unary_- : Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Negative(operand)
     }
@@ -1343,21 +1413,21 @@ object DifferentiableINDArray {
     }
 
     /**
-      * Return sum of all elements of NDArray
+      * Returns sum of all elements of INDArray
       */
     def sum: Layer.Aux[Input, DoublePlaceholder.Tape] = {
       ReduceSum(operand)
     }
 
     /**
-      * Return mean of all elements of NDArray
+      * Returns mean of all elements of INDArray
       */
     def mean: Layer.Aux[Input, DoublePlaceholder.Tape] = {
       ReduceMean(operand)
     }
 
     /**
-      * Return sum dimensions of NDArray,will return an INDArrayPlaceholder
+      * Returns sum dimensions of INDArray,will Returns an INDArrayPlaceholder
       */
     def sum(dimensions: Int*): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
       Sum(operand, dimensions)
@@ -1366,7 +1436,7 @@ object DifferentiableINDArray {
   }
 
   /**
-    * A helper that contains common boilerplate code for all NDArray layers.
+    * Implicitly converts any layer to [[INDArrayLayerOps]], which enables common methods for INDArray layers.
 
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableINDArray._
@@ -1374,8 +1444,7 @@ object DifferentiableINDArray {
     */
   implicit def toINDArrayLayerOps[From, Input <: Tape, OutputData, OutputDelta](from: From)(
       implicit toLayer: ToLayer.Aux[From, Input, OutputData, OutputDelta],
-      constrait: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input,
-                                                                                    Tape.Aux[INDArray, INDArray]]
+      constrait: Layer.Aux[Input, Tape.Aux[OutputData, OutputDelta]] <:< Layer.Aux[Input, Tape.Aux[INDArray, INDArray]]
   ): INDArrayLayerOps[Input] = {
     new INDArrayLayerOps(constrait(toLayer(from)))
   }
@@ -1400,6 +1469,9 @@ object DifferentiableINDArray {
 
   implicit def indArrayToLiteral: ToLiteral.Aux[INDArray, INDArray, INDArray] = ToLiteral.fromData
 
+  /**
+    * @see [[com.thoughtworks.deeplearning.DifferentiableAny.Trainable Trainable]]
+    */
   implicit def indArrayTrainable: Trainable[INDArray, INDArray] = new Trainable[INDArray, INDArray] {
     override def apply(data: INDArray): INDArray = Nd4j.ones(data.shape(): _*)
   }

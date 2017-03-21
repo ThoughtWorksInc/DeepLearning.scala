@@ -5,6 +5,14 @@ import com.thoughtworks.deeplearning.Symbolic._
 import shapeless.{Lazy, Poly1, Poly2}
 
 /**
+  * A namespace of common math operators.
+  *
+  * [[Poly.MathMethods MathMethods]] and [[Poly.MathFunctions MathFunctions]] provide functions like [[Poly.MathMethods.+ +]], [[Poly.MathMethods.- -]], [[Poly.MathMethods.* *]], [[Poly.MathMethods./ /]],
+  * [[Poly.MathFunctions.log log]], [[Poly.MathFunctions.abs abs]], [[Poly.MathFunctions.max max]], [[Poly.MathFunctions.min min]] and [[Poly.MathFunctions.exp exp]], those functions been implements in specific Differentiable Object such as [[DifferentiableINDArray]]
+  *
+  * @see [[DifferentiableINDArray.Double+INDArray]]
+  * @see [[DifferentiableINDArray.exp(INDArray)]]
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object Poly {
@@ -45,6 +53,9 @@ object Poly {
     }
   }
 
+  /**
+    * Provide [[Poly.MathMethods.+ +]], [[Poly.MathMethods.- -]], [[Poly.MathMethods.* *]] and [[Poly.MathMethods./ /]] which is called in [[Poly.MathOps MathOps]].
+    */
   object MathMethods {
     object - extends LayerPoly2
     object + extends LayerPoly2
@@ -52,6 +63,9 @@ object Poly {
     object / extends LayerPoly2
   }
 
+  /**
+    * [[Poly.MathMethods.+ +]], [[Poly.MathMethods.- -]], [[Poly.MathMethods.* *]], [[Poly.MathMethods./ /]] are provide by [[MathMethods]] and implement in specific `DifferentiableType` such as [[DifferentiableINDArray]]
+    */
   implicit final class MathOps[Left](left: Left) {
 
     def -[Right](right: Right)(implicit methodCase: MathMethods.-.Case[Left, Right]): methodCase.Result =
@@ -68,6 +82,9 @@ object Poly {
 
   }
 
+  /**
+    * Provide [[Poly.MathFunctions.log log]], [[Poly.MathFunctions.abs abs]], [[Poly.MathFunctions.max max]], [[Poly.MathFunctions.min min]] and [[Poly.MathFunctions.exp exp]]
+    */
   object MathFunctions {
 
     object log extends LayerPoly1

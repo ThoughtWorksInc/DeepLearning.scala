@@ -9,9 +9,12 @@ import shapeless.Lazy
 import language.implicitConversions
 import language.higherKinds
 
-// TODO: rename to sized
-
 /**
+  * A namespace of common operators for Seq layers.
+  *
+  * After importing `DifferentiableSeq._`, the following methods will be available on Seq layers.
+  *  - [[DifferentiableSeq.SeqLayerOps.apply apply]]
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableSeq {
@@ -103,7 +106,7 @@ object DifferentiableSeq {
   }
 
   /**
-    * A helper that contains common boilerplate code for all Seq layers.
+    * Implicitly converts any layer to [[SeqLayerOps]], which enables common methods for Seq layers.
 
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableSeq._

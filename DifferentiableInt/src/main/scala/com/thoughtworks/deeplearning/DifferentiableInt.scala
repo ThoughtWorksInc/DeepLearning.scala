@@ -11,6 +11,8 @@ import shapeless.PolyDefns.Case
 import shapeless.the
 
 /**
+  * A namespace of common operators for Int layers.
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object DifferentiableInt {
@@ -174,9 +176,6 @@ object DifferentiableInt {
       override def close(): Unit = {}
 
     }
-//    final case class Weight(scalaInt: Int) extends Layer {
-//
-//    }
   }
 
   import com.thoughtworks.deeplearning.DifferentiableInt.Layers._
@@ -192,7 +191,10 @@ object DifferentiableInt {
   implicit def intToLiteral: ToLiteral.Aux[Int, Int, Float] = ToLiteral.fromData
 
   /**
-    * Returns a [[Poly.MathMethods.+.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.+]]
+    * Returns a [[Poly.MathMethods.+.Case]] that accepts two Int [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.+]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
@@ -203,14 +205,17 @@ object DifferentiableInt {
     * }}}
     */
   implicit def `Int+Int`[Input <: Tape]: MathMethods.+.Case.Aux[Layer.Aux[Input, IntPlaceholder.Tape],
-                                                                 Layer.Aux[Input, IntPlaceholder.Tape],
-                                                                 Layer.Aux[Input, IntPlaceholder.Tape]] = {
+                                                                Layer.Aux[Input, IntPlaceholder.Tape],
+                                                                Layer.Aux[Input, IntPlaceholder.Tape]] = {
 
     MathMethods.+.at(Plus(_, _))
   }
 
   /**
-    * Returns a [[Poly.MathMethods.-.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.-]]
+    * Returns a [[Poly.MathMethods.-.Case]] that accepts two Int [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.-]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
@@ -221,8 +226,8 @@ object DifferentiableInt {
     * }}}
     */
   implicit def `Int-Int`[Input <: Tape]: MathMethods.-.Case.Aux[Layer.Aux[Input, IntPlaceholder.Tape],
-                                                                 Layer.Aux[Input, IntPlaceholder.Tape],
-                                                                 Layer.Aux[Input, IntPlaceholder.Tape]] = {
+                                                                Layer.Aux[Input, IntPlaceholder.Tape],
+                                                                Layer.Aux[Input, IntPlaceholder.Tape]] = {
 
     MathMethods.-.at { (leftLayer, rightLayer) =>
       Plus(leftLayer, Negative(rightLayer))
@@ -230,7 +235,10 @@ object DifferentiableInt {
   }
 
   /**
-    * Returns a [[Poly.MathMethods.*.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods.*]]
+    * Returns a [[Poly.MathMethods.*.Case]] that accepts two Int [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods.*]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
@@ -241,14 +249,17 @@ object DifferentiableInt {
     * }}}
     */
   implicit def `Int*Int`[Input <: Tape]: MathMethods.*.Case.Aux[Layer.Aux[Input, IntPlaceholder.Tape],
-                                                                 Layer.Aux[Input, IntPlaceholder.Tape],
-                                                                 Layer.Aux[Input, IntPlaceholder.Tape]] = {
+                                                                Layer.Aux[Input, IntPlaceholder.Tape],
+                                                                Layer.Aux[Input, IntPlaceholder.Tape]] = {
 
     MathMethods.*.at(Times(_, _))
   }
 
   /**
-    * Returns a [[Poly.MathMethods./.Case]] that accepts two Int [[Layer]]s for the polymorphic function [[Poly.MathMethods./]]
+    * Returns a [[Poly.MathMethods./.Case]] that accepts two Int [[Layer]]s.
+    *
+    * The returned `Case` is used by the polymorphic function [[Poly.MathMethods./]],
+    * which is called in [[com.thoughtworks.deeplearning.Poly.MathOps MathOps]].
     *
     * @example{{{
     * import com.thoughtworks.deeplearning.DifferentiableInt._
@@ -259,13 +270,16 @@ object DifferentiableInt {
     * }}}
     */
   implicit def `Int/Int`[Input <: Tape]: /.Case.Aux[Layer.Aux[Input, IntPlaceholder.Tape],
-                                                     Layer.Aux[Input, IntPlaceholder.Tape],
-                                                     Layer.Aux[Input, IntPlaceholder.Tape]] = {
+                                                    Layer.Aux[Input, IntPlaceholder.Tape],
+                                                    Layer.Aux[Input, IntPlaceholder.Tape]] = {
     /.at { (leftLayer, rightLayer) =>
       Times(leftLayer, Reciprocal(rightLayer))
     }
   }
 
+  /**
+    * @see [[com.thoughtworks.deeplearning.DifferentiableAny.Trainable Trainable]]
+    */
   implicit def intTrainable: Trainable[Int, Float] = new Trainable[Int, Float] {
     def apply(data: Int): Float = data.toFloat
   }
