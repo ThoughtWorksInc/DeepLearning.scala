@@ -66,7 +66,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
     val dk = DifferentiableExpression.FloatLiteral(42.0f).compile(context, device, commandQueue, executionContext)
     Future {
       // TODO: Literal
-      val outputTape = dk.forward((Literal(1), Map.empty)).await
+      val outputTape = dk.forward((1, Map.empty)).await
       try {
         val f = BufferUtils.createFloatBuffer(1)
         val r = commandQueue.readBuffer(outputTape.value, f)

@@ -7,7 +7,8 @@ import com.qifun.statelessFuture.Future.Stateless
 import com.qifun.statelessFuture.util._
 import com.thoughtworks.deeplearning.DifferentiableKernel._
 import com.thoughtworks.deeplearning.Layer.Tape
-import com.thoughtworks.deeplearning.OpenCL.CommandQueue.Dimension
+import com.thoughtworks.deeplearning.Memory.Address
+import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel, Program}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslExpression.GetGlobalId
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
@@ -25,8 +26,7 @@ trait DifferentiableKernel extends Layer with AutoCloseable { // TODO: rename to
   type OutputData
   type OutputDelta
 
-  type OutputBufferSize = Tape.Aux[Int, Nothing]
-  override type Input = (OutputBufferSize, Map[Any, Tape])
+  override type Input = (Int, Map[Any, Tape])
 
   override type Output = Tape.Aux[OutputData, OutputDelta]
 
@@ -231,25 +231,24 @@ object DifferentiableKernel {
         override def forward(input: Input) = Future {
           val (program, inputSetter) = forwardProgram.await
           val kernel = program.createKernel(ForwardKernelName)
-          val (size, inputParameterMap) = input
-          val outputBuffer = context.createBuffer[OutputElementData](size.value)(outputDataMemory)
+          val (expectedSize, inputParameterMap) = input
+//
+//          val dimension = if (device.capabilities.OpenCL20) {
+//            Dimension(0L, expectedSize, device.maxWorkItemSizes.get(0))
+//          } else {
+//            val localWorkSize = math.min(device.maxWorkGroupSize.toLong, device.maxWorkItemSizes.get(0))
+//            val mod = expectedSize % localWorkSize
+//            if (mod == 0) {
+//              Dimension(0L, expectedSize, localWorkSize)
+//            } else {
+//              Dimension(0L, expectedSize + localWorkSize - mod, localWorkSize)
+//            }
+//          }
+//          val paddingSize = dimension.globalWorkSize
+          val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
           inputSetter(kernel, inputParameterMap)
           kernel.setArg(inputMetadataMap.size, outputBuffer)
-
-          val dimension = if (device.capabilities.OpenCL20) {
-            Dimension(0L, size.value, device.maxWorkItemSizes.get(0))
-          } else {
-            val expectedSize = size.value
-            val localWorkSize = math.min(device.maxWorkGroupSize.toLong, device.maxWorkItemSizes.get(0))
-            val mod = expectedSize % localWorkSize
-            if (mod == 0) {
-              Dimension(0L, expectedSize, localWorkSize)
-            } else {
-              Dimension(0L, expectedSize + localWorkSize - mod, localWorkSize)
-            }
-          }
-
-          val event = commandQueue.ndRangeKernel(kernel, Seq(dimension))
+          val event = commandQueue.ndRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
           try {
             event.await
           } finally {

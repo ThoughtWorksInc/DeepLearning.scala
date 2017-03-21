@@ -15,7 +15,7 @@ import org.lwjgl.system.Pointer._
 import scala.collection.mutable
 import com.qifun.statelessFuture.Future
 import com.thoughtworks.deeplearning.Memory.{Address, Box}
-import org.lwjgl.system.{JNI, MemoryUtil, Pointer}
+import org.lwjgl.system.{JNI, MemoryStack, MemoryUtil, Pointer}
 
 import scala.util.control.Exception.Catcher
 import scala.util.control.TailCalls
@@ -343,11 +343,71 @@ data: $data""")
 
   }
   object CommandQueue {
-    final case class Dimension(globalWorkOffset: Long, globalWorkSize: Long, localWorkSize: Long)
+
+    final case class NDimensionBuffer(globalWorkOffset: PointerBuffer,
+                                      globalWorkSize: PointerBuffer,
+                                      localWorkSize: PointerBuffer)
+
+    trait NDimensionBufferAllocator {
+      def numberOfDimensions: Int
+      def allocateStackBuffers(stack: MemoryStack): NDimensionBuffer
+    }
+
+    implicit final class GlobalAndLocalDimensionBufferAllocator(dimensions: Iterable[GlobalAndLocalDimension])
+        extends NDimensionBufferAllocator {
+      def this(dimensions: GlobalAndLocalDimension*) = this(dimensions)
+      override def allocateStackBuffers(stack: MemoryStack): NDimensionBuffer = {
+        val globalWorkOffsetBuffer = stack.mallocPointer(numberOfDimensions)
+        val globalWorkSizeBuffer = stack.mallocPointer(numberOfDimensions)
+        val localWorkSizeBuffer = stack.mallocPointer(numberOfDimensions)
+        for ((dimension, i) <- dimensions.view.zipWithIndex) {
+          globalWorkOffsetBuffer.put(i, dimension.globalWorkOffset.toLong)
+          globalWorkSizeBuffer.put(i, dimension.globalWorkSize.toLong)
+          localWorkSizeBuffer.put(i, dimension.localWorkSize.toLong)
+        }
+        NDimensionBuffer(globalWorkOffsetBuffer, globalWorkSizeBuffer, localWorkSizeBuffer)
+      }
+
+      override val numberOfDimensions: Int = dimensions.size
+    }
+
+    implicit final class GlobalDimensionBufferAllocator(dimensions: Iterable[GlobalDimension])
+        extends NDimensionBufferAllocator {
+      def this(dimensions: GlobalDimension*) = this(dimensions)
+      override def allocateStackBuffers(stack: MemoryStack): NDimensionBuffer = {
+        val globalWorkOffsetBuffer = stack.mallocPointer(numberOfDimensions)
+        val globalWorkSizeBuffer = stack.mallocPointer(numberOfDimensions)
+        for ((dimension, i) <- dimensions.view.zipWithIndex) {
+          globalWorkOffsetBuffer.put(i, dimension.globalWorkOffset.toLong)
+          globalWorkSizeBuffer.put(i, dimension.globalWorkSize.toLong)
+        }
+        NDimensionBuffer(globalWorkOffsetBuffer, globalWorkSizeBuffer, null)
+      }
+      override val numberOfDimensions: Int = dimensions.size
+    }
+
+    implicit final class GlobalWorkSizeOnlyDimensionBufferAllocator(dimensions: Iterable[GlobalWorkSizeOnlyDimension])
+        extends NDimensionBufferAllocator {
+      def this(dimensions: GlobalWorkSizeOnlyDimension*) = this(dimensions)
+      override def allocateStackBuffers(stack: MemoryStack): NDimensionBuffer = {
+        val globalWorkSizeBuffer = stack.mallocPointer(numberOfDimensions)
+        for ((dimension, i) <- dimensions.view.zipWithIndex) {
+          globalWorkSizeBuffer.put(i, dimension.globalWorkSize.toLong)
+        }
+        NDimensionBuffer(null, globalWorkSizeBuffer, null)
+      }
+      override val numberOfDimensions: Int = dimensions.size
+    }
+
+    final case class GlobalWorkSizeOnlyDimension(globalWorkSize: Address)
+    final case class GlobalDimension(globalWorkOffset: Address, globalWorkSize: Address)
+    final case class GlobalAndLocalDimension(globalWorkOffset: Address,
+                                             globalWorkSize: Address,
+                                             localWorkSize: Address)
   }
 
   final class CommandQueue private[OpenCL] (val handle: Address) extends IsClosed {
-
+    import CommandQueue._
     def duplicate(): CommandQueue = {
       checkErrorCode(clRetainCommandQueue(handle.toLong))
       new CommandQueue(handle)
@@ -357,18 +417,7 @@ data: $data""")
       checkErrorCode(clReleaseCommandQueue(handle.toLong))
     }
 
-    def ndRangeKernel(kernel: Kernel,
-                      dimensions: TraversableOnce[CommandQueue.Dimension],
-                      preconditionEvents: Event*): Event = {
-
-      val globalWorkOffsetBuffer = mutable.Buffer.empty[Long]
-      val globalWorkSizeBuffer = mutable.Buffer.empty[Long]
-      val localWorkSizeBuffer = mutable.Buffer.empty[Long]
-      for (dimension <- dimensions) {
-        globalWorkOffsetBuffer += dimension.globalWorkOffset
-        globalWorkSizeBuffer += dimension.globalWorkSize
-        localWorkSizeBuffer += dimension.localWorkSize
-      }
+    def ndRangeKernel(kernel: Kernel, dimensions: NDimensionBufferAllocator, preconditionEvents: Event*): Event = {
       val stack = stackPush()
       val outputEvent = try {
         val inputEventBuffer = if (preconditionEvents.isEmpty) {
@@ -377,14 +426,15 @@ data: $data""")
           stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
         }
         val outputEventBuffer = stack.pointers(0L)
+        val ndimensionBuffer = dimensions.allocateStackBuffers(stack)
         checkErrorCode(
           clEnqueueNDRangeKernel(
             handle.toLong,
             kernel.handle.toLong,
-            globalWorkOffsetBuffer.length,
-            stack.pointers(globalWorkOffsetBuffer: _*),
-            stack.pointers(globalWorkSizeBuffer: _*),
-            stack.pointers(localWorkSizeBuffer: _*),
+            dimensions.numberOfDimensions,
+            ndimensionBuffer.globalWorkOffset,
+            ndimensionBuffer.globalWorkSize,
+            ndimensionBuffer.localWorkSize,
             inputEventBuffer,
             outputEventBuffer
           )
