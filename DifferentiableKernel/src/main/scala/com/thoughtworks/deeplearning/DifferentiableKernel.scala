@@ -69,6 +69,48 @@ object DifferentiableKernel {
     type OutputDelta >: OutputDelta0
   }
 
+  object Tapes {
+    final class Fill[OutputElementData, OutputElementDelta](inputParameterMap: Map[Any, Tape],
+                                                            override val value: OpenCL.Buffer[OutputElementData])
+        extends CumulativeTape {
+      override def isTrainable: Boolean = ???
+
+      private var deltaAccumulator: Future.Stateful[Option[Delta]] = {
+        new Constant(None)
+      }
+
+      override def forceBackward(delta: Delta) = ???
+
+      override type Delta = OpenCL.Buffer[OutputElementDelta]
+      override type Data = OpenCL.Buffer[OutputElementData]
+
+      private def rawBackward(deltaFuture: Future.Stateful[Option[Delta]]): Unit = {
+        implicit def catcher = PartialFunction.empty
+        for (deltaOption <- deltaFuture) {
+          deltaOption match {
+            case None =>
+            case Some(delta) =>
+              ???
+          }
+        }
+      }
+
+      override protected def flush(): Unit = {
+        rawBackward(synchronized {
+          val delta = deltaAccumulator
+          deltaAccumulator = new Constant(None)
+          delta
+        })
+      }
+
+      override protected def closeUpstreams(): Unit = {
+        for (upstream <- inputParameterMap.values) {
+          upstream.close()
+        }
+      }
+    }
+  }
+
   trait InputMetadata {
 
     type Data
@@ -213,45 +255,7 @@ object DifferentiableKernel {
           } finally {
             event.close()
           }
-          new CumulativeTape {
-            override def isTrainable: Boolean = ???
-
-            private var deltaAccumulator: Future.Stateful[Option[Delta]] = {
-              new Constant(None)
-            }
-
-            override val value = outputBuffer
-
-            override def forceBackward(delta: Delta) = ???
-
-            override type Delta = OutputDelta
-            override type Data = OutputData
-
-            private def rawBackward(deltaFuture: Future.Stateful[Option[Delta]]): Unit = {
-              implicit def catcher = PartialFunction.empty
-              for (deltaOption <- deltaFuture) {
-                deltaOption match {
-                  case None =>
-                  case Some(delta) =>
-                    ???
-                }
-              }
-            }
-
-            override protected def flush(): Unit = {
-              rawBackward(synchronized {
-                val delta = deltaAccumulator
-                deltaAccumulator = new Constant(None)
-                delta
-              })
-            }
-
-            override protected def closeUpstreams(): Unit = {
-              for (upstream <- inputParameterMap.values) {
-                upstream.close()
-              }
-            }
-          }
+          new Tapes.Fill(inputParameterMap, outputBuffer)
         }
       }
     }
