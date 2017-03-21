@@ -240,7 +240,7 @@ object DifferentiableKernel {
             Dimension(0L, size.value, device.maxWorkItemSizes.get(0))
           } else {
             val expectedSize = size.value
-            val localWorkSize = device.maxWorkItemSizes.get(0)
+            val localWorkSize = math.min(device.maxWorkGroupSize.toLong, device.maxWorkItemSizes.get(0))
             val mod = expectedSize % localWorkSize
             if (mod == 0) {
               Dimension(0L, expectedSize, localWorkSize)
