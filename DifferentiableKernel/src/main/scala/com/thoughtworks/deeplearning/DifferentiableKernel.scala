@@ -238,7 +238,7 @@ object DifferentiableKernel {
           val event = commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
           try {
             event.await
-            JumpInto(executor).await
+            event.await
           } finally {
             event.close()
           }
