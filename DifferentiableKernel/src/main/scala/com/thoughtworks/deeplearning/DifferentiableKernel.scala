@@ -232,19 +232,6 @@ object DifferentiableKernel {
           val (program, inputSetter) = forwardProgram.await
           val kernel = program.createKernel(ForwardKernelName)
           val (expectedSize, inputParameterMap) = input
-//
-//          val dimension = if (device.capabilities.OpenCL20) {
-//            Dimension(0L, expectedSize, device.maxWorkItemSizes.get(0))
-//          } else {
-//            val localWorkSize = math.min(device.maxWorkGroupSize.toLong, device.maxWorkItemSizes.get(0))
-//            val mod = expectedSize % localWorkSize
-//            if (mod == 0) {
-//              Dimension(0L, expectedSize, localWorkSize)
-//            } else {
-//              Dimension(0L, expectedSize + localWorkSize - mod, localWorkSize)
-//            }
-//          }
-//          val paddingSize = dimension.globalWorkSize
           val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
           inputSetter(kernel, inputParameterMap)
           kernel.setArg(inputMetadataMap.size, outputBuffer)
