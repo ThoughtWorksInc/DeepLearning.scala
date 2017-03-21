@@ -417,7 +417,7 @@ data: $data""")
       checkErrorCode(clReleaseCommandQueue(handle.toLong))
     }
 
-    def ndRangeKernel(kernel: Kernel, dimensions: NDimensionBufferAllocator, preconditionEvents: Event*): Event = {
+    def enqueueNDRangeKernel(kernel: Kernel, dimensions: NDimensionBufferAllocator, preconditionEvents: Event*): Event = {
       val stack = stackPush()
       val outputEvent = try {
         val inputEventBuffer = if (preconditionEvents.isEmpty) {
@@ -447,7 +447,7 @@ data: $data""")
       new Event(Address(outputEvent))
     }
 
-    def readBuffer[Element, Destination](
+    def enqueueReadBuffer[Element, Destination](
         source: Buffer[Element],
         destination: Destination,
         preconditionEvents: Event*)(implicit memory: Memory.Aux[Element, Destination]): Event = {

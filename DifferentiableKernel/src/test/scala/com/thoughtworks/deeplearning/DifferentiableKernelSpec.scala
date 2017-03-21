@@ -69,7 +69,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       val outputTape = dk.forward((1, Map.empty)).await
       try {
         val f = BufferUtils.createFloatBuffer(1)
-        val r = commandQueue.readBuffer(outputTape.value, f)
+        val r = commandQueue.enqueueReadBuffer(outputTape.value, f)
         r.await
         f.capacity should be(1)
         f.get(0) should be(42.0f)

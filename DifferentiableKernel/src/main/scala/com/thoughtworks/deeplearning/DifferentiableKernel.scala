@@ -248,7 +248,7 @@ object DifferentiableKernel {
           val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
           inputSetter(kernel, inputParameterMap)
           kernel.setArg(inputMetadataMap.size, outputBuffer)
-          val event = commandQueue.ndRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
+          val event = commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
           try {
             event.await
           } finally {
