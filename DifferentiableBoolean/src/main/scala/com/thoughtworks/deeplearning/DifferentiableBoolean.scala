@@ -50,13 +50,13 @@ object DifferentiableBoolean {
     }
 
     final case class Not[Input0 <: Tape](operand: Layer.Aux[Input0, BooleanPlaceholder.Tape])
-        extends BufferedLayer.Unary {
+        extends CumulativeLayer.Unary {
 
-      type BufferedTape = MonoidTape with BooleanMonoidTape with UnaryTape
+      type CumulativeTape = MonoidTape with BooleanMonoidTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
 
           override val input = input0

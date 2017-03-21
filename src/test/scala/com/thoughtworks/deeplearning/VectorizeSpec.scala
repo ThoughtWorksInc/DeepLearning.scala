@@ -92,7 +92,7 @@ final class VectorizeSpec extends FreeSpec with Matchers {
       trainNetwork.train(makeMinitape)
       def assertClear(layer: Any): Unit = {
         layer match {
-          case cached: BufferedLayer =>
+          case cached: CumulativeLayer =>
             cached.cache shouldBe empty
           case _ =>
         }

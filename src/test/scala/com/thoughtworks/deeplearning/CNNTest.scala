@@ -25,7 +25,7 @@ final class CNNTest extends FreeSpec with Matchers {
   "fix view error" in {
     def assertClear(layer: Any): Unit = {
       layer match {
-        case cached: BufferedLayer =>
+        case cached: CumulativeLayer =>
           assert(cached.cache.isEmpty)
         case _ =>
       }

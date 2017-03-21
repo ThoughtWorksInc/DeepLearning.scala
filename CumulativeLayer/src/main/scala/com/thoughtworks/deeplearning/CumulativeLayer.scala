@@ -17,12 +17,12 @@ import annotation.elidable
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait BufferedLayer extends Layer {
+trait CumulativeLayer extends Layer {
 
   private[deeplearning] val cache =
-    java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[AnyRef, BufferedTape](1))
+    java.util.Collections.synchronizedMap(new java.util.IdentityHashMap[AnyRef, CumulativeTape](1))
 
-  protected trait ReferenceCount extends Tape { this: BufferedTape =>
+  protected trait ReferenceCount extends Tape { this: CumulativeTape =>
 
     /**
       * Returns a [[Layer.Tape Tape]] that prevents [[Layer.Tape#close close]] being invoked more than once.
@@ -58,7 +58,7 @@ trait BufferedLayer extends Layer {
       }
     }
 
-    private[BufferedLayer] final def checkedIfCloseOnlyOnce: Self = {
+    private[CumulativeLayer] final def checkedIfCloseOnlyOnce: Self = {
       Option(checked).getOrElse(ReferenceCount.this.self)
     }
 
@@ -76,11 +76,11 @@ trait BufferedLayer extends Layer {
       checkedIfCloseOnlyOnce
     }
 
-    private[BufferedLayer] type Self >: Tape.Aux[Data, Delta] <: Tape.Aux[Data, Delta]
+    private[CumulativeLayer] type Self >: Tape.Aux[Data, Delta] <: Tape.Aux[Data, Delta]
 
     private final def self: Self = this: Tape.Aux[Data, Delta]
 
-    private[BufferedLayer] var count: Int = 1
+    private[CumulativeLayer] var count: Int = 1
 
     protected def flush(): Unit
 
@@ -96,8 +96,8 @@ trait BufferedLayer extends Layer {
       }
       assert(newCount >= 0)
       if (newCount == 0) {
-        val tape: BufferedTape = cache.remove(input)
-        assert(tape eq (this: BufferedTape))
+        val tape: CumulativeTape = cache.remove(input)
+        assert(tape eq (this: CumulativeTape))
         flush()
         closeUpstreams()
       }
@@ -105,7 +105,7 @@ trait BufferedLayer extends Layer {
 
   }
 
-  protected trait MonoidTape extends ReferenceCount { this: BufferedTape =>
+  protected trait MonoidTape extends ReferenceCount { this: CumulativeTape =>
 
     private var accumulatedDelta: Delta = monoid.empty
 
@@ -131,7 +131,7 @@ trait BufferedLayer extends Layer {
     }
   }
 
-  protected trait SemigroupTape extends ReferenceCount { this: BufferedTape =>
+  protected trait SemigroupTape extends ReferenceCount { this: CumulativeTape =>
 
     private var accumulatedDelta: Option[Delta] = None
 
@@ -168,16 +168,16 @@ trait BufferedLayer extends Layer {
     * [[flush]] will be called and all the upstreams will be closed as well.
     *
     * @template */
-  type Output = BufferedTape#Self
+  type Output = CumulativeTape#Self
 
-  protected type BufferedTape <: ReferenceCount
+  protected type CumulativeTape <: ReferenceCount
 
   /**
     * Performs the underlying [[forward]] pass.
     *
     * @return a [[com.thoughtworks.deeplearning.Layer.Tape Tape]] that will be cached for subsequent [[forward]]
     */
-  protected def rawForward(input: Input): BufferedTape
+  protected def rawForward(input: Input): CumulativeTape
 
   /**
     * Returns the returns the result of [[rawForward]].
@@ -198,18 +198,18 @@ trait BufferedLayer extends Layer {
   }
 }
 
-object BufferedLayer {
+object CumulativeLayer {
 
   /**
     * A helper that contains common boilerplate code for layers of unary operator.
     */
-  trait Unary extends BufferedLayer {
+  trait Unary extends CumulativeLayer {
 
     protected val operand: Layer.Aux[Input, _ <: Tape]
 
-    protected type BufferedTape <: UnaryTape
+    protected type CumulativeTape <: UnaryTape
 
-    protected trait UnaryTape extends ReferenceCount { this: BufferedTape =>
+    protected trait UnaryTape extends ReferenceCount { this: CumulativeTape =>
 
       override def input: Input
 
@@ -229,14 +229,14 @@ object BufferedLayer {
   /**
     * A helper that contains common boilerplate code for layers of binary operator.
     */
-  trait Binary extends BufferedLayer {
+  trait Binary extends CumulativeLayer {
 
     protected val operand1: Layer.Aux[Input, _ <: Tape]
     protected val operand2: Layer.Aux[Input, _ <: Tape]
 
-    protected type BufferedTape <: BinaryTape
+    protected type CumulativeTape <: BinaryTape
 
-    protected trait BinaryTape extends ReferenceCount { this: BufferedTape =>
+    protected trait BinaryTape extends ReferenceCount { this: CumulativeTape =>
 
       override def input: Input
 

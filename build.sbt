@@ -15,13 +15,13 @@ lazy val Layer = project
 
 lazy val Symbolic = project.dependsOn(Layer)
 
-lazy val DifferentiableBoolean = project.dependsOn(Layer, BufferedLayer, Poly)
+lazy val DifferentiableBoolean = project.dependsOn(Layer, CumulativeLayer, Poly)
 
 lazy val DifferentiableDouble =
-  project.dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+  project.dependsOn(Poly, DifferentiableBoolean, CumulativeLayer, DifferentiableAny)
 
 lazy val DifferentiableFloat =
-  project.dependsOn(Poly, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+  project.dependsOn(Poly, DifferentiableBoolean, CumulativeLayer, DifferentiableAny)
 
 val DoubleRegex = """(?i:double)""".r
 
@@ -46,7 +46,7 @@ sourceGenerators in Compile in DifferentiableFloat += Def.task {
 }.taskValue
 
 lazy val DifferentiableInt =
-  project.dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, BufferedLayer, DifferentiableAny)
+  project.dependsOn(Poly, DifferentiableDouble, DifferentiableBoolean, CumulativeLayer, DifferentiableAny)
 
 lazy val Poly = project.dependsOn(Symbolic)
 
@@ -63,7 +63,7 @@ lazy val DifferentiableHList = project.dependsOn(Poly)
 
 lazy val DifferentiableCoproduct = project.dependsOn(DifferentiableBoolean)
 
-lazy val BufferedLayer = project.dependsOn(Layer)
+lazy val CumulativeLayer = project.dependsOn(Layer)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 

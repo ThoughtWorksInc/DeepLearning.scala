@@ -37,9 +37,9 @@ object DifferentiableInt {
   object Layers {
 
     final case class Negative[Input0 <: Tape](operand: Layer.Aux[Input0, IntPlaceholder.Tape])
-        extends BufferedLayer.Unary {
+        extends CumulativeLayer.Unary {
 
-      type BufferedTape = IntMonoidTape with MonoidTape with UnaryTape
+      type CumulativeTape = IntMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
@@ -61,13 +61,13 @@ object DifferentiableInt {
     final case class Plus[Input0 <: Tape](
         operand1: Layer.Aux[Input0, IntPlaceholder.Tape],
         operand2: Layer.Aux[Input0, IntPlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = IntMonoidTape with MonoidTape with BinaryTape
+      type CumulativeTape = IntMonoidTape with MonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with IntMonoidTape with MonoidTape with BinaryTape {
@@ -86,13 +86,13 @@ object DifferentiableInt {
     final case class Times[Input0 <: Tape](
         operand1: Layer.Aux[Input0, IntPlaceholder.Tape],
         operand2: Layer.Aux[Input0, IntPlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = IntMonoidTape with MonoidTape with BinaryTape
+      type CumulativeTape = IntMonoidTape with MonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with IntMonoidTape with MonoidTape with BinaryTape {
@@ -109,9 +109,9 @@ object DifferentiableInt {
     }
 
     final case class Reciprocal[Input0 <: Tape](operand: Layer.Aux[Input0, IntPlaceholder.Tape])
-        extends BufferedLayer.Unary {
+        extends CumulativeLayer.Unary {
 
-      type BufferedTape = IntMonoidTape with MonoidTape with UnaryTape
+      type CumulativeTape = IntMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
@@ -135,13 +135,13 @@ object DifferentiableInt {
     final case class Substract[Input0 <: Tape](
         operand1: Layer.Aux[Input0, IntPlaceholder.Tape],
         operand2: Layer.Aux[Input0, IntPlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = MonoidTape with IntMonoidTape with BinaryTape
+      type CumulativeTape = MonoidTape with IntMonoidTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with MonoidTape with IntMonoidTape with BinaryTape {

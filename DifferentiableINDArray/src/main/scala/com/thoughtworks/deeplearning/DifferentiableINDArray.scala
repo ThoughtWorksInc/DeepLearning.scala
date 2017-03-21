@@ -275,13 +275,13 @@ object DifferentiableINDArray {
     final case class MultiplyINDArray[Input0 <: Tape](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -309,13 +309,13 @@ object DifferentiableINDArray {
     final case class MaxDouble[Input0 <: Tape](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -335,13 +335,13 @@ object DifferentiableINDArray {
     final case class PlusINDArray[Input0 <: Tape](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -372,14 +372,14 @@ object DifferentiableINDArray {
       * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
       */
     final case class ToSeq[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
+        extends CumulativeLayer.Unary {
       import ToSeq._
-      type BufferedTape =
+      type CumulativeTape =
         UnaryTape with Seq2DTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with UnaryTape with Seq2DTape {
@@ -484,12 +484,12 @@ object DifferentiableINDArray {
     }
 
     final case class Sum[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape], dimensions: Seq[Int])
-        extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -505,12 +505,12 @@ object DifferentiableINDArray {
     }
 
     final case class ReduceSum[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with DoubleMonoidTape with MonoidTape with UnaryTape {
@@ -525,12 +525,12 @@ object DifferentiableINDArray {
     }
 
     final case class ReduceMean[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = DoubleMonoidTape with MonoidTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = DoubleMonoidTape with MonoidTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with DoubleMonoidTape with MonoidTape with UnaryTape {
@@ -547,12 +547,12 @@ object DifferentiableINDArray {
     }
 
     final case class Reciprocal[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -570,13 +570,13 @@ object DifferentiableINDArray {
     final case class PlusDouble[Input0 <: Tape](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -591,12 +591,12 @@ object DifferentiableINDArray {
     }
 
     final case class Negative[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -611,12 +611,12 @@ object DifferentiableINDArray {
     }
 
     final case class Exp[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -630,12 +630,12 @@ object DifferentiableINDArray {
     }
 
     final case class Abs[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -650,12 +650,12 @@ object DifferentiableINDArray {
     }
 
     final case class Log[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape])
-        extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -672,13 +672,13 @@ object DifferentiableINDArray {
     final case class MultiplyDouble[Input0 <: Tape](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         operand2: Layer.Aux[Input0, DoublePlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -703,13 +703,13 @@ object DifferentiableINDArray {
     final case class Dot[Input0 <: Tape](
         operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
-    ) extends BufferedLayer.Binary {
+    ) extends CumulativeLayer.Binary {
 
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override final val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -732,12 +732,12 @@ object DifferentiableINDArray {
         kernel: Array[Int],
         stride: Array[Int],
         padding: Array[Int]
-    ) extends BufferedLayer.Unary {
-      type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+    ) extends CumulativeLayer.Unary {
+      type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
@@ -758,12 +758,12 @@ object DifferentiableINDArray {
     final case class Reshape[Input0 <: Tape](
         override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         override val operand2: Layer.Aux[Input0, Tape.Aux[Seq[Int], (Int, Float)]])
-        extends BufferedLayer.Binary {
-      override type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+        extends CumulativeLayer.Binary {
+      override type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       override type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -784,12 +784,12 @@ object DifferentiableINDArray {
     final case class Permute[Input0 <: Tape](
         override val operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
         override val operand2: Layer.Aux[Input0, Tape.Aux[Seq[Int], (Int, Float)]])
-        extends BufferedLayer.Binary {
-      override type BufferedTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
+        extends CumulativeLayer.Binary {
+      override type CumulativeTape = INDArraySemigroupTape with SemigroupTape with BinaryTape
 
       override type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
@@ -819,12 +819,12 @@ object DifferentiableINDArray {
     //TODO: update nd4j to 0.8.0
     final case class MaxPool[Input0 <: Tape](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
                                              dimensions: Int*)
-        extends BufferedLayer.Unary {
-      override type BufferedTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+        extends CumulativeLayer.Unary {
+      override type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
 
       override type Input = Input0
 
-      override protected def rawForward(input0: Input): BufferedTape = {
+      override protected def rawForward(input0: Input): CumulativeTape = {
         new {
           override val input = input0
         } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
