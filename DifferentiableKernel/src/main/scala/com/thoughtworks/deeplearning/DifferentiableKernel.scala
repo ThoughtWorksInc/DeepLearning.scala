@@ -236,11 +236,12 @@ object DifferentiableKernel {
           inputSetter(kernel, inputParameterMap)
           kernel.setArg(inputMetadataMap.size, outputBuffer)
           val event = commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
-//          try {
+          try {
             event.await
-//          } finally {
-//            event.close()
-//          }
+            JumpInto(executor).await
+          } finally {
+            event.close()
+          }
           new Tapes.Fill(inputParameterMap, outputBuffer)
         }
       }
