@@ -574,7 +574,7 @@ data: $data""")
   object Program {
     private[Program] final class ManagedCallback(handler: Unit => TailRec[Unit]) extends CLProgramCallbackI {
       override def invoke(program: Long, user_data: Long): Unit = {
-        container.close()
+//         container.close()
         handler(()).result
       }
       val container: CLProgramCallback = CLProgramCallback.create(this)
