@@ -166,12 +166,28 @@ object OpenCL {
       buffer
     }
 
+    def maxWorkGroupSize: Address = {
+      addressInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE)
+    }
+
     def intInfo(paramName: Int): Int = {
       val buffer = Array[Int](0)
       checkErrorCode(clGetDeviceInfo(id, paramName, buffer, null))
       val Array(value) = buffer
       value
     }
+
+    def addressInfo(paramName: Int): Address = {
+      val stack = stackPush()
+      try {
+        val buffer = stack.mallocPointer(1)
+        checkErrorCode(clGetDeviceInfo(id, paramName, buffer, null))
+        Address(buffer.get(0))
+      } finally {
+        stack.close()
+      }
+    }
+
     def longInfo(paramName: Int): Long = {
       val buffer = Array[Long](0L)
       checkErrorCode(clGetDeviceInfo(id, paramName, buffer, null))
