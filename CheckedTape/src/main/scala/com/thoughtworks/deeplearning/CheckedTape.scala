@@ -1,9 +1,8 @@
 package com.thoughtworks.deeplearning
 
 import com.qifun.statelessFuture.Future
-import com.qifun.statelessFuture.Future.Stateless
+import com.thoughtworks.deeplearning.Closeables.AssertionAutoCloseable
 import com.thoughtworks.deeplearning.Layer.Tape
-import com.thoughtworks.deeplearning.Layer.Tape.Aux
 
 import scala.annotation.elidable
 
@@ -37,11 +36,13 @@ object CheckedTape {
 /**
   * A [[Tape]] able to detect error of closing more than once.
   */
-final case class CheckedTape[Data0, Delta0](underlying: Tape.Aux[Data0, Delta0]) extends Tape with IsClosed {
+final case class CheckedTape[Data0, Delta0](underlying: Tape.Aux[Data0, Delta0])
+    extends Tape
+    with AssertionAutoCloseable {
   override type Data = Data0
   override type Delta = Delta0
 
-  override def duplicate(): Aux[Data, Delta] = CheckedTape(underlying.duplicate())
+  override def duplicate(): Tape.Aux[Data, Delta] = CheckedTape(underlying.duplicate())
   override def forceBackward(delta: Delta): Future[Unit] = underlying.forceBackward(delta)
   override def isTrainable: Boolean = underlying.isTrainable
   override def value: Data = underlying.value

@@ -10,11 +10,11 @@ lazy val Layer = project.dependsOn(`stateless-future`)
 
 lazy val CumulativeTape = project.dependsOn(Layer)
 
-lazy val CheckedTape = project.dependsOn(Layer, IsClosed)
+lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
-lazy val IsClosed = project
+lazy val Closeables = project
 
 // TODO: Rename to ToLiteral?
 lazy val Symbolic = project.dependsOn(Layer)
@@ -23,7 +23,7 @@ lazy val `stateless-future` = project
 
 lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
-lazy val OpenCL = project.dependsOn(IsClosed, `stateless-future`, Memory)
+lazy val OpenCL = project.dependsOn(Closeables, `stateless-future`, Memory)
 
 lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 

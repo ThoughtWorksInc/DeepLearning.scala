@@ -14,6 +14,7 @@ import org.lwjgl.system.Pointer._
 
 import scala.collection.mutable
 import com.qifun.statelessFuture.Future
+import com.thoughtworks.deeplearning.Closeables.{AssertionAutoCloseable, AssertionFinalizer}
 import com.thoughtworks.deeplearning.Memory.{Address, Box}
 import org.lwjgl.system.{JNI, MemoryStack, MemoryUtil, Pointer}
 
@@ -288,7 +289,9 @@ data: $data""")
   /**
     * @param logger keep the reference to keep the weak reference to logger
     */
-  final class Context private[OpenCL] (val handle: Address, logger: AnyRef) extends IsClosed {
+  final class Context private[OpenCL] (val handle: Address, logger: AnyRef)
+      extends AssertionAutoCloseable
+      with AssertionFinalizer {
 
     def createProgramWithSource(sourceCode: TraversableOnce[CharSequence]): Program = {
       val stack = stackPush()
@@ -406,7 +409,9 @@ data: $data""")
                                              localWorkSize: Address)
   }
 
-  final class CommandQueue private[OpenCL] (val handle: Address) extends IsClosed {
+  final class CommandQueue private[OpenCL] (val handle: Address)
+      extends AssertionAutoCloseable
+      with AssertionFinalizer {
     import CommandQueue._
     def duplicate(): CommandQueue = {
       checkErrorCode(clRetainCommandQueue(handle.toLong))
@@ -417,7 +422,9 @@ data: $data""")
       checkErrorCode(clReleaseCommandQueue(handle.toLong))
     }
 
-    def enqueueNDRangeKernel(kernel: Kernel, dimensions: NDimensionBufferAllocator, preconditionEvents: Event*): Event = {
+    def enqueueNDRangeKernel(kernel: Kernel,
+                             dimensions: NDimensionBufferAllocator,
+                             preconditionEvents: Event*): Event = {
       val stack = stackPush()
       val outputEvent = try {
         val inputEventBuffer = if (preconditionEvents.isEmpty) {
@@ -485,7 +492,10 @@ data: $data""")
 
   }
 
-  final class Event(val handle: Address) extends IsClosed with Future.Stateful[Unit] {
+  final class Event(val handle: Address)
+      extends AssertionAutoCloseable
+      with AssertionFinalizer
+      with Future.Stateful[Unit] {
 
     def duplicate = new Event(handle)
 
@@ -548,7 +558,9 @@ data: $data""")
   }
 
   // TODO: remove the `Element` type parameter
-  final class Buffer[Element] private[OpenCL] (val handle: Address) extends IsClosed {
+  final class Buffer[Element] private[OpenCL] (val handle: Address)
+      extends AssertionAutoCloseable
+      with AssertionFinalizer {
 
     def numberOfBytes: Int = {
       val sizeBuffer: Array[Long] = Array(0L)
@@ -581,7 +593,7 @@ data: $data""")
     }
   }
 
-  final class Program private[OpenCL] (val handle: Address) extends IsClosed {
+  final class Program private[OpenCL] (val handle: Address) extends AssertionAutoCloseable with AssertionFinalizer {
 
     def duplicate(): Program = {
       checkErrorCode(clRetainProgram(handle.toLong))
@@ -595,11 +607,11 @@ data: $data""")
     def build(devices: Seq[Device], options: CharSequence = ""): Future.Stateless[Unit] = new Future.Stateless[Unit] {
       override def onComplete(handler: Unit => TailRec[Unit])(
           implicit catcher: Catcher[TailRec[Unit]]): TailRec[Unit] = {
-        val callback = new Program.ManagedCallback(handler)
+        val callbackContainer = new Program.ManagedCallback(handler).container
         val stack = stackPush()
         try {
           checkErrorCode(
-            clBuildProgram(handle.toLong, stack.pointers(devices.map(_.id): _*), options, callback.container, NULL))
+            clBuildProgram(handle.toLong, stack.pointers(devices.map(_.id): _*), options, callbackContainer, NULL))
         } finally {
           stack.close()
         }
@@ -627,7 +639,7 @@ data: $data""")
 
   }
 
-  final class Kernel private[OpenCL] (val handle: Address) extends IsClosed {
+  final class Kernel private[OpenCL] (val handle: Address) extends AssertionAutoCloseable with AssertionFinalizer {
 
     def setArg[A](argIndex: Int, a: A)(implicit memory: Memory[A]): Unit = {
       val stack = stackPush()
