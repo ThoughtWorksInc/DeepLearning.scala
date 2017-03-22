@@ -14,7 +14,7 @@ lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
-lazy val Closeables = project
+lazy val Closeables = project.dependsOn(`stateless-future`)
 
 // TODO: Rename to ToLiteral?
 lazy val Symbolic = project.dependsOn(Layer)

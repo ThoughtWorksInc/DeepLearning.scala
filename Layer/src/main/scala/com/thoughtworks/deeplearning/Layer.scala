@@ -22,7 +22,7 @@ object Layer {
   /**
     * Tape是对Data和Delta的封装，每个Tape都包含`backward()`,详细信息可参看[[Layer]]
     */
-  trait Tape extends AutoCloseable {
+  trait Tape {
     type Data
     type Delta
 
@@ -35,6 +35,8 @@ object Layer {
     def forceBackward(delta: Delta): Future[Unit]
 
     def isTrainable: Boolean
+
+    def close(): Future[Unit]
 
     @inline
     final def backward(delta: Delta): Future[Unit] = {

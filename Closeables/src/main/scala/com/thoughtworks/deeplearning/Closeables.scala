@@ -2,9 +2,46 @@ package com.thoughtworks.deeplearning
 
 import java.io.Closeable
 
+import com.qifun.statelessFuture.Future
+
 object Closeables {
 
-  trait AssertionFinalizer { this: AssertionAutoCloseable =>
+  trait IsClosed {
+    protected final var closed = false
+
+  }
+
+  trait FutureCloseable extends FutureAutoCloseable
+
+  trait FutureAutoCloseable {
+    def close(): Future[Unit]
+  }
+
+  trait AssertionFutureAutoCloseable extends FutureAutoCloseable with IsClosed {
+
+    protected def forceClose(): Future[Unit]
+
+    /**
+      * Calls [[forceClose]] and then marks this [[AssertionAutoCloseable]] as closed if this [[AssertionAutoCloseable]] was not closed; throw an exception otherwise.
+      */
+    @throws(classOf[IllegalStateException])
+    override final def close(): Future[Unit] = Future {
+      val wasClosed = synchronized {
+        val wasClosed = closed
+        if (!wasClosed) {
+          closed = true
+        }
+        wasClosed
+      }
+      if (wasClosed) {
+        throw new IllegalStateException("Can't close more than once.")
+      } else {
+        forceClose().await
+      }
+    }
+  }
+
+  trait AssertionFinalizer { this: IsClosed =>
     override protected final def finalize(): Unit = {
       if (!closed) {
         throw new IllegalStateException("close() must be called before garbage collection.")
@@ -44,11 +81,9 @@ object Closeables {
 
   }
 
-  trait AssertionAutoCloseable extends AutoCloseable {
+  trait AssertionAutoCloseable extends AutoCloseable with IsClosed {
 
     protected def forceClose(): Unit
-
-    protected final var closed = false
 
     /**
       * Calls [[forceClose]] and then marks this [[AssertionAutoCloseable]] as closed if this [[AssertionAutoCloseable]] was not closed; throw an exception otherwise.

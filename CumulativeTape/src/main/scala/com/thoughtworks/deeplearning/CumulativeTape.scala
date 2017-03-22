@@ -27,11 +27,11 @@ trait CumulativeTape extends Tape {
 
   private[deeplearning] var count: Int = 1
 
-  protected def flush(): Unit
+  protected def flush(): Future[Unit]
 
-  protected def closeUpstreams(): Unit
+  protected def closeUpstreams(): Future[Unit]
 
-  override final def close(): Unit = {
+  override final def close(): Future[Unit] = Future {
     val newCount = synchronized {
       val newCount = count - 1
       count = newCount
@@ -39,8 +39,8 @@ trait CumulativeTape extends Tape {
     }
     assert(newCount >= 0)
     if (newCount == 0) {
-      flush()
-      closeUpstreams()
+      flush().await
+      closeUpstreams().await
     }
   }
 }
@@ -53,11 +53,11 @@ object CumulativeTape {
     /**
       * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
       */
-    protected def rawBackward(delta: Delta): Unit
+    protected def rawBackward(delta: Delta): Future[Unit]
 
     implicit protected def monoid: Monoid[Delta]
 
-    override protected final def flush(): Unit = {
+    override protected final def flush(): Future[Unit] = {
       rawBackward(synchronized {
         val delta = deltaAccumulator
         deltaAccumulator = monoid.empty
@@ -65,7 +65,7 @@ object CumulativeTape {
       })
     }
 
-    override final def forceBackward(outputDelta: Delta) = {
+    override final def forceBackward(outputDelta: Delta): Future[Unit] = {
       synchronized {
         deltaAccumulator = deltaAccumulator |+| outputDelta
       }
@@ -80,16 +80,19 @@ object CumulativeTape {
     /**
       * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
       */
-    protected def rawBackward(delta: Delta): Unit
+    protected def rawBackward(delta: Delta): Future[Unit]
 
     implicit protected def semigroup: Semigroup[Delta]
 
-    override protected final def flush(): Unit = {
+    override protected final def flush(): Future[Unit] = {
       synchronized {
-        val delta = deltaAccumulator
+        val deltaOption = deltaAccumulator
         deltaAccumulator = None
-        delta
-      }.foreach(rawBackward)
+        deltaOption
+      } match {
+        case None => Future(())
+        case Some(delta) => rawBackward(delta)
+      }
     }
 
     override final def forceBackward(outputDelta: Delta) = {

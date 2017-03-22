@@ -2,6 +2,7 @@ package com.thoughtworks.deeplearning
 
 import java.util.concurrent.Executor
 
+import com.qifun.statelessFuture.util.AwaitableSeq.futureSeq
 import com.qifun.statelessFuture.Future
 import com.qifun.statelessFuture.Future.Stateless
 import com.qifun.statelessFuture.util._
@@ -84,7 +85,7 @@ object DifferentiableKernel {
       override type Delta = OpenCL.Buffer[OutputElementDelta]
       override type Data = OpenCL.Buffer[OutputElementData]
 
-      private def rawBackward(deltaFuture: Future.Stateful[Option[Delta]]): Unit = {
+      private def rawBackward(deltaFuture: Future.Stateful[Option[Delta]]): Future[Unit] = {
         implicit def catcher = PartialFunction.empty
         for (deltaOption <- deltaFuture) {
           deltaOption match {
@@ -95,7 +96,7 @@ object DifferentiableKernel {
         }
       }
 
-      override protected def flush(): Unit = {
+      override protected def flush(): Future[Unit] = {
         rawBackward(synchronized {
           val delta = deltaAccumulator
           deltaAccumulator = new Constant(None)
@@ -103,8 +104,8 @@ object DifferentiableKernel {
         })
       }
 
-      override protected def closeUpstreams(): Unit = {
-        for (upstream <- inputParameterMap.values) {
+      override protected def closeUpstreams(): Future[Unit] = Future {
+        for (upstream <- futureSeq(inputParameterMap.values)) {
           upstream.close()
         }
       }
@@ -235,7 +236,8 @@ object DifferentiableKernel {
           val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
           inputSetter(kernel, inputParameterMap)
           kernel.setArg(inputMetadataMap.size, outputBuffer)
-          val event = commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
+          val event =
+            commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
           try {
             event.await
           } finally {

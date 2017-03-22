@@ -23,7 +23,7 @@ object Symbolic {
 
       override def forceBackward(delta: Delta) = Future(())
 
-      override def close(): Unit = {}
+      override def close(): Future[Unit] = Future(())
 
       override def duplicate() = this
     }
