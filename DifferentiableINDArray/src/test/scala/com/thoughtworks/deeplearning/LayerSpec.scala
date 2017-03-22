@@ -319,24 +319,24 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     shapeSeq(3) should be(9)
   }
 
-  "INDArrayPlaceholder maxPool dimensions --one dimension" ignore {
+  "INDArrayPlaceholder maxPool poolSize --forward" in {
 
     implicit val learningRate = new LearningRate {
       override def currentLearningRate() = 0.0003
     }
 
-    def makeNetwork(dimension: Int)(implicit x: INDArray @Symbolic) = {
-      val weightInitialValue = 1 to 54
-      weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimension)
+    def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
+      val weightInitialValue = 1 to 96
+      weightInitialValue.toNDArray.reshape(2, 3, 4, 4).toWeight.maxPool(poolSize)
     }
 
-    val network = makeNetwork(3)
+    val network = makeNetwork((2, 2))
 
-    val inputData = 1 to 54
+    val inputData = 1 to 96
 
     def train() = {
       val outputTape = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
+        inputData.toNDArray.reshape(2, 3, 4, 4).toTape
       )
       try {
         val loss = (outputTape.value: INDArray).sumT
@@ -347,14 +347,9 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       }
     }
 
-    train().value should be(513.0)
+    train().value should be(1224.0)
 
-    inside(network) {
-      case MaxPool(Weight(w), _) =>
-        println(w)
-    }
-
-    for (_ <- 0 until 40000) {
+    for (_ <- 0 until 70000) {
       train().value
     }
 
@@ -362,24 +357,24 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
   }
 
-  "INDArrayPlaceholder maxPool dimensions --two dimension" ignore {
+  "INDArrayPlaceholder maxPool poolSize --backward" in {
 
     implicit val learningRate = new LearningRate {
-      override def currentLearningRate() = 0.0003
+      override def currentLearningRate() = 1.0
     }
 
-    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
-      val weightInitialValue = 1 to 54
-      weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimensions: _*)
+    def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
+      val weightInitialValue = 1 to 96
+      weightInitialValue.toNDArray.reshape(2, 3, 4, 4).toWeight.maxPool(poolSize)
     }
 
-    val network = makeNetwork(2, 3)
+    val network = makeNetwork((2, 2))
 
-    val inputData = 1 to 54
+    val inputData = 1 to 96
 
     def train() = {
       val outputTape = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
+        inputData.toNDArray.reshape(2, 3, 4, 4).toTape
       )
       try {
         val loss = (outputTape.value: INDArray).sumT
@@ -390,51 +385,13 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
       }
     }
 
-    train().value should be(189.0)
+    train().value
 
-    for (_ <- 0 until 30000) {
-      train().value
+    val result = inside(network) {
+      case MaxPool(Weight(w), _) => w
     }
 
-    math.abs(train().value) should be < 10.0
-
-  }
-
-  "INDArrayPlaceholder maxPool dimensions --three dimension" ignore {
-
-    implicit val learningRate = new LearningRate {
-      override def currentLearningRate() = 0.0003
-    }
-
-    def makeNetwork(dimensions: Int*)(implicit x: INDArray @Symbolic) = {
-      val weightInitialValue = 1 to 54
-      weightInitialValue.toNDArray.reshape(2, 3, 3, 3).toWeight.maxPool(dimensions: _*)
-    }
-
-    val network = makeNetwork(1, 2, 3)
-
-    val inputData = 1 to 54
-
-    def train() = {
-      val outputTape = network.forward(
-        inputData.toNDArray.reshape(2, 3, 3, 3).toTape
-      )
-      try {
-        val loss = (outputTape.value: INDArray).sumT
-        outputTape.backward(outputTape.value)
-        loss
-      } finally {
-        outputTape.close()
-      }
-    }
-
-    train().value should be(81.0)
-
-    for (_ <- 0 until 20000) {
-      train().value
-    }
-
-    math.abs(train().value) should be < 10.0
+    result.sumT should be(3432)
 
   }
 
