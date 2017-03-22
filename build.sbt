@@ -27,6 +27,11 @@ lazy val OpenCL = project.dependsOn(Closeables, `stateless-future`, Memory)
 
 lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
+lazy val DifferentiableFloat =
+  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-util` % Test, Symbolic % Test)
+
+
+
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 publishArtifact := false
