@@ -30,7 +30,13 @@ lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 lazy val DifferentiableFloat =
   project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-util` % Test, Symbolic % Test)
 
-
+lazy val DifferentiableInt =
+  project.dependsOn(Layer,
+                    CumulativeTape,
+                    CheckedTape,
+                    DifferentiableFloat,
+                    `stateless-future-util` % Test,
+                    Symbolic % Test)
 
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
