@@ -6,7 +6,7 @@ lazy val DifferentiableKernel =
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
 // TODO: Create a separate Tape library?
-lazy val Layer = project.dependsOn(`stateless-future`)
+lazy val Layer = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
 
 lazy val CumulativeTape = project.dependsOn(Layer)
 
@@ -14,12 +14,18 @@ lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
-lazy val Closeables = project.dependsOn(`stateless-future`)
+lazy val Closeables = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
 
 // TODO: Rename to ToLiteral?
 lazy val Symbolic = project.dependsOn(Layer)
 
 lazy val `stateless-future` = project
+
+lazy val `stateless-future-scalaz` = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
+
+lazy val `stateless-future-sde` = project.dependsOn(`stateless-future-scalaz`, `stateless-future-scalatest` % Test)
+
+lazy val `stateless-future-scalatest` = project.dependsOn(`stateless-future-util`)
 
 lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
