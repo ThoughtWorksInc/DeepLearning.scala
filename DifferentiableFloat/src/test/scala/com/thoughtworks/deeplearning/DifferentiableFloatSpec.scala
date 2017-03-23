@@ -82,7 +82,7 @@ final class DifferentiableFloatSpec extends FutureFreeSpec with Matchers {
       try {
         val outputTape = myNeuralNetwork.forward(input).!
         try {
-          outputTape.backward(1.0f).! should be(2.0f)
+          outputTape.backward(1.0f).! should be(())
         } finally {
           outputTape.close().!
         }
