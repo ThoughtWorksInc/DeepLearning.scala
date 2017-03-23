@@ -5,7 +5,9 @@ import cats.implicits._
 import cats.kernel.CommutativeGroup
 import com.qifun.statelessFuture.Future
 import com.thoughtworks.deeplearning.CumulativeTape.MonoidTape
+import com.thoughtworks.deeplearning.DifferentiableFloat.Optimizers.Optimizer
 import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.deeplearning.Layer.Tape.Aux
 import shapeless.the
 
 /**
@@ -78,6 +80,51 @@ object DifferentiableFloat {
       }
     }
 
+  }
+
+  object OptimizerFactory {
+    implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
+      override def floatOptimizer(weight: Weight): Optimizer = optimizer
+    }
+  }
+
+  trait OptimizerFactory {
+    def floatOptimizer(weight: Weight): Optimizer
+  }
+
+  object Weight {
+
+    def apply(value: Float)(implicit optimizerFactory: OptimizerFactory) = new Weight(value) {
+      override protected val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
+    }
+
+  }
+
+  abstract case class Weight(var value: Float) extends Layer with Tape {
+
+    override type Data = Float
+    override type Delta = Float
+
+    override type Input = Tape
+    override type Output = Tape.Aux[Data, Delta]
+
+    override final def isTrainable = true
+
+    protected def optimizer: Optimizer
+
+    override final def forward(any: Input) = Future {
+      this
+    }
+
+    override final def duplicate(): Weight = this
+
+    override def forceBackward(delta: Delta): Future[Unit] = Future {
+      synchronized {
+        value = optimizer.updateFloat(value, delta)
+      }
+    }
+
+    override final def close(): Future[Unit] = Future {}
   }
 
   object Tapes {
