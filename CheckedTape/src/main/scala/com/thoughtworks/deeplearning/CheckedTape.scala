@@ -48,7 +48,7 @@ final case class CheckedTape[Data0, Delta0](underlying: Tape.Aux[Data0, Delta0])
   override type Delta = Delta0
 
   override def duplicate(): Tape.Aux[Data, Delta] = CheckedTape(underlying.duplicate())
-  override def forceBackward(delta: Delta): Future[Unit] = underlying.forceBackward(delta)
+  override def backward(delta: Delta): Future[Unit] = underlying.backward(delta)
   override def isTrainable: Boolean = underlying.isTrainable
   override def value: Data = underlying.value
 

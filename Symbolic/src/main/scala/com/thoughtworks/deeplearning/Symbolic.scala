@@ -21,7 +21,7 @@ object Symbolic {
 
       override def isTrainable: Boolean = false
 
-      override def forceBackward(delta: Delta) = Future(())
+      override def backward(delta: Delta) = Future(())
 
       override def close(): Future[Unit] = Future(())
 
