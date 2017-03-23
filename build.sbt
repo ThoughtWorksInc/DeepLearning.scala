@@ -14,7 +14,7 @@ lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
-lazy val Closeables = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
+lazy val Closeables = project.dependsOn(`stateless-future-sde`, `stateless-future-scalatest` % Test)
 
 // TODO: Rename to ToLiteral?
 lazy val Symbolic = project.dependsOn(Layer)
@@ -34,10 +34,10 @@ lazy val OpenCL = project.dependsOn(Closeables, `stateless-future`, Memory)
 lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
 lazy val DifferentiableFloat =
-  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-util` % Test, Symbolic % Test)
+  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-scalatest` % Test, Symbolic % Test)
 
 lazy val DifferentiableDouble =
-  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-util` % Test, Symbolic % Test)
+  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-scalatest` % Test, Symbolic % Test)
 
 lazy val DifferentiableInt =
   project.dependsOn(Layer,
