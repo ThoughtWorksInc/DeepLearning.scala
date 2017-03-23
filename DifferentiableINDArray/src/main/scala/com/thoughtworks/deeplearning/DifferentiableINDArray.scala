@@ -832,24 +832,12 @@ object DifferentiableINDArray {
             upstream.value.shape()
           }
 
-          private val poolProduct = {
-            poolSize._1 * poolSize._2
-          }
-
-          private val afterMaxPoolShape = {
-            val reverseUpstreamShape = upstreamShape.reverse
-
-            reverseUpstreamShape(0) = reverseUpstreamShape(0) / poolSize._1
-            reverseUpstreamShape(1) = reverseUpstreamShape(1) / poolSize._2
-
-            reverseUpstreamShape.reverse
-          }
-
           private val kernelAndStrideSize: Array[Int] = toArray(poolSize)
 
-          private val preMaxPool: INDArray = Convolution
-            .im2col(upstream.value, kernelAndStrideSize, kernelAndStrideSize, Array(0, 0))
-            .permute(0, 1, 4, 5, 2, 3)
+          private val preMaxPool: INDArray =
+            Convolution
+              .im2col(upstream.value, kernelAndStrideSize, kernelAndStrideSize, Array(0, 0))
+              .permute(0, 1, 4, 5, 2, 3)
 
           private val preShape: Seq[Int] = preMaxPool.shape().toSeq
 
