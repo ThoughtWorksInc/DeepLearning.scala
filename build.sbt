@@ -30,6 +30,9 @@ lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 lazy val DifferentiableFloat =
   project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-util` % Test, Symbolic % Test)
 
+lazy val DifferentiableDouble =
+  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-util` % Test, Symbolic % Test)
+
 lazy val DifferentiableInt =
   project.dependsOn(Layer,
                     CumulativeTape,
@@ -37,6 +40,28 @@ lazy val DifferentiableInt =
                     DifferentiableFloat,
                     `stateless-future-util` % Test,
                     Symbolic % Test)
+
+val FloatRegex = """(?i:float)""".r
+
+sourceGenerators in Compile in DifferentiableDouble += Def.task {
+  for {
+    floatFile <- (unmanagedSources in Compile in DifferentiableFloat).value
+    relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in DifferentiableFloat).value)
+  } yield {
+    val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
+
+    val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
+      m.matched match {
+        case "Float" => "Double"
+        case "float" => "double"
+      }
+    })
+
+    val outputFile = (sourceManaged in Compile in DifferentiableDouble).value / relativeFile.getPath
+    IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
+    outputFile
+  }
+}.taskValue
 
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 

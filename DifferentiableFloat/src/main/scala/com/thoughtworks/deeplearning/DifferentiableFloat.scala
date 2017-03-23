@@ -2,12 +2,10 @@ package com.thoughtworks.deeplearning
 
 import cats.Monoid
 import cats.implicits._
-import cats.kernel.CommutativeGroup
 import com.qifun.statelessFuture.Future
 import com.thoughtworks.deeplearning.CumulativeTape.MonoidTape
 import com.thoughtworks.deeplearning.DifferentiableFloat.Optimizers.Optimizer
 import com.thoughtworks.deeplearning.Layer.Tape
-import com.thoughtworks.deeplearning.Layer.Tape.Aux
 import shapeless.the
 
 /**
