@@ -85,7 +85,7 @@ object DifferentiableKernel {
       override type Delta = OpenCL.Buffer[OutputElementDelta]
       override type Data = OpenCL.Buffer[OutputElementData]
 
-      private def rawBackward(deltaFuture: Future.Stateful[Option[Delta]]): Future[Unit] = {
+      private def flush(deltaFuture: Future.Stateful[Option[Delta]]): Future[Unit] = {
         implicit def catcher = PartialFunction.empty
         for (deltaOption <- deltaFuture) {
           deltaOption match {
@@ -97,7 +97,7 @@ object DifferentiableKernel {
       }
 
       override protected def flush(): Future[Unit] = {
-        rawBackward(synchronized {
+        flush(synchronized {
           val delta = deltaAccumulator
           deltaAccumulator = new Constant(None)
           delta
