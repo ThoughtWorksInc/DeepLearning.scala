@@ -31,6 +31,6 @@ libraryDependencies ++= {
     val nd4jVersion = "0.8.0"
     Seq("org.nd4j" %% "nd4s" % nd4jVersion,
         "org.nd4j" % "nd4j-api" % nd4jVersion,
-        "org.nd4j" % "nd4j-native-platform" % nd4jVersion)
+        "org.nd4j" % "nd4j-native-platform" % nd4jVersion % Test)
   }
 }

@@ -73,6 +73,8 @@ addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-depend
 
 libraryDependencies += "com.thoughtworks.enableIf" %% "enableif" % "1.1.4" % Test
 
+libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0" % Test
+
 crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1")
 
 publishArtifact := false
