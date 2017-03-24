@@ -1,3 +1,5 @@
+enablePlugins(ProjectsGenerator)
+
 parallelExecution in Global := false
 
 sbt.dsl.dependsOn(
@@ -92,6 +94,7 @@ lazy val unidoc = project
     },
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )
+
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
