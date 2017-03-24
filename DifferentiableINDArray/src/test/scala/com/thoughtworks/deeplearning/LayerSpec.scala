@@ -82,7 +82,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
   "INDArrayPlaceholder im2col (kernel,stride,padding) --forward" in {
 
     implicit val learningRate = new LearningRate {
-      override def currentLearningRate() = 0.0003
+      override def currentLearningRate() = 0.03
     }
 
     def makeNetwork(kernel: Array[Int], stride: Array[Int], padding: Array[Int])(implicit x: INDArray @Symbolic) = {
@@ -109,7 +109,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
     train().value should be(-8085.0)
 
-    for (_ <- 0 until 10000) {
+    for (_ <- 0 until 100) {
       train().value
     }
 
@@ -321,7 +321,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
   "INDArrayPlaceholder maxPool poolSize --forward" in {
 
     implicit val learningRate = new LearningRate {
-      override def currentLearningRate() = 0.0003
+      override def currentLearningRate() = 0.03
     }
 
     def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
@@ -348,7 +348,7 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
 
     train().value should be(1224.0)
 
-    for (_ <- 0 until 70000) {
+    for (_ <- 0 until 700) {
       train().value
     }
 
