@@ -28,9 +28,8 @@ libraryDependencies ++= {
   if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
     Nil
   } else {
-    val nd4jVersion = "0.8.0"
-    Seq("org.nd4j" %% "nd4s" % nd4jVersion,
-        "org.nd4j" % "nd4j-api" % nd4jVersion,
-        "org.nd4j" % "nd4j-native-platform" % nd4jVersion % Test)
+    Seq("org.nd4j" %% "nd4s" % "0.8.0",
+        "org.nd4j" % "nd4j-api" % "0.8.0",
+        "org.nd4j" % "nd4j-native-platform" % "0.8.0" % Test)
   }
 }
