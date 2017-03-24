@@ -48,7 +48,7 @@ filename: Debug.ipynb
 <span class="o">}</span>
 </pre></div>
 <p><code>withOutputDataHook</code>在<code>com.thoughtworks.deeplearning#DifferentiableAny</code>下，方法签名如下：</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="n">withOutputDataHook</span><span class="o">(</span><span class="n">hook</span><span class="k">:</span> <span class="kt">OutputData</span> <span class="o">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span><span class="k">:</span> <span class="kt">Layer.Aux</span><span class="o">[</span><span class="kt">Input</span>, <span class="kt">Batch.Aux</span><span class="o">[</span><span class="kt">OutputData</span>, <span class="kt">OutputDelta</span><span class="o">]]</span> <span class="k">=</span> <span class="o">???</span>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="n">withOutputDataHook</span><span class="o">(</span><span class="n">hook</span><span class="k">:</span> <span class="kt">OutputData</span> <span class="o">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span><span class="k">:</span> <span class="kt">Layer.Aux</span><span class="o">[</span><span class="kt">Input</span>, <span class="kt">Tape.Aux</span><span class="o">[</span><span class="kt">OutputData</span>, <span class="kt">OutputDelta</span><span class="o">]]</span> <span class="k">=</span> <span class="o">???</span>
 </pre></div>
 <p>调用这个方法时可以传入一个自定义方法来进行输出或者其它操作，同时可以在这个自定义方法上打断点来查看<code>exp(scores)</code>后的状态。
 假如不需要debug的时候可以注释掉新增的一行，不会影响其它地方的代码。</p>
