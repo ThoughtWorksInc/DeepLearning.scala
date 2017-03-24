@@ -3,6 +3,8 @@
   subitems:
     - text: GettingStarted
       url: /demo/GettingStarted.html
+    - text: Debug
+      url: /demo/Debug.html
     - text: SoftmaxLinearClassifier
       url: /demo/SoftmaxLinearClassifier.html
     - text: MiniBatchGradientDescent
