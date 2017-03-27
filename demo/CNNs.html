@@ -31,14 +31,14 @@ filename: CNNs.ipynb
     <div class="input_area">
 <div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:2.0.0`</span>
 
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC11`</span>
-<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC11`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableany:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablenothing:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableseq:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiabledouble:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablefloat:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablehlist:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::differentiableindarray:1.0.0`</span>
 <span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j:nd4j-native-platform:0.7.2`</span>
 <span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.rauschig:jarchivelib:0.5.0`</span>
 
@@ -73,10 +73,9 @@ filename: CNNs.ipynb
 <span class="k">import</span> <span class="nn">org.nd4s.Implicits._</span>
 <span class="k">import</span> <span class="nn">plotly.Scatter</span>
 <span class="k">import</span> <span class="nn">shapeless._</span>
-<span class="k">import</span> <span class="nn">plotly.Scatter</span>
-<span class="k">import</span> <span class="nn">shapeless._</span>
 <span class="k">import</span> <span class="nn">plotly.Plotly._</span>
 <span class="k">import</span> <span class="nn">plotly._</span>
+<span class="k">import</span> <span class="nn">plotly.JupyterScala._</span>
 <span class="k">import</span> <span class="nn">shapeless.OpticDefns.compose</span>
 
 <span class="k">import</span> <span class="nn">scala.annotation.tailrec</span>
@@ -848,6 +847,8 @@ train loss : 0.2774548053741455
 
 <span class="k">val</span> <span class="n">interval</span> <span class="k">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="mi">10000</span> <span class="o">/</span> <span class="nc">MiniBatchSize</span>
 
+<span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+
 <span class="k">val</span> <span class="n">plot</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
   <span class="nc">Scatter</span><span class="o">(</span><span class="n">trainLossSeq</span><span class="o">.</span><span class="n">indices</span><span class="o">,</span> <span class="n">trainLossSeq</span><span class="o">,</span> <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;train loss&quot;</span><span class="o">),</span>
   <span class="nc">Scatter</span><span class="o">(</span><span class="n">trainLossSeq</span><span class="o">.</span><span class="n">indices</span> <span class="n">by</span> <span class="n">interval</span><span class="o">,</span>
@@ -916,10 +917,10 @@ train loss : 0.2774548053741455
 
 
 
-<div id="b301c68a-a3d3-4983-8ec4-f9ea96c257f9"></div>
+<div id="7456bdba-e7e4-4504-bcd1-d4abb8f0aed8"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#b301c68a-a3d3-4983-8ec4-f9ea96c257f9');
+var element = $('#7456bdba-e7e4-4504-bcd1-d4abb8f0aed8');
 
 requirejs(["plotly"], function(Plotly) {
   (function () {
