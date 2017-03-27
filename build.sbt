@@ -1,5 +1,3 @@
-enablePlugins(ProjectsGenerator)
-
 parallelExecution in Global := false
 
 sbt.dsl.dependsOn(
