@@ -1,3 +1,3 @@
 version in ThisBuild := "1.0.0-SNAPSHOT"
 
-releaseVersion := { _ => "1.0.0-RC10" }
+releaseVersion := { _ => "1.0.0-RC11" }
