@@ -4,9 +4,7 @@ featured: images/pic01.jpg
 layout: post
 ---
 
-[DeepLearning.scala](http://deeplearning.thoughtworks.school/) is a simple language for creating complex neural networks.
-
-Version 1.0.0 is the first stable release.
+Version 1.0.0 is the first stable release of [DeepLearning.scala](http://deeplearning.thoughtworks.school/), a simple language for creating complex neural networks.
 
 ## Features in 1.0.0
 
