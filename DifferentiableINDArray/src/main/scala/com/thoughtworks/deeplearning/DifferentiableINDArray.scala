@@ -816,68 +816,68 @@ object DifferentiableINDArray {
       }
     }
 
-    final case class MaxPool[Input0 <: Tape](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
-                                             poolSize: (Int, Int))
-        extends CumulativeLayer.Unary {
-      override type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
-
-      override type Input = Input0
-
-      override protected def rawForward(input0: Input): CumulativeTape = {
-        new {
-          override val input = input0
-        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
-
-          private val upstreamShape = {
-            upstream.value.shape()
-          }
-
-          private val kernelAndStrideSize: Array[Int] = toArray(poolSize)
-
-          private val preMaxPool: INDArray =
-            Convolution
-              .im2col(upstream.value, kernelAndStrideSize, kernelAndStrideSize, Array(0, 0))
-              .permute(0, 1, 4, 5, 2, 3)
-
-          private val preShape: Seq[Int] = preMaxPool.shape().toSeq
-
-          private val lastDimensionSize: Int = preShape.takeRight(2).product
-
-          private val reshapedPreMaxPool: INDArray = preMaxPool
-            .reshape(preShape.take(preShape.length - 2) :+ lastDimensionSize: _*)
-
-          override val value = reshapedPreMaxPool.max(4)
-
-          override protected def rawBackward(outputDelta: INDArray): Unit = {
-
-            val a = reshapedPreMaxPool
-            val upStreamDup = a.dup()
-            val rows = ArrayUtil.prod(a.length())
-
-            val isMax: INDArray = Nd4j.getExecutioner
-              .execAndReturn(new IsMax(upStreamDup, 4))
-              .reshape(preShape.take(preShape.length - 2) :+ poolSize._2 :+ poolSize._1: _*)
-              .permute(0, 1, 2, 4, 3, 5)
-              .reshape('c', rows, 1)
-
-            val outputDelta1d = {
-              outputDelta
-                .repeat(-1, poolSize._1)
-                .permute(1, 0, 3, 2)
-                .repeat(-1, poolSize._2)
-                .permute(1, 0, 3, 2)
-                .reshape('c', upstreamShape.product, 1)
-            }
-
-            upstream.backward(
-              isMax
-                .muliColumnVector(outputDelta1d)
-                .reshape(upstreamShape: _*)
-            )
-          }
-        }
-      }
-    }
+//    final case class MaxPool[Input0 <: Tape](override val operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
+//                                             poolSize: (Int, Int))
+//        extends CumulativeLayer.Unary {
+//      override type CumulativeTape = INDArraySemigroupTape with SemigroupTape with UnaryTape
+//
+//      override type Input = Input0
+//
+//      override protected def rawForward(input0: Input): CumulativeTape = {
+//        new {
+//          override val input = input0
+//        } with INDArraySemigroupTape with SemigroupTape with UnaryTape {
+//
+//          private val upstreamShape = {
+//            upstream.value.shape()
+//          }
+//
+//          private val kernelAndStrideSize: Array[Int] = toArray(poolSize)
+//
+//          private val preMaxPool: INDArray =
+//            Convolution
+//              .im2col(upstream.value, kernelAndStrideSize, kernelAndStrideSize, Array(0, 0))
+//              .permute(0, 1, 4, 5, 2, 3)
+//
+//          private val preShape: Seq[Int] = preMaxPool.shape().toSeq
+//
+//          private val lastDimensionSize: Int = preShape.takeRight(2).product
+//
+//          private val reshapedPreMaxPool: INDArray = preMaxPool
+//            .reshape(preShape.take(preShape.length - 2) :+ lastDimensionSize: _*)
+//
+//          override val value = reshapedPreMaxPool.max(4)
+//
+//          override protected def rawBackward(outputDelta: INDArray): Unit = {
+//
+//            val a = reshapedPreMaxPool
+//            val upStreamDup = a.dup()
+//            val rows = ArrayUtil.prod(a.length())
+//
+//            val isMax: INDArray = Nd4j.getExecutioner
+//              .execAndReturn(new IsMax(upStreamDup, 4))
+//              .reshape(preShape.take(preShape.length - 2) :+ poolSize._2 :+ poolSize._1: _*)
+//              .permute(0, 1, 2, 4, 3, 5)
+//              .reshape('c', rows, 1)
+//
+//            val outputDelta1d = {
+//              outputDelta
+//                .repeat(-1, poolSize._1)
+//                .permute(1, 0, 3, 2)
+//                .repeat(-1, poolSize._2)
+//                .permute(1, 0, 3, 2)
+//                .reshape('c', upstreamShape.product, 1)
+//            }
+//
+//            upstream.backward(
+//              isMax
+//                .muliColumnVector(outputDelta1d)
+//                .reshape(upstreamShape: _*)
+//            )
+//          }
+//        }
+//      }
+//    }
 
     final case class Shape[Input0 <: Tape](operand: Layer.Aux[Input0, INDArrayPlaceholder.Tape]) extends Layer {
       override def forward(input: Input0): Output = {
@@ -1373,9 +1373,9 @@ object DifferentiableINDArray {
       Permute(operand, DifferentiableSeq.Layers.ToSeq(newShape.map(toLayer.apply(_))))
     }
 
-    def maxPool(poolSize: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
-      MaxPool(operand, poolSize)
-    }
+//    def maxPool(poolSize: (Int, Int)): Layer.Aux[Input, INDArrayPlaceholder.Tape] = {
+//      MaxPool(operand, poolSize)
+//    }
 
     /**
       * Returns shape of INDArray

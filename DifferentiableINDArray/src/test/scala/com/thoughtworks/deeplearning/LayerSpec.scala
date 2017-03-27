@@ -318,81 +318,81 @@ final class LayerSpec extends FreeSpec with Matchers with Inside {
     shapeSeq(3) should be(9)
   }
 
-  "INDArrayPlaceholder maxPool poolSize --forward" in {
-
-    implicit val learningRate = new LearningRate {
-      override def currentLearningRate() = 0.03
-    }
-
-    def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
-      val weightInitialValue = 1 to 96
-      weightInitialValue.toNDArray.reshape(2, 3, 4, 4).toWeight.maxPool(poolSize)
-    }
-
-    val network = makeNetwork((2, 2))
-
-    val inputData = 1 to 96
-
-    def train() = {
-      val outputTape = network.forward(
-        inputData.toNDArray.reshape(2, 3, 4, 4).toTape
-      )
-      try {
-        val loss = (outputTape.value: INDArray).sumT
-        outputTape.backward(outputTape.value)
-        loss
-      } finally {
-        outputTape.close()
-      }
-    }
-
-    train().value should be(1224.0)
-
-    for (_ <- 0 until 700) {
-      train().value
-    }
-
-    math.abs(train().value) should be < 10.0
-
-  }
-
-  "INDArrayPlaceholder maxPool poolSize --backward" in {
-
-    implicit val learningRate = new LearningRate {
-      override def currentLearningRate() = 1.0
-    }
-
-    def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
-      val weightInitialValue = 1 to 96
-      weightInitialValue.toNDArray.reshape(2, 3, 4, 4).toWeight.maxPool(poolSize)
-    }
-
-    val network = makeNetwork((2, 2))
-
-    val inputData = 1 to 96
-
-    def train() = {
-      val outputTape = network.forward(
-        inputData.toNDArray.reshape(2, 3, 4, 4).toTape
-      )
-      try {
-        val loss = (outputTape.value: INDArray).sumT
-        outputTape.backward(outputTape.value)
-        loss
-      } finally {
-        outputTape.close()
-      }
-    }
-
-    train().value
-
-    val result = inside(network) {
-      case MaxPool(Weight(w), _) => w
-    }
-
-    result.sumT should be(3432)
-
-  }
+//  "INDArrayPlaceholder maxPool poolSize --forward" in {
+//
+//    implicit val learningRate = new LearningRate {
+//      override def currentLearningRate() = 0.03
+//    }
+//
+//    def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
+//      val weightInitialValue = 1 to 96
+//      weightInitialValue.toNDArray.reshape(2, 3, 4, 4).toWeight.maxPool(poolSize)
+//    }
+//
+//    val network = makeNetwork((2, 2))
+//
+//    val inputData = 1 to 96
+//
+//    def train() = {
+//      val outputTape = network.forward(
+//        inputData.toNDArray.reshape(2, 3, 4, 4).toTape
+//      )
+//      try {
+//        val loss = (outputTape.value: INDArray).sumT
+//        outputTape.backward(outputTape.value)
+//        loss
+//      } finally {
+//        outputTape.close()
+//      }
+//    }
+//
+//    train().value should be(1224.0)
+//
+//    for (_ <- 0 until 700) {
+//      train().value
+//    }
+//
+//    math.abs(train().value) should be < 10.0
+//
+//  }
+//
+//  "INDArrayPlaceholder maxPool poolSize --backward" in {
+//
+//    implicit val learningRate = new LearningRate {
+//      override def currentLearningRate() = 1.0
+//    }
+//
+//    def makeNetwork(poolSize: (Int, Int))(implicit x: INDArray @Symbolic) = {
+//      val weightInitialValue = 1 to 96
+//      weightInitialValue.toNDArray.reshape(2, 3, 4, 4).toWeight.maxPool(poolSize)
+//    }
+//
+//    val network = makeNetwork((2, 2))
+//
+//    val inputData = 1 to 96
+//
+//    def train() = {
+//      val outputTape = network.forward(
+//        inputData.toNDArray.reshape(2, 3, 4, 4).toTape
+//      )
+//      try {
+//        val loss = (outputTape.value: INDArray).sumT
+//        outputTape.backward(outputTape.value)
+//        loss
+//      } finally {
+//        outputTape.close()
+//      }
+//    }
+//
+//    train().value
+//
+//    val result = inside(network) {
+//      case MaxPool(Weight(w), _) => w
+//    }
+//
+//    result.sumT should be(3432)
+//
+//  }
 
   "INDArrayPlaceholder shape --only forward no backward" in {
 
