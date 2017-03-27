@@ -5,7 +5,7 @@ package com.thoughtworks
   *
   *  ==Overview==
   *
-  * [[com.thoughtworks.deeplearning.BufferedLayer `BufferedLayer`]], [[com.thoughtworks.deeplearning.DifferentiableAny `DifferentiableAny`]], [[com.thoughtworks.deeplearning.DifferentiableNothing `DifferentiableNothing`]], [[com.thoughtworks.deeplearning.Layer `Layer`]], [[com.thoughtworks.deeplearning.Poly `Poly`]] and [[com.thoughtworks.deeplearning.Symbolic `Symbolic`]] are base packages which contains necessary operations , all other packages dependent on those base packages.
+  * [[com.thoughtworks.deeplearning.CumulativeLayer `CumulativeLayer`]], [[com.thoughtworks.deeplearning.DifferentiableAny `DifferentiableAny`]], [[com.thoughtworks.deeplearning.DifferentiableNothing `DifferentiableNothing`]], [[com.thoughtworks.deeplearning.Layer `Layer`]], [[com.thoughtworks.deeplearning.Poly `Poly`]] and [[com.thoughtworks.deeplearning.Symbolic `Symbolic`]] are base packages which contains necessary operations , all other packages dependent on those base packages.
   *
   * If you want to implement a layer, you need to know how to use base packages.
   *
