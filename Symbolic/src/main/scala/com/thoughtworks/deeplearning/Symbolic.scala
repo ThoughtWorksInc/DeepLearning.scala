@@ -14,15 +14,15 @@ import scala.language.{existentials, implicitConversions}
   * Combining with [[https://github.com/ThoughtWorksInc/implicit-dependent-type implicit-dependent-type]] compiler plugin,
   * it can be treated as a type [[http://www.scala-lang.org/files/archive/spec/2.12/11-annotations.html annotation]] in the form of `NativeOutput @Symbolic`, converting `NativeOutput` to a specific [[Layer]] type.
   *
-  * == `@Symbolic` 的三种用法 ==
+  * == Three usages of `@Symbolic` ==
   *
-  * === 用于符号方法的隐式参数类型 ===
+  * === Implicit parameter types used for symbol methods ===
   *
-  * 如果某个方法的隐式类型参数标注了`@Symbolic`，那么这个方法就是符号方法，`@Symbolic`所标注的隐式参数类型是这个符号方法的'''输入类型'''。
-  * 这种情况下，`NativeOutput @Symbolic`会被展开为：
-  * {{{Identity[NativeOutput, NativeOutput的导数类型]}}}
+  * In case that the implicit parameter of an method is marked with `@Symbolic`, then this method is symbol method. The implicit parameter type marked with `@Symbolic` is the '''input type''' of this symbol method.
+  * In this case, `NativeOutput @Symbolic` will be expanded as:
+  * {{{Identity[NativeOutput, Derivative type of NativeOutput]}}}
   *
-  * 例如：
+  * For example:
   *
   * {{{
   * def sumNetwork(implicit scores: INDArray @Symbolic): Double = {
@@ -30,14 +30,15 @@ import scala.language.{existentials, implicitConversions}
   * }
   * }}}
   *
-  * 上述代码中，由于`INDArray`的[[Layer.Tape#Delta 导数类型]]也是`INDArray`，所以`sumNetwork`的输入类型`INDArray @Symbolic`展开后是`Identity[INDArray, INDArray]`。
+  * In the above code, because [[Layer.Tape#Delta the derivative type]] of `INDArray` is also `INDArray`, the input type `INDArray @Symbolic` of `sumNetwork`, once expanded, is `Identity[INDArray, INDArray]`
   *
-  * === 用于符号方法内部变量和返回值 ===
+  * === Used for symbol method internal variable and return value ===
   *
-  * 在符号方法内部和返回值处，`NativeOutput @Symbolic`会被展开为：
-  * {{{Layer.Aux[Tape.Aux[输入类型的值类型, 输入类型的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]}}}
+  * A `NativeOutput @Symbolic` inside a symbol method, or at the return position of a symbol method, will be expanded as:
+  * {{{Layer.Aux[Tape.Aux[value type of input type, derivative type of input type], Tape.Aux[NativeOutput, derivative type of NativeOutput]]}}}
   *
-  * 例如：
+  * For example:
+  *
   *
   * {{{
   * def sumNetwork(implicit scores: INDArray @Symbolic): Double @Symbolic = {
@@ -47,32 +48,34 @@ import scala.language.{existentials, implicitConversions}
   * }
   * }}}
   *
-  * 上述代码中，`expScores`的类型`INDArray @Symbolic`展开后是：
+  * In the above code, the type `INDArray @Symbolic` of `expScores` is expanded as:
   * {{{Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray]]}}}
   *
-  * 而`result`的类型`Double @Symbolic`展开后是：
+  * The type `Double @Symbolic` of `result` is expanded as:
   * {{{Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]}}}
   *
-  * === 用于符号方法之外 ===
+  * === Used for cases excluding symbol method ===
   *
-  * 在符号方法之外，`(NativeInput => NativeOutput) @Symbolic`会被展开为：
-  * {{{Layer.Aux[Tape.Aux[NativeInput, NativeInput的导数类型], Tape.Aux[NativeOutput, NativeOutput的导数类型]]}}}
+  * `(NativeInput => NativeOutput) @Symbolic` outside a symbol method, will be expanded as:
+  * {{{Layer.Aux[Tape.Aux[NativeInput, derivative type of NativeInput], Tape.Aux[NativeOutput, derivative type of NativeOutput]]}}}
   *
-  * 例如：
+  * For example:
   *
   * {{{
   * val predictor: (INDArray => Double) @Symbolic = sumNetwork
   * }}}
   *
-  * 上述代码中，`predictor`的类型`(INDArray => Double) @Symbolic`展开后是：
+  * In the above code, type `(INDArray => Double) @Symbolic` of `predictor` is expanded as:
+  *
   * {{{Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[Double, Double]]}}}
   *
-  * == 定制符号类型 ==
+  * == Custom symbol type ==
   *
-  * `@Symbolic`通过检查[[Symbolic.ToLiteral]]隐式值来确定原生类型和导数之间的映射关系。
-  * 因此，只要定义[[Symbolic.ToLiteral]]类型的隐式值，`@Symbolic`就可以支持定制符号类型。
   *
-  * 比如，假如你希望支持`Short @Symbolic`，其中使用[[scala.Float Float]]作为[[scala.Short Short]]的导数类型，那么可以这样做：
+  * The `@Symbolic` determines the mapping relation between the primitive type and derivative by checking [[Symbolic.ToLiteral]] implicit value. Therefore, `@Symbolic` can be a custom symbol type once you define your own the implicit [[Symbolic.ToLiteral]].
+  *
+  * For example, if you want to support `Short @Symbolic`, using [[scala.Float Float]] as the derivative type of [[scala.Short Short]], then you can conduct the follows:
+  *
   *
   * {{{
   * implicit object ShortToLiteral extends ToLiteral[Short] {
@@ -88,9 +91,8 @@ import scala.language.{existentials, implicitConversions}
   * val shortNetwork: (Short => Short) @Symbolic = makeShortNetwork
   * }}}
   *
-  * 这样一来`shortNetwork`的类型就会展开为：
+  * Thus, type of `shortNetwork` is expanded as:
   * {{{Layer.Aux[Tape.Aux[Short, Float], Tape.Aux[Short, Float]]}}}
-  *
   * @see [[Symbolic.Layers.Identity]]
   * @see [[Symbolic.ToLiteral]]
   * @see [[Layer.Tape#Delta]]
@@ -121,7 +123,7 @@ private[deeplearning] trait LowPrioritySymbolic { this: Symbolic.type =>
   *   val floatLayer: Float @Symbolic = 1.0f.toLayer
   *   floatLayer
   * }
-  *}}}
+  * }}}
   *
   * The second way is [[Symbolic.autoToLayer autoToLayer]], such as:
   * {{{
