@@ -1,9 +1,7 @@
 package com.thoughtworks
 
 /**
-  * This is the documentation for the DeepLearning.Scala
-  *
-  *  ==Overview==
+  * ==Overview==
   *
   * [[com.thoughtworks.deeplearning.CumulativeLayer `CumulativeLayer`]], [[com.thoughtworks.deeplearning.DifferentiableAny `DifferentiableAny`]], [[com.thoughtworks.deeplearning.DifferentiableNothing `DifferentiableNothing`]], [[com.thoughtworks.deeplearning.Layer `Layer`]], [[com.thoughtworks.deeplearning.Poly `Poly`]] and [[com.thoughtworks.deeplearning.Symbolic `Symbolic`]] are base packages which contains necessary operations , all other packages dependent on those base packages.
   *
