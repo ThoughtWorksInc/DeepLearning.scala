@@ -80,7 +80,7 @@ object DifferentiableKernel {
         new Constant(None)
       }
 
-      override def forceBackward(delta: Delta) = ???
+      override def backward(delta: Delta) = ???
 
       override type Delta = OpenCL.Buffer[OutputElementDelta]
       override type Data = OpenCL.Buffer[OutputElementData]

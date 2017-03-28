@@ -32,20 +32,11 @@ object Layer {
       */
     def duplicate(): Tape.Aux[Data, Delta]
 
-    def forceBackward(delta: Delta): Future[Unit]
-
     def isTrainable: Boolean
 
     def close(): Future[Unit]
 
-    @inline
-    final def backward(delta: Delta): Future[Unit] = {
-      if (isTrainable) {
-        forceBackward(delta)
-      } else {
-        Future(())
-      }
-    }
+    def backward(delta: Delta): Future[Unit]
 
     def value: Data
   }

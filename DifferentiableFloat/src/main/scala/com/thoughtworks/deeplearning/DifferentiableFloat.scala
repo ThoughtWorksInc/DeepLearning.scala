@@ -6,6 +6,8 @@ import com.qifun.statelessFuture.Future
 import com.thoughtworks.deeplearning.CumulativeTape.MonoidTape
 import com.thoughtworks.deeplearning.DifferentiableFloat.Optimizers.Optimizer
 import com.thoughtworks.deeplearning.Layer.Tape
+import org.typelevel.future.sde.future
+import org.typelevel.future.sde.future.AutoImports._
 import shapeless.the
 
 /**
@@ -15,7 +17,7 @@ import shapeless.the
   */
 object DifferentiableFloat {
 
-  private[deeplearning] trait FloatMonoidTape extends CumulativeTape {
+  private[deeplearning] trait FloatMonoidTape extends MonoidTape {
 
     override type Data = Float
 
@@ -116,7 +118,7 @@ object DifferentiableFloat {
 
     override final def duplicate(): Weight = this
 
-    override def forceBackward(delta: Delta): Future[Unit] = Future {
+    override def backward(delta: Delta): Future[Unit] = Future {
       synchronized {
         value = optimizer.updateFloat(value, delta)
       }
@@ -126,144 +128,77 @@ object DifferentiableFloat {
   }
 
   object Tapes {
-    final class Plus(upstream0: Tape.Aux[Float, Float], upstream1: Tape.Aux[Float, Float])
-        extends FloatMonoidTape
-        with MonoidTape {
-
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        // TODO: parallelize the two close calls
-        upstream0.close().await
-        upstream1.close().await
-      }
-
-      override val isTrainable: Boolean = upstream0.isTrainable || upstream1.isTrainable
+    abstract case class Plus(upstream0: Tape.Aux[Float, Float], upstream1: Tape.Aux[Float, Float])
+        extends FloatMonoidTape {
 
       override val value: Float = upstream0.value + upstream1.value
 
-      override protected def flush(delta: Float): Future[Unit] = Future {
-        // TODO: parallelize the two backward calls
-        upstream0.backward(delta).await
-        upstream1.backward(delta).await
-      }
+      protected def upstream0Delta(outputDelta: Delta): Future[upstream0.Delta] = Future { outputDelta }
+
+      protected def upstream1Delta(outputDelta: Delta): Future[upstream1.Delta] = Future { outputDelta }
+
     }
 
-    final class Negative(upstream: Tape.Aux[Float, Float]) extends FloatMonoidTape with MonoidTape {
+    abstract case class Negative(upstream0: Tape.Aux[Float, Float]) extends FloatMonoidTape {
 
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        upstream.close().await
-      }
-
-      /**
-        * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
-        */
       override protected def flush(delta: Float): Future[Unit] = Future {
-        upstream.backward(-delta)
+        upstream0.backward(-delta)
       }
 
-      override def isTrainable: Boolean = upstream.isTrainable
-
-      override def value: Float = -upstream.value
+      override final def value: Float = -upstream0.value
     }
 
-    final class Reciprocal(upstream: Tape.Aux[Float, Float]) extends FloatMonoidTape with MonoidTape {
+    abstract case class Reciprocal(upstream0: Tape.Aux[Float, Float]) extends FloatMonoidTape {
 
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        upstream.close().await
-      }
-
-      /**
-        * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
-        */
       override protected def flush(delta: Float): Future[Unit] = Future {
-        val a = upstream.value
-        upstream.backward(-delta / (a * a))
+        val a = upstream0.value
+        upstream0.backward(-delta / (a * a))
       }
 
-      override def isTrainable: Boolean = upstream.isTrainable
-
-      override def value: Float = the[Numeric[Float]].one / upstream.value
+      override final def value: Float = the[Numeric[Float]].one / upstream0.value
     }
 
-    final class Substract(upstream0: Tape.Aux[Float, Float], upstream1: Tape.Aux[Float, Float])
-        extends FloatMonoidTape
-        with MonoidTape {
+    abstract case class Substract(upstream0: Tape.Aux[Float, Float], upstream1: Tape.Aux[Float, Float])
+        extends FloatMonoidTape {
 
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        upstream0.close().await
-        upstream1.close().await
-      }
-
-      /**
-        * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
-        */
       override protected def flush(delta: Float): Future[Unit] = Future {
         upstream0.backward(delta)
         upstream1.backward(-delta)
       }
 
-      override def isTrainable: Boolean = upstream0.isTrainable || upstream1.isTrainable
-
-      override def value: Float = upstream0.value - upstream1.value
+      override final def value: Float = upstream0.value - upstream1.value
     }
 
-    final class Times(upstream0: Tape.Aux[Float, Float], upstream1: Tape.Aux[Float, Float])
-        extends FloatMonoidTape
-        with MonoidTape {
+    abstract case class Times(upstream0: Tape.Aux[Float, Float], upstream1: Tape.Aux[Float, Float])
+        extends FloatMonoidTape {
 
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        upstream0.close().await
-        upstream1.close().await
+      protected def upstream0Delta(outputDelta: Delta): Future[upstream0.Delta] = Future {
+        outputDelta * upstream1.value
       }
 
-      /**
-        * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
-        */
-      override protected def flush(delta: Float): Future[Unit] = Future {
-        val a = upstream0.value
-        val b = upstream1.value
-        upstream0.backward(delta * b)
-        upstream1.backward(delta * a)
+      protected def upstream1Delta(outputDelta: Delta): Future[upstream1.Delta] = Future {
+        outputDelta * upstream0.value
       }
 
-      override def isTrainable: Boolean = upstream0.isTrainable || upstream1.isTrainable
-
-      override def value: Float = upstream0.value * upstream1.value
+      override final def value: Float = upstream0.value * upstream1.value
     }
 
-    final class Log(upstream: Tape.Aux[Float, Float]) extends FloatMonoidTape with MonoidTape {
+    abstract case class Log(upstream0: Tape.Aux[Float, Float]) extends FloatMonoidTape {
 
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        upstream.close().await
-      }
-
-      /**
-        * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
-        */
       override protected def flush(delta: Float): Future[Unit] = Future {
-        upstream.backward(delta / upstream.value)
+        upstream0.backward(delta / upstream0.value)
       }
 
-      override def isTrainable: Boolean = upstream.isTrainable
-
-      override def value: Float = math.log(upstream.value).toFloat
+      override final def value: Float = math.log(upstream0.value).toFloat
     }
 
-    final class Exp(upstream: Tape.Aux[Float, Float]) extends FloatMonoidTape with MonoidTape {
+    abstract case class Exp(upstream0: Tape.Aux[Float, Float]) extends FloatMonoidTape {
 
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        upstream.close().await
-      }
-
-      /**
-        * Performs the underlying backward pass with all `outputDelta`s that previously received from [[forceBackward]].
-        */
       override protected def flush(delta: Float): Future[Unit] = Future {
-        upstream.backward(delta * value)
+        upstream0.backward(delta * value)
       }
 
-      override def isTrainable: Boolean = upstream.isTrainable
-
-      override def value: Float = math.exp(upstream.value).toFloat
+      override final def value: Float = math.exp(upstream0.value).toFloat
     }
   }
 
@@ -271,27 +206,32 @@ object DifferentiableFloat {
 
   implicit final class FloatTapeOps(floatTape: Tape.Aux[Float, Float]) {
     def +(right: Tape.Aux[Float, Float]): Plus = {
-      new Plus(floatTape.duplicate(), right.duplicate())
+      CumulativeTape[Plus](floatTape.duplicate(), right.duplicate())
     }
 
     def - : Negative = {
-      new Negative(floatTape)
+      CumulativeTape[Negative](floatTape.duplicate())
     }
 
     def *(right: Tape.Aux[Float, Float]): Times = {
-      new Times(floatTape, right)
+      CumulativeTape[Times](floatTape.duplicate(), right.duplicate())
     }
 
-    def /(right: Tape.Aux[Float, Float]): Times = {
-      new Times(floatTape, new Reciprocal(right))
+    def /(right: Tape.Aux[Float, Float]): Future[Times] = future {
+      val r = CumulativeTape[Reciprocal](right.duplicate())
+      try {
+        CumulativeTape[Times](floatTape.duplicate(), r)
+      } finally {
+        r.close().!
+      }
     }
 
     def log: Log = {
-      new Log(floatTape)
+      CumulativeTape[Log](floatTape.duplicate())
     }
 
     def exp: Exp = {
-      new Exp(floatTape)
+      CumulativeTape[Exp](floatTape.duplicate())
     }
 
   }

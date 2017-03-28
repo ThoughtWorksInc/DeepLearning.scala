@@ -53,7 +53,7 @@ object future extends MonadicFactory.WithTypeClass[({ type T[F[_]] = MonadError[
       val q"$methodName[$a]($future)" = c.macroApplication
       q"""
         _root_.com.thoughtworks.sde.core.MonadicFactory.Instructions.each[
-          _root_.com.qifun.statelessFuture.Future,
+          _root_.com.qifun.statelessFuture.Future.Stateless,
           $a
         ]($future)
       """
@@ -65,7 +65,7 @@ object future extends MonadicFactory.WithTypeClass[({ type T[F[_]] = MonadError[
       q"""
         val $opsName = $ops
         _root_.com.thoughtworks.sde.core.MonadicFactory.Instructions.each[
-          _root_.com.qifun.statelessFuture.Future,
+          _root_.com.qifun.statelessFuture.Future.Stateless,
           $opsName.A
         ]($opsName.underlying)
       """

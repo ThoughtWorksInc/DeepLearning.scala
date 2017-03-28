@@ -10,7 +10,7 @@ import scalaz.MonadError
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class FutureInstances[TailRecResult]
-    extends MonadError[({ type T[AwaitResult] = Awaitable[AwaitResult, TailRecResult] })#T, Throwable] {
+    extends MonadError[({ type T[AwaitResult] = Awaitable.Stateless[AwaitResult, TailRecResult] })#T, Throwable] {
   override def raiseError[A](e: Throwable) = new Awaitable.Stateless[A, TailRecResult] {
     override def onComplete(handler: (A) => TailRec[TailRecResult])(
         implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult] = {
@@ -18,7 +18,7 @@ final class FutureInstances[TailRecResult]
     }
   }
 
-  override def handleError[A](fa: Awaitable[A, TailRecResult])(f: (Throwable) => Awaitable[A, TailRecResult]) =
+  override def handleError[A](fa: Awaitable.Stateless[A, TailRecResult])(f: (Throwable) => Awaitable.Stateless[A, TailRecResult]) =
     new Awaitable.Stateless[A, TailRecResult] {
       override def onComplete(handler: (A) => TailRec[TailRecResult])(
           implicit catcher: Catcher[TailRec[TailRecResult]]): TailRec[TailRecResult] = {
@@ -30,7 +30,7 @@ final class FutureInstances[TailRecResult]
       }
     }
 
-  override def bind[A, B](fa: Awaitable[A, TailRecResult])(f: (A) => Awaitable[B, TailRecResult]) = {
+  override def bind[A, B](fa: Awaitable.Stateless[A, TailRecResult])(f: (A) => Awaitable.Stateless[B, TailRecResult]) = {
     fa.flatMap(f)
   }
 
@@ -44,6 +44,6 @@ final class FutureInstances[TailRecResult]
 
 object FutureInstances {
 
-  implicit def futureInstances[TailRecResult]: FutureInstances[TailRecResult] = new FutureInstances[TailRecResult]
+  implicit def statelessInstances[TailRecResult]: FutureInstances[TailRecResult] = new FutureInstances[TailRecResult]
 
 }

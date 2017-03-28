@@ -43,7 +43,7 @@ object DifferentiableInt {
 
     override final def duplicate(): Weight = this
 
-    override def forceBackward(delta: Delta): Future[Unit] = Future {
+    override def backward(delta: Delta): Future[Unit] = Future {
       synchronized {
         value = optimizer.updateFloat(value, delta).toInt
       }

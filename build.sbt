@@ -8,7 +8,7 @@ lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 // TODO: Create a separate Tape library?
 lazy val Layer = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
 
-lazy val CumulativeTape = project.dependsOn(Layer)
+lazy val CumulativeTape = project.dependsOn(Layer, Constructor, `stateless-future-sde`)
 
 lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
@@ -68,6 +68,8 @@ sourceGenerators in Compile in DifferentiableDouble += Def.task {
     outputFile
   }
 }.taskValue
+
+lazy val Constructor = project
 
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
