@@ -168,13 +168,13 @@ object Layer {
   *   def forward(inputData: Tape): Output = {
   *     val upstream1 = operand1.forward(input)
   *     val upstream2 = operand2.forward(input)
-  *     new Output(upstream1, upstream2)// the concrete realization is ignored here, and recursion details are focused on
+  *     new Output(upstream1, upstream2)
   *   }
   *   final class Output(upstream1: Tape, upstream2: Tape) extends Tape { ... }
   * }
   * }}}
   *
-  * It is `Plus` at `myLayer.operand1`, and `Weight` at `myLayer.operand2`. Therefore, `upstream1` and `upstream2` are the results of `forward` of `operand1` and `operand2` respectively.
+  * It is a `Plus` at `myLayer.operand1`, and a `Weight` at `myLayer.operand2`. Therefore, `upstream1` and `upstream2` are the results of `forward` of `operand1` and `operand2` respectively.
   *
   * In a similar way, the `forward` code of `Plus` is similar to `forward` of `Times`. During the invoking for `forward` of `Plus`, [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus#operand1 operand1]] is `Literal`, and [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus.operand2 operand2]] is `Identity`. At this point, `forward` of `Literal` and `Identity` of each are invoked respectively.
   *
