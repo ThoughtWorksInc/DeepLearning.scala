@@ -14,7 +14,8 @@ parallelExecution in Global := false
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
 // TODO: Create a separate Tape library?
-lazy val Layer = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
+lazy val Layer = project.dependsOn(ProjectRef(file("Future.scala"), "Continuation"),
+                                   ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
 
 //lazy val CumulativeTape = project.dependsOn(Layer, Constructor, ProjectRef(file("Future.scala"), "sde-task"))
 
@@ -22,22 +23,15 @@ lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
-lazy val Closeables = project.dependsOn(`stateless-future-sde`, `stateless-future-scalatest` % Test)
+lazy val Closeables = project.dependsOn(ProjectRef(file("Future.scala"), "sde-task"),
+                                        ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
 
 // TODO: Rename to ToLiteral?
 lazy val Symbolic = project.dependsOn(Layer)
 
-lazy val `stateless-future` = project
+includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val `stateless-future-scalaz` = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
-
-lazy val `stateless-future-sde` = project.dependsOn(`stateless-future-scalaz`, `stateless-future-scalatest` % Test)
-
-lazy val `stateless-future-scalatest` = project.dependsOn(`stateless-future-util`)
-
-lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
-
-lazy val OpenCL = project.dependsOn(Closeables, `stateless-future`, Memory)
+lazy val OpenCL = project.dependsOn(Closeables, ProjectRef(file("Future.scala"), "Continuation"), Memory)
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 //

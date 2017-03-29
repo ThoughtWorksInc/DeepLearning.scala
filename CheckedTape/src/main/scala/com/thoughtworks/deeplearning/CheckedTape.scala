@@ -1,12 +1,8 @@
 package com.thoughtworks.deeplearning
 
-import com.qifun.statelessFuture.Future
-import com.thoughtworks.deeplearning.Closeables.{
-  AssertionAutoCloseable,
-  AssertionFinalizer,
-  AssertionFutureAutoCloseable
-}
+import com.thoughtworks.deeplearning.Closeables._
 import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.future.Continuation.Task
 
 import scala.annotation.elidable
 
@@ -42,15 +38,15 @@ object CheckedTape {
   */
 final case class CheckedTape[Data0, Delta0](underlying: Tape.Aux[Data0, Delta0])
     extends Tape
-    with AssertionFutureAutoCloseable
+    with AssertionTaskAutoCloseable
     with AssertionFinalizer {
   override type Data = Data0
   override type Delta = Delta0
 
   override def duplicate(): Tape.Aux[Data, Delta] = CheckedTape(underlying.duplicate())
-  override def backward(delta: Delta): Future[Unit] = underlying.backward(delta)
+  override def backward(delta: Delta): Task[Unit] = underlying.backward(delta)
   override def isTrainable: Boolean = underlying.isTrainable
   override def value: Data = underlying.value
 
-  override protected def forceClose(): Future[Unit] = underlying.close()
+  override protected def forceClose(): Task[Unit] = underlying.close()
 }

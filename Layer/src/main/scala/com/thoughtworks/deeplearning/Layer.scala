@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.qifun.statelessFuture.Future
+import com.thoughtworks.future.Continuation.Task
 
 import language.existentials
 import language.implicitConversions
@@ -34,9 +34,9 @@ object Layer {
 
     def isTrainable: Boolean
 
-    def close(): Future[Unit]
+    def close(): Task[Unit]
 
-    def backward(delta: Delta): Future[Unit]
+    def backward(delta: Delta): Task[Unit]
 
     def value: Data
   }
@@ -79,6 +79,6 @@ trait Layer {
 
   type Output <: Tape
 
-  def forward(input: Input): Future[Output]
+  def forward(input: Input): Task[Output]
 
 }

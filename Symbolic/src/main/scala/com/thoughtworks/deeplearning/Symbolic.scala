@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
-import com.qifun.statelessFuture.Future
 import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.future.Continuation.Task
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -17,13 +17,13 @@ object Symbolic {
 
       override def value: Data = value0
 
-      override def forward(input: Input) = Future(this)
+      override def forward(input: Input) = Task(this)
 
       override def isTrainable: Boolean = false
 
-      override def backward(delta: Delta) = Future(())
+      override def backward(delta: Delta) = Task(())
 
-      override def close(): Future[Unit] = Future(())
+      override def close(): Task[Unit] = Task(())
 
       override def duplicate() = this
     }

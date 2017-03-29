@@ -2,7 +2,9 @@ package com.thoughtworks.deeplearning
 
 import java.io.Closeable
 
-import com.qifun.statelessFuture.Future
+import com.thoughtworks.future.Continuation.Task
+import com.thoughtworks.future.sde.task
+import com.thoughtworks.future.sde.task.AwaitOps
 
 object Closeables {
 
@@ -11,21 +13,21 @@ object Closeables {
 
   }
 
-  trait FutureCloseable extends FutureAutoCloseable
+  trait TaskCloseable extends TaskAutoCloseable
 
-  trait FutureAutoCloseable {
-    def close(): Future[Unit]
+  trait TaskAutoCloseable {
+    def close(): Task[Unit]
   }
 
-  trait AssertionFutureAutoCloseable extends FutureAutoCloseable with IsClosed {
+  trait AssertionTaskAutoCloseable extends TaskAutoCloseable with IsClosed {
 
-    protected def forceClose(): Future[Unit]
+    protected def forceClose(): Task[Unit]
 
     /**
       * Calls [[forceClose]] and then marks this [[AssertionAutoCloseable]] as closed if this [[AssertionAutoCloseable]] was not closed; throw an exception otherwise.
       */
     @throws(classOf[IllegalStateException])
-    override final def close(): Future[Unit] = Future {
+    override final def close(): Task[Unit] = task {
       val wasClosed = synchronized {
         val wasClosed = closed
         if (!wasClosed) {
@@ -36,7 +38,7 @@ object Closeables {
       if (wasClosed) {
         throw new IllegalStateException("Can't close more than once.")
       } else {
-        forceClose().await
+        forceClose().!
       }
     }
   }
