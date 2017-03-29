@@ -17,9 +17,9 @@ lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 lazy val Layer = project.dependsOn(ProjectRef(file("Future.scala"), "Continuation"),
                                    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
 
-//lazy val CumulativeTape = project.dependsOn(Layer, Constructor, ProjectRef(file("Future.scala"), "sde-task"))
+lazy val CumulativeTape = project.dependsOn(Layer, ProjectRef(file("Future.scala"), "sde-task"))
 
-lazy val CheckedTape = project.dependsOn(Layer, Closeables)
+//lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
@@ -34,14 +34,13 @@ includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value &
 lazy val OpenCL = project.dependsOn(Closeables, ProjectRef(file("Future.scala"), "Continuation"), Memory)
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
-//
-//lazy val DifferentiableFloat =
-//  project.dependsOn(Layer,
-//                    CumulativeTape,
-//                    CheckedTape,
-//                    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
-//                    Symbolic % Test)
-//
+
+lazy val DifferentiableFloat =
+  project.dependsOn(Layer,
+                    CumulativeTape,
+                    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
+                    Symbolic % Test)
+
 //lazy val DifferentiableDouble =
 //  project.dependsOn(Layer,
 //                    CumulativeTape,
