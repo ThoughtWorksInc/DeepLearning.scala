@@ -233,7 +233,7 @@ object Layer {
   *
   * [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html Aux]] is a design pattern which realized [[https://www.scala-lang.org/files/archive/spec/2.12/03-types.html type refinement]] and can be used to limit the range of type parameters.
   *
-  * Generally, we will not handwrite `Aux` type, because we can use `Symbolic` to acquire the same effect. For example, when used for symbolic method internal variable and return value: `Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray` and `INDArray @Symbolic` are equivalent, so we usually use `Symbolic` to replace the writing method of `Aux`.
+  * Generally, we will not handwrite `Aux` type, because we can use `Symbolic` to describe the same type. For example, when being used for symbolic method internal variable and return value: `Layer.Aux[Tape.Aux[INDArray, INDArray], Tape.Aux[INDArray, INDArray` and `INDArray @Symbolic` are equivalent, so we usually use `Symbolic` to replace the writing method of `Aux`.
   *
   * @see [[https://gigiigig.github.io/posts/2015/09/13/aux-pattern.html aux pattern]]
   * @see [[http://www.vlachjosef.com/aux-pattern-evolution/ aux pattern evolution]]
