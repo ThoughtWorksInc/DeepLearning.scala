@@ -1,14 +1,22 @@
 parallelExecution in Global := false
-
-lazy val DifferentiableKernel =
-  project.dependsOn(OpenCL, OpenCLCodeGenerator, CumulativeTape, Layer, `stateless-future-util`, Symbolic % Test)
+//
+//lazy val DifferentiableKernel =
+//  project.dependsOn(
+//    OpenCL,
+//    OpenCLCodeGenerator,
+//    Layer,
+//    ProjectRef(file("Future.scala"), "concurrent-Execution"),
+//    ProjectRef(file("Future.scala"), "sde-task"),
+//    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
+//    Symbolic % Test
+//  )
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
 // TODO: Create a separate Tape library?
 lazy val Layer = project.dependsOn(`stateless-future`, `stateless-future-scalatest` % Test)
 
-lazy val CumulativeTape = project.dependsOn(Layer, Constructor, `stateless-future-sde`)
+//lazy val CumulativeTape = project.dependsOn(Layer, Constructor, ProjectRef(file("Future.scala"), "sde-task"))
 
 lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
@@ -31,7 +39,7 @@ lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 
 lazy val OpenCL = project.dependsOn(Closeables, `stateless-future`, Memory)
 
-lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
+//lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 //
 //lazy val DifferentiableFloat =
 //  project.dependsOn(Layer,
