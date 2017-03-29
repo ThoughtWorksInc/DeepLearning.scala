@@ -32,42 +32,50 @@ lazy val `stateless-future-util` = project.dependsOn(`stateless-future`)
 lazy val OpenCL = project.dependsOn(Closeables, `stateless-future`, Memory)
 
 lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
-
-lazy val DifferentiableFloat =
-  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-scalatest` % Test, Symbolic % Test)
-
-lazy val DifferentiableDouble =
-  project.dependsOn(Layer, CumulativeTape, CheckedTape, `stateless-future-scalatest` % Test, Symbolic % Test)
-
-lazy val DifferentiableInt =
-  project.dependsOn(Layer,
-                    CumulativeTape,
-                    CheckedTape,
-                    DifferentiableFloat,
-                    `stateless-future-util` % Test,
-                    Symbolic % Test)
-
-val FloatRegex = """(?i:float)""".r
-
-sourceGenerators in Compile in DifferentiableDouble += Def.task {
-  for {
-    floatFile <- (unmanagedSources in Compile in DifferentiableFloat).value
-    relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in DifferentiableFloat).value)
-  } yield {
-    val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
-
-    val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
-      m.matched match {
-        case "Float" => "Double"
-        case "float" => "double"
-      }
-    })
-
-    val outputFile = (sourceManaged in Compile in DifferentiableDouble).value / relativeFile.getPath
-    IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
-    outputFile
-  }
-}.taskValue
+//
+//lazy val DifferentiableFloat =
+//  project.dependsOn(Layer,
+//                    CumulativeTape,
+//                    CheckedTape,
+//                    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
+//                    Symbolic % Test)
+//
+//lazy val DifferentiableDouble =
+//  project.dependsOn(Layer,
+//                    CumulativeTape,
+//                    CheckedTape,
+//                    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
+//                    Symbolic % Test)
+//
+//lazy val DifferentiableInt =
+//  project.dependsOn(Layer,
+//                    CumulativeTape,
+//                    CheckedTape,
+//                    DifferentiableFloat,
+//                    ProjectRef(file("Future.scala"), "sde-task") % Test,
+//                    Symbolic % Test)
+//
+//val FloatRegex = """(?i:float)""".r
+//
+//sourceGenerators in Compile in DifferentiableDouble += Def.task {
+//  for {
+//    floatFile <- (unmanagedSources in Compile in DifferentiableFloat).value
+//    relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in DifferentiableFloat).value)
+//  } yield {
+//    val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
+//
+//    val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
+//      m.matched match {
+//        case "Float" => "Double"
+//        case "float" => "double"
+//      }
+//    })
+//
+//    val outputFile = (sourceManaged in Compile in DifferentiableDouble).value / relativeFile.getPath
+//    IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
+//    outputFile
+//  }
+//}.taskValue
 
 lazy val Constructor = project
 
