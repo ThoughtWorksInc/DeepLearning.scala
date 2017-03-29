@@ -79,8 +79,6 @@ lazy val OpenCL = project.dependsOn(Closeables, ProjectRef(file("Future.scala"),
 //  }
 //}.taskValue
 
-lazy val Constructor = project
-
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 publishArtifact := false
