@@ -21,8 +21,8 @@ object Layer {
     trait Untrainable extends Tape
 
     trait Trainable extends Tape {
-      def retain(): TailRec[Unit]
-      def release(): Task[Unit]
+//      def retain(): TailRec[Unit]
+//      def release(): Task[Unit]
       def backward(delta: Delta): TailRec[Unit]
     }
 
@@ -33,6 +33,8 @@ object Layer {
     type Delta
 
     def value: Data
+
+    def close(): Task[Unit]
 
   }
 
