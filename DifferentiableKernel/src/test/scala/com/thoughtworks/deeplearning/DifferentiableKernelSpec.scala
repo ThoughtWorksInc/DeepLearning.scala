@@ -6,26 +6,21 @@ import org.lwjgl.opencl.{CL10, CL12, CL20}
 import CL10._
 import CL12._
 import CL20._
-import com.qifun.statelessFuture.Future
-import com.qifun.statelessFuture.util.Promise
-import com.thoughtworks.deeplearning.DifferentiableKernel.DifferentiableExpression
-import com.thoughtworks.deeplearning.Symbolic.Layers.Literal
+ import com.thoughtworks.deeplearning.DifferentiableKernel.DifferentiableExpression
+import com.thoughtworks.future.Future
+import com.thoughtworks.future.sde.task,task.AwaitOps
 import org.lwjgl.BufferUtils
 import org.scalatest.{AsyncFreeSpec, FreeSpec, Matchers}
 import shapeless.HNil
+import com.thoughtworks.future.concurrent.Converters._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
-  private def toConcurrentFuture[A](statelessFuture: Future.Stateless[A]): scala.concurrent.Future[A] = {
-    val p = Promise[A]
-    p.completeWith(statelessFuture)
-    p
-  }
 
-  "*" in toConcurrentFuture {
+  "*" in Future.completeWith {
     val platform = OpenCL.platforms.head
 
     val device = platform.devices.maxBy { device =>
@@ -64,17 +59,17 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
         )
       )
     val dk = DifferentiableExpression.FloatLiteral(42.0f).compile(context, device, commandQueue, executionContext)
-    Future {
+    task {
       // TODO: Literal
-      val outputTape = dk.forward((1, Map.empty)).await
+      val outputTape = dk.forward((1, Map.empty)).!
       try {
         val f = BufferUtils.createFloatBuffer(1)
         val r = commandQueue.enqueueReadBuffer(outputTape.value, f)
-        r.await
+        r.!
         f.capacity should be(1)
         f.get(0) should be(42.0f)
       } finally {
-        outputTape.close()
+        outputTape.close().!
       }
     }
   }

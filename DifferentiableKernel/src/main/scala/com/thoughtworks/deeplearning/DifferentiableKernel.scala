@@ -2,10 +2,6 @@ package com.thoughtworks.deeplearning
 
 import java.util.concurrent.Executor
 
-import com.qifun.statelessFuture.util.AwaitableSeq.futureSeq
-import com.qifun.statelessFuture.Future
-import com.qifun.statelessFuture.Future.Stateless
-import com.qifun.statelessFuture.util._
 import com.thoughtworks.deeplearning.DifferentiableKernel._
 import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Memory.Address
@@ -13,6 +9,10 @@ import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimen
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel, Program}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslExpression.GetGlobalId
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
+import com.thoughtworks.future.Future
+import com.thoughtworks.future.Future.Constant
+import com.thoughtworks.future.concurrent.Execution.JumpInto
+import com.thoughtworks.future.sde.task,task.AwaitOps
 import shapeless.HList
 import org.lwjgl.opencl.CL10._
 
@@ -27,7 +27,9 @@ trait DifferentiableKernel extends Layer with AutoCloseable { // TODO: rename to
   type OutputData
   type OutputDelta
 
-  override type Input = (Int, Map[Any, Tape])
+  private type OutputSize = Int
+
+  override type Input = (OutputSize, Map[Any, Tape])
 
   override type Output = Tape.Aux[OutputData, OutputDelta]
 
@@ -71,45 +73,45 @@ object DifferentiableKernel {
   }
 
   object Tapes {
-    final class Fill[OutputElementData, OutputElementDelta](inputParameterMap: Map[Any, Tape],
-                                                            override val value: OpenCL.Buffer[OutputElementData])
-        extends CumulativeTape {
-      override def isTrainable: Boolean = ???
-
-      private var deltaAccumulator: Future.Stateful[Option[Delta]] = {
-        new Constant(None)
-      }
-
-      override def backward(delta: Delta) = ???
-
-      override type Delta = OpenCL.Buffer[OutputElementDelta]
-      override type Data = OpenCL.Buffer[OutputElementData]
-
-      private def flush(deltaFuture: Future.Stateful[Option[Delta]]): Future[Unit] = {
-        implicit def catcher = PartialFunction.empty
-        for (deltaOption <- deltaFuture) {
-          deltaOption match {
-            case None =>
-            case Some(delta) =>
-              ???
-          }
-        }
-      }
-
-      override protected def flush(): Future[Unit] = {
-        flush(synchronized {
-          val delta = deltaAccumulator
-          deltaAccumulator = new Constant(None)
-          delta
-        })
-      }
-
-      override protected def closeUpstreams(): Future[Unit] = Future {
-        for (upstream <- futureSeq(inputParameterMap.values)) {
-          upstream.close()
-        }
-      }
-    }
+//    final class Fill[OutputElementData, OutputElementDelta](inputParameterMap: Map[Any, Tape],
+//                                                            override val value: OpenCL.Buffer[OutputElementData])
+//        extends CumulativeTape {
+//      override def isTrainable: Boolean = ???
+//
+//      private var deltaAccumulator: Future[Option[Delta]] = {
+//        Future(None)
+//      }
+//
+//      override def backward(delta: Delta) = ???
+//
+//      override type Delta = OpenCL.Buffer[OutputElementDelta]
+//      override type Data = OpenCL.Buffer[OutputElementData]
+//
+//      private def flush(deltaFuture: Future.Stateful[Option[Delta]]): Future[Unit] = {
+//        implicit def catcher = PartialFunction.empty
+//        for (deltaOption <- deltaFuture) {
+//          deltaOption match {
+//            case None =>
+//            case Some(delta) =>
+//              ???
+//          }
+//        }
+//      }
+//
+//      override protected def flush(): Future[Unit] = {
+//        flush(synchronized {
+//          val delta = deltaAccumulator
+//          deltaAccumulator = new Constant(None)
+//          delta
+//        })
+//      }
+//
+//      override protected def closeUpstreams(): Future[Unit] = Future {
+//        for (upstream <- futureSeq(inputParameterMap.values)) {
+//          upstream.close()
+//        }
+//      }
+//    }
   }
 
   trait InputMetadata {
@@ -184,9 +186,8 @@ object DifferentiableKernel {
     def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue, executor: ExecutionContext)
       : DifferentiableKernel.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]] = {
 
-      val forwardProgram = Promise[(Program, Setter[OutputElementData])]
-      forwardProgram.completeWith(Future {
-        JumpInto(executor).await
+      val forwardProgram = Future.completeWith(task {
+        JumpInto(executor).!
 
         val outputParameter = Parameter(OutputId, DslType.DslBuffer(outputDataType))
 
@@ -215,11 +216,11 @@ object DifferentiableKernel {
         val forwardSource = OpenCLCodeGenerator.generateSourceCode(forwardKernelDefinition).toArray[CharSequence]
 
         val program = context.createProgramWithSource(forwardSource)
-        program.build().await
+        program.build().!
         (program, inputSetter)
       })
 
-      val backwardKernels = mutable.Map.empty[Map[Any, Boolean], Future.Stateful[Kernel]]
+      val backwardKernels = mutable.Map.empty[Map[Any, Boolean], Future[Kernel]]
 
       new DifferentiableKernel {
 
@@ -230,7 +231,7 @@ object DifferentiableKernel {
         override def close(): Unit = ???
 
         override def forward(input: Input) = Future {
-          val (program, inputSetter) = forwardProgram.await
+          val (program, inputSetter) = forwardProgram.!
           val kernel = program.createKernel(ForwardKernelName)
           val (expectedSize, inputParameterMap) = input
           val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
@@ -239,7 +240,7 @@ object DifferentiableKernel {
           val event =
             commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
           try {
-            event.await
+            event.!
           } finally {
             event.close()
           }
