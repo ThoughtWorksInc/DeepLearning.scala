@@ -139,7 +139,7 @@ object Layer {
   *
   * The above mathematical expression with equivalent codes can be written, by [[Symbolic]], as: `(1.0 + x) * 2.0.toWeight`. `2.0.toWeight` represents a variable, of which the initial value is `2`. The value updates during neural network iteration.
   *
-  * Both [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Times Times]] and [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus Plus]] are of case class, therefore, `myLayer` is a tree in nested structure consisted of the case class. `Times` and `Plus` are placeholders.
+  * Both [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Times Times]] and [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Plus Plus]] are `case class`es, therefore, `myLayer` is a tree in nested structure consisted of the case class. `Times` and `Plus` are placeholders.
   *
   * [[com.thoughtworks.deeplearning.DifferentiableDouble.Layers.Weight Weight]] is a `Layer` containing weight, of which the initial value is `2.0`.
   *
