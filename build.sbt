@@ -11,35 +11,34 @@ parallelExecution in Global := false
 //    Symbolic % Test
 //  )
 
-lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
+//lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
-// TODO: Create a separate Tape library?
-lazy val Layer = project.dependsOn(ProjectRef(file("Future.scala"), "Continuation"),
-                                   ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
+//lazy val Layer = project.dependsOn(ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"))
 
-lazy val CumulativeTape = project.dependsOn(Layer, ProjectRef(file("Future.scala"), "sde-task"))
+//lazy val CumulativeTape = project.dependsOn(Layer, ProjectRef(file("RAII.scala"), "Shared"))
 
 //lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 lazy val Memory = project
 
-lazy val Closeables = project.dependsOn(ProjectRef(file("Future.scala"), "sde-task"),
-                                        ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
+lazy val Tape = project
 
-// TODO: Rename to ToLiteral?
-lazy val Symbolic = project.dependsOn(Layer)
+//lazy val Closeables = project.dependsOn(ProjectRef(file("Future.scala"), "sde-task"),
+//                                        ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
+
+//// TODO: Rename to ToLiteral?
+//lazy val Symbolic = project.dependsOn(Layer)
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val OpenCL = project.dependsOn(Closeables, ProjectRef(file("Future.scala"), "Continuation"), Memory)
+//lazy val OpenCL = project.dependsOn(ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"), Memory)
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
-lazy val DifferentiableFloat =
-  project.dependsOn(Layer,
-                    CumulativeTape,
-                    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
-                    Symbolic % Test)
+//lazy val DifferentiableFloat =
+//  project.dependsOn(Layer,
+//                    CumulativeTape,
+//                    Symbolic % Test)
 
 //lazy val DifferentiableDouble =
 //  project.dependsOn(Layer,
