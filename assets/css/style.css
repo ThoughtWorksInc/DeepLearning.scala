@@ -481,6 +481,7 @@
 		line-height: 1.25em;
 		overflow: auto;
 		padding: 6px 10px;
+		white-space: nowrap;
 	}
 
 	.normal-head .output pre {
