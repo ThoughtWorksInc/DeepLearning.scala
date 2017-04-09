@@ -12,6 +12,11 @@ sealed trait Tape {
 
   def data: Data
 
+  /** @see https://github.com/scala/bug/issues/10251 */
+  @inline private[deeplearning] final def workaround10251: {
+    type Data = Tape.this.Data
+    type Delta = Tape.this.Delta
+  } = this
 }
 
 object Tape {

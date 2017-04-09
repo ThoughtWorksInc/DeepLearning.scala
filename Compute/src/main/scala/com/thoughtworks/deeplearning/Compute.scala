@@ -71,9 +71,9 @@ object Compute {
                       }
                     }
                   }
-                  upstream0 match {
+                  upstream0.workaround10251 match {
                     case trainable0: Tape.Trainable =>
-                      upstream1 match {
+                      upstream1.workaround10251 match {
                         case trainable1: Tape.Trainable =>
                           new TrainableOutput {
                             override def release(): Future[Unit] = {
@@ -95,7 +95,7 @@ object Compute {
                           }
                       }
                     case untrainable0: Tape.Untrainable =>
-                      upstream1 match {
+                      upstream1.workaround10251 match {
                         case trainable1: Tape.Trainable =>
                           new TrainableOutput {
                             override def release(): Future[Unit] = {
