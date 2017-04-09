@@ -19,6 +19,7 @@ parallelExecution in Global := false
 
 //lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
+// TODO: Move to a separate repository
 lazy val Memory = project
 
 lazy val Tape = project
@@ -42,7 +43,7 @@ includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value &
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
-lazy val DifferentiableFloat = project.dependsOn(Compute)
+lazy val Float = project.dependsOn(Compute)
 
 //lazy val DifferentiableDouble =
 //  project.dependsOn(Layer,
@@ -55,7 +56,7 @@ lazy val DifferentiableFloat = project.dependsOn(Compute)
 //  project.dependsOn(Layer,
 //                    CumulativeTape,
 //                    CheckedTape,
-//                    DifferentiableFloat,
+//                    Float,
 //                    ProjectRef(file("Future.scala"), "sde-task") % Test,
 //                    Symbolic % Test)
 //
@@ -63,8 +64,8 @@ lazy val DifferentiableFloat = project.dependsOn(Compute)
 //
 //sourceGenerators in Compile in DifferentiableDouble += Def.task {
 //  for {
-//    floatFile <- (unmanagedSources in Compile in DifferentiableFloat).value
-//    relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in DifferentiableFloat).value)
+//    floatFile <- (unmanagedSources in Compile in Float).value
+//    relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in Float).value)
 //  } yield {
 //    val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
 //
@@ -81,7 +82,7 @@ lazy val DifferentiableFloat = project.dependsOn(Compute)
 //  }
 //}.taskValue
 
-dependsOn(DifferentiableFloat)
+dependsOn(Float)
 
 enablePlugins(TravisUnidocTitle)
 

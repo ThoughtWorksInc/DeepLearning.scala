@@ -10,7 +10,7 @@ import scalaz.concurrent.{Future, Task}
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object DifferentiableFloat {
+object Float {
 
   private implicit object FloatMonoid extends Monoid[Float] {
     override def zero: Float = 0.0f
@@ -18,7 +18,7 @@ object DifferentiableFloat {
     override def append(f1: Float, f2: => Float): Float = f1 + f2
   }
 
-  implicit final class FloatTapeOps(operand0: Compute[Tape.Aux[Float, Float]]) {
+  implicit final class FloatComputeOps(operand0: Compute[Tape.Aux[Float, Float]]) {
     def +(operand1: Compute[Tape.Aux[Float, Float]]): Compute[Tape.Aux[Float, Float]] = {
       Compute.binary(operand0, operand1) { (data0, data1) =>
         Task.delay {

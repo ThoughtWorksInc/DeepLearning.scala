@@ -6,7 +6,7 @@ package com.thoughtworks.deeplearning
 //import org.typelevel.future.scalatest.FutureFreeSpec
 //import org.typelevel.future.sde.future
 //import org.typelevel.future.sde.future.AutoImports._
-//import DifferentiableFloat._
+//import Float._
 //
 ///**
 //  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;

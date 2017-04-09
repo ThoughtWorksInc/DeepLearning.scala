@@ -4,7 +4,7 @@ import cats.Monoid
 import cats.implicits._
 import com.qifun.statelessFuture.Future
 import com.thoughtworks.deeplearning.CumulativeTape.MonoidTape
-import com.thoughtworks.deeplearning.DifferentiableFloat.Optimizers.Optimizer
+import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
 import com.thoughtworks.deeplearning.Layer.Tape
 import shapeless.the
 
@@ -23,7 +23,7 @@ object DifferentiableInt {
     protected final def monoid: Monoid[Float] = implicitly[Monoid[Delta]]
   }
 
-  val optimizers = DifferentiableFloat.Optimizers
+  val optimizers = Float.Optimizers
 
   abstract case class Weight(var value: Int) extends Layer with Tape {
 
