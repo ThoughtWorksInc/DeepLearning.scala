@@ -72,9 +72,9 @@ object Compute {
                     }
                   }
                   upstream0 match {
-                    case trainable0: Tape.Trainable.Aux[Data0, Delta0] =>
+                    case trainable0: Tape.Trainable =>
                       upstream1 match {
-                        case trainable1: Tape.Trainable.Aux[Data1, Delta1] =>
+                        case trainable1: Tape.Trainable =>
                           new TrainableOutput {
                             override def release(): Future[Unit] = {
                               val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
@@ -86,7 +86,7 @@ object Compute {
                               }
                             }
                           }
-                        case untrainable1: Tape.Untrainable.Aux[Data1, Delta1] =>
+                        case untrainable1: Tape.Untrainable =>
                           new TrainableOutput {
                             override def release(): Future[Unit] = {
                               val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
@@ -94,16 +94,16 @@ object Compute {
                             }
                           }
                       }
-                    case untrainable0: Tape.Untrainable.Aux[Data0, Delta0] =>
+                    case untrainable0: Tape.Untrainable =>
                       upstream1 match {
-                        case trainable1: Tape.Trainable.Aux[Data1, Delta1] =>
+                        case trainable1: Tape.Trainable =>
                           new TrainableOutput {
                             override def release(): Future[Unit] = {
                               val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
                               upstream1Delta.flatMap(trainable1.backward)
                             }
                           }
-                        case untrainable1: Tape.Untrainable.Aux[Data1, Delta1] =>
+                        case untrainable1: Tape.Untrainable =>
                           new UntrainableOutput
                       }
                   }
