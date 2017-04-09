@@ -18,27 +18,27 @@ object Compute {
   def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Compute[Tape.Aux[Data0, Delta0]],
                                                                     operand1: Compute[Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])(
-      implicit factory: ComputeFactory[OutputData, OutputDelta]): Compute[Tape.Aux[OutputData, OutputDelta]] = {
-    factory.binary(operand0, operand1)(computeForward)
+                                                                     implicit binaryComputeFactory: BinaryComputeFactory[OutputData, OutputDelta]): Compute[Tape.Aux[OutputData, OutputDelta]] = {
+    binaryComputeFactory(operand0, operand1)(computeForward)
   }
 
   private[deeplearning] type FutureResourceFactory[A] = ResourceFactoryT[Future, A]
 
   private[deeplearning] type Compute[A] = EitherT[FutureResourceFactory, Throwable, A]
 
-  trait ComputeFactory[OutputData, OutputDelta] {
+  trait BinaryComputeFactory[OutputData, OutputDelta] {
 
-    def binary[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
-                                             operand1: Compute[Tape.Aux[Data1, Delta1]])(
+    def apply[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
+                                            operand1: Compute[Tape.Aux[Data1, Delta1]])(
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
       : Compute[Tape.Aux[OutputData, OutputDelta]]
 
   }
 
-  object ComputeFactory {
-    final class MonoidComputeFactory[OutputData, OutputDelta: Monoid] extends ComputeFactory[OutputData, OutputDelta] {
-      override def binary[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
-                                                        operand1: Compute[Tape.Aux[Data1, Delta1]])(
+  object BinaryComputeFactory {
+    final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid] extends BinaryComputeFactory[OutputData, OutputDelta] {
+      override def apply[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
+                                                       operand1: Compute[Tape.Aux[Data1, Delta1]])(
           computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
         : Compute[Tape.Aux[OutputData, OutputDelta]] = {
         Nondeterminism[Compute].both(operand0, operand1).flatMap {
@@ -115,8 +115,8 @@ object Compute {
     }
 
     implicit def monoidComputeFactory[OutputData, OutputDelta: Monoid]
-      : MonoidComputeFactory[OutputData, OutputDelta] = {
-      new MonoidComputeFactory[OutputData, OutputDelta]
+      : MonoidBinaryComputeFactory[OutputData, OutputDelta] = {
+      new MonoidBinaryComputeFactory[OutputData, OutputDelta]
     }
   }
 }
