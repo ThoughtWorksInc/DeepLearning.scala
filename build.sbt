@@ -23,6 +23,13 @@ lazy val Memory = project
 
 lazy val Tape = project
 
+lazy val Compute = project.dependsOn(
+  Tape,
+  ProjectRef(file("RAII.scala"), "EitherTNondeterminismJVM"),
+  ProjectRef(file("RAII.scala"), "Shared"),
+  ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM")
+)
+
 //lazy val Closeables = project.dependsOn(ProjectRef(file("Future.scala"), "sde-task"),
 //                                        ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
 
@@ -35,10 +42,7 @@ includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value &
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
-//lazy val DifferentiableFloat =
-//  project.dependsOn(Layer,
-//                    CumulativeTape,
-//                    Symbolic % Test)
+lazy val DifferentiableFloat = project.dependsOn(Compute)
 
 //lazy val DifferentiableDouble =
 //  project.dependsOn(Layer,
@@ -77,19 +81,26 @@ includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value &
 //  }
 //}.taskValue
 
-crossScalaVersions := Seq("2.11.8", "2.12.1")
+dependsOn(DifferentiableFloat)
 
-publishArtifact := false
+enablePlugins(TravisUnidocTitle)
 
-lazy val unidoc = project
-  .enablePlugins(TravisUnidocTitle)
-  .settings(
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-    scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value,
-    scalaOrganization := "org.typelevel",
-    scalacOptions += "-Yliteral-types"
-  )
+libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.2.10"
+
+UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject)
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value
+
+scalaOrganization := "org.typelevel"
+
+scalacOptions += "-Yliteral-types"
+
+name := "deeplearning"
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-fork in Test := true
+crossScalaVersions := Seq("2.11.8", "2.12.1")
+
+fork in ThisBuild in Test := true
