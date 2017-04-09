@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Tape.{Literal}
 import com.thoughtworks.raii.ResourceFactoryT
 import com.thoughtworks.raii.ResourceFactoryT.ReleasableT
 
@@ -8,6 +7,7 @@ import scalaz.{-\/, EitherT, Monoid, Nondeterminism, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism._
 import com.thoughtworks.raii.Shared._
+
 import scalaz.syntax.all._
 
 /**
