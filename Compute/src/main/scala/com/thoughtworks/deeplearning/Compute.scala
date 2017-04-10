@@ -6,7 +6,7 @@ import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.raii.ResourceFactoryT
 import com.thoughtworks.raii.ResourceFactoryT.ReleasableT
 
-import scalaz.{-\/, EitherT, Monoid, Nondeterminism, \/, \/-}
+import scalaz.{-\/, Bind, EitherT, Functor, Id, Monoid, Nondeterminism, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism._
 import com.thoughtworks.raii.Shared._
@@ -42,6 +42,29 @@ object Compute {
 
   def managed[A <: AutoCloseable](a: => A): Compute[A] = {
     managed(Task.delay(a))
+  }
+
+  def unmanaged[A](task: Task[A]): Compute[A] = {
+    new Compute[A]({ () =>
+      task.get.map { either =>
+        new ReleasableT[Future, Throwable \/ A] {
+          override def value: Throwable \/ A = either
+          override def release(): Future[Unit] = Future.now(())
+        }
+      }
+    })
+  }
+
+  def unmanaged[A](future: Future[A]): Compute[A] = {
+    unmanaged(new Task(future.map(\/-(_))))
+  }
+
+  def unmanaged[A](a: => A): Compute[A] = {
+    unmanaged(Task.delay(a))
+  }
+  
+  def delay[A](a: => A): Compute[A] = {
+    unmanaged(a)
   }
 
   /** Create a [[Compute]] that will evaluate `a` using the given `ExecutorService`. */
