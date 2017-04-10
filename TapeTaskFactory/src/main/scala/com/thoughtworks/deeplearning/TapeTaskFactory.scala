@@ -3,8 +3,8 @@ package com.thoughtworks.deeplearning
 import java.util.concurrent.ExecutorService
 
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
-import com.thoughtworks.raii.ResourceFactoryT
-import com.thoughtworks.raii.ResourceFactoryT.ReleasableT
+import com.thoughtworks.raii._
+import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 
 import scalaz.{-\/, Applicative, Bind, EitherT, Functor, Id, Monoid, Nondeterminism, \/, \/-}
 import scalaz.concurrent.{Future, Task}
@@ -16,92 +16,27 @@ import scalaz.syntax.all._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object Compute {
-
-  def managed[A <: AutoCloseable](task: Task[A]): Compute[A] = {
-    new Compute[A]({ () =>
-      task.get.map { either =>
-        new ReleasableT[Future, Throwable \/ A] {
-          override def value: Throwable \/ A = either
-          override def release(): Future[Unit] = {
-            either match {
-              case \/-(closeable) =>
-                Future.delay(closeable.close())
-              case -\/(e) =>
-                Future.now(())
-            }
-          }
-        }
-      }
-    })
-  }
-
-  def managed[A <: AutoCloseable](future: Future[A]): Compute[A] = {
-    managed(new Task(future.map(\/-(_))))
-  }
-
-  def managed[A <: AutoCloseable](a: => A): Compute[A] = {
-    managed(Task.delay(a))
-  }
-
-  def unmanaged[A](task: Task[A]): Compute[A] = {
-    new Compute[A]({ () =>
-      task.get.map { either =>
-        new ReleasableT[Future, Throwable \/ A] {
-          override def value: Throwable \/ A = either
-          override def release(): Future[Unit] = Future.now(())
-        }
-      }
-    })
-  }
-
-  def unmanaged[A](future: Future[A]): Compute[A] = {
-    unmanaged(new Task(future.map(\/-(_))))
-  }
-
-  def unmanaged[A](a: => A): Compute[A] = {
-    unmanaged(Task.delay(a))
-  }
-  
-  def delay[A](a: => A): Compute[A] = {
-    unmanaged(a)
-  }
-
-  /** Create a [[Compute]] that will evaluate `a` using the given `ExecutorService`. */
-  def apply[A](a: => A)(implicit executorService: ExecutorService): Compute[A] = {
-    new Compute[A]({ () =>
-      Task(a).get.map { either =>
-        new ReleasableT[Future, Throwable \/ A] {
-          override def value: Throwable \/ A = either
-          override def release(): Future[Unit] = Future.now(())
-        }
-      }
-    })
-  }
+object TapeTaskFactory {
 
   @inline
-  def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Compute[Tape.Aux[Data0, Delta0]],
-                                                                    operand1: Compute[Tape.Aux[Data1, Delta1]])(
+  def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
+                                                                    operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])(
       implicit binaryComputeFactory: BinaryComputeFactory[OutputData, OutputDelta])
-    : Compute[Tape.Aux[OutputData, OutputDelta]] = {
+    : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
     binaryComputeFactory(operand0, operand1)(computeForward)
   }
 
   @inline
-  def unary[Data, Delta, OutputData, OutputDelta](operand: Compute[Tape.Aux[Data, Delta]])(
+  def unary[Data, Delta, OutputData, OutputDelta](operand: RAIITask[Tape.Aux[Data, Delta]])(
       computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])(
       implicit unaryComputeFactory: UnaryComputeFactory[OutputData, OutputDelta])
-    : Compute[Tape.Aux[OutputData, OutputDelta]] = {
+    : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
     unaryComputeFactory(operand)(computeForward)
   }
 
-  private[deeplearning] type FutureResourceFactory[Result] = ResourceFactoryT[Future, Result]
-
-  private[deeplearning] type Compute[Result] = EitherT[FutureResourceFactory, Throwable, Result]
-
   private trait Output[OutputData, OutputDelta]
-      extends ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] { this: Tape =>
+      extends ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] { this: Tape =>
     override final type Delta = OutputDelta
     override final type Data = OutputData
     final override def value: \/-[this.type] = \/-(this)
@@ -134,36 +69,36 @@ object Compute {
 
   private abstract class Releasable[OutputData, OutputDelta](
       override val value: \/[Throwable, Aux[OutputData, OutputDelta]])
-      extends ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
+      extends ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
     override def release(): Future[Unit] = Future.now(())
   }
 
   trait BinaryComputeFactory[OutputData, OutputDelta] {
 
-    def apply[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
-                                            operand1: Compute[Tape.Aux[Data1, Delta1]])(
+    def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
+                                            operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
-      : Compute[Tape.Aux[OutputData, OutputDelta]]
+      : RAIITask[Tape.Aux[OutputData, OutputDelta]]
 
   }
 
   trait UnaryComputeFactory[OutputData, OutputDelta] {
 
-    def apply[Data, Delta](operand: Compute[Tape.Aux[Data, Delta]])(
+    def apply[Data, Delta](operand: RAIITask[Tape.Aux[Data, Delta]])(
         computeForward: (Data) => Task[(OutputData, OutputDelta => (Future[Delta]))])
-      : Compute[Tape.Aux[OutputData, OutputDelta]]
+      : RAIITask[Tape.Aux[OutputData, OutputDelta]]
   }
 
   object BinaryComputeFactory {
     final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
         extends BinaryComputeFactory[OutputData, OutputDelta] {
-      override def apply[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
-                                                       operand1: Compute[Tape.Aux[Data1, Delta1]])(
+      override def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
+                                                       operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
           computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
-        : Compute[Tape.Aux[OutputData, OutputDelta]] = {
-        Nondeterminism[Compute].both(operand0, operand1).flatMap {
+        : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
+        Nondeterminism[RAIITask].both(operand0, operand1).flatMap {
           case (upstream0, upstream1) =>
-            val resource: FutureResourceFactory[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
+            val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(_) =>
                   new Releasable[OutputData, OutputDelta](left) {}
@@ -181,7 +116,7 @@ object Compute {
                   }
               }
             }
-            new Compute(resource.shared)
+            new RAIITask(resource.shared)
         }
       }
     }
@@ -196,12 +131,12 @@ object Compute {
   object UnaryComputeFactory {
     final class MonoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
         extends UnaryComputeFactory[OutputData, OutputDelta] {
-      override def apply[Data, Delta](operand: Compute[Tape.Aux[Data, Delta]])(
+      override def apply[Data, Delta](operand: RAIITask[Tape.Aux[Data, Delta]])(
           computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])
-        : Compute[Tape.Aux[OutputData, OutputDelta]] = {
+        : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
         operand.flatMap {
           case (upstream) =>
-            val resource: FutureResourceFactory[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
+            val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream.data).get.map {
                 case left @ -\/(_) =>
                   new Releasable[OutputData, OutputDelta](left) {}
@@ -218,7 +153,7 @@ object Compute {
                   }
               }
             }
-            new Compute(resource.shared)
+            new RAIITask(resource.shared)
         }
       }
     }
@@ -230,8 +165,8 @@ object Compute {
     }
   }
 
-  implicit def floatToCompute(value: Float): Compute[Tape.Aux[Float, Float]] = {
-    Applicative[Compute].point(Literal(value))
+  implicit def floatToCompute(value: Float): RAIITask[Tape.Aux[Float, Float]] = {
+    Applicative[RAIITask].point(Literal(value))
   }
 
 }

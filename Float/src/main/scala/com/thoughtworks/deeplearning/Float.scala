@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Compute._
+import com.thoughtworks.raii.RAIITask
 
 import scalaz.Monoid
 import scalaz.concurrent.{Future, Task}
@@ -18,9 +18,9 @@ object Float {
     override def append(f1: Float, f2: => Float): Float = f1 + f2
   }
 
-  implicit final class FloatComputeOps(operand0: Compute[Tape.Aux[Float, Float]]) {
-    def +(operand1: Compute[Tape.Aux[Float, Float]]): Compute[Tape.Aux[Float, Float]] = {
-      Compute.binary(operand0, operand1) { (data0, data1) =>
+  implicit final class FloatComputeOps(operand0: RAIITask[Tape.Aux[Float, Float]]) {
+    def +(operand1: RAIITask[Tape.Aux[Float, Float]]): RAIITask[Tape.Aux[Float, Float]] = {
+      TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
         Task.delay {
           val outputData = data0 + data1
           def computeDeltas(delta: Float) = {

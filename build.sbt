@@ -24,11 +24,10 @@ lazy val Memory = project
 
 lazy val Tape = project
 
-lazy val Compute = project.dependsOn(
+lazy val TapeTaskFactory = project.dependsOn(
   Tape,
-  ProjectRef(file("RAII.scala"), "EitherTNondeterminismJVM"),
-  ProjectRef(file("RAII.scala"), "Shared"),
-  ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM")
+  ProjectRef(file("RAII.scala"), "RAIITask"),
+  ProjectRef(file("RAII.scala"), "packageJVM")
 )
 
 lazy val Closeables = project
@@ -42,7 +41,7 @@ lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.sc
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
-lazy val Float = project.dependsOn(Compute)
+lazy val Float = project.dependsOn(TapeTaskFactory)
 
 //lazy val DifferentiableDouble =
 //  project.dependsOn(Layer,
