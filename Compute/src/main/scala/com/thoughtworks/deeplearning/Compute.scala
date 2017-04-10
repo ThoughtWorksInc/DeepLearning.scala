@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Compute.BinaryComputeFactory.MonoidBinaryComputeFactory
+import java.util.concurrent.ExecutorService
+
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.raii.ResourceFactoryT
 import com.thoughtworks.raii.ResourceFactoryT.ReleasableT
@@ -16,6 +17,18 @@ import scalaz.syntax.all._
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object Compute {
+
+  /** Create a [[Compute]] that will evaluate `a` using the given `ExecutorService`. */
+  def apply[A](a: => A)(implicit executorService: ExecutorService): Compute[A] = {
+    new Compute[A]({ () =>
+      Task(a).get.map { either =>
+        new ReleasableT[Future, Throwable \/ A] {
+          override def value: Throwable \/ A = either
+          override def release(): Future[Unit] = Future.now(())
+        }
+      }
+    })
+  }
 
   @inline
   def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Compute[Tape.Aux[Data0, Delta0]],
