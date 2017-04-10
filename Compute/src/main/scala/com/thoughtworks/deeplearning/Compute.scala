@@ -1,5 +1,7 @@
 package com.thoughtworks.deeplearning
 
+import com.thoughtworks.deeplearning.Compute.BinaryComputeFactory.MonoidBinaryComputeFactory
+import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.raii.ResourceFactoryT
 import com.thoughtworks.raii.ResourceFactoryT.ReleasableT
 
@@ -24,9 +26,49 @@ object Compute {
     binaryComputeFactory(operand0, operand1)(computeForward)
   }
 
+  @inline
+  def unary[Data, Delta, OutputData, OutputDelta](operand: Compute[Tape.Aux[Data, Delta]])(
+      computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])(
+      implicit unaryComputeFactory: UnaryComputeFactory[OutputData, OutputDelta])
+    : Compute[Tape.Aux[OutputData, OutputDelta]] = {
+    unaryComputeFactory(operand)(computeForward)
+  }
+
   private[deeplearning] type FutureResourceFactory[A] = ResourceFactoryT[Future, A]
 
   private[deeplearning] type Compute[A] = EitherT[FutureResourceFactory, Throwable, A]
+
+  private trait Output[OutputData, OutputDelta]
+      extends ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] { this: Tape =>
+    override final type Delta = OutputDelta
+    override final type Data = OutputData
+    final override def value: \/-[this.type] = \/-(this)
+  }
+
+  private final class UntrainableOutput[OutputData, OutputDelta](override val data: OutputData)
+      extends Tape.Untrainable
+      with Output[OutputData, OutputDelta] {
+    override def release(): Future[Unit] = Future.now(())
+  }
+
+  private abstract class TrainableOutput[OutputData, OutputDelta: Monoid](override val data: OutputData)
+      extends Tape.Trainable
+      with Output[OutputData, OutputDelta] {
+
+    @volatile
+    protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
+    final override def backward(delta: OutputDelta): Future[Unit] = Future.delay {
+      synchronized {
+        deltaAccumulator |+|= delta
+      }
+    }
+  }
+
+  private abstract class Releasable[OutputData, OutputDelta](
+      override val value: \/[Throwable, Aux[OutputData, OutputDelta]])
+      extends ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
+    override def release(): Future[Unit] = Future.now(())
+  }
 
   trait BinaryComputeFactory[OutputData, OutputDelta] {
 
@@ -35,6 +77,13 @@ object Compute {
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
       : Compute[Tape.Aux[OutputData, OutputDelta]]
 
+  }
+
+  trait UnaryComputeFactory[OutputData, OutputDelta] {
+
+    def apply[Data, Delta](operand: Compute[Tape.Aux[Data, Delta]])(
+        computeForward: (Data) => Task[(OutputData, OutputDelta => (Future[Delta]))])
+      : Compute[Tape.Aux[OutputData, OutputDelta]]
   }
 
   object BinaryComputeFactory {
@@ -49,36 +98,13 @@ object Compute {
             val resource: FutureResourceFactory[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(_) =>
-                  new ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
-                    override def value: -\/[Throwable] = left
-
-                    override def release(): Future[Unit] = Future.now(())
-                  }
+                  new Releasable[OutputData, OutputDelta](left) {}
                 case right @ \/-((forwardData, computeBackward)) =>
-                  trait Output extends ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
-                    this: Tape =>
-                    override final type Delta = OutputDelta
-                    override final type Data = OutputData
-                    final override def data: Data = forwardData
-                    final override def value: \/-[this.type] = \/-(this)
-                  }
-                  final class UntrainableOutput extends Tape.Untrainable with Output {
-                    override def release(): Future[Unit] = Future.now(())
-                  }
-                  trait TrainableOutput extends Tape.Trainable with Output {
-                    @volatile
-                    protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
-                    final override def backward(delta: OutputDelta): Future[Unit] = Future.delay {
-                      synchronized {
-                        deltaAccumulator |+|= delta
-                      }
-                    }
-                  }
                   upstream0.workaround10251 match {
                     case trainable0: Tape.Trainable =>
                       upstream1.workaround10251 match {
                         case trainable1: Tape.Trainable =>
-                          new TrainableOutput {
+                          new TrainableOutput[OutputData, OutputDelta](forwardData) {
                             override def release(): Future[Unit] = {
                               val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
                               Future.futureInstance.mapBoth(
@@ -90,7 +116,7 @@ object Compute {
                             }
                           }
                         case untrainable1: Tape.Untrainable =>
-                          new TrainableOutput {
+                          new TrainableOutput[OutputData, OutputDelta](forwardData) {
                             override def release(): Future[Unit] = {
                               val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
                               upstream0Delta.flatMap(trainable0.backward)
@@ -100,14 +126,14 @@ object Compute {
                     case untrainable0: Tape.Untrainable =>
                       upstream1.workaround10251 match {
                         case trainable1: Tape.Trainable =>
-                          new TrainableOutput {
+                          new TrainableOutput[OutputData, OutputDelta](forwardData) {
                             override def release(): Future[Unit] = {
                               val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
                               upstream1Delta.flatMap(trainable1.backward)
                             }
                           }
                         case untrainable1: Tape.Untrainable =>
-                          new UntrainableOutput
+                          new UntrainableOutput[OutputData, OutputDelta](forwardData)
                       }
                   }
               }
@@ -121,6 +147,44 @@ object Compute {
     implicit def monoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
       : BinaryComputeFactory[OutputData, OutputDelta] = {
       new MonoidBinaryComputeFactory[OutputData, OutputDelta]
+    }
+  }
+
+  object UnaryComputeFactory {
+    final class MonoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
+        extends UnaryComputeFactory[OutputData, OutputDelta] {
+      override def apply[Data, Delta](operand: Compute[Tape.Aux[Data, Delta]])(
+          computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])
+        : Compute[Tape.Aux[OutputData, OutputDelta]] = {
+        operand.flatMap {
+          case (upstream) =>
+            val resource: FutureResourceFactory[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
+              computeForward(upstream.data).get.map {
+                case left @ -\/(_) =>
+                  new Releasable[OutputData, OutputDelta](left) {}
+                case right @ \/-((forwardData, computeBackward)) =>
+                  upstream.workaround10251 match {
+                    case trainable: Tape.Trainable =>
+                      new TrainableOutput[OutputData, OutputDelta](forwardData) {
+                        override def release(): Future[Unit] = {
+                          val upstreamDelta = computeBackward(deltaAccumulator)
+                          upstreamDelta.flatMap(trainable.backward)
+                        }
+                      }
+                    case untrainable: Tape.Untrainable =>
+                      new UntrainableOutput[OutputData, OutputDelta](forwardData)
+                  }
+              }
+            }
+            new Compute(resource.shared)
+        }
+      }
+    }
+
+    @inline
+    implicit def monoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
+      : UnaryComputeFactory[OutputData, OutputDelta] = {
+      new MonoidUnaryComputeFactory[OutputData, OutputDelta]
     }
   }
 }
