@@ -18,6 +18,32 @@ import scalaz.syntax.all._
   */
 object Compute {
 
+  def managed[A <: AutoCloseable](task: Task[A]): Compute[A] = {
+    new Compute[A]({ () =>
+      task.get.map { either =>
+        new ReleasableT[Future, Throwable \/ A] {
+          override def value: Throwable \/ A = either
+          override def release(): Future[Unit] = {
+            either match {
+              case \/-(closeable) =>
+                Future.delay(closeable.close())
+              case -\/(e) =>
+                Future.now(())
+            }
+          }
+        }
+      }
+    })
+  }
+
+  def managed[A <: AutoCloseable](future: Future[A]): Compute[A] = {
+    managed(new Task(future.map(\/-(_))))
+  }
+
+  def managed[A <: AutoCloseable](a: => A): Compute[A] = {
+    managed(Task.delay(a))
+  }
+
   /** Create a [[Compute]] that will evaluate `a` using the given `ExecutorService`. */
   def apply[A](a: => A)(implicit executorService: ExecutorService): Compute[A] = {
     new Compute[A]({ () =>
