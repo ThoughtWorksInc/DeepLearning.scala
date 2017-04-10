@@ -2,11 +2,11 @@ package com.thoughtworks.deeplearning
 
 import java.util.concurrent.ExecutorService
 
-import com.thoughtworks.deeplearning.Tape.Aux
+import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.raii.ResourceFactoryT
 import com.thoughtworks.raii.ResourceFactoryT.ReleasableT
 
-import scalaz.{-\/, Bind, EitherT, Functor, Id, Monoid, Nondeterminism, \/, \/-}
+import scalaz.{-\/, Applicative, Bind, EitherT, Functor, Id, Monoid, Nondeterminism, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism._
 import com.thoughtworks.raii.Shared._
@@ -108,22 +108,28 @@ object Compute {
   }
 
   private final class UntrainableOutput[OutputData, OutputDelta](override val data: OutputData)
-      extends Tape.Untrainable
+      extends Tape
       with Output[OutputData, OutputDelta] {
     override def release(): Future[Unit] = Future.now(())
+
+    override def backward(delta: Future[Delta]): Future[Unit] = Future.now(())
   }
 
-  private abstract class TrainableOutput[OutputData, OutputDelta: Monoid](override val data: OutputData)
-      extends Tape.Trainable
+  private abstract class output[OutputData, OutputDelta: Monoid](override val data: OutputData)
+      extends Tape
       with Output[OutputData, OutputDelta] {
 
     @volatile
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
-    final override def backward(delta: OutputDelta): Future[Unit] = Future.delay {
-      synchronized {
-        deltaAccumulator |+|= delta
+
+    final override def backward(deltaFuture: Future[OutputDelta]): Future[Unit] = {
+      deltaFuture.map { delta =>
+        synchronized {
+          deltaAccumulator |+|= delta
+        }
       }
     }
+
   }
 
   private abstract class Releasable[OutputData, OutputDelta](
@@ -162,41 +168,16 @@ object Compute {
                 case left @ -\/(_) =>
                   new Releasable[OutputData, OutputDelta](left) {}
                 case right @ \/-((forwardData, computeBackward)) =>
-                  upstream0.workaround10251 match {
-                    case trainable0: Tape.Trainable =>
-                      upstream1.workaround10251 match {
-                        case trainable1: Tape.Trainable =>
-                          new TrainableOutput[OutputData, OutputDelta](forwardData) {
-                            override def release(): Future[Unit] = {
-                              val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
-                              Future.futureInstance.mapBoth(
-                                upstream0Delta.flatMap(trainable0.backward),
-                                upstream1Delta.flatMap(trainable1.backward)
-                              ) { (_: Unit, _: Unit) =>
-                                ()
-                              }
-                            }
-                          }
-                        case untrainable1: Tape.Untrainable =>
-                          new TrainableOutput[OutputData, OutputDelta](forwardData) {
-                            override def release(): Future[Unit] = {
-                              val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
-                              upstream0Delta.flatMap(trainable0.backward)
-                            }
-                          }
+                  new output[OutputData, OutputDelta](forwardData) {
+                    override def release(): Future[Unit] = {
+                      val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
+                      Future.futureInstance.mapBoth(
+                        upstream0.backward(upstream0DeltaFuture),
+                        upstream1.backward(upstream1DeltaFuture)
+                      ) { (_: Unit, _: Unit) =>
+                        ()
                       }
-                    case untrainable0: Tape.Untrainable =>
-                      upstream1.workaround10251 match {
-                        case trainable1: Tape.Trainable =>
-                          new TrainableOutput[OutputData, OutputDelta](forwardData) {
-                            override def release(): Future[Unit] = {
-                              val (upstream0Delta, upstream1Delta) = computeBackward(deltaAccumulator)
-                              upstream1Delta.flatMap(trainable1.backward)
-                            }
-                          }
-                        case untrainable1: Tape.Untrainable =>
-                          new UntrainableOutput[OutputData, OutputDelta](forwardData)
-                      }
+                    }
                   }
               }
             }
@@ -226,14 +207,13 @@ object Compute {
                   new Releasable[OutputData, OutputDelta](left) {}
                 case right @ \/-((forwardData, computeBackward)) =>
                   upstream.workaround10251 match {
-                    case trainable: Tape.Trainable =>
-                      new TrainableOutput[OutputData, OutputDelta](forwardData) {
+                    case trainable: Tape =>
+                      new output[OutputData, OutputDelta](forwardData) {
                         override def release(): Future[Unit] = {
-                          val upstreamDelta = computeBackward(deltaAccumulator)
-                          upstreamDelta.flatMap(trainable.backward)
+                          trainable.backward(computeBackward(deltaAccumulator))
                         }
                       }
-                    case untrainable: Tape.Untrainable =>
+                    case untrainable: Tape =>
                       new UntrainableOutput[OutputData, OutputDelta](forwardData)
                   }
               }
@@ -249,4 +229,9 @@ object Compute {
       new MonoidUnaryComputeFactory[OutputData, OutputDelta]
     }
   }
+
+  implicit def floatToCompute(value: Float): Compute[Tape.Aux[Float, Float]] = {
+    Applicative[Compute].point(Literal(value))
+  }
+
 }

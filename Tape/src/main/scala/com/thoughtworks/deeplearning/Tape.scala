@@ -5,12 +5,13 @@ import scalaz.concurrent.Future
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-sealed trait Tape {
+trait Tape {
 
   type Data
   type Delta
 
   def data: Data
+  def backward(delta: Future[Delta]): Future[Unit]
 
   /** @see https://github.com/scala/bug/issues/10251 */
   @inline private[deeplearning] final def workaround10251: {
@@ -26,29 +27,11 @@ object Tape {
     type Delta >: Delta0
   }
 
-  trait Untrainable extends Tape
-
-  object Untrainable {
-    type Aux[+Data0, -Delta0] = Untrainable {
-      type Data <: Data0
-      type Delta >: Delta0
-    }
-  }
-
-  final case class Literal[Data0](data: Data0) extends Untrainable {
+  final case class Literal[Data0](data: Data0) extends Tape {
     override type Data = Data0
     override type Delta = Any
-  }
 
-  trait Trainable extends Tape {
-    def backward(delta: Delta): Future[Unit]
-  }
-
-  object Trainable {
-    type Aux[+Data0, -Delta0] = Trainable {
-      type Data <: Data0
-      type Delta >: Delta0
-    }
+    override def backward(delta: Future[Delta]): Future[Unit] = Future.now(())
   }
 
 }
