@@ -47,9 +47,9 @@ object Compute {
     unaryComputeFactory(operand)(computeForward)
   }
 
-  private[deeplearning] type FutureResourceFactory[A] = ResourceFactoryT[Future, A]
+  private[deeplearning] type FutureResourceFactory[Result] = ResourceFactoryT[Future, Result]
 
-  private[deeplearning] type Compute[A] = EitherT[FutureResourceFactory, Throwable, A]
+  private[deeplearning] type Compute[Result] = EitherT[FutureResourceFactory, Throwable, Result]
 
   private trait Output[OutputData, OutputDelta]
       extends ReleasableT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] { this: Tape =>
