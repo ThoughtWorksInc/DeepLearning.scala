@@ -7,22 +7,22 @@ import org.lwjgl.opencl._
 import CL10._
 import CL11._
 import CL20._
+import com.thoughtworks.deeplearning.Closeables.{AssertionAutoCloseable, AssertionFinalizer}
 import org.lwjgl.{BufferUtils, PointerBuffer}
 import org.lwjgl.system.MemoryUtil.{memASCII, _}
 import org.lwjgl.system.MemoryStack._
 import org.lwjgl.system.Pointer._
 
 import scala.collection.mutable
-import com.thoughtworks.deeplearning.Closeables.{AssertionAutoCloseable, AssertionFinalizer}
 import com.thoughtworks.deeplearning.Memory.{Address, Box}
-import com.thoughtworks.future.Continuation.Task
-import com.thoughtworks.future.Future
 import org.lwjgl.system.{JNI, MemoryStack, MemoryUtil, Pointer}
 
 import scala.util.control.Exception.Catcher
 import scala.util.control.TailCalls
 import scala.util.control.TailCalls.TailRec
 import scala.util.{Failure, Success, Try}
+import scalaz.{-\/, \/, \/-}
+import scalaz.concurrent.{Future, Task}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -493,7 +493,7 @@ data: $data""")
 
   }
 
-  final class Event(val handle: Address) extends AssertionAutoCloseable with AssertionFinalizer with Future[Unit] {
+  final class Event(val handle: Address) extends AssertionAutoCloseable with AssertionFinalizer {
 
     def duplicate = new Event(handle)
 
@@ -507,35 +507,30 @@ data: $data""")
       a(0)
     }
 
-    override def value: Option[Try[Unit]] = {
-      commandExecutionStatus match {
-        case CL_QUEUED => None
-        case CL_SUBMITTED => None
-        case CL_RUNNING => None
-        case CL_COMPLETE => Some(Success(()))
-        case errorCode => Some(Failure(Exceptions.fromErrorCode(errorCode)))
-      }
-    }
-
-    override def onComplete(handler: Try[Unit] => TailRec[Unit]): TailRec[Unit] = {
+    def waitFor(callbackType: Int): Task[Unit] = Task.async { handler =>
       object Callback extends CLEventCallbackI {
         override final def invoke(event: Long, status: Int, userData: Long): Unit = {
           container.close()
-          val Some(resultOrException) = value
-          handler(resultOrException).result
+          status match {
+            case `callbackType` => handler(\/-(()))
+            case errorCode if errorCode < 0 => handler(-\/(Exceptions.fromErrorCode(errorCode)))
+            case _ => throw new IllegalStateException()
+          }
         }
         val container: CLEventCallback = CLEventCallback.create(this)
       }
       checkErrorCode(
         clSetEventCallback(
           handle.toLong,
-          CL_COMPLETE,
+          callbackType,
           Callback.container,
           NULL
         )
       )
-      TailCalls.done(())
     }
+
+    def waitForComplete(): Task[Unit] = waitFor(CL_COMPLETE)
+
   }
 
   object Buffer {
@@ -577,10 +572,10 @@ data: $data""")
   }
 
   object Program {
-    private[Program] final class ManagedCallback(handler: Try[Unit] => TailRec[Unit]) extends CLProgramCallbackI {
+    private[Program] final class ManagedCallback(handler: Unit => Unit) extends CLProgramCallbackI {
       override def invoke(program: Long, user_data: Long): Unit = {
         container.close()
-        handler(Success(())).result
+        handler(())
       }
       val container: CLProgramCallback = CLProgramCallback.create(this)
     }
@@ -597,8 +592,7 @@ data: $data""")
       checkErrorCode(clReleaseProgram(handle.toLong))
     }
 
-    def build(devices: Seq[Device], options: CharSequence = ""): Task[Unit] = { (handler: Try[Unit] => TailRec[
-      Unit]) =>
+    def build(devices: Seq[Device], options: CharSequence = ""): Future[Unit] = Future.async { (handler: Unit => Unit) =>
       val callbackContainer = new Program.ManagedCallback(handler).container
       val stack = stackPush()
       try {
@@ -610,13 +604,13 @@ data: $data""")
       TailCalls.done(())
     }
 
-    def build(options: CharSequence): Task[Unit] = { (handler: Try[Unit] => TailRec[Unit]) =>
+    def build(options: CharSequence): Future[Unit] = Future.async { (handler: Unit => Unit) =>
       val callback = new Program.ManagedCallback(handler)
       checkErrorCode(clBuildProgram(handle.toLong, null, options, callback.container, NULL))
       TailCalls.done(())
     }
 
-    def build(): Task[Unit] = build("")
+    def build(): Future[Unit] = build("")
 
     def createKernel(kernelName: CharSequence): Kernel = {
       val errorCodeBuffer = Array(0)

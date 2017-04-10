@@ -2,45 +2,11 @@ package com.thoughtworks.deeplearning
 
 import java.io.Closeable
 
-import com.thoughtworks.future.Continuation.Task
-import com.thoughtworks.future.sde.task
-import com.thoughtworks.future.sde.task.AwaitOps
-
 object Closeables {
 
   trait IsClosed {
     protected final var closed = false
 
-  }
-
-  trait TaskCloseable extends TaskAutoCloseable
-
-  trait TaskAutoCloseable {
-    def close(): Task[Unit]
-  }
-
-  trait AssertionTaskAutoCloseable extends TaskAutoCloseable with IsClosed {
-
-    protected def forceClose(): Task[Unit]
-
-    /**
-      * Calls [[forceClose]] and then marks this [[AssertionAutoCloseable]] as closed if this [[AssertionAutoCloseable]] was not closed; throw an exception otherwise.
-      */
-    @throws(classOf[IllegalStateException])
-    override final def close(): Task[Unit] = task {
-      val wasClosed = synchronized {
-        val wasClosed = closed
-        if (!wasClosed) {
-          closed = true
-        }
-        wasClosed
-      }
-      if (wasClosed) {
-        throw new IllegalStateException("Can't close more than once.")
-      } else {
-        forceClose().!
-      }
-    }
   }
 
   trait AssertionFinalizer { this: IsClosed =>

@@ -31,15 +31,14 @@ lazy val Compute = project.dependsOn(
   ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM")
 )
 
-//lazy val Closeables = project.dependsOn(ProjectRef(file("Future.scala"), "sde-task"),
-//                                        ProjectRef(file("Future.scala"), "concurrent-Converters") % Test)
+lazy val Closeables = project
 
 //// TODO: Rename to ToLiteral?
 //lazy val Symbolic = project.dependsOn(Layer)
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-//lazy val OpenCL = project.dependsOn(ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"), Memory)
+lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"))
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 

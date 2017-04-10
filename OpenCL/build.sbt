@@ -16,4 +16,6 @@ libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.1"
 
 libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.1" % Runtime classifier lwjglNatives
 
+libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.2.10"
+
 fork := true
