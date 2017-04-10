@@ -11,7 +11,7 @@ parallelExecution in Global := false
 //    Symbolic % Test
 //  )
 
-//lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
+lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
 //lazy val Layer = project.dependsOn(ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"))
 
