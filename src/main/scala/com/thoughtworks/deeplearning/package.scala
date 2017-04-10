@@ -10,8 +10,13 @@ import scalaz.concurrent.Future
   */
 package object deeplearning {
 
-  type FutureResourceFactory[A] = ResourceFactoryT[Future, A]
+  type FutureResourceFactory[Result] = ResourceFactoryT[Future, Result]
 
-  type Compute[A] = EitherT[FutureResourceFactory, Throwable, A]
+  /** A computational node that computes a `Result`.
+    *
+    * The features of this `Compute` are accessible via [[scalaz.MonadError]] and [[scalaz.Nondeterminism]] type classes
+    * that support RAII, exception handling and asynchronous computing.
+    */
+  type Compute[Result] = EitherT[FutureResourceFactory, Throwable, Result]
 
 }
