@@ -15,10 +15,12 @@ import scalaz.syntax.all._
   */
 object Compute {
 
+  @inline
   def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Compute[Tape.Aux[Data0, Delta0]],
                                                                     operand1: Compute[Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])(
-                                                                     implicit binaryComputeFactory: BinaryComputeFactory[OutputData, OutputDelta]): Compute[Tape.Aux[OutputData, OutputDelta]] = {
+      implicit binaryComputeFactory: BinaryComputeFactory[OutputData, OutputDelta])
+    : Compute[Tape.Aux[OutputData, OutputDelta]] = {
     binaryComputeFactory(operand0, operand1)(computeForward)
   }
 
@@ -36,7 +38,8 @@ object Compute {
   }
 
   object BinaryComputeFactory {
-    final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid] extends BinaryComputeFactory[OutputData, OutputDelta] {
+    final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
+        extends BinaryComputeFactory[OutputData, OutputDelta] {
       override def apply[Data0, Delta0, Data1, Delta1](operand0: Compute[Tape.Aux[Data0, Delta0]],
                                                        operand1: Compute[Tape.Aux[Data1, Delta1]])(
           computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
@@ -114,8 +117,9 @@ object Compute {
       }
     }
 
-    implicit def monoidComputeFactory[OutputData, OutputDelta: Monoid]
-      : MonoidBinaryComputeFactory[OutputData, OutputDelta] = {
+    @inline
+    implicit def monoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
+      : BinaryComputeFactory[OutputData, OutputDelta] = {
       new MonoidBinaryComputeFactory[OutputData, OutputDelta]
     }
   }
