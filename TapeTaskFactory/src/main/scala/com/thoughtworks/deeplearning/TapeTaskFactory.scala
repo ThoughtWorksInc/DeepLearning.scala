@@ -148,10 +148,4 @@ object TapeTaskFactory {
     }
   }
 
-  implicit def toRAIITask[A <: Tape](a: A): RAIITask[A] = RAIITask.unmanaged(a)
-
-  implicit def floatToCompute(value: Float): RAIITask[Tape.Aux[Float, Float]] = {
-    Applicative[RAIITask].point(Literal(value))
-  }
-
 }

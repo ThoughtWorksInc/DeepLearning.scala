@@ -18,8 +18,7 @@ lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 // TODO: Move to a separate repository
 lazy val Memory = project
 
-lazy val Tape =
-  project.dependsOn(ProjectRef(file("RAII.scala"), "packageJVM"), ProjectRef(file("RAII.scala"), "RAIITask"))
+lazy val Tape = project
 
 lazy val TapeTaskFactory = project.dependsOn(
   Tape,

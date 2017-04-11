@@ -1,8 +1,8 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.raii.{RAIIFuture, RAIITask, RAIITask2, ResourceFactoryT}
+import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
 import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
-import com.thoughtworks.deeplearning.Poly.MathMethods
+import com.thoughtworks.deeplearning.Poly.{MathMethods, ToRAIITask}
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
@@ -19,6 +19,10 @@ import scalaz.concurrent.{Future, Task}
 object Float {
 
   type FloatTape = Tape.Aux[Float, Float]
+
+  @inline
+  implicit def toFloatTapeTask[A](
+      implicit typeClass: ToRAIITask.Aux[A, Float, Float]): ToRAIITask.Aux[A, Float, Float] = typeClass
 
   object Optimizers {
 
@@ -134,7 +138,8 @@ object Float {
 //      : Compute[Tape.Aux[Float, Float]] = ???
 //  }
 
-  implicit val `Float+Float`: +.Case.Aux[RAIITask2[FloatTape], RAIITask2[FloatTape], RAIITask[FloatTape]] = {
+  implicit val `Float+Float`
+    : +.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     MathMethods.+.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
         Task.delay {

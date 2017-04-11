@@ -1,15 +1,11 @@
 package com.thoughtworks.deeplearning
 
 import org.scalatest._
-import Float._
+import com.thoughtworks.deeplearning.Float._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import Poly._
 import com.thoughtworks.deeplearning.Float.Optimizers.{LearningRate, Optimizer}
-import com.thoughtworks.deeplearning.Float.WeightOps
-import com.thoughtworks.raii.{RAIIFuture, RAIITask, RAIITask2, ResourceFactoryT}
-import com.thoughtworks.deeplearning.TapeTaskFactory.floatToCompute
-import com.thoughtworks.deeplearning.TapeTaskFactory.toRAIITask
-import com.thoughtworks.deeplearning.Float.RAIIOps
+import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
 
 import scala.concurrent.Promise
 import scalaz.concurrent.{Future, Task}
@@ -33,28 +29,14 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
 
     val weight: Weight = 1.0f.toWeight
 
-
-    implicit def tapeToTape[A](implicit x: ToRAIITask.Aux[A, Float, Float]): ToRAIITask.Aux[A, Float, Float] = x
-
-//    implicit def tapeToTaped[A](implicit x: ToRAIITask.Aux[A, Double, Double]): ToRAIITask.Aux[A, Double, Double] = x
-
-//    implicit def tapeToTape[A <: RAIITask2[Tape.Aux[Double, Double]]]: ToRAIITask.Aux[A, Double, Double] = {
-//      new ToRAIITask[A] {
-//        override type Data = Double
-//        override type Delta = Double
-//        override def apply(t: A): RAIITask2[Tape.Aux[Double, Double]] = (t)
-//      }
-//    }
-
     def myNetwork(input: RAIITask[Tape.Aux[Float, Float]]): RAIITask[Tape.Aux[Float, Float]] = {
-//      (null : RAIITask[Literal[Float]]) + input
-
-      input + weight
+      6.7f + input + weight + 5.5f
     }
 
     def train(inputData: Float): Task[Unit] = {
-      val c: RAIITask[Unit] = myNetwork(inputData).flatMap { outputTape =>
-        RAIITask.unmanaged(outputTape.backward(Future.now(1.0f)))
+      val c: RAIITask[Unit] = myNetwork(RAIITask.unmanaged(Literal(inputData): Tape.Aux[Float, Float])).flatMap {
+        outputTape =>
+          RAIITask.unmanaged(outputTape.backward(Future.now(1.0f)))
       }
       new Task(c.run.run)
     }
