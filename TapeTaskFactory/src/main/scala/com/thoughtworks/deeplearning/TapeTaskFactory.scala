@@ -19,8 +19,8 @@ import scalaz.syntax.all._
 object TapeTaskFactory {
 
   @inline
-  def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
-                                                                    operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
+  def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
+                                                                    operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])(
       implicit binaryComputeFactory: BinaryComputeFactory[OutputData, OutputDelta])
     : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
@@ -28,7 +28,7 @@ object TapeTaskFactory {
   }
 
   @inline
-  def unary[Data, Delta, OutputData, OutputDelta](operand: RAIITask[Tape.Aux[Data, Delta]])(
+  def unary[Data, Delta, OutputData, OutputDelta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
       computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])(
       implicit unaryComputeFactory: UnaryComputeFactory[OutputData, OutputDelta])
     : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
@@ -58,8 +58,8 @@ object TapeTaskFactory {
 
   trait BinaryComputeFactory[OutputData, OutputDelta] {
 
-    def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
-                                            operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
+    def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
+                                            operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
       : RAIITask[Tape.Aux[OutputData, OutputDelta]]
 
@@ -67,7 +67,7 @@ object TapeTaskFactory {
 
   trait UnaryComputeFactory[OutputData, OutputDelta] {
 
-    def apply[Data, Delta](operand: RAIITask[Tape.Aux[Data, Delta]])(
+    def apply[Data, Delta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
         computeForward: (Data) => Task[(OutputData, OutputDelta => (Future[Delta]))])
       : RAIITask[Tape.Aux[OutputData, OutputDelta]]
   }
@@ -76,8 +76,8 @@ object TapeTaskFactory {
     final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
         extends BinaryComputeFactory[OutputData, OutputDelta] {
       @inline
-      override def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
-                                                       operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
+      override def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
+                                                       operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
           computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
         : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
         Nondeterminism[RAIITask].both(operand0, operand1).flatMap {
@@ -116,7 +116,7 @@ object TapeTaskFactory {
     final class MonoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
         extends UnaryComputeFactory[OutputData, OutputDelta] {
       @inline
-      override def apply[Data, Delta](operand: RAIITask[Tape.Aux[Data, Delta]])(
+      override def apply[Data, Delta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
           computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])
         : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
         operand.flatMap {
@@ -147,6 +147,8 @@ object TapeTaskFactory {
       new MonoidUnaryComputeFactory[OutputData, OutputDelta]
     }
   }
+
+  implicit def toRAIITask[A <: Tape](a: A): RAIITask[A] = RAIITask.unmanaged(a)
 
   implicit def floatToCompute(value: Float): RAIITask[Tape.Aux[Float, Float]] = {
     Applicative[RAIITask].point(Literal(value))
