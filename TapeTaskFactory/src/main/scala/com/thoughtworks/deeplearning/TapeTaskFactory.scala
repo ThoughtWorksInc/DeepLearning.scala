@@ -56,12 +56,6 @@ object TapeTaskFactory {
 
   }
 
-  private final class Releasable[OutputData, OutputDelta](
-      override val value: \/[Throwable, Aux[OutputData, OutputDelta]])
-      extends ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
-    override def release(): Future[Unit] = Future.now(())
-  }
-
   trait BinaryComputeFactory[OutputData, OutputDelta] {
 
     def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
@@ -91,7 +85,7 @@ object TapeTaskFactory {
             val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(_) =>
-                  new Releasable[OutputData, OutputDelta](left)
+                  ResourceT.unmanaged(left)
                 case right @ \/-((forwardData, computeBackward)) =>
                   new Output[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
@@ -130,7 +124,7 @@ object TapeTaskFactory {
             val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream.data).get.map {
                 case left @ -\/(_) =>
-                  new Releasable[OutputData, OutputDelta](left)
+                  ResourceT.unmanaged(left)
                 case right @ \/-((forwardData, computeBackward)) =>
                   upstream.workaround10251 match {
                     case trainable: Tape =>
