@@ -1,39 +1,28 @@
 package com.thoughtworks.deeplearning
 
-import java.util.concurrent.Executor
+import java.util.concurrent.{Executor, ExecutorService}
 
 import com.thoughtworks.deeplearning.DifferentiableKernel._
-import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel, Program}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslExpression.GetGlobalId
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
-import com.thoughtworks.future.Future
-import com.thoughtworks.future.Future.Constant
-import com.thoughtworks.future.concurrent.Execution.JumpInto
-import com.thoughtworks.future.sde.task,task.AwaitOps
+import com.thoughtworks.raii.RAIITask
+
+import scalaz.\/-
+import scalaz.concurrent.{Future, Task}
+//import com.thoughtworks.future.Future
+//import com.thoughtworks.future.Future.Constant
+//import com.thoughtworks.future.concurrent.Execution.JumpInto
+//import com.thoughtworks.future.sde.task, task.AwaitOps
 import shapeless.HList
 import org.lwjgl.opencl.CL10._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
-
-/**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
-  */
-trait DifferentiableKernel extends Layer with AutoCloseable { // TODO: rename to fill
-  type OutputData
-  type OutputDelta
-
-  private type OutputSize = Int
-
-  override type Input = (OutputSize, Map[Any, Tape])
-
-  override type Output = Tape.Aux[OutputData, OutputDelta]
-
-}
+import com.thoughtworks.each.Monadic._
 
 //
 //final case class DifferentiableKernel[OutputData, OutputDelta](
@@ -66,53 +55,6 @@ trait DifferentiableKernel extends Layer with AutoCloseable { // TODO: rename to
 //}
 
 object DifferentiableKernel {
-
-  type Aux[+OutputData0, -OutputDelta0] = DifferentiableKernel {
-    type OutputData <: OutputData0
-    type OutputDelta >: OutputDelta0
-  }
-
-  object Tapes {
-//    final class Fill[OutputElementData, OutputElementDelta](inputParameterMap: Map[Any, Tape],
-//                                                            override val value: OpenCL.Buffer[OutputElementData])
-//        extends CumulativeTape {
-//      override def isTrainable: Boolean = ???
-//
-//      private var deltaAccumulator: Future[Option[Delta]] = {
-//        Future(None)
-//      }
-//
-//      override def backward(delta: Delta) = ???
-//
-//      override type Delta = OpenCL.Buffer[OutputElementDelta]
-//      override type Data = OpenCL.Buffer[OutputElementData]
-//
-//      private def flush(deltaFuture: Future.Stateful[Option[Delta]]): Future[Unit] = {
-//        implicit def catcher = PartialFunction.empty
-//        for (deltaOption <- deltaFuture) {
-//          deltaOption match {
-//            case None =>
-//            case Some(delta) =>
-//              ???
-//          }
-//        }
-//      }
-//
-//      override protected def flush(): Future[Unit] = {
-//        flush(synchronized {
-//          val delta = deltaAccumulator
-//          deltaAccumulator = new Constant(None)
-//          delta
-//        })
-//      }
-//
-//      override protected def closeUpstreams(): Future[Unit] = Future {
-//        for (upstream <- futureSeq(inputParameterMap.values)) {
-//          upstream.close()
-//        }
-//      }
-//    }
-  }
 
   trait InputMetadata {
 
@@ -183,68 +125,92 @@ object DifferentiableKernel {
     /**
       * @param executor on which the compilation runs
       */
-    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue, executor: ExecutionContext)
-      : DifferentiableKernel.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]] = {
+    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue)(
+        implicit executor: ExecutionContext): RAIITask[(Int, Map[Any, Tape]) => RAIITask[
+      Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
 
-      val forwardProgram = Future.completeWith(task {
-        JumpInto(executor).!
+      RAIITask.jump().each
 
-        val outputParameter = Parameter(OutputId, DslType.DslBuffer(outputDataType))
+      val outputParameter = Parameter(OutputId, DslType.DslBuffer(outputDataType))
 
-        val (parameters, inputSetter) = inputMetadataMap.view.zipWithIndex
-          .foldRight[(List[Parameter], Setter[OutputElementData])]((outputParameter :: Nil, EmptySetter)) {
-            case (((symbol, metadata), i), (accumulatedParameters, accumulatedSetter)) =>
-              val parameter = Parameter(symbol, metadata.dataType)
-              val setter: Setter[OutputElementData] = { (kernel, input) =>
-                val inputData = input(symbol)
-                kernel.setArg[inputData.type](i, inputData)(
-                  inputMetadataMap(symbol).dataMemory.asInstanceOf[Memory[inputData.type]])
-                accumulatedSetter(kernel, input)
-              }
-              (parameter :: accumulatedParameters, setter)
-          }
-
-        def forwardKernelDefinition = {
-          val outputIndex = {
-            // TODO: Support n-dimension Array
-            DslExpression.GetGlobalId(DslExpression.IntLiteral(0))
-          }
-          val effect = DslEffect.Update(DslExpression.Identifier(OutputId), outputIndex, forward, outputDataType)
-          KernelDefinition(ForwardKernelName, parameters, Seq(effect))
+      val (parameters, inputSetter) = inputMetadataMap.view.zipWithIndex
+        .foldRight[(List[Parameter], Setter[OutputElementData])]((outputParameter :: Nil, EmptySetter)) {
+          case (((symbol, metadata), i), (accumulatedParameters, accumulatedSetter)) =>
+            val parameter = Parameter(symbol, metadata.dataType)
+            val setter: Setter[OutputElementData] = { (kernel, input) =>
+              val inputData = input(symbol)
+              kernel.setArg[inputData.type](i, inputData)(
+                inputMetadataMap(symbol).dataMemory.asInstanceOf[Memory[inputData.type]])
+              accumulatedSetter(kernel, input)
+            }
+            (parameter :: accumulatedParameters, setter)
         }
 
-        val forwardSource = OpenCLCodeGenerator.generateSourceCode(forwardKernelDefinition).toArray[CharSequence]
+      def forwardKernelDefinition = {
+        val outputIndex = {
+          // TODO: Support n-dimension Array
+          DslExpression.GetGlobalId(DslExpression.IntLiteral(0))
+        }
+        val effect = DslEffect.Update(DslExpression.Identifier(OutputId), outputIndex, forward, outputDataType)
+        KernelDefinition(ForwardKernelName, parameters, Seq(effect))
+      }
 
-        val program = context.createProgramWithSource(forwardSource)
-        program.build().!
-        (program, inputSetter)
-      })
+      val forwardSource = OpenCLCodeGenerator.generateSourceCode(forwardKernelDefinition).toArray[CharSequence]
+
+      val program = RAIITask.managed(context.createProgramWithSource(forwardSource)).each
+      RAIITask.unmanaged(program.build()).each
+      (program, inputSetter)
 
       val backwardKernels = mutable.Map.empty[Map[Any, Boolean], Future[Kernel]]
+//
+//      new DifferentiableKernel {
+//
+//        // TODO: Change OutputData and OutputDelta to a pair of OpenCL.Buffer and OpenCL.Event
+//        override type OutputData = OpenCL.Buffer[OutputElementData]
+//        override type OutputDelta = OpenCL.Buffer[OutputElementDelta]
+//
+//        override def close(): Unit = ???
+//
+////        override def forward(input: Input) = monadic[Future] {
+////          val (program, inputSetter) = forwardProgram.!
+////          val kernel = program.createKernel(ForwardKernelName)
+////          val (expectedSize, inputParameterMap) = input
+////          val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
+////          inputSetter(kernel, inputParameterMap)
+////          kernel.setArg(inputMetadataMap.size, outputBuffer)
+////          val event = commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
+////          try {
+////            event.each
+////          } finally {
+////            event.close()
+////          }
+////          new Tapes.Fill(inputParameterMap, outputBuffer)
+////          ???
+////        }
+//        override def forward(expectedOutputSize: Int, inputParameterMap: Map[Any, Tape])
+//          : RAIITask[Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]] = {}
+//      }
 
-      new DifferentiableKernel {
-
-        // TODO: Change OutputData and OutputDelta to a pair of OpenCL.Buffer and OpenCL.Event
-        override type OutputData = OpenCL.Buffer[OutputElementData]
-        override type OutputDelta = OpenCL.Buffer[OutputElementDelta]
-
-        override def close(): Unit = ???
-
-        override def forward(input: Input) = Future {
-          val (program, inputSetter) = forwardProgram.!
+      { (expectedSize, inputParameterMap) =>
+        throwableMonadic[RAIITask] {
           val kernel = program.createKernel(ForwardKernelName)
-          val (expectedSize, inputParameterMap) = input
           val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
           inputSetter(kernel, inputParameterMap)
           kernel.setArg(inputMetadataMap.size, outputBuffer)
           val event =
-            commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize))))
-          try {
-            event.!
-          } finally {
-            event.close()
+            RAIITask
+              .managed(
+                commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize)))))
+              .each
+          event.waitForComplete()
+          new Tape {
+            override def data: OpenCL.Buffer[OutputElementData] = outputBuffer
+
+            override def backward(delta: Future[OpenCL.Buffer[OutputElementDelta]]): Future[Unit] = ???
+
+            override type Data = OpenCL.Buffer[OutputElementData]
+            override type Delta = OpenCL.Buffer[OutputElementDelta]
           }
-          new Tapes.Fill(inputParameterMap, outputBuffer)
         }
       }
     }

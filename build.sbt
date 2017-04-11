@@ -1,15 +1,11 @@
 parallelExecution in Global := false
-//
-//lazy val DifferentiableKernel =
-//  project.dependsOn(
-//    OpenCL,
-//    OpenCLCodeGenerator,
-//    Layer,
-//    ProjectRef(file("Future.scala"), "concurrent-Execution"),
-//    ProjectRef(file("Future.scala"), "sde-task"),
-//    ProjectRef(file("Future.scala"), "concurrent-Converters") % Test,
-//    Symbolic % Test
-//  )
+
+lazy val DifferentiableKernel =
+  project.dependsOn(
+    OpenCL,
+    OpenCLCodeGenerator,
+    TapeTaskFactory
+  )
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 

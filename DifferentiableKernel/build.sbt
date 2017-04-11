@@ -25,3 +25,7 @@ scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value
 scalaOrganization := "org.typelevel"
 
 scalacOptions += "-Yliteral-types"
+
+libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.0"
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
