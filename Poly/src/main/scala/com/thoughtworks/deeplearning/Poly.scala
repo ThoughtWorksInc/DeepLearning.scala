@@ -2,7 +2,8 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Tape.Literal
 import com.thoughtworks.raii.RAIITask
-import shapeless.{DepFn1, Lazy, Poly1, Poly2}
+import shapeless.PolyDefns.{Case1, Case2}
+import shapeless._
 
 /**
   * A namespace of common math operators.
@@ -19,6 +20,7 @@ object Poly {
     type Delta
     override final type Out = RAIITask.Covariant[Tape.Aux[Data, Delta]]
   }
+
   object ToRAIITask {
 
     type Aux[From, Data0, Delta0] = ToRAIITask[From] {
@@ -56,29 +58,44 @@ object Poly {
     }
 
   }
-
-  object MathMethods {
-    object - extends Poly2
-    object + extends Poly2 {
-      implicit def raiiTaskCase[Operand0, Operand1, Data0, Delta0, Data1, Delta1](
-          implicit toRAIITask0: ToRAIITask.Aux[Operand0, Data0, Delta0],
-          toRAIITask1: ToRAIITask.Aux[Operand1, Data1, Delta1],
-          raiiTaskCase: Lazy[
-            Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]]]
-      ): Case.Aux[Operand0, Operand1, raiiTaskCase.value.Result] = {
-        at { (operand0: Operand0, operand1: Operand1) =>
-          def forceApply[A, B](lazyCase: Lazy[Case[A, B]], a: A, b: B): lazyCase.value.Result = {
-            lazyCase.value(a, b)
-          }
-          forceApply[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]](
-            raiiTaskCase,
-            toRAIITask0(operand0),
-            toRAIITask1(operand1))
+  trait TapeTaskPoly1 extends Poly1 {
+    implicit def tapeTaskCase[Operand0, Data0, Delta0](
+        implicit toRAIITask0: ToRAIITask.Aux[Operand0, Data0, Delta0],
+        tapeTaskCase: Lazy[Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]]]]
+    ): Case.Aux[Operand0, tapeTaskCase.value.Result] = {
+      at { (operand0: Operand0) =>
+        def forceApply[A](lazyCase: Lazy[Case[A]], a: A): lazyCase.value.Result = {
+          lazyCase.value(a)
         }
+        forceApply[RAIITask.Covariant[Tape.Aux[Data0, Delta0]]](tapeTaskCase, toRAIITask0(operand0))
       }
     }
-    object * extends Poly2
-    object / extends Poly2
+  }
+  trait TapeTaskPoly2 extends Poly2 {
+
+    implicit def tapeTaskCase[F, Operand0, Operand1, Data0, Delta0, Data1, Delta1](
+        implicit toRAIITask0: ToRAIITask.Aux[Operand0, Data0, Delta0],
+        toRAIITask1: ToRAIITask.Aux[Operand1, Data1, Delta1],
+        tapeTaskCase: Lazy[
+          Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]]]
+    ): Case.Aux[Operand0, Operand1, tapeTaskCase.value.Result] = {
+      at { (operand0: Operand0, operand1: Operand1) =>
+        def forceApply[A, B](lazyCase: Lazy[Case[A, B]], a: A, b: B): lazyCase.value.Result = {
+          lazyCase.value(a, b)
+        }
+        forceApply[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]](
+          tapeTaskCase,
+          toRAIITask0(operand0),
+          toRAIITask1(operand1))
+      }
+    }
+  }
+
+  object MathMethods {
+    object - extends TapeTaskPoly2
+    object + extends TapeTaskPoly2
+    object * extends TapeTaskPoly2
+    object / extends TapeTaskPoly2
   }
 
   implicit final class MathOps[Left](left: Left) {
@@ -97,11 +114,11 @@ object Poly {
 
   object MathFunctions {
 
-    object log extends Poly1
-    object exp extends Poly1
-    object abs extends Poly1
-    object max extends Poly2
-    object min extends Poly2
+    object log extends TapeTaskPoly1
+    object exp extends TapeTaskPoly1
+    object abs extends TapeTaskPoly1
+    object max extends TapeTaskPoly2
+    object min extends TapeTaskPoly2
 
   }
 
