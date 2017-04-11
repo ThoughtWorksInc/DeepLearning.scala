@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.raii.{RAIITask, RAIITask2}
-import shapeless.{Lazy, Poly1, Poly2}
+import shapeless.{DepFn1, Lazy, Poly1, Poly2}
 
 /**
   * A namespace of common math operators.
@@ -13,24 +13,54 @@ import shapeless.{Lazy, Poly1, Poly2}
   */
 object Poly {
 
+  trait ToRAIITask[From] extends DepFn1[From] {
+    type Data
+    type Delta
+    override final type Out = RAIITask2[Tape.Aux[Data, Delta]]
+  }
+  object ToRAIITask {
+
+    type Aux[From, Data0, Delta0] = ToRAIITask[From] {
+      type Data = Data0
+      type Delta = Delta0
+    }
+
+    implicit def fromTape[Data0, Delta0, A <: Tape.Aux[Data0, Delta0]]: ToRAIITask.Aux[A, Data0, Delta0] = {
+      new ToRAIITask[A] {
+        override type Data = Data0
+        override type Delta = Delta0
+
+        override def apply(a: A): RAIITask2[Tape.Aux[Data0, Delta0]] = RAIITask.unmanaged(a)
+      }
+
+    }
+
+    implicit def fromSubtype[Data0, Delta0, A <: RAIITask2[Tape.Aux[Data0, Delta0]]]
+      : ToRAIITask.Aux[A, Data0, Delta0] = {
+      new ToRAIITask[A] {
+        override type Data = Data0
+        override type Delta = Delta0
+        override def apply(a: A): RAIITask2[Tape.Aux[Data0, Delta0]] = a
+      }
+    }
+
+  }
+
   object MathMethods {
     object - extends Poly2
     object + extends Poly2 {
-      implicit def raiiTaskCase[Operand0, Operand1, Tape0, Tape1](
-          implicit toRaiiTask0: Operand0 => RAIITask2[Tape0],
-          toRaiiTask1: Operand1 => RAIITask2[ Tape1],
-          raiiTaskCase: Lazy[Case[RAIITask2[Tape0], RAIITask2[Tape1]]]
+      implicit def raiiTaskCase[Operand0, Operand1, Data0, Delta0, Data1, Delta1](
+          implicit toRAIITask0: ToRAIITask.Aux[Operand0, Data0, Delta0],
+          toRAIITask1: ToRAIITask.Aux[Operand1, Data1, Delta1],
+          raiiTaskCase: Lazy[Case[RAIITask2[Tape.Aux[Data0, Delta0]], RAIITask2[Tape.Aux[Data1, Delta1]]]]
       ): Case.Aux[Operand0, Operand1, raiiTaskCase.value.Result] = {
         at { (operand0: Operand0, operand1: Operand1) =>
-          type Task0 = RAIITask2[Tape0]
-          type Task1 = RAIITask2[Tape1]
-          val task0: Task0 = toRaiiTask0(operand0)
-          val task1: Task1 = toRaiiTask1(operand1)
-
           def forceApply[A, B](lazyCase: Lazy[Case[A, B]], a: A, b: B): lazyCase.value.Result = {
             lazyCase.value(a, b)
           }
-          forceApply[Task0, Task1](raiiTaskCase, task0, task1)
+          forceApply[RAIITask2[Tape.Aux[Data0, Delta0]], RAIITask2[Tape.Aux[Data1, Delta1]]](raiiTaskCase,
+                                                                                             toRAIITask0(operand0),
+                                                                                             toRAIITask1(operand1))
         }
       }
     }

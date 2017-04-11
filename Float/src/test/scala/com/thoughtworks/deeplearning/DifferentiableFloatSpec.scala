@@ -33,16 +33,23 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
 
     val weight: Weight = 1.0f.toWeight
 
-    implicit def weightTaskToTapeTask(w: Weight): RAIITask2[Tape.Aux[Float, Float]] = RAIITask.unmanaged(w)
 
-    implicit def tapeToTape[A](w: A)(
-        implicit constraint: Lazy[A => Tape.Aux[Float, Float]]
-    ): RAIITask2[Tape.Aux[Float, Float]] = constraint.value(w)
+    implicit def tapeToTape[A](implicit x: ToRAIITask.Aux[A, Float, Float]): ToRAIITask.Aux[A, Float, Float] = x
+
+//    implicit def tapeToTaped[A](implicit x: ToRAIITask.Aux[A, Double, Double]): ToRAIITask.Aux[A, Double, Double] = x
+
+//    implicit def tapeToTape[A <: RAIITask2[Tape.Aux[Double, Double]]]: ToRAIITask.Aux[A, Double, Double] = {
+//      new ToRAIITask[A] {
+//        override type Data = Double
+//        override type Delta = Double
+//        override def apply(t: A): RAIITask2[Tape.Aux[Double, Double]] = (t)
+//      }
+//    }
 
     def myNetwork(input: RAIITask[Tape.Aux[Float, Float]]): RAIITask[Tape.Aux[Float, Float]] = {
-      //(??? : RAIITask[Tape.Aux[Float, Any]]) + input
+//      (null : RAIITask[Literal[Float]]) + input
 
-      input + weight //.toRAIITask
+      input + weight
     }
 
     def train(inputData: Float): Task[Unit] = {
