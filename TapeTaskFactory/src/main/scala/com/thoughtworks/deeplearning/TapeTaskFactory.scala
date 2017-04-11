@@ -84,6 +84,7 @@ object TapeTaskFactory {
   object BinaryComputeFactory {
     final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
         extends BinaryComputeFactory[OutputData, OutputDelta] {
+      @inline
       override def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[Tape.Aux[Data0, Delta0]],
                                                        operand1: RAIITask[Tape.Aux[Data1, Delta1]])(
           computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])
@@ -123,6 +124,7 @@ object TapeTaskFactory {
   object UnaryComputeFactory {
     final class MonoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
         extends UnaryComputeFactory[OutputData, OutputDelta] {
+      @inline
       override def apply[Data, Delta](operand: RAIITask[Tape.Aux[Data, Delta]])(
           computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])
         : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
