@@ -12,14 +12,16 @@ import scalaz.concurrent.{Future, Task}
   */
 object Float {
 
+  type FloatTape = Tape.Aux[Float, Float]
+
   private implicit object FloatMonoid extends Monoid[Float] {
     override def zero: Float = 0.0f
 
     override def append(f1: Float, f2: => Float): Float = f1 + f2
   }
 
-  implicit final class FloatComputeOps(operand0: RAIITask[Tape.Aux[Float, Float]]) {
-    def +(operand1: RAIITask[Tape.Aux[Float, Float]]): RAIITask[Tape.Aux[Float, Float]] = {
+  implicit final class FloatComputeOps(operand0: RAIITask[FloatTape]) {
+    def +(operand1: RAIITask[FloatTape]): RAIITask[FloatTape] = {
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
         Task.delay {
           val outputData = data0 + data1
