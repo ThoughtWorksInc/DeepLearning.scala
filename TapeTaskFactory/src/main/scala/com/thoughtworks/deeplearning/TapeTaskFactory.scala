@@ -42,14 +42,6 @@ object TapeTaskFactory {
     final override def value: \/-[this.type] = \/-(this)
   }
 
-  private final class UntrainableOutput[OutputData, OutputDelta](override val data: OutputData)
-      extends Tape
-      with Output[OutputData, OutputDelta] {
-    override def release(): Future[Unit] = Future.now(())
-
-    override def backward(delta: Future[Delta]): Future[Unit] = Future.now(())
-  }
-
   private abstract class output[OutputData, OutputDelta: Monoid](override val data: OutputData)
       extends Tape
       with Output[OutputData, OutputDelta] {
@@ -148,8 +140,6 @@ object TapeTaskFactory {
                           trainable.backward(computeBackward(deltaAccumulator))
                         }
                       }
-                    case untrainable: Tape =>
-                      new UntrainableOutput[OutputData, OutputDelta](forwardData)
                   }
               }
             }
