@@ -601,13 +601,11 @@ data: $data""")
       } finally {
         stack.close()
       }
-      TailCalls.done(())
     }
 
     def build(options: CharSequence): Future[Unit] = Future.async { (handler: Unit => Unit) =>
       val callback = new Program.ManagedCallback(handler)
       checkErrorCode(clBuildProgram(handle.toLong, null, options, callback.container, NULL))
-      TailCalls.done(())
     }
 
     def build(): Future[Unit] = build("")
