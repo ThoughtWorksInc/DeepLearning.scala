@@ -35,16 +35,13 @@ object TapeTaskFactory {
     unaryComputeFactory(operand)(computeForward)
   }
 
-  private trait Output[OutputData, OutputDelta]
-      extends ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] { this: Tape =>
+  private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)
+      extends Tape
+      with ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
+
     override final type Delta = OutputDelta
     override final type Data = OutputData
     final override def value: \/-[this.type] = \/-(this)
-  }
-
-  private abstract class output[OutputData, OutputDelta: Monoid](override val data: OutputData)
-      extends Tape
-      with Output[OutputData, OutputDelta] {
 
     @volatile
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
@@ -59,7 +56,7 @@ object TapeTaskFactory {
 
   }
 
-  private abstract class Releasable[OutputData, OutputDelta](
+  private final class Releasable[OutputData, OutputDelta](
       override val value: \/[Throwable, Aux[OutputData, OutputDelta]])
       extends ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
     override def release(): Future[Unit] = Future.now(())
@@ -94,9 +91,9 @@ object TapeTaskFactory {
             val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(_) =>
-                  new Releasable[OutputData, OutputDelta](left) {}
+                  new Releasable[OutputData, OutputDelta](left)
                 case right @ \/-((forwardData, computeBackward)) =>
-                  new output[OutputData, OutputDelta](forwardData) {
+                  new Output[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
                       val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
                       Future.futureInstance.mapBoth(
@@ -133,11 +130,11 @@ object TapeTaskFactory {
             val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
               computeForward(upstream.data).get.map {
                 case left @ -\/(_) =>
-                  new Releasable[OutputData, OutputDelta](left) {}
+                  new Releasable[OutputData, OutputDelta](left)
                 case right @ \/-((forwardData, computeBackward)) =>
                   upstream.workaround10251 match {
                     case trainable: Tape =>
-                      new output[OutputData, OutputDelta](forwardData) {
+                      new Output[OutputData, OutputDelta](forwardData) {
                         override def release(): Future[Unit] = {
                           trainable.backward(computeBackward(deltaAccumulator))
                         }
