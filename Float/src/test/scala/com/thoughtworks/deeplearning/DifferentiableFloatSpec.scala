@@ -3,7 +3,7 @@ package com.thoughtworks.deeplearning
 import org.scalatest._
 import com.thoughtworks.deeplearning.Float._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
-import Poly._
+import PolyFunctions._
 import com.thoughtworks.deeplearning.Float.Optimizers.{LearningRate, Optimizer}
 import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
 import com.thoughtworks.deeplearning.Float.trainableFloat

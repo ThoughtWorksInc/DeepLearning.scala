@@ -33,10 +33,12 @@ lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.sc
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
-lazy val Float = project.dependsOn(TapeTask, TapeTaskFactory, Poly)
+lazy val Float = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions)
 
-lazy val Poly =
+lazy val ToTapeTask =
   project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "RAIITask"), ProjectRef(file("RAII.scala"), "packageJVM"))
+
+lazy val PolyFunctions = project.dependsOn(ToTapeTask)
 
 lazy val TapeTask =
   project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "packageJVM"), ProjectRef(file("RAII.scala"), "RAIITask"))

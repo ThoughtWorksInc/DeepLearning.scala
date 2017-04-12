@@ -2,12 +2,8 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.raii.RAIITask
 import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
-import com.thoughtworks.deeplearning.Poly.{MathMethods, ToTapeTask}
-import com.thoughtworks.deeplearning.Poly.MathMethods._
-import com.thoughtworks.deeplearning.Tape.Aux
+import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
-import com.thoughtworks.raii.ResourceFactoryT.ResourceT
-import shapeless.PolyDefns.Case
 import shapeless.the
 
 import scalaz.{Applicative, Monoid, \/, \/-}
@@ -104,8 +100,8 @@ object Float {
 
   @inline
   implicit val `Float+Float`
-    : +.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
-    MathMethods.+.at { (operand0, operand1) =>
+    : PolyMethods.+.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyMethods.+.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
         Task.delay {
           val outputData = data0 + data1
