@@ -6,7 +6,7 @@ import shapeless.PolyDefns.{Case1, Case2}
 import shapeless._
 
 /**
-  * A namespace of common math operators.
+  * A namespace of common math operators for [[RAIITask]] of [[Tape]]s.
   *
   * [[Poly.MathMethods MathMethods]] and [[Poly.MathFunctions MathFunctions]] provide functions like [[Poly.MathMethods.+ +]], [[Poly.MathMethods.- -]], [[Poly.MathMethods.* *]], [[Poly.MathMethods./ /]],
   * [[Poly.MathFunctions.log log]], [[Poly.MathFunctions.abs abs]], [[Poly.MathFunctions.max max]], [[Poly.MathFunctions.min min]] and [[Poly.MathFunctions.exp exp]], those functions been implements in specific Differentiable Object such as [[???]]
