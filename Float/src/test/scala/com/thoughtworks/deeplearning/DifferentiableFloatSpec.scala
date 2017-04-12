@@ -6,6 +6,9 @@ import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import Poly._
 import com.thoughtworks.deeplearning.Float.Optimizers.{LearningRate, Optimizer}
 import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
+import com.thoughtworks.deeplearning.Float.trainableFloat
+import com.thoughtworks.deeplearning.Float.toFloatTapeTask
+import com.thoughtworks.deeplearning.TapeTask.train
 
 import scala.concurrent.Promise
 import scalaz.concurrent.{Future, Task}
@@ -47,6 +50,44 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
       train(1.0f).each
       train(1.0f).each
       train(1.0f).each
+    }
+
+    val p = Promise[Assertion]
+    t5.unsafePerformAsync { either: \/[Throwable, Unit] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(_) => {
+            weight.data should be(-4)
+          }
+        }
+      }
+    }
+    p.future
+  }
+
+  "Plus with TapeTask" in {
+
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1.0f
+    }
+
+    val weight: Weight = 1.0f.toWeight
+
+    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
+      6.7f + input + weight + 5.5f
+    }
+
+    def trainMyNetwork(inputData: Float): Task[Float] = {
+      train(myNetwork(inputData))
+    }
+
+    val t5: Task[Unit] = throwableMonadic[Task] {
+      trainMyNetwork(1.0f).each
+      trainMyNetwork(1.0f).each
+      trainMyNetwork(1.0f).each
+      trainMyNetwork(1.0f).each
+      trainMyNetwork(1.0f).each
     }
 
     val p = Promise[Assertion]

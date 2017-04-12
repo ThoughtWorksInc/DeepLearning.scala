@@ -4,6 +4,11 @@ import com.thoughtworks.raii.RAIITask
 import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
 import com.thoughtworks.deeplearning.Poly.{MathMethods, ToTapeTask}
 import com.thoughtworks.deeplearning.Poly.MathMethods._
+import com.thoughtworks.deeplearning.Tape.Aux
+import com.thoughtworks.deeplearning.TapeTask.Trainable
+import com.thoughtworks.raii.ResourceFactoryT.ResourceT
+import shapeless.PolyDefns.Case
+import shapeless.the
 
 import scalaz.{Applicative, Monoid, \/, \/-}
 import scalaz.concurrent.{Future, Task}
@@ -85,6 +90,10 @@ object Float {
 
   trait OptimizerFactory {
     def FloatOptimizer(weight: Weight): Optimizer
+  }
+
+  implicit def trainableFloat: Trainable[Float, Float] = new Trainable[Float, Float] {
+    override def apply(data: Float): Future[Float] = Future.now(the[Numeric[Float]].one)
   }
 
   private implicit object FloatMonoid extends Monoid[Float] {
