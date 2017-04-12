@@ -1,8 +1,9 @@
 package com.thoughtworks.deeplearning
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
-import com.thoughtworks.raii.{RAIIFuture, RAIITask}
+import com.thoughtworks.raii.ResourceFactoryT.ResourceT
+import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
 
-import scalaz.{EitherT, \/}
+import scalaz.{EitherT, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 
 object TapeTask {
@@ -12,20 +13,19 @@ object TapeTask {
   }
 
   def train[OutputData, OutputDelta](forward: RAIITask[_ <: Tape.Aux[OutputData, OutputDelta]])(
-      implicit outputDataIsOutputDelta: Trainable[OutputData, OutputDelta]): Task[OutputData] = {
-    val c: EitherT[RAIIFuture, Throwable, OutputData] =
-      forward
-        .flatMap[OutputData] { outputTape =>
-          val loss = outputTape.data
-          RAIITask.unmanaged(outputTape.backward(outputDataIsOutputDelta(loss))).map { _: Unit =>
-            loss
-          }
+      implicit trainable: Trainable[OutputData, OutputDelta]): Task[OutputData] = {
+    val c: RAIITask[OutputData] = forward.flatMap[OutputData] { outputTape =>
+      trainable(outputTape.data).flatMap { delta: OutputDelta =>
+        RAIITask.unmanaged(outputTape.backward(Future.now(delta))).map { _: Unit =>
+          outputTape.data
         }
+      }
+    }
     new Task(c.run.run)
   }
 
   trait Trainable[-Data, +Delta] {
-    def apply(data: Data): Future[Delta]
+    def apply(data: Data): RAIITask[_ <: Delta]
   }
 
 }

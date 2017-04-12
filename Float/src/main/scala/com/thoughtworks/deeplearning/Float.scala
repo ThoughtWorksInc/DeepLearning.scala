@@ -89,7 +89,7 @@ object Float {
   }
 
   implicit object trainableFloat extends Trainable[Float, Float] {
-    override def apply(data: Float): Future[Float] = Future.now(the[Numeric[Float]].one)
+    override def apply(data: Float): RAIITask[Float] = RAIITask.unmanaged(the[Numeric[Float]].one)
   }
 
   private implicit object FloatMonoid extends Monoid[Float] {
