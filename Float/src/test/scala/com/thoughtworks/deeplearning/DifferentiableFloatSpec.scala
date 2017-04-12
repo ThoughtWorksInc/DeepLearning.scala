@@ -13,12 +13,14 @@ import com.thoughtworks.deeplearning.TapeTask.predict
 
 import scala.concurrent.Promise
 import scalaz.concurrent.{Future, Task}
-import com.thoughtworks.each.Monadic.{throwableMonadic, _}
+import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 import shapeless.Lazy
 
 import scala.annotation.tailrec
-import scalaz.{-\/, \/, \/-}
+import scalaz.{-\/, Foldable, \/, \/-}
+import scalaz.std.option._
+import scalaz.std.iterable._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -167,13 +169,10 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
       train(myNetwork(inputData))
     }
 
-//    @monadic[Task]
-    def t5: Task[Unit] = {
-      import scalaz.std.iterable._
-      iterableSubtypeFoldable.traverse_[Task, Int, Unit](1 to 7) { iteration =>
-        trainMyNetwork(1.0f).map { loss =>
-          println(loss)
-        }
+    @monadic[Task]
+    val t5: Task[Unit] = {
+      for (_ <- (1 to 7): Iterable[Int]) {
+        trainMyNetwork(1.0f).each
       }
     }
 
