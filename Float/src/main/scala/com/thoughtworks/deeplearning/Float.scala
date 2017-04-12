@@ -63,12 +63,12 @@ object Float {
     override type Data = Float
     override type Delta = Float
 
-    override def backward(deltaFuture: Future[Delta]): Future[Unit] = {
-      deltaFuture.map { delta =>
+    override def backward(deltaFuture: RAIITask[_ <: Delta]): Future[Unit] = {
+      logged(deltaFuture.map { delta =>
         synchronized {
           data = optimizer.updateFloat(data, delta)
         }
-      }
+      })
     }
   }
 
@@ -106,8 +106,8 @@ object Float {
         Task.delay {
           val outputData = data0 + data1
           val computeBackward = { outputDelta: Float =>
-            val delta0Future = Future.now(outputDelta)
-            val delta1Future = Future.now(outputDelta)
+            val delta0Future = RAIITask.now(outputDelta)
+            val delta1Future = RAIITask.now(outputDelta)
             (delta0Future, delta1Future)
           }
           (outputData, computeBackward)

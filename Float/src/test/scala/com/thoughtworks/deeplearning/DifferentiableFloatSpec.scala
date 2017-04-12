@@ -42,7 +42,7 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
     def train(inputData: Float): Task[Unit] = {
       val c: RAIITask[Unit] = myNetwork(RAIITask.unmanaged(Literal(inputData): Tape.Aux[Float, Float])).flatMap {
         outputTape =>
-          RAIITask.unmanaged(outputTape.backward(Future.now(1.0f)))
+          RAIITask.unmanaged(outputTape.backward(RAIITask.now(1.0f)))
       }
       new Task(c.run.run)
     }

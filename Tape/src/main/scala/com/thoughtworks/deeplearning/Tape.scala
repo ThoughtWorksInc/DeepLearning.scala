@@ -1,5 +1,8 @@
 package com.thoughtworks.deeplearning
 
+import com.thoughtworks.raii.RAIITask
+
+import scalaz.{-\/, \/-}
 import scalaz.concurrent.Future
 
 /**
@@ -7,11 +10,22 @@ import scalaz.concurrent.Future
   */
 trait Tape {
 
+  // TODO: logging
+  protected final def logged(raiiTask: RAIITask[Unit]): Future[Unit] = {
+    raiiTask.run.run.flatMap {
+      case -\/(e) =>
+        e.printStackTrace()
+        Future.now(())
+      case \/-(()) =>
+        Future.now(())
+    }
+  }
+
   type Data
   type Delta
 
   def data: Data
-  def backward(delta: Future[Delta]): Future[Unit]
+  def backward(delta: RAIITask[_ <: Delta]): Future[Unit]
 
   /** @see https://github.com/scala/bug/issues/10251 */
   @inline private[deeplearning] final def workaround10251: {
@@ -31,7 +45,7 @@ object Tape {
     override type Data = Data0
     override type Delta = Any
 
-    override def backward(delta: Future[Delta]): Future[Unit] = Future.now(())
+    override def backward(delta: RAIITask[_ <: Delta]): Future[Unit] = Future.now(())
   }
 
 }

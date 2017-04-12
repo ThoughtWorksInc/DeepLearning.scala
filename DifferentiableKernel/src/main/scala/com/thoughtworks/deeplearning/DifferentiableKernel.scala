@@ -206,7 +206,7 @@ object DifferentiableKernel {
           new Tape {
             override def data: OpenCL.Buffer[OutputElementData] = outputBuffer
 
-            override def backward(delta: Future[OpenCL.Buffer[OutputElementDelta]]): Future[Unit] = ???
+            override def backward(delta: RAIITask[_ <: OpenCL.Buffer[OutputElementDelta]]): Future[Unit] = ???
 
             override type Data = OpenCL.Buffer[OutputElementData]
             override type Delta = OpenCL.Buffer[OutputElementDelta]

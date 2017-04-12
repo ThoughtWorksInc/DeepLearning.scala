@@ -15,10 +15,8 @@ object TapeTask {
   def train[OutputData, OutputDelta](forward: RAIITask[_ <: Tape.Aux[OutputData, OutputDelta]])(
       implicit trainable: Trainable[OutputData, OutputDelta]): Task[OutputData] = {
     val c: RAIITask[OutputData] = forward.flatMap[OutputData] { outputTape =>
-      trainable(outputTape.data).flatMap { delta: OutputDelta =>
-        RAIITask.unmanaged(outputTape.backward(Future.now(delta))).map { _: Unit =>
-          outputTape.data
-        }
+      RAIITask.unmanaged(outputTape.backward(trainable(outputTape.data))).map { _ =>
+        outputTape.data
       }
     }
     new Task(c.run.run)
