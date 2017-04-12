@@ -59,17 +59,8 @@ object Float {
 
   }
 
-  object Weight {
-
-    def apply(value: Float)(implicit optimizerFactory: OptimizerFactory) = new Weight(value) {
-      override protected val optimizer = optimizerFactory.FloatOptimizer(this)
-    }
-
-  }
-
-  // TODO: think about if Weight should be abstract
-  abstract case class Weight(var data: Float) extends Tape {
-    protected def optimizer: Optimizer
+  final case class Weight(@volatile var data: Float)(implicit optimizerFactory: OptimizerFactory) extends Tape {
+    private val optimizer: Optimizer = optimizerFactory.FloatOptimizer(this)
 
     override type Data = Float
     override type Delta = Float
