@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.raii.RAIITask
 import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
-import com.thoughtworks.deeplearning.Poly.{MathMethods, ToRAIITask}
+import com.thoughtworks.deeplearning.Poly.{MathMethods, ToTapeTask}
 import com.thoughtworks.deeplearning.Poly.MathMethods._
 
 import scalaz.{Applicative, Monoid, \/, \/-}
@@ -19,7 +19,7 @@ object Float {
 
   @inline
   implicit def toFloatTapeTask[A](
-      implicit typeClass: ToRAIITask.Aux[A, Float, Float]): ToRAIITask.Aux[A, Float, Float] = typeClass
+      implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] = typeClass
 
   object Optimizers {
 

@@ -15,78 +15,79 @@ import shapeless._
   */
 object Poly {
 
-  trait ToRAIITask[From] extends DepFn1[From] {
+  trait ToTapeTask[From] extends DepFn1[From] {
     type Data
     type Delta
     override final type Out = RAIITask.Covariant[Tape.Aux[Data, Delta]]
   }
 
-  object ToRAIITask {
+  object ToTapeTask {
 
-    type Aux[From, Data0, Delta0] = ToRAIITask[From] {
+    type Aux[From, Data0, Delta0] = ToTapeTask[From] {
       type Data = Data0
       type Delta = Delta0
     }
 
-    implicit def fromTape[Data0, Delta0, A <: Tape.Aux[Data0, Delta0]]: ToRAIITask.Aux[A, Data0, Delta0] = {
-      new ToRAIITask[A] {
+    @inline
+    implicit def fromTape[Data0, Delta0, From <: Tape.Aux[Data0, Delta0]]: ToTapeTask.Aux[From, Data0, Delta0] = {
+      new ToTapeTask[From] {
         override type Data = Data0
         override type Delta = Delta0
 
-        override def apply(a: A): RAIITask.Covariant[Tape.Aux[Data0, Delta0]] = RAIITask.unmanaged(a)
+        @inline
+        override def apply(a: From): Out = RAIITask.unmanaged(a)
       }
 
     }
 
-    implicit def fromSubtype[Data0, Delta0, A <: RAIITask.Covariant[Tape.Aux[Data0, Delta0]]]
-      : ToRAIITask.Aux[A, Data0, Delta0] = {
-      new ToRAIITask[A] {
+    @inline
+    implicit def fromSubtype[Data0, Delta0, From <: RAIITask[_ <: Tape.Aux[Data0, Delta0]]]
+      : ToTapeTask.Aux[From, Data0, Delta0] = {
+      new ToTapeTask[From] {
         override type Data = Data0
         override type Delta = Delta0
-        override def apply(a: A): RAIITask.Covariant[Tape.Aux[Data0, Delta0]] = a
+
+        @inline
+        override def apply(a: From): Out = a
       }
     }
 
-    implicit def fromData[Data0, Delta0]: ToRAIITask.Aux[Data0, Data0, Delta0] = {
-      new ToRAIITask[Data0] {
-        override type Data = Data0
+    @inline
+    implicit def fromData[From, Delta0]: ToTapeTask.Aux[From, From, Delta0] = {
+      new ToTapeTask[From] {
+        override type Data = From
         override type Delta = Delta0
 
-        override def apply(a: Data): RAIITask.Covariant[Tape.Aux[Data0, Delta0]] = RAIITask.unmanaged(Literal(a))
+        @inline
+        override def apply(a: Data): Out = RAIITask.unmanaged(Literal(a))
       }
 
     }
 
   }
+
   trait TapeTaskPoly1 extends Poly1 {
+    @inline
     implicit def tapeTaskCase[Operand0, Data0, Delta0](
-        implicit toRAIITask0: ToRAIITask.Aux[Operand0, Data0, Delta0],
+        implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
         tapeTaskCase: Lazy[Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]]]]
     ): Case.Aux[Operand0, tapeTaskCase.value.Result] = {
       at { (operand0: Operand0) =>
-        def forceApply[A](lazyCase: Lazy[Case[A]], a: A): lazyCase.value.Result = {
-          lazyCase.value(a)
-        }
-        forceApply[RAIITask.Covariant[Tape.Aux[Data0, Delta0]]](tapeTaskCase, toRAIITask0(operand0))
+        tapeTaskCase.value(toTapeTask0(operand0))
       }
     }
   }
-  trait TapeTaskPoly2 extends Poly2 {
 
+  trait TapeTaskPoly2 extends Poly2 {
+    @inline
     implicit def tapeTaskCase[F, Operand0, Operand1, Data0, Delta0, Data1, Delta1](
-        implicit toRAIITask0: ToRAIITask.Aux[Operand0, Data0, Delta0],
-        toRAIITask1: ToRAIITask.Aux[Operand1, Data1, Delta1],
+        implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
+        toTapeTask1: ToTapeTask.Aux[Operand1, Data1, Delta1],
         tapeTaskCase: Lazy[
           Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]]]
     ): Case.Aux[Operand0, Operand1, tapeTaskCase.value.Result] = {
       at { (operand0: Operand0, operand1: Operand1) =>
-        def forceApply[A, B](lazyCase: Lazy[Case[A, B]], a: A, b: B): lazyCase.value.Result = {
-          lazyCase.value(a, b)
-        }
-        forceApply[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]](
-          tapeTaskCase,
-          toRAIITask0(operand0),
-          toRAIITask1(operand1))
+        tapeTaskCase.value(toTapeTask0(operand0), toTapeTask1(operand1))
       }
     }
   }
