@@ -22,7 +22,7 @@ object Closeables {
   }
 
   /**
-    * An idempotent [[Closeable]].
+    * An idempotent `Closeable`.
     * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
     */
   trait IdempotentCloseable extends Closeable {
