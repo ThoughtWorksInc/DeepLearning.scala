@@ -56,7 +56,7 @@ object Float {
 
   }
 
-  final case class Weight(@volatile var data: Float)(implicit optimizerFactory: OptimizerFactory) extends Tape {
+  final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory) extends Tape {
     private val optimizer: Optimizer = optimizerFactory.FloatOptimizer(this)
 
     override type Data = Float
@@ -64,7 +64,9 @@ object Float {
 
     override def backward(deltaFuture: Future[Delta]): Future[Unit] = {
       deltaFuture.map { delta =>
-        data = optimizer.updateFloat(data, delta)
+        synchronized {
+          data = optimizer.updateFloat(data, delta)
+        }
       }
     }
   }
