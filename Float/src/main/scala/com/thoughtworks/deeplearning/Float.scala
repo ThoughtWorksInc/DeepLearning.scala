@@ -1,12 +1,9 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
+import com.thoughtworks.raii.RAIITask
 import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
 import com.thoughtworks.deeplearning.Poly.{MathMethods, ToRAIITask}
 import com.thoughtworks.deeplearning.Poly.MathMethods._
-import com.thoughtworks.deeplearning.Tape.Aux
-import com.thoughtworks.raii.ResourceFactoryT.ResourceT
-import shapeless.PolyDefns.Case
 
 import scalaz.{Applicative, Monoid, \/, \/-}
 import scalaz.concurrent.{Future, Task}
@@ -65,12 +62,6 @@ object Float {
     override type Data = Float
     override type Delta = Float
 
-//    override def value: \/-[this.type] = \/-(this)
-//
-//    override def acquire(): Future[ResourceT[Future, \/[Throwable, Aux[Float, Float]]]] = Future.now(this)
-//
-//    override def release(): Future[Unit] = Future.now(())
-
     override def backward(deltaFuture: Future[Delta]): Future[Unit] = {
       deltaFuture.map { delta =>
         data = optimizer.updateFloat(data, delta)
@@ -81,12 +72,6 @@ object Float {
   implicit final class ToWeightOps(value: Float) {
     def toWeight(implicit optimizerFactory: OptimizerFactory): Weight = {
       Weight(value)
-    }
-  }
-
-  implicit final class RAIIOps[Data, Delta](value: Tape.Aux[Data, Delta]) {
-    def toRAIITask: RAIITask[Tape.Aux[Data, Delta]] = {
-      RAIITask.unmanaged(value)
     }
   }
 
@@ -105,29 +90,6 @@ object Float {
 
     override def append(f1: Float, f2: => Float): Float = f1 + f2
   }
-//
-//  implicit final class FloatComputeOps(operand0: Compute[Tape.Aux[Float, Float]]) {
-//    def +(operand1: Compute[Tape.Aux[Float, Float]]): Compute[Tape.Aux[Float, Float]] = {
-//      Compute.binary(operand0, operand1) { (data0, data1) =>
-//        Task.delay {
-//          val outputData = data0 + data1
-//          def computeDeltas(delta: Float) = {
-//            val delta0Future = Future.now(delta)
-//            val delta1Future = Future.now(delta)
-//            (delta0Future, delta1Future)
-//          }
-//          (outputData, computeDeltas)
-//        }
-//      }
-//    }
-//  }
-//
-//  final case class Plus(operand0: Compute[Tape.Aux[Float, Float]], operand1: Compute[Tape.Aux[Float, Float]])
-//      extends Compute.BinaryComputeFactory[Float, Float] {
-//    def apply(operand0: Compute[Aux[Float, Float]], operand1: Compute[Aux[Float, Float]])(
-//        computeForward: (Float, Float) => Task[(Float, (Float) => (Future[Float], Future[Float]))])
-//      : Compute[Tape.Aux[Float, Float]] = ???
-//  }
 
   @inline
   implicit val `Float+Float`
@@ -147,24 +109,3 @@ object Float {
     }
   }
 }
-
-/*
-
-val a: Future[...] = b + c
-
-val d = a + a
-
-
-def train(f: Future[Tape...]) = {
-
-  f.onComplete { t: Tape =>
-    t.retain()
-    try {
-      t.backward(t.value)
-    } finally {
-      t.release()
-    }
-  }
-
-}
- */
