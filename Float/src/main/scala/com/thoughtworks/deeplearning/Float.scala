@@ -92,7 +92,9 @@ object Float {
     def FloatOptimizer(weight: Weight): Optimizer
   }
 
-  implicit def trainableFloat: Trainable[Float, Float] = (_: Float) => Future.now(the[Numeric[Float]].one)
+  implicit def trainableFloat: Trainable[Float, Float] = new Trainable[Float, Float] {
+    override def apply(data: Float): Future[Float] = Future.now(the[Numeric[Float]].one)
+  }
 
   private implicit object FloatMonoid extends Monoid[Float] {
     override def zero: Float = 0.0f
