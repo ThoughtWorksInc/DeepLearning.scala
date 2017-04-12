@@ -129,6 +129,7 @@ object Float {
 //      : Compute[Tape.Aux[Float, Float]] = ???
 //  }
 
+  @inline
   implicit val `Float+Float`
     : +.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     MathMethods.+.at { (operand0, operand1) =>
