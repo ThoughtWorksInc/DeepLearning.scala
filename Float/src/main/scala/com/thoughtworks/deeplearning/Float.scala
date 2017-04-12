@@ -78,7 +78,7 @@ object Float {
     }
   }
 
-  implicit final class WeightOps(value: Float) {
+  implicit final class ToWeightOps(value: Float) {
     def toWeight(implicit optimizerFactory: OptimizerFactory): Weight = {
       Weight(value)
     }
@@ -135,9 +135,9 @@ object Float {
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
         Task.delay {
           val outputData = data0 + data1
-          def computeBackward(delta: Float) = {
-            val delta0Future = Future.now(delta)
-            val delta1Future = Future.now(delta)
+          val computeBackward = { outputDelta: Float =>
+            val delta0Future = Future.now(outputDelta)
+            val delta1Future = Future.now(outputDelta)
             (delta0Future, delta1Future)
           }
           (outputData, computeBackward)
