@@ -22,17 +22,17 @@ object TapeTaskFactory {
   def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
                                                                     operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Future[Delta0], Future[Delta1]))])(
-      implicit binaryComputeFactory: BinaryComputeFactory[OutputData, OutputDelta])
+      implicit binaryTapeTaskFactory: BinaryTapeTaskFactory[OutputData, OutputDelta])
     : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
-    binaryComputeFactory(operand0, operand1)(computeForward)
+    binaryTapeTaskFactory(operand0, operand1)(computeForward)
   }
 
   @inline
   def unary[Data, Delta, OutputData, OutputDelta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
       computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])(
-      implicit unaryComputeFactory: UnaryComputeFactory[OutputData, OutputDelta])
+      implicit unaryTapeTaskFactory: UnaryTapeTaskFactory[OutputData, OutputDelta])
     : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
-    unaryComputeFactory(operand)(computeForward)
+    unaryTapeTaskFactory(operand)(computeForward)
   }
 
   private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)
@@ -56,7 +56,7 @@ object TapeTaskFactory {
 
   }
 
-  trait BinaryComputeFactory[OutputData, OutputDelta] {
+  trait BinaryTapeTaskFactory[OutputData, OutputDelta] {
 
     def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
                                             operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
@@ -65,16 +65,16 @@ object TapeTaskFactory {
 
   }
 
-  trait UnaryComputeFactory[OutputData, OutputDelta] {
+  trait UnaryTapeTaskFactory[OutputData, OutputDelta] {
 
     def apply[Data, Delta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
         computeForward: (Data) => Task[(OutputData, OutputDelta => (Future[Delta]))])
       : RAIITask[Tape.Aux[OutputData, OutputDelta]]
   }
 
-  object BinaryComputeFactory {
-    final class MonoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
-        extends BinaryComputeFactory[OutputData, OutputDelta] {
+  object BinaryTapeTaskFactory {
+    final class MonoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid]
+        extends BinaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
       override def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
                                                        operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
@@ -106,18 +106,18 @@ object TapeTaskFactory {
     }
 
     @inline
-    implicit def monoidBinaryComputeFactory[OutputData, OutputDelta: Monoid]
-      : BinaryComputeFactory[OutputData, OutputDelta] = {
-      new MonoidBinaryComputeFactory[OutputData, OutputDelta]
+    implicit def monoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid]
+      : BinaryTapeTaskFactory[OutputData, OutputDelta] = {
+      new MonoidBinaryTapeTaskFactory[OutputData, OutputDelta]
     }
   }
 
-  object UnaryComputeFactory {
-    final class MonoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
-        extends UnaryComputeFactory[OutputData, OutputDelta] {
+  object UnaryTapeTaskFactory {
+    final class MonoidUnaryTapeTaskFactory[OutputData, OutputDelta: Monoid]
+        extends UnaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
       override def apply[Data, Delta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
-          computeForward: (Data) => Task[(OutputData, OutputDelta => Future[Delta])])
+          computeForward: Data => Task[(OutputData, OutputDelta => Future[Delta])])
         : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
         operand.flatMap {
           case (upstream) =>
@@ -142,9 +142,9 @@ object TapeTaskFactory {
     }
 
     @inline
-    implicit def monoidUnaryComputeFactory[OutputData, OutputDelta: Monoid]
-      : UnaryComputeFactory[OutputData, OutputDelta] = {
-      new MonoidUnaryComputeFactory[OutputData, OutputDelta]
+    implicit def monoidUnaryTapeTaskFactory[OutputData, OutputDelta: Monoid]
+      : UnaryTapeTaskFactory[OutputData, OutputDelta] = {
+      new MonoidUnaryTapeTaskFactory[OutputData, OutputDelta]
     }
   }
 
