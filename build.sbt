@@ -9,10 +9,6 @@ lazy val DifferentiableKernel =
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
-//lazy val Layer = project.dependsOn(ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"))
-
-//lazy val CumulativeTape = project.dependsOn(Layer, ProjectRef(file("RAII.scala"), "Shared"))
-
 //lazy val CheckedTape = project.dependsOn(Layer, Closeables)
 
 // TODO: Move to a separate repository
