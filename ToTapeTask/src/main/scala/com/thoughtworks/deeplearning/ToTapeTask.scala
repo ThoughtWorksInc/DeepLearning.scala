@@ -25,7 +25,7 @@ object ToTapeTask {
       override type Delta = Delta0
 
       @inline
-      override def apply(a: From): Out = RAIITask.unmanaged(a)
+      override def apply(a: From): Out = RAIITask.now(a)
     }
 
   }
@@ -49,7 +49,7 @@ object ToTapeTask {
       override type Delta = Delta0
 
       @inline
-      override def apply(a: Data): Out = RAIITask.unmanaged(Literal(a))
+      override def apply(a: Data): Out = RAIITask.now(Literal(a))
     }
 
   }
