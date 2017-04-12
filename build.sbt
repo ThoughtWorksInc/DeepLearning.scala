@@ -82,23 +82,16 @@ lazy val TapeTask =
 //  }
 //}.taskValue
 
-dependsOn(Float)
+publishArtifact := false
 
-enablePlugins(TravisUnidocTitle)
-
-libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.2.10"
-
-UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject)
-
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-
-scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value
-
-scalaOrganization := "org.typelevel"
-
-scalacOptions += "-Yliteral-types"
-
-name := "deeplearning"
+lazy val unidoc = project
+  .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
+  .settings(
+    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject),
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    scalacOptions += "-Xexperimental"
+  )
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
