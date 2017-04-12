@@ -64,62 +64,70 @@ object Poly {
 
     }
 
-  }
-
-  trait TapeTaskPoly1 extends Poly1 {
-    @inline
-    implicit def tapeTaskCase[Operand0, Data0, Delta0](
-        implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
-        tapeTaskCase: Lazy[Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]]]]
-    ): Case.Aux[Operand0, tapeTaskCase.value.Result] = {
-      at { (operand0: Operand0) =>
-        tapeTaskCase.value(toTapeTask0(operand0))
+    trait Poly1 extends shapeless.Poly1 {
+      @inline
+      implicit def tapeTaskCase[Operand0, Data0, Delta0](
+          implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
+          tapeTaskCase: Lazy[Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]]]]
+      ): Case.Aux[Operand0, tapeTaskCase.value.Result] = {
+        at { (operand0: Operand0) =>
+          tapeTaskCase.value(toTapeTask0(operand0))
+        }
       }
     }
-  }
 
-  trait TapeTaskPoly2 extends Poly2 {
-    @inline
-    implicit def tapeTaskCase[F, Operand0, Operand1, Data0, Delta0, Data1, Delta1](
-        implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
-        toTapeTask1: ToTapeTask.Aux[Operand1, Data1, Delta1],
-        tapeTaskCase: Lazy[
-          Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]]]
-    ): Case.Aux[Operand0, Operand1, tapeTaskCase.value.Result] = {
-      at { (operand0: Operand0, operand1: Operand1) =>
-        tapeTaskCase.value(toTapeTask0(operand0), toTapeTask1(operand1))
+    trait Poly2 extends shapeless.Poly2 {
+      @inline
+      implicit def tapeTaskCase[F, Operand0, Operand1, Data0, Delta0, Data1, Delta1](
+          implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
+          toTapeTask1: ToTapeTask.Aux[Operand1, Data1, Delta1],
+          tapeTaskCase: Lazy[
+            Case[RAIITask.Covariant[Tape.Aux[Data0, Delta0]], RAIITask.Covariant[Tape.Aux[Data1, Delta1]]]]
+      ): Case.Aux[Operand0, Operand1, tapeTaskCase.value.Result] = {
+        at { (operand0: Operand0, operand1: Operand1) =>
+          tapeTaskCase.value(toTapeTask0(operand0), toTapeTask1(operand1))
+        }
       }
     }
+
   }
 
   object MathMethods {
-    object - extends TapeTaskPoly2
-    object + extends TapeTaskPoly2
-    object * extends TapeTaskPoly2
-    object / extends TapeTaskPoly2
+    object - extends ToTapeTask.Poly2
+    object + extends ToTapeTask.Poly2
+    object * extends ToTapeTask.Poly2
+    object / extends ToTapeTask.Poly2
   }
 
-  implicit final class MathOps[Left](left: Left) {
-    def -[Right](right: Right)(implicit methodCase: MathMethods.-.Case[Left, Right]): methodCase.Result =
-      MathMethods.-(left, right)
+  implicit final class MathOps[Operand0](operand0: Operand0) {
+    @inline
+    def -[Operand1](operand1: Operand1)(
+        implicit methodCase: MathMethods.-.Case[Operand0, Operand1]): methodCase.Result =
+      methodCase(operand0, operand1)
 
-    def +[Right](right: Right)(implicit methodCase: MathMethods.+.Case[Left, Right]): methodCase.Result =
-      MathMethods.+(left, right)
+    @inline
+    def +[Operand1](operand1: Operand1)(
+        implicit methodCase: MathMethods.+.Case[Operand0, Operand1]): methodCase.Result =
+      methodCase(operand0, operand1)
 
-    def *[Right](right: Right)(implicit methodCase: MathMethods.*.Case[Left, Right]): methodCase.Result =
-      MathMethods.*(left, right)
+    @inline
+    def *[Operand1](operand1: Operand1)(
+        implicit methodCase: MathMethods.*.Case[Operand0, Operand1]): methodCase.Result =
+      methodCase(operand0, operand1)
 
-    def /[Right](right: Right)(implicit methodCase: MathMethods./.Case[Left, Right]): methodCase.Result =
-      MathMethods./(left, right)
+    @inline
+    def /[Operand1](operand1: Operand1)(
+        implicit methodCase: MathMethods./.Case[Operand0, Operand1]): methodCase.Result =
+      methodCase(operand0, operand1)
   }
 
   object MathFunctions {
 
-    object log extends TapeTaskPoly1
-    object exp extends TapeTaskPoly1
-    object abs extends TapeTaskPoly1
-    object max extends TapeTaskPoly2
-    object min extends TapeTaskPoly2
+    object log extends ToTapeTask.Poly1
+    object exp extends ToTapeTask.Poly1
+    object abs extends ToTapeTask.Poly1
+    object max extends ToTapeTask.Poly2
+    object min extends ToTapeTask.Poly2
 
   }
 
