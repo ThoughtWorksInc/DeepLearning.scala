@@ -6,11 +6,13 @@ import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.raii._
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 
-import scalaz.{-\/, Applicative, Bind, EitherT, Functor, Id, Monoid, Nondeterminism, \/, \/-}
+import scalaz.{-\/, @@, Applicative, Monoid, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism._
 import com.thoughtworks.raii.Shared._
 
+import Future._
+import scalaz.Tags.Parallel
 import scalaz.syntax.all._
 
 /**
@@ -83,7 +85,17 @@ object TapeTaskFactory {
           computeForward: (Data0,
                            Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])
         : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
-        Nondeterminism[RAIITask].both(operand0, operand1).flatMap { pair =>
+
+        import com.thoughtworks.raii.EitherTNondeterminism._
+        import com.thoughtworks.raii.ResourceFactoryT.resourceFactoryTParallelApplicative
+
+        val parallelTuple =
+          Applicative[Lambda[x => RAIITask[x] @@ Parallel]]
+            .tuple2(Parallel(operand0), Parallel(operand1))
+
+        val tuple = Parallel.unwrap(parallelTuple)
+
+        tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
           val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>
             computeForward(upstream0.data, upstream1.data).get.map {
@@ -93,11 +105,13 @@ object TapeTaskFactory {
                 new Output[OutputData, OutputDelta](forwardData) {
                   override def release(): Future[Unit] = {
                     val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
-                    Future.futureInstance.mapBoth(
-                      upstream0.backward(upstream0DeltaFuture),
-                      upstream1.backward(upstream1DeltaFuture)
-                    ) { (_: Unit, _: Unit) =>
-                      ()
+                    Parallel.unwrap {
+                      Future.futureParallelApplicativeInstance.apply2(
+                        Parallel(upstream0.backward(upstream0DeltaFuture)),
+                        Parallel(upstream1.backward(upstream1DeltaFuture))
+                      ) { (_: Unit, _: Unit) =>
+                        ()
+                      }
                     }
                   }
                 }
