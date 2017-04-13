@@ -154,7 +154,7 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
     p.future
   }
 
-  "Plus with Predict -- use for" in {
+  "Predict -- use for" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 1.0f
     }
@@ -162,7 +162,8 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
     val weight: Weight = 1.0f.toWeight
 
     def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      1.0f + input + weight + 4.0f
+      10.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
+      //10.0f - (input - weight + 4.0f) //6
     }
 
     def trainMyNetwork(inputData: Float): Task[Float] = {
@@ -171,7 +172,7 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
 
     @monadic[Task]
     val t5: Task[Unit] = {
-      for (_ <- (1 to 7): Iterable[Int]) {
+      for (_ <- 1 to 6) {
         trainMyNetwork(1.0f).each
       }
     }
@@ -191,6 +192,7 @@ final class DifferentiableFloatSpec extends AsyncFreeSpec with Matchers with Ins
           case -\/(e) => throw e
           case \/-(loss) =>
             loss should be(0.0f)
+            weight.data should be(-5)
         }
       }
     }

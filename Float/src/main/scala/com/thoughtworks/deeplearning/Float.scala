@@ -93,7 +93,7 @@ object Float {
   }
 
   private implicit object FloatMonoid extends Monoid[Float] {
-    override def zero: Float = 0.0f
+    override def zero: Float = the[Numeric[Float]].zero
 
     override def append(f1: Float, f2: => Float): Float = f1 + f2
   }
@@ -108,6 +108,60 @@ object Float {
           val computeBackward = { outputDelta: Float =>
             val delta0Future = RAIITask.now(outputDelta)
             val delta1Future = RAIITask.now(outputDelta)
+            (delta0Future, delta1Future)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit val `Float-Float`
+    : PolyMethods.-.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyMethods.-.at { (operand0, operand1) =>
+      TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        Task.delay {
+          val outputData = data0 - data1
+          val computeBackward = { outputDelta: Float =>
+            val delta0Future = RAIITask.now(outputDelta)
+            val delta1Future = RAIITask.now(-outputDelta)
+            (delta0Future, delta1Future)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit val `Float*Float`
+    : PolyMethods.*.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyMethods.*.at { (operand0, operand1) =>
+      TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        Task.delay {
+          val outputData = data0 * data1
+          val computeBackward = { outputDelta: Float =>
+            val delta0Future = RAIITask.now(outputDelta * data1)
+            val delta1Future = RAIITask.now(outputDelta * data0)
+            (delta0Future, delta1Future)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit val `Float/Float`
+    : PolyMethods./.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyMethods./.at { (operand0, operand1) =>
+      TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        Task.delay {
+          val outputData = data0 / data1
+          val computeBackward = { outputDelta: Float =>
+            val delta0Future = RAIITask.now(outputDelta / data1)
+            val delta1Future = RAIITask.now(-data0 * outputDelta / (data1 * data1))
             (delta0Future, delta1Future)
           }
           (outputData, computeBackward)
