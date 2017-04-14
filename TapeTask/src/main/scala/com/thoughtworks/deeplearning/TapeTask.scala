@@ -1,10 +1,7 @@
 package com.thoughtworks.deeplearning
-import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
-import com.thoughtworks.raii.ResourceFactoryT.ResourceT
-import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
+import com.thoughtworks.raii.RAIITask
 
-import scalaz.{EitherT, \/, \/-}
-import scalaz.concurrent.{Future, Task}
+import scalaz.concurrent.Task
 
 object TapeTask {
 

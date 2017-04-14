@@ -1,14 +1,11 @@
 package com.thoughtworks.deeplearning
 
-import java.util.concurrent.ExecutorService
-
-import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.raii._
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 
 import scalaz.{-\/, @@, Applicative, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
-import com.thoughtworks.raii.EitherTNondeterminism._
+import com.thoughtworks.raii.EitherTNondeterminism.eitherTParallelApplicative
 import com.thoughtworks.raii.Shared._
 
 import Future._
