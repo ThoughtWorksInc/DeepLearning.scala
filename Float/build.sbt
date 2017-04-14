@@ -5,3 +5,5 @@ libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 libraryDependencies += "org.scalaz" %% "scalaz-effect" % "7.2.10" % Test
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")

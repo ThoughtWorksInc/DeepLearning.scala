@@ -6,12 +6,13 @@ import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.raii._
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 
-import scalaz.{-\/, @@, Applicative, Monoid, \/, \/-}
+import scalaz.{-\/, @@, Applicative, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism._
 import com.thoughtworks.raii.Shared._
 
 import Future._
+import scala.util.control.NoStackTrace
 import scalaz.Tags.Parallel
 import scalaz.syntax.all._
 
@@ -77,6 +78,30 @@ object TapeTaskFactory {
   }
 
   object BinaryTapeTaskFactory {
+
+    /** An exception that contains multiple Throwables. */
+    final case class MultipleException(throwableSet: Set[Throwable])
+        extends Exception("Multiple exceptions found")
+        with NoStackTrace {
+      override def toString: String = throwableSet.toString()
+    }
+
+    implicit def throwableSemigroup = new Semigroup[Throwable] {
+      override def append(f1: Throwable, f2: => Throwable): Throwable =
+        f1 match {
+          case MultipleException(exceptionSet1) =>
+            f2 match {
+              case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
+              case _: Throwable => MultipleException(exceptionSet1 + f2)
+            }
+          case _: Throwable =>
+            f2 match {
+              case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
+              case _: Throwable => MultipleException(Set(f1, f2))
+            }
+        }
+    }
+
     final class MonoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid]
         extends BinaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
@@ -86,7 +111,6 @@ object TapeTaskFactory {
                            Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])
         : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
 
-        import com.thoughtworks.raii.EitherTNondeterminism._
         import com.thoughtworks.raii.ResourceFactoryT.resourceFactoryTParallelApplicative
 
         val parallelTuple =
