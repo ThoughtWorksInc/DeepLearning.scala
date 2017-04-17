@@ -11,6 +11,7 @@ import com.thoughtworks.deeplearning.Float.toFloatTapeTask
 import com.thoughtworks.deeplearning.TapeTask.train
 import com.thoughtworks.deeplearning.TapeTask.predict
 import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.MultipleException
+import com.thoughtworks.deeplearning.Logger.defaultLogger
 
 import scala.concurrent.Promise
 import scalaz.concurrent.{Future, Task}

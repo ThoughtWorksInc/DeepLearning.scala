@@ -10,17 +10,6 @@ import scalaz.concurrent.Future
   */
 trait Tape {
 
-  // TODO: logging
-  protected final def logged(raiiTask: RAIITask[Unit]): Future[Unit] = {
-    raiiTask.run.run.flatMap {
-      case -\/(e) =>
-        e.printStackTrace()
-        Future.now(())
-      case \/-(()) =>
-        Future.now(())
-    }
-  }
-
   type Data
   type Delta
 

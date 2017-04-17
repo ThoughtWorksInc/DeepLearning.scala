@@ -3,15 +3,17 @@ package com.thoughtworks.deeplearning
 import com.thoughtworks.raii._
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 
-import scalaz.{-\/, @@, Applicative, Monoid, Semigroup, \/, \/-}
+import scalaz.{-\/, @@, Applicative, EitherT, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism.eitherTParallelApplicative
 import com.thoughtworks.raii.Shared._
+
 import scala.language.existentials
 import Future._
 import scala.util.control.NoStackTrace
 import scalaz.Tags.Parallel
 import scalaz.syntax.all._
+import scala.util.control.NonFatal
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -23,20 +25,21 @@ object TapeTaskFactory {
                                                                     operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0,
                        Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])(
-      implicit binaryTapeTaskFactory: BinaryTapeTaskFactory[OutputData, OutputDelta])
-    : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
+      implicit binaryTapeTaskFactory: BinaryTapeTaskFactory[OutputData, OutputDelta],
+      logger: Logger): RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
     binaryTapeTaskFactory(operand0, operand1)(computeForward)
   }
 
   @inline
   def unary[Data, Delta, OutputData, OutputDelta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
       computeForward: (Data) => Task[(OutputData, OutputDelta => RAIITask[_ <: Delta])])(
-      implicit unaryTapeTaskFactory: UnaryTapeTaskFactory[OutputData, OutputDelta])
-    : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
+      implicit unaryTapeTaskFactory: UnaryTapeTaskFactory[OutputData, OutputDelta],
+      logger: Logger): RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
     unaryTapeTaskFactory(operand)(computeForward)
   }
 
-  private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)
+  private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)(
+      implicit logger: Logger)
       extends Tape
       with ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
 
@@ -48,11 +51,19 @@ object TapeTaskFactory {
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
 
     final override def backward[CovariantDelta <: OutputDelta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
-      logged(deltaFuture.map { delta =>
+      val eitherTRAIIFuture: EitherT[RAIIFuture, Throwable, Unit] = deltaFuture.map { delta =>
         synchronized {
           deltaAccumulator |+|= delta
         }
-      })
+      }
+
+      eitherTRAIIFuture.run.run.flatMap {
+        case -\/(e) =>
+          logger.handleBackwardException(e)
+          Future.now(())
+        case \/-(()) =>
+          Future.now(())
+      }
     }
 
   }
@@ -62,16 +73,16 @@ object TapeTaskFactory {
     def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
                                             operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
         computeForward: (Data0,
-                         Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])
-      : RAIITask[Tape.Aux[OutputData, OutputDelta]]
+                         Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])(
+        implicit logger: Logger): RAIITask[Tape.Aux[OutputData, OutputDelta]]
 
   }
 
   trait UnaryTapeTaskFactory[OutputData, OutputDelta] {
 
     def apply[Data, Delta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
-        computeForward: (Data) => Task[(OutputData, OutputDelta => RAIITask[_ <: Delta])])
-      : RAIITask[Tape.Aux[OutputData, OutputDelta]]
+        computeForward: (Data) => Task[(OutputData, OutputDelta => RAIITask[_ <: Delta])])(
+        implicit logger: Logger): RAIITask[Tape.Aux[OutputData, OutputDelta]]
   }
 
   object BinaryTapeTaskFactory {
@@ -104,9 +115,10 @@ object TapeTaskFactory {
       @inline
       override def apply[Data0, Delta0, Data1, Delta1](operand0: RAIITask[_ <: Tape.Aux[Data0, Delta0]],
                                                        operand1: RAIITask[_ <: Tape.Aux[Data1, Delta1]])(
-          computeForward: (Data0,
-                           Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])
-        : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
+          computeForward: (
+              Data0,
+              Data1) => Task[(OutputData, OutputDelta => (RAIITask[_ <: Delta0], RAIITask[_ <: Delta1]))])(
+          implicit logger: Logger): RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
 
         import com.thoughtworks.raii.ResourceFactoryT.resourceFactoryTParallelApplicative
 
@@ -155,8 +167,8 @@ object TapeTaskFactory {
         extends UnaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
       override def apply[Data, Delta](operand: RAIITask[_ <: Tape.Aux[Data, Delta]])(
-          computeForward: Data => Task[(OutputData, OutputDelta => RAIITask[_ <: Delta])])
-        : RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
+          computeForward: Data => Task[(OutputData, OutputDelta => RAIITask[_ <: Delta])])(
+          implicit logger: Logger): RAIITask[Tape.Aux[OutputData, OutputDelta]] = {
         operand.flatMap {
           case (upstream) =>
             val resource: RAIIFuture[Throwable \/ Tape.Aux[OutputData, OutputDelta]] = { () =>

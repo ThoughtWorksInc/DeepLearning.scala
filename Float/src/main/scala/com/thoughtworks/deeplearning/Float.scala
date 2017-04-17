@@ -6,7 +6,7 @@ import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import shapeless.the
 
-import scalaz.{Applicative, Monoid, \/, \/-}
+import scalaz.{-\/, Applicative, Monoid, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 
 /**
@@ -57,18 +57,26 @@ object Float {
 
   }
 
-  final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory) extends Tape {
+  final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory, logger: Logger) extends Tape {
     private val optimizer: Optimizer = optimizerFactory.FloatOptimizer(this)
 
     override type Data = Float
     override type Delta = Float
 
     override def backward[CovariantDelta <: Delta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
-      logged(deltaFuture.map { delta =>
+      val eitherTRAIIFuture = deltaFuture.map { delta =>
         synchronized {
           data = optimizer.updateFloat(data, delta)
         }
-      })
+      }
+
+      eitherTRAIIFuture.run.run.flatMap {
+        case -\/(e) =>
+          logger.handleBackwardException(e)
+          Future.now(())
+        case \/-(()) =>
+          Future.now(())
+      }
     }
   }
 
@@ -99,7 +107,7 @@ object Float {
   }
 
   @inline
-  implicit val `Float+Float`
+  implicit def `Float+Float`(implicit logger: Logger)
     : PolyMethods.+.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods.+.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -117,7 +125,7 @@ object Float {
   }
 
   @inline
-  implicit val `Float-Float`
+  implicit def `Float-Float`(implicit logger: Logger)
     : PolyMethods.-.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods.-.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -135,7 +143,7 @@ object Float {
   }
 
   @inline
-  implicit val `Float*Float`
+  implicit def `Float*Float`(implicit logger: Logger)
     : PolyMethods.*.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods.*.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -153,7 +161,7 @@ object Float {
   }
 
   @inline
-  implicit val `Float/Float`
+  implicit def `Float/Float`(implicit logger: Logger)
     : PolyMethods./.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods./.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
