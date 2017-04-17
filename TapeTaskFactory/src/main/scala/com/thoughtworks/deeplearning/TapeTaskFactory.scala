@@ -7,7 +7,7 @@ import scalaz.{-\/, @@, Applicative, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.EitherTNondeterminism.eitherTParallelApplicative
 import com.thoughtworks.raii.Shared._
-
+import scala.language.existentials
 import Future._
 import scala.util.control.NoStackTrace
 import scalaz.Tags.Parallel
@@ -47,7 +47,7 @@ object TapeTaskFactory {
     @volatile
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
 
-    final override def backward(deltaFuture: RAIITask[_ <: OutputDelta]): Future[Unit] = {
+    final override def backward[CovariantDelta <: OutputDelta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
       logged(deltaFuture.map { delta =>
         synchronized {
           deltaAccumulator |+|= delta

@@ -63,7 +63,7 @@ object Float {
     override type Data = Float
     override type Delta = Float
 
-    override def backward(deltaFuture: RAIITask[_ <: Delta]): Future[Unit] = {
+    override def backward[CovariantDelta <: Delta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
       logged(deltaFuture.map { delta =>
         synchronized {
           data = optimizer.updateFloat(data, delta)

@@ -25,7 +25,7 @@ trait Tape {
   type Delta
 
   def data: Data
-  def backward(delta: RAIITask[_ <: Delta]): Future[Unit]
+  def backward[CovariantDelta <: Delta](outputDelta: RAIITask[CovariantDelta]): Future[Unit]
 
   /** @see https://github.com/scala/bug/issues/10251 */
   @inline private[deeplearning] final def workaround10251: {
@@ -45,7 +45,7 @@ object Tape {
     override type Data = Data0
     override type Delta = Any
 
-    override def backward(delta: RAIITask[_ <: Delta]): Future[Unit] = Future.now(())
+    override def backward[OutputDelta <: Delta](outputDelta: RAIITask[OutputDelta]): Future[Unit] = Future.now(())
   }
 
 }

@@ -9,7 +9,9 @@ import com.thoughtworks.raii.RAIITask
 import org.lwjgl.BufferUtils
 import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}
 import com.thoughtworks.each.Monadic._
+
 import scala.concurrent.Promise
+import scalaz.concurrent.Future
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -61,6 +63,8 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
     throwableMonadic[RAIITask] {
       val layer = layerTask.each
       val outputTape = layer(1, Map.empty).each
+      val delta = RAIITask.managed(context.createBuffer[Float](1))
+      RAIITask.unmanaged(outputTape.backward(delta)).each
       val f = BufferUtils.createFloatBuffer(1)
       val event = RAIITask.managed(commandQueue.enqueueReadBuffer(outputTape.data, f)).each
       RAIITask.unmanaged(event.waitForComplete()).each

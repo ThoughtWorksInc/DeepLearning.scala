@@ -1,5 +1,6 @@
 parallelExecution in Global := false
 
+// TODO: Rename to OpenCLLayer
 lazy val DifferentiableKernel =
   project.dependsOn(
     OpenCL,

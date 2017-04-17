@@ -26,6 +26,8 @@ scalaOrganization := "org.typelevel"
 
 scalacOptions += "-Yliteral-types"
 
-libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.0"
+libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
