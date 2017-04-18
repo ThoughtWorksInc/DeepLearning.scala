@@ -40,9 +40,33 @@ object DifferentiableKernel {
       type Delta = Delta0
     }
   }
-  object DifferentiableExpression {
+  object OpenCLLayer {
 
-    final case class FloatLiteral(data: Float) extends DifferentiableExpression {
+    final case class Reciprocal[OutputElementData0, OutputElementDelta0](
+        operand0: OpenCLLayer
+    ) extends OpenCLLayer {
+      override type OutputElementDelta = OutputElementDelta0
+      override type OutputElementData = OutputElementData0
+
+      override def inputMetadataMap: Map[Any, InputMetadata] = operand0.inputMetadataMap
+
+      override def outputDataMemory: Memory[OutputElementData0] = ???
+
+      override def outputDeltaMemory: Memory[OutputElementDelta0] = ???
+
+      override def outputDataType: DslType = ???
+
+      override def outputDeltaType: DslType = ???
+
+      override def forward: DslExpression = ???
+
+      override def backward(outputDelta: DslExpression): Map[Any, DslExpression] = {
+        //operand0.backward(upstreamDelta(outputDelta))
+        ???
+      }
+    }
+
+    final case class FloatLiteral(data: Float) extends OpenCLLayer {
 
       override type OutputElementDelta = Float
       override type OutputElementData = Float
@@ -64,17 +88,17 @@ object DifferentiableKernel {
       override def backward(outputDelta: DslExpression): Map[Any, DslExpression] = Map.empty
     }
 
-    private[DifferentiableExpression] final val OutputDataId = new AnyRef
-    private[DifferentiableExpression] final val OutputDeltaId = new AnyRef
-    @inline private[DifferentiableExpression] final val ForwardKernelName = "forward"
-    @inline private[DifferentiableExpression] final def backwardKernelName(index: Int) = raw"""backward_$index"""
-    private[DifferentiableExpression] type Setter[-OutputData] = (Kernel, Map[Any, Tape]) => Unit
-    private[DifferentiableExpression] val EmptySetter: Setter[Any] = (kernel, input) => ()
+    private[OpenCLLayer] final val OutputDataId = new AnyRef
+    private[OpenCLLayer] final val OutputDeltaId = new AnyRef
+    @inline private[OpenCLLayer] final val ForwardKernelName = "forward"
+    @inline private[OpenCLLayer] final def backwardKernelName(index: Int) = raw"""backward_$index"""
+    private[OpenCLLayer] type Setter[-OutputData] = (Kernel, Map[Any, Tape]) => Unit
+    private[OpenCLLayer] val EmptySetter: Setter[Any] = (kernel, input) => ()
 
   }
 
-  trait DifferentiableExpression {
-    import DifferentiableExpression._
+  trait OpenCLLayer {
+    import OpenCLLayer._
 
     def inputMetadataMap: Map[Any, InputMetadata]
 

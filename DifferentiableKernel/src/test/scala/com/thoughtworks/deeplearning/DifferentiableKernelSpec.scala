@@ -4,7 +4,7 @@ import org.lwjgl.opencl.{CL10, CL12, CL20}
 import CL10._
 import CL12._
 import CL20._
-import com.thoughtworks.deeplearning.DifferentiableKernel.DifferentiableExpression
+import com.thoughtworks.deeplearning.DifferentiableKernel.OpenCLLayer
 import com.thoughtworks.raii.RAIITask
 import org.lwjgl.BufferUtils
 import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}
@@ -56,8 +56,11 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
           }
         )
       )
+    val differentiableKernel = {
+      OpenCLLayer.FloatLiteral(42.0f)
+    }
     val layerTask: RAIITask[(Int, Map[Any, Tape]) => RAIITask[Tape.Aux[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]]] =
-      DifferentiableExpression.FloatLiteral(42.0f).compile(context, device, commandQueue)
+      differentiableKernel.compile(context, device, commandQueue)
 
     val p = Promise[Assertion]
     throwableMonadic[RAIITask] {
