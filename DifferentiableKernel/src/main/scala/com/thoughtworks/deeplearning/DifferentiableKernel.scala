@@ -57,9 +57,9 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
 
     def deltaMemory: Memory[Delta]
 
-    def dataType: DslType
+    def dataType: StaticDslType[Data]
 
-    def deltaType: DslType
+    def deltaType: StaticDslType[Delta]
 
     private[DifferentiableKernel] def self: InputMetadata.Aux[Data, Delta] = this
   }
