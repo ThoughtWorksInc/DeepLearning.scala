@@ -78,7 +78,7 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
     )
 
     private[OpenCLLayer] final val OutputId = new AnyRef
-    @inline private[OpenCLLayer] final val ForwardKernelName = "data"
+    @inline private[OpenCLLayer] final val ForwardKernelName = "forward"
     @inline private[OpenCLLayer] final def backwardKernelName(index: Int) = raw"""backward_$index"""
     private[OpenCLLayer] type Setter[-OutputData] = (Kernel, Map[Any, Tape]) => Unit
     private[OpenCLLayer] val EmptySetter: Setter[Any] = (kernel, input) => ()
