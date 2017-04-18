@@ -86,7 +86,7 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
   }
 
   final case class OpenCLLayer[OutputElementData, OutputElementDelta](
-      inputMetadataMap: Map[Any, InputMetadata],
+      inputMetadataMap: Map[Any, InputMetadata], // TODO: replace Maps to shapeless records
       data: DslExpression,
       jacobian: Map[Any, DslExpression]
   ) {
