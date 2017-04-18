@@ -77,6 +77,18 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
       Map.empty
     )
 
+    def intLiteral(data: Int): OpenCLLayer[Int, Float] = OpenCLLayer[Int, Float](
+      Map.empty,
+      DslExpression.IntLiteral(data),
+      Map.empty
+    )
+
+    def getGlobalId(operand: OpenCLLayer[Int, Float]): OpenCLLayer[Int, Float] = OpenCLLayer[Int, Float](
+      operand.inputMetadataMap,
+      DslExpression.GetGlobalId(operand.data),
+      Map.empty
+    )
+
     private[OpenCLLayer] final val OutputId = new AnyRef
     @inline private[OpenCLLayer] final val ForwardKernelName = "forward"
     @inline private[OpenCLLayer] final def backwardKernelName(index: Int) = raw"""backward_$index"""
