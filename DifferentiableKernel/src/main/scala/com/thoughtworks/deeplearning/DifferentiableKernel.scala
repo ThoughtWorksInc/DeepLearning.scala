@@ -3,21 +3,45 @@ package com.thoughtworks.deeplearning
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
+import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.RAIITask
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
-import scalaz.Monoid
+import scalaz.{Monad, Monoid}
 import scalaz.Tags.Parallel
 import scalaz.concurrent.Future
 import scalaz.concurrent.Future.{ParallelFuture, futureParallelApplicativeInstance}
 import scalaz.std.anyVal._
 import scalaz.std.iterable._
 import scalaz.syntax.foldable._
+import scala.language.higherKinds
 
 object DifferentiableKernel {
+
+  trait DslTypes {
+    type StaticDslType[A] <: DslType
+
+    implicit def dslDouble: StaticDslType[Double]
+    implicit def dslFloat: StaticDslType[Float]
+    implicit def dslInt: StaticDslType[Int]
+  }
+
+  @inline
+  val dslTypes: DslTypes = new DslTypes {
+    @inline
+    override final def dslDouble = DslDouble
+
+    @inline
+    override final def dslFloat = DslFloat
+
+    @inline
+    override final def dslInt = DslInt
+
+    override type StaticDslType[A] = DslType
+  }
 
   trait InputMetadata {
 
@@ -42,92 +66,42 @@ object DifferentiableKernel {
   }
   object OpenCLLayer {
 
-    final case class Reciprocal[OutputElementData0, OutputElementDelta0](
-        operand0: OpenCLLayer
-    ) extends OpenCLLayer {
-      override type OutputElementDelta = OutputElementDelta0
-      override type OutputElementData = OutputElementData0
+    import dslTypes._
+    def floatLiteral(data: Float): OpenCLLayer[Float, Float] = OpenCLLayer[Float, Float](
+      Map.empty,
+      DslExpression.FloatLiteral(data),
+      Map.empty
+    )
 
-      override def inputMetadataMap: Map[Any, InputMetadata] = operand0.inputMetadataMap
-
-      override def outputDataMemory: Memory[OutputElementData0] = ???
-
-      override def outputDeltaMemory: Memory[OutputElementDelta0] = ???
-
-      override def outputDataType: DslType = ???
-
-      override def outputDeltaType: DslType = ???
-
-      override def forward: DslExpression = ???
-
-      override def backward(outputDelta: DslExpression): Map[Any, DslExpression] = {
-        //operand0.backward(upstreamDelta(outputDelta))
-        ???
-      }
-    }
-
-    final case class FloatLiteral(data: Float) extends OpenCLLayer {
-
-      override type OutputElementDelta = Float
-      override type OutputElementData = Float
-
-      override def inputMetadataMap: Map[Any, InputMetadata] = Map.empty
-
-      override def outputDataMemory: Memory[OutputElementData] = implicitly
-
-      override def outputDeltaMemory: Memory[OutputElementDelta] = implicitly
-
-      override def outputDataType: DslType = DslType.DslFloat
-
-      override def outputDeltaType: DslType = DslType.DslFloat
-
-      override def forward: DslExpression = {
-        DslExpression.FloatLiteral(data)
-      }
-
-      override def backward(outputDelta: DslExpression): Map[Any, DslExpression] = Map.empty
-    }
-
-    private[OpenCLLayer] final val OutputDataId = new AnyRef
-    private[OpenCLLayer] final val OutputDeltaId = new AnyRef
-    @inline private[OpenCLLayer] final val ForwardKernelName = "forward"
+    private[OpenCLLayer] final val OutputId = new AnyRef
+    @inline private[OpenCLLayer] final val ForwardKernelName = "data"
     @inline private[OpenCLLayer] final def backwardKernelName(index: Int) = raw"""backward_$index"""
     private[OpenCLLayer] type Setter[-OutputData] = (Kernel, Map[Any, Tape]) => Unit
     private[OpenCLLayer] val EmptySetter: Setter[Any] = (kernel, input) => ()
 
   }
 
-  trait OpenCLLayer {
+  final case class OpenCLLayer[OutputElementData, OutputElementDelta](
+      inputMetadataMap: Map[Any, InputMetadata],
+      data: DslExpression,
+      jacobian: Map[Any, DslExpression]
+  ) {
     import OpenCLLayer._
-
-    def inputMetadataMap: Map[Any, InputMetadata]
-
-    type OutputElementData
-    type OutputElementDelta
-
-    def outputDataMemory: Memory[OutputElementData]
-
-    def outputDeltaMemory: Memory[OutputElementDelta]
-
-    def outputDataType: DslType
-
-    def outputDeltaType: DslType
-
-//    type CacheExpression = Seq[DslExpression]
-    def forward: DslExpression
-
-    def backward(outputDelta: DslExpression /*, cache: Seq[DslExpression]*/ ): Map[Any, DslExpression]
 
     /**
       * @param executor on which the compilation runs
       */
     def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue)(
-        implicit executor: ExecutionContext): RAIITask[(Int, Map[Any, Tape]) => RAIITask[
+        implicit outputDataMemory: Memory[OutputElementData],
+        outputDeltaMemory: Memory[OutputElementDelta],
+        outputDataType: dslTypes.StaticDslType[OutputElementData],
+        outputDeltaType: dslTypes.StaticDslType[OutputElementDelta],
+        executor: ExecutionContext): RAIITask[(Int, Map[Any, Tape]) => RAIITask[
       Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
 
       RAIITask.jump().each
 
-      val forwardOutputParameter = Parameter(OutputDataId, DslType.DslBuffer(outputDataType))
+      val forwardOutputParameter = Parameter(OutputId, DslType.DslBuffer(outputDataType))
 
       val (forwardParameters, inputSetter) = inputMetadataMap.view.zipWithIndex
         .foldRight[(List[Parameter], Setter[OutputElementData])]((forwardOutputParameter :: Nil, EmptySetter)) {
@@ -148,7 +122,7 @@ object DifferentiableKernel {
           // TODO: Support n-dimension Array
           DslExpression.GetGlobalId(DslExpression.IntLiteral(0))
         }
-        val effect = DslEffect.Update(DslExpression.Identifier(OutputDataId), outputIndex, forward, outputDataType)
+        val effect = DslEffect.Update(DslExpression.Identifier(OutputId), outputIndex, data, outputDataType)
         KernelDefinition(ForwardKernelName, forwardParameters, Seq(effect))
       }
 
@@ -158,13 +132,13 @@ object DifferentiableKernel {
       val forwardKernelTask = RAIITask.managed(forwordProgram.createKernel(ForwardKernelName))
 
       val backwardPrograms: Map[Any, RAIITask[Kernel]] = {
-        backward(DslExpression.Identifier(OutputDeltaId)).view.zipWithIndex
+        jacobian.view.zipWithIndex
           .foldLeft(RAIITask.delay(Map.empty[Any, RAIITask[Kernel]])) {
             case (accumulator, ((id, backwardExpression), index)) =>
               throwableMonadic[RAIITask] {
                 val kernelName = backwardKernelName(index)
                 val backwardParameters = Seq(
-                  Parameter(OutputDeltaId, DslType.DslBuffer(outputDeltaType)),
+                  Parameter(OutputId, DslType.DslBuffer(outputDeltaType)),
                   Parameter(id, inputMetadataMap(id).deltaType)
                 ) // TODO: cache
                 def backwardKernelDefinition: KernelDefinition = {
@@ -173,10 +147,12 @@ object DifferentiableKernel {
                     // TODO: Support n-dimension Array
                     DslExpression.GetGlobalId(DslExpression.IntLiteral(0))
                   }
-                  val effect = DslEffect.Update(DslExpression.Identifier(id),
-                                                backwardIndex,
-                                                backwardExpression,
-                                                inputMetadataMap(id).deltaType)
+                  val effect = DslEffect.Update(
+                    DslExpression.Identifier(id),
+                    backwardIndex,
+                    DslExpression.Times(DslExpression.Identifier(OutputId), backwardExpression, outputDeltaType),
+                    inputMetadataMap(id).deltaType
+                  )
                   KernelDefinition(kernelName, backwardParameters, Seq(effect))
                 }
                 val backwardSource =

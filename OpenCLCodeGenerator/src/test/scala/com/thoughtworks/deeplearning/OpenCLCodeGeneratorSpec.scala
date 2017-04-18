@@ -30,7 +30,7 @@ final class OpenCLCodeGeneratorSpec extends FreeSpec with Matchers {
   def platformRank(platformId: Long, platformCapabilities: CLCapabilities): Unit = {}
   def deviceRank(deviceId: Long, deviceCapabilities: CLCapabilities): Unit = {}
 
-  "Add" in {
+  "Plus" in {
 
     val kernel = OpenCLCodeGenerator.KernelDefinition(
       "f",
@@ -40,7 +40,7 @@ final class OpenCLCodeGeneratorSpec extends FreeSpec with Matchers {
           DslExpression.Identifier('output),
           DslExpression.GetGlobalId(DslExpression.IntLiteral(0)),
           DslExpression.HCons(
-            DslExpression.Add(DslExpression.DoubleLiteral(1.5), DslExpression.DoubleLiteral(1.5), DslType.DslDouble),
+            DslExpression.Plus(DslExpression.DoubleLiteral(1.5), DslExpression.DoubleLiteral(1.5), DslType.DslDouble),
             DslExpression.HNilLiteral),
           DslType.DslStructure(List(DslType.DslDouble))
         ))

@@ -57,8 +57,9 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
         )
       )
     val differentiableKernel = {
-      OpenCLLayer.FloatLiteral(42.0f)
+      OpenCLLayer.floatLiteral(42.0f)
     }
+    import DifferentiableKernel.dslTypes._
     val layerTask: RAIITask[(Int, Map[Any, Tape]) => RAIITask[Tape.Aux[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]]] =
       differentiableKernel.compile(context, device, commandQueue)
 

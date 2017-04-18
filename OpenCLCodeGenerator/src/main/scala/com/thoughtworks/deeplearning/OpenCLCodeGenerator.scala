@@ -204,7 +204,7 @@ ${exportedFunctions.mkFastring}
       }
     }
 
-    final case class Add(operand1: DslExpression, operand2: DslExpression, dslType: DslType) extends DslExpression {
+    final case class Plus(operand1: DslExpression, operand2: DslExpression, dslType: DslType) extends DslExpression {
       override def toCode(context: Context): Code = {
         val name = context.freshName("plus")
         val typeReference = context.get(dslType)
@@ -212,6 +212,19 @@ ${exportedFunctions.mkFastring}
         Code(
           localDefinitions = fastraw"""
   $packedType $name = ${context.get(operand1).packed} + ${context.get(operand2).packed};""",
+          accessor = Packed(Fastring(name), typeReference.unpacked.length)
+        )
+      }
+    }
+
+    final case class Times(operand1: DslExpression, operand2: DslExpression, dslType: DslType) extends DslExpression {
+      override def toCode(context: Context): Code = {
+        val name = context.freshName("plus")
+        val typeReference = context.get(dslType)
+        val packedType = typeReference.packed
+        Code(
+          localDefinitions = fastraw"""
+  $packedType $name = ${context.get(operand1).packed} * ${context.get(operand2).packed};""",
           accessor = Packed(Fastring(name), typeReference.unpacked.length)
         )
       }
