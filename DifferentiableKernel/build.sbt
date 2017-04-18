@@ -28,6 +28,8 @@ scalacOptions += "-Yliteral-types"
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
+libraryDependencies += "com.chrisneveu" %% "macrame" % "1.2.5"
+
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")

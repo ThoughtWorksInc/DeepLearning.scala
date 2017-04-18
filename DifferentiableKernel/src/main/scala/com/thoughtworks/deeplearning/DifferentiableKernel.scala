@@ -7,6 +7,7 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslDouble, Dsl
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.RAIITask
+import macrame.delegate
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -19,29 +20,33 @@ import scalaz.std.iterable._
 import scalaz.syntax.foldable._
 import scala.language.higherKinds
 
-object DifferentiableKernel {
+private[deeplearning] trait DifferentiableKernelAbstractFunctions {
+  type StaticDslType[A] <: DslType
 
-  trait DslTypes {
-    type StaticDslType[A] <: DslType
-
-    implicit def dslDouble: StaticDslType[Double]
-    implicit def dslFloat: StaticDslType[Float]
-    implicit def dslInt: StaticDslType[Int]
-  }
+  implicit def dslDouble: StaticDslType[Double]
+  implicit def dslFloat: StaticDslType[Float]
+  implicit def dslInt: StaticDslType[Int]
+}
+object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
 
   @inline
-  val dslTypes: DslTypes = new DslTypes {
-    @inline
-    override final def dslDouble = DslDouble
+  @delegate
+  private[DifferentiableKernel] val abstractFunctions: DifferentiableKernelAbstractFunctions =
+    new DifferentiableKernelAbstractFunctions {
+      @inline
+      override final def dslDouble = DslDouble
 
-    @inline
-    override final def dslFloat = DslFloat
+      @inline
+      override final def dslFloat = DslFloat
 
-    @inline
-    override final def dslInt = DslInt
+      @inline
+      override final def dslInt = DslInt
 
-    override type StaticDslType[A] = DslType
-  }
+      override type StaticDslType[A] = DslType
+    }
+
+  // TODO: https://github.com/ClaireNeveu/macrame/issues/7
+  type StaticDslType[A] = abstractFunctions.StaticDslType[A]
 
   trait InputMetadata {
 
@@ -66,7 +71,6 @@ object DifferentiableKernel {
   }
   object OpenCLLayer {
 
-    import dslTypes._
     def floatLiteral(data: Float): OpenCLLayer[Float, Float] = OpenCLLayer[Float, Float](
       Map.empty,
       DslExpression.FloatLiteral(data),
@@ -94,8 +98,8 @@ object DifferentiableKernel {
     def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue)(
         implicit outputDataMemory: Memory[OutputElementData],
         outputDeltaMemory: Memory[OutputElementDelta],
-        outputDataType: dslTypes.StaticDslType[OutputElementData],
-        outputDeltaType: dslTypes.StaticDslType[OutputElementDelta],
+        outputDataType: StaticDslType[OutputElementData],
+        outputDeltaType: StaticDslType[OutputElementDelta],
         executor: ExecutionContext): RAIITask[(Int, Map[Any, Tape]) => RAIITask[
       Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
 
