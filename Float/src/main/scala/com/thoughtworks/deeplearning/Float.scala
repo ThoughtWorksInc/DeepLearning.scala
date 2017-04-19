@@ -1,7 +1,10 @@
 package com.thoughtworks.deeplearning
 
+import java.util.logging.{Level, Logger}
+
 import com.thoughtworks.raii.RAIITask
 import com.thoughtworks.deeplearning.Float.Optimizers.Optimizer
+import com.thoughtworks.deeplearning.LogRecords.{FloatWeightTracker, UncaughtExceptionDuringBackward}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import shapeless.the
@@ -57,7 +60,9 @@ object Float {
 
   }
 
-  final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory, logger: Logger) extends Tape {
+  final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory,
+                                           logger: Logger = Logger.getGlobal)
+      extends Tape {
     private val optimizer: Optimizer = optimizerFactory.FloatOptimizer(this)
 
     override type Data = Float
@@ -66,13 +71,16 @@ object Float {
     override def backward[CovariantDelta <: Delta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
       val eitherTRAIIFuture = deltaFuture.map { delta =>
         synchronized {
+          if (logger.isLoggable(Level.FINER)) {
+            logger.log(FloatWeightTracker(s"weight: $data, delta:$delta"))
+          }
           data = optimizer.updateFloat(data, delta)
         }
       }
 
       eitherTRAIIFuture.run.run.flatMap {
         case -\/(e) =>
-          logger.handleBackwardException(e)
+          logger.log(UncaughtExceptionDuringBackward(e, "An exception raised during backward"))
           Future.now(())
         case \/-(()) =>
           Future.now(())
@@ -81,7 +89,7 @@ object Float {
   }
 
   implicit final class ToWeightOps(value: Float) {
-    def toWeight(implicit optimizerFactory: OptimizerFactory): Weight = {
+    def toWeight(implicit optimizerFactory: OptimizerFactory, logger: Logger = Logger.getGlobal): Weight = {
       Weight(value)
     }
   }
@@ -96,7 +104,7 @@ object Float {
     def FloatOptimizer(weight: Weight): Optimizer
   }
 
-  implicit object trainableFloat extends Trainable[Float, Float] {
+  implicit object TrainableFloat extends Trainable[Float, Float] {
     override def apply(data: Float): RAIITask[Float] = RAIITask.now(the[Numeric[Float]].one)
   }
 
@@ -107,7 +115,7 @@ object Float {
   }
 
   @inline
-  implicit def `Float+Float`(implicit logger: Logger)
+  implicit def `Float+Float`(implicit logger: Logger = Logger.getGlobal)
     : PolyMethods.+.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods.+.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -125,7 +133,7 @@ object Float {
   }
 
   @inline
-  implicit def `Float-Float`(implicit logger: Logger)
+  implicit def `Float-Float`(implicit logger: Logger = Logger.getGlobal)
     : PolyMethods.-.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods.-.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -143,7 +151,7 @@ object Float {
   }
 
   @inline
-  implicit def `Float*Float`(implicit logger: Logger)
+  implicit def `Float*Float`(implicit logger: Logger = Logger.getGlobal)
     : PolyMethods.*.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods.*.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -161,7 +169,7 @@ object Float {
   }
 
   @inline
-  implicit def `Float/Float`(implicit logger: Logger)
+  implicit def `Float/Float`(implicit logger: Logger = Logger.getGlobal)
     : PolyMethods./.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
     PolyMethods./.at { (operand0, operand1) =>
       TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -177,4 +185,112 @@ object Float {
       }
     }
   }
+
+  @inline
+  implicit def `min(Float,Float)`(implicit logger: Logger = Logger.getGlobal)
+    : PolyFunctions.min.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyFunctions.min.at { (operand0, operand1) =>
+      TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        Task.delay {
+          val leftLessThenRight = data0 < data1
+          val outputData = if (leftLessThenRight) data0 else data1
+          val computeBackward = { outputDelta: Float =>
+            val zero = RAIITask.now(the[Numeric[Float]].zero)
+            val delta = RAIITask.now(outputDelta)
+            if (leftLessThenRight) (delta, zero) else (zero, delta)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit def `max(Float,Float)`(implicit logger: Logger = Logger.getGlobal)
+    : PolyFunctions.max.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyFunctions.max.at { (operand0, operand1) =>
+      TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        Task.delay {
+          val leftLessThenRight = data0 < data1
+          val outputData = if (leftLessThenRight) data1 else data0
+          val computeBackward = { outputDelta: Float =>
+            val zero = RAIITask.now(the[Numeric[Float]].zero)
+            val delta = RAIITask.now(outputDelta)
+            if (leftLessThenRight) (zero, delta) else (delta, zero)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit def `log(Float)`(implicit logger: Logger = Logger.getGlobal)
+    : PolyFunctions.log.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyFunctions.log.at { operand =>
+      TapeTaskFactory.unary(operand) { data =>
+        Task.delay {
+          val outputData = math.log(data).toFloat
+          val computeBackward = { outputDelta: Float =>
+            RAIITask.now(outputDelta / data)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit def `exp(Float)`(implicit logger: Logger = Logger.getGlobal)
+    : PolyFunctions.exp.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyFunctions.exp.at { operand =>
+      TapeTaskFactory.unary(operand) { data =>
+        Task.delay {
+          val outputData = math.exp(data).toFloat
+          val computeBackward = { outputDelta: Float =>
+            RAIITask.now(outputDelta * outputData)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  @inline
+  implicit def `abs(Float)`(implicit logger: Logger = Logger.getGlobal)
+    : PolyFunctions.abs.Case.Aux[RAIITask.Covariant[FloatTape], RAIITask[FloatTape]] = {
+    PolyFunctions.abs.at { operand =>
+      TapeTaskFactory.unary(operand) { data =>
+        Task.delay {
+          val isDataPositive = data >= 0
+          val outputData = if (isDataPositive) data else -data
+          val computeBackward = { outputDelta: Float =>
+            if (isDataPositive) RAIITask.now(outputDelta) else RAIITask.now(-outputDelta)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  final class FloatOps(operand: RAIITask.Covariant[FloatTape])(implicit logger: Logger = Logger.getGlobal) {
+    @inline
+    def unary_- : RAIITask[FloatTape] = {
+      TapeTaskFactory.unary(operand) { data =>
+        Task.delay {
+          val outputData = -data
+          val computeBackward = { outputDelta: Float =>
+            RAIITask.now(-outputDelta)
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+  }
+
+  implicit def toFloatOps(operand: RAIITask.Covariant[FloatTape])(
+      implicit logger: Logger = Logger.getGlobal): FloatOps = {
+    new FloatOps(operand)
+  }
+
 }
