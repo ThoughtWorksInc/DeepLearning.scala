@@ -40,8 +40,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   private def jump()(implicit executionContext: ExecutionContext): Task[Unit] = {
     Task.async { handler: ((Throwable \/ Unit) => Unit) =>
-      executionContext.execute { () =>
-        handler(\/-(()))
+      executionContext.execute {
+        new Runnable {
+          override def run(): Unit = handler(\/-(()))
+        }
       }
     }
   }
