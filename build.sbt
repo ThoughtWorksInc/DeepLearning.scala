@@ -90,6 +90,6 @@ lazy val unidoc = project
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-crossScalaVersions := Seq("2.11.8", "2.12.1")
+crossScalaVersions := Seq("2.11.11", "2.12.2")
 
 fork in ThisBuild in Test := true
