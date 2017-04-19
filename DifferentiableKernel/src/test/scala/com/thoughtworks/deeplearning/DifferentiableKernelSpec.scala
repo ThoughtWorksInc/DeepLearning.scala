@@ -11,7 +11,6 @@ import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}
 import com.thoughtworks.each.Monadic._
 
 import scala.concurrent.Promise
-import scalaz.concurrent.Future
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
