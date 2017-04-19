@@ -117,6 +117,14 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
       Map.empty
     )
 
+    def identifier[Data: Memory: StaticDslType, Delta: Memory: StaticDslType](
+        id: Any) /*(implicit multiplicationMonoid: Monoid[StaticDslExpression[Delta] @@ Multiplication])*/ =
+      OpenCLLayer[Data, Delta](
+        Map(id -> InputMetadata[Data, Delta]),
+        DslExpression.Identifier(id),
+        Map(id -> ??? /*Multiplication.unwrap(multiplicationMonoid.zero)*/ ) // TODO: delta for entire buffer
+      )
+
     private[OpenCLLayer] final val OutputId = new AnyRef
     @inline private[OpenCLLayer] final val ForwardKernelName = "forward"
     @inline private[OpenCLLayer] final def backwardKernelName(index: Int) = raw"""backward_$index"""

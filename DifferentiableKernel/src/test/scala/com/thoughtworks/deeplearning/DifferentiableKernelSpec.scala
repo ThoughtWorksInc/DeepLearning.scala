@@ -97,5 +97,19 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       }
 
     }
+
+    "When fill a buffer with another buffer" ignore {
+
+      val differentiableKernel = {
+        import OpenCLLayer._
+        import DifferentiableKernel._
+        identifier[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]('input)
+        getGlobalId(intLiteral(0))
+
+      }
+
+      ???
+    }
+
   }
 }
