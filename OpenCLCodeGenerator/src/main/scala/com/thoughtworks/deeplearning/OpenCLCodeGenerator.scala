@@ -204,6 +204,20 @@ ${exportedFunctions.mkFastring}
       }
     }
 
+    final case class GetElement(operand0: DslExpression, operand1: DslExpression, elementType: DslType)
+        extends DslExpression {
+      override def toCode(context: Context): Code = {
+        val name = context.freshName("getElement")
+        val typeReference = context.get(elementType)
+        val packedType = typeReference.packed
+        Code(
+          localDefinitions = fastraw"""
+  $packedType $name = ${context.get(operand0).packed}[${context.get(operand1).packed}];""",
+          accessor = Packed(Fastring(name), typeReference.unpacked.length)
+        )
+      }
+    }
+
     final case class Plus(operand0: DslExpression, operand1: DslExpression, dslType: DslType) extends DslExpression {
       override def toCode(context: Context): Code = {
         val name = context.freshName("plus")
