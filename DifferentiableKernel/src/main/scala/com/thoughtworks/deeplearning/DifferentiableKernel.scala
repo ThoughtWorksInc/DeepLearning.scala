@@ -1,9 +1,10 @@
 package com.thoughtworks.deeplearning
 
+import com.thoughtworks.deeplearning.DifferentiableKernel.abstractFunctions
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
-import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslDouble, DslFloat, DslInt}
+import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.RAIITask
@@ -11,8 +12,8 @@ import macrame.delegate
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
-import scalaz.{Monad, Monoid}
-import scalaz.Tags.Parallel
+import scalaz.{@@, Monad, Monoid}
+import scalaz.Tags.{Multiplication, Parallel}
 import scalaz.concurrent.Future
 import scalaz.concurrent.Future.{ParallelFuture, futureParallelApplicativeInstance}
 import scalaz.std.anyVal._
@@ -22,15 +23,17 @@ import scala.language.higherKinds
 
 private[deeplearning] trait DifferentiableKernelAbstractFunctions {
   type StaticDslType[A] <: DslType
+  type StaticDslExpression[A] <: DslExpression
 
   implicit def dslDouble: StaticDslType[Double]
   implicit def dslFloat: StaticDslType[Float]
   implicit def dslInt: StaticDslType[Int]
+  implicit def dslBuffer[Element: StaticDslType]: StaticDslType[OpenCL.Buffer[Element]]
 }
 object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
 
   @inline
-  @delegate
+//  @delegate
   private[DifferentiableKernel] val abstractFunctions: DifferentiableKernelAbstractFunctions =
     new DifferentiableKernelAbstractFunctions {
       @inline
@@ -43,10 +46,22 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
       override final def dslInt = DslInt
 
       override type StaticDslType[A] = DslType
-    }
+      override type StaticDslExpression[A] = DslExpression
 
+      override def dslBuffer[Element](implicit elementType: DslType): DslType = DslBuffer(elementType)
+    }
   // TODO: https://github.com/ClaireNeveu/macrame/issues/7
   type StaticDslType[A] = abstractFunctions.StaticDslType[A]
+  type StaticDslExpression[A] = abstractFunctions.StaticDslExpression[A]
+
+  override implicit def dslDouble: StaticDslType[Double] = abstractFunctions.dslDouble
+
+  override implicit def dslFloat: StaticDslType[Float] = abstractFunctions.dslFloat
+
+  override implicit def dslInt: StaticDslType[Int] = abstractFunctions.dslInt
+
+  override implicit def dslBuffer[Element: DifferentiableKernel.StaticDslType]: StaticDslType[OpenCL.Buffer[Element]] =
+    abstractFunctions.dslBuffer
 
   trait InputMetadata {
 
@@ -68,6 +83,19 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
       type Data = Data0
       type Delta = Delta0
     }
+    def apply[Data0: Memory: StaticDslType, Delta0: Memory: StaticDslType]: InputMetadata.Aux[Data0, Delta0] =
+      new InputMetadata {
+        override type Data = Data0
+        override type Delta = Delta0
+
+        override def dataMemory: Memory[Data0] = implicitly
+
+        override def deltaMemory: Memory[Delta0] = implicitly
+
+        override def dataType: StaticDslType[Data0] = implicitly
+
+        override def deltaType: StaticDslType[Delta0] = implicitly
+      }
   }
   object OpenCLLayer {
 
@@ -98,7 +126,7 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
   }
 
   final case class OpenCLLayer[OutputElementData, OutputElementDelta](
-      inputMetadataMap: Map[Any, InputMetadata], // TODO: replace Maps to shapeless records
+      inputMetadataMap: Map[Any, InputMetadata], // TODO: replace Maps to shapeless records and create proxy via RecordArgs
       data: DslExpression,
       jacobian: Map[Any, DslExpression]
   ) {
