@@ -9,6 +9,7 @@ import com.thoughtworks.raii.RAIITask
 import org.lwjgl.BufferUtils
 import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}
 import com.thoughtworks.each.Monadic._
+import shapeless.HNil
 
 import scala.concurrent.Promise
 
@@ -16,6 +17,8 @@ import scala.concurrent.Promise
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
+//  def compileNil(OpenCL.Context): Unit = {}
+
   "Given an new OpenCL context" - {
     val platform = OpenCL.platforms.head
 
@@ -68,8 +71,8 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = OpenCLLayer.compile(differentiableKernel, context, device, commandQueue).each
-                  val outputTape = layer(1, Map.empty).each
+                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+                  val outputTape = layer(1, HNil).each
                   val delta = RAIITask.managed(context.createBuffer[Float](1))
                   RAIITask.unmanaged(outputTape.backward(delta)).each
                   val f = BufferUtils.createFloatBuffer(1)
@@ -97,20 +100,20 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       }
 
     }
-
-    "When fill a buffer with another buffer" ignore {
-
-      val differentiableKernel = {
-        import OpenCLLayer._
-        import DifferentiableKernel._
-        import StaticDslType._
-        identifier[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]('input)
-        getGlobalId(intLiteral(0))
-
-      }
-
-      ???
-    }
+//
+//    "When fill a buffer with another buffer" ignore {
+//
+//      val differentiableKernel = {
+//        import OpenCLLayer._
+//        import DifferentiableKernel._
+//        import StaticDslType._
+//        identifier[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]('input)
+//        getGlobalId(intLiteral(0))
+//
+//      }
+//
+//      ???
+//    }
 
   }
 }
