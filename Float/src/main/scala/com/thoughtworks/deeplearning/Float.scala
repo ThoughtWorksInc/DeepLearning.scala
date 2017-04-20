@@ -141,7 +141,7 @@ object Float {
           val outputData = data0 - data1
           val computeBackward = { outputDelta: Float =>
             val delta0Future = RAIITask.now(outputDelta)
-            val delta1Future = RAIITask.now(-outputDelta)
+            val delta1Future = RAIITask.delay(-outputDelta)
             (delta0Future, delta1Future)
           }
           (outputData, computeBackward)
@@ -158,8 +158,8 @@ object Float {
         Task.delay {
           val outputData = data0 * data1
           val computeBackward = { outputDelta: Float =>
-            val delta0Future = RAIITask.now(outputDelta * data1)
-            val delta1Future = RAIITask.now(outputDelta * data0)
+            val delta0Future = RAIITask.delay(outputDelta * data1)
+            val delta1Future = RAIITask.delay(outputDelta * data0)
             (delta0Future, delta1Future)
           }
           (outputData, computeBackward)
@@ -176,8 +176,8 @@ object Float {
         Task.delay {
           val outputData = data0 / data1
           val computeBackward = { outputDelta: Float =>
-            val delta0Future = RAIITask.now(outputDelta / data1)
-            val delta1Future = RAIITask.now(-data0 * outputDelta / (data1 * data1))
+            val delta0Future = RAIITask.delay(outputDelta / data1)
+            val delta1Future = RAIITask.delay(-data0 * outputDelta / (data1 * data1))
             (delta0Future, delta1Future)
           }
           (outputData, computeBackward)
@@ -232,7 +232,7 @@ object Float {
         Task.delay {
           val outputData = math.log(data).toFloat
           val computeBackward = { outputDelta: Float =>
-            RAIITask.now(outputDelta / data)
+            RAIITask.delay(outputDelta / data)
           }
           (outputData, computeBackward)
         }
@@ -248,7 +248,7 @@ object Float {
         Task.delay {
           val outputData = math.exp(data).toFloat
           val computeBackward = { outputDelta: Float =>
-            RAIITask.now(outputDelta * outputData)
+            RAIITask.delay(outputDelta * outputData)
           }
           (outputData, computeBackward)
         }
@@ -265,7 +265,7 @@ object Float {
           val isDataPositive = data >= 0
           val outputData = if (isDataPositive) data else -data
           val computeBackward = { outputDelta: Float =>
-            if (isDataPositive) RAIITask.now(outputDelta) else RAIITask.now(-outputDelta)
+            if (isDataPositive) RAIITask.now(outputDelta) else RAIITask.delay(-outputDelta)
           }
           (outputData, computeBackward)
         }
@@ -280,7 +280,7 @@ object Float {
         Task.delay {
           val outputData = -data
           val computeBackward = { outputDelta: Float =>
-            RAIITask.now(-outputDelta)
+            RAIITask.delay(-outputDelta)
           }
           (outputData, computeBackward)
         }
