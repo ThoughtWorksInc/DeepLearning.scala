@@ -60,6 +60,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
         floatLiteral(42.0f)
       }
       import DifferentiableKernel._
+      import StaticDslType._
 
       val resultTask = openclTask
         .flatMap {
@@ -67,7 +68,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+                  val layer = OpenCLLayer.compile(differentiableKernel, context, device, commandQueue).each
                   val outputTape = layer(1, Map.empty).each
                   val delta = RAIITask.managed(context.createBuffer[Float](1))
                   RAIITask.unmanaged(outputTape.backward(delta)).each
@@ -102,6 +103,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       val differentiableKernel = {
         import OpenCLLayer._
         import DifferentiableKernel._
+        import StaticDslType._
         identifier[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]('input)
         getGlobalId(intLiteral(0))
 

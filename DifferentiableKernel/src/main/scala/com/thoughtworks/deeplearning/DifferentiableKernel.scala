@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.DifferentiableKernel.abstractFunctions
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
@@ -8,7 +7,6 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, Dsl
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.RAIITask
-import macrame.delegate
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -21,21 +19,32 @@ import scalaz.std.iterable._
 import scalaz.syntax.foldable._
 import scala.language.higherKinds
 
-private[deeplearning] trait DifferentiableKernelAbstractFunctions {
-  type StaticDslType[A] <: DslType
-  type StaticDslExpression[A] <: DslExpression
+object DifferentiableKernel {
 
-  implicit def dslDouble: StaticDslType[Double]
-  implicit def dslFloat: StaticDslType[Float]
-  implicit def dslInt: StaticDslType[Int]
-  implicit def dslBuffer[Element: StaticDslType]: StaticDslType[OpenCL.Buffer[Element]]
-}
-object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
+  private[DifferentiableKernel] trait StaticDslTypeExtractor {
+    type AbstractType[A] <: DslType
 
-  @inline
-//  @delegate
-  private[DifferentiableKernel] val abstractFunctions: DifferentiableKernelAbstractFunctions =
-    new DifferentiableKernelAbstractFunctions {
+    implicit def dslDouble: AbstractType[Double]
+    implicit def dslFloat: AbstractType[Float]
+    implicit def dslInt: AbstractType[Int]
+    implicit def dslBuffer[Element: AbstractType]: AbstractType[OpenCL.Buffer[Element]]
+  }
+
+  private[DifferentiableKernel] trait StaticDslExpressionExtractor {
+    type AbstractType[A] <: DslExpression
+
+    def apply[A](expression: DslExpression): AbstractType[A]
+  }
+
+  @inline val StaticDslExpression: StaticDslExpressionExtractor =
+    new StaticDslExpressionExtractor {
+      override type AbstractType[A] = DslExpression
+
+      override def apply[A](expression: DslExpression): DslExpression = expression
+    }
+
+  @inline val StaticDslType: StaticDslTypeExtractor =
+    new StaticDslTypeExtractor {
       @inline
       override final def dslDouble = DslDouble
 
@@ -45,23 +54,15 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
       @inline
       override final def dslInt = DslInt
 
-      override type StaticDslType[A] = DslType
-      override type StaticDslExpression[A] = DslExpression
+      override type AbstractType[A] = DslType
 
       override def dslBuffer[Element](implicit elementType: DslType): DslType = DslBuffer(elementType)
     }
   // TODO: https://github.com/ClaireNeveu/macrame/issues/7
-  type StaticDslType[A] = abstractFunctions.StaticDslType[A]
-  type StaticDslExpression[A] = abstractFunctions.StaticDslExpression[A]
+  type StaticDslType[A] = StaticDslType.AbstractType[A]
+  type StaticDslExpression[A] = StaticDslExpression.AbstractType[A]
 
-  override implicit def dslDouble: StaticDslType[Double] = abstractFunctions.dslDouble
-
-  override implicit def dslFloat: StaticDslType[Float] = abstractFunctions.dslFloat
-
-  override implicit def dslInt: StaticDslType[Int] = abstractFunctions.dslInt
-
-  override implicit def dslBuffer[Element: DifferentiableKernel.StaticDslType]: StaticDslType[OpenCL.Buffer[Element]] =
-    abstractFunctions.dslBuffer
+  import StaticDslType._
 
   trait InputMetadata {
 
@@ -97,31 +98,74 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
         override def deltaType: StaticDslType[Delta0] = implicitly
       }
   }
+
+  trait Trainable[Jacobian] {
+    type OutputElementDelta
+    def backward(inputId: Any, // TODO: Give Input a type
+                 inputType: DslType,
+                 delta: Jacobian,
+                 outputElementDelta: StaticDslExpression[OutputElementDelta]): Seq[DslEffect]
+  }
+  object Trainable {
+    type Aux[Jacobian, OutputElementDelta0] = Trainable[Jacobian] {
+      type OutputElementDelta = OutputElementDelta0
+    }
+
+    implicit object FloatTrainable extends Trainable[StaticDslExpression[Float]] {
+      override type OutputElementDelta = Float
+
+      override def backward(inputId: Any,
+                            inputType: DslType,
+                            delta: StaticDslExpression[Float],
+                            outputElementDelta: StaticDslExpression[Float]): Seq[DslEffect] = {
+        Seq(
+          DslEffect.Update(
+            DslExpression.Identifier(inputId),
+            DslExpression.IntLiteral(0),
+            DslExpression.Times(outputElementDelta, delta, dslFloat),
+            inputType
+          ))
+      }
+    }
+  }
+
+  final case class OpenCLLayer[Data, Delta](
+      inputMetadataMap: Map[Any, InputMetadata], // TODO: replace Maps to shapeless records and create proxy via RecordArgs
+      data: Data,
+      jacobian: Map[Any, Delta]
+  )
   object OpenCLLayer {
 
-    def floatLiteral(data: Float): OpenCLLayer[Float, Float] = OpenCLLayer[Float, Float](
-      Map.empty,
-      DslExpression.FloatLiteral(data),
-      Map.empty
-    )
+    type ForwardAccumulation[OutputElementData, OutputElementDelta] =
+      OpenCLLayer[StaticDslExpression[OutputElementData], StaticDslExpression[OutputElementDelta]]
 
-    def intLiteral(data: Int): OpenCLLayer[Int, Float] = OpenCLLayer[Int, Float](
-      Map.empty,
-      DslExpression.IntLiteral(data),
-      Map.empty
-    )
+    def floatLiteral(data: Float): OpenCLLayer.ForwardAccumulation[Float, Float] =
+      new OpenCLLayer.ForwardAccumulation[Float, Float](
+        Map.empty,
+        StaticDslExpression(DslExpression.FloatLiteral(data)),
+        Map.empty
+      )
 
-    def getGlobalId(operand: OpenCLLayer[Int, Float]): OpenCLLayer[Int, Float] = OpenCLLayer[Int, Float](
-      operand.inputMetadataMap,
-      DslExpression.GetGlobalId(operand.data),
-      Map.empty
-    )
+    def intLiteral(data: Int): OpenCLLayer.ForwardAccumulation[Int, Float] =
+      new OpenCLLayer.ForwardAccumulation[Int, Float](
+        Map.empty,
+        StaticDslExpression(DslExpression.IntLiteral(data)),
+        Map.empty
+      )
+
+    def getGlobalId(
+        operand: OpenCLLayer.ForwardAccumulation[Int, Float]): OpenCLLayer.ForwardAccumulation[Int, Float] =
+      new OpenCLLayer.ForwardAccumulation[Int, Float](
+        operand.inputMetadataMap,
+        StaticDslExpression[Int](DslExpression.GetGlobalId(operand.data)),
+        Map.empty
+      )
 
     def identifier[Data: Memory: StaticDslType, Delta: Memory: StaticDslType](
         id: Any) /*(implicit multiplicationMonoid: Monoid[StaticDslExpression[Delta] @@ Multiplication])*/ =
-      OpenCLLayer[Data, Delta](
+      new OpenCLLayer.ForwardAccumulation[Data, Delta](
         Map(id -> InputMetadata[Data, Delta]),
-        DslExpression.Identifier(id),
+        StaticDslExpression(DslExpression.Identifier(id)),
         Map(id -> ??? /*Multiplication.unwrap(multiplicationMonoid.zero)*/ ) // TODO: delta for entire buffer
       )
 
@@ -131,26 +175,23 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
     private[OpenCLLayer] type Setter[-OutputData] = (Kernel, Map[Any, Tape]) => Unit
     private[OpenCLLayer] val EmptySetter: Setter[Any] = (kernel, input) => ()
 
-  }
-
-  final case class OpenCLLayer[OutputElementData, OutputElementDelta](
-      inputMetadataMap: Map[Any, InputMetadata], // TODO: replace Maps to shapeless records and create proxy via RecordArgs
-      data: DslExpression,
-      jacobian: Map[Any, DslExpression]
-  ) {
     import OpenCLLayer._
 
     /**
       * @param executor on which the compilation runs
       */
-    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue)(
-        implicit outputDataMemory: Memory[OutputElementData],
-        outputDeltaMemory: Memory[OutputElementDelta],
-        outputDataType: StaticDslType[OutputElementData],
-        outputDeltaType: StaticDslType[OutputElementDelta],
-        executor: ExecutionContext): RAIITask[(Int, Map[Any, Tape]) => RAIITask[
+    def compile[OutputElementData, Jacobian, OutputElementDelta](
+        layer: OpenCLLayer[StaticDslExpression[OutputElementData], Jacobian],
+        context: OpenCL.Context,
+        device: Device,
+        commandQueue: CommandQueue)(implicit trainable: Trainable.Aux[Jacobian, OutputElementDelta],
+                                    outputDataMemory: Memory[OutputElementData],
+                                    outputDeltaMemory: Memory[OutputElementDelta],
+                                    outputDataType: StaticDslType[OutputElementData],
+                                    outputDeltaType: StaticDslType[OutputElementDelta],
+                                    executor: ExecutionContext): RAIITask[(Int, Map[Any, Tape]) => RAIITask[
       Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
-
+      import layer._
       RAIITask.jump().each
 
       val forwardOutputParameter = Parameter(OutputId, DslType.DslBuffer(outputDataType))
@@ -199,13 +240,17 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
                     // TODO: Support n-dimension Array
                     DslExpression.GetGlobalId(DslExpression.IntLiteral(0))
                   }
-                  val effect = DslEffect.Update(
-                    DslExpression.Identifier(id),
-                    backwardIndex,
-                    DslExpression.Times(DslExpression.Identifier(OutputId), backwardExpression, outputDeltaType),
-                    inputMetadataMap(id).deltaType
-                  )
-                  KernelDefinition(kernelName, backwardParameters, Seq(effect))
+                  val effects = trainable.backward(id,
+                                                   inputMetadataMap(id).deltaType,
+                                                   backwardExpression,
+                                                   StaticDslExpression(DslExpression.Identifier(OutputId)))
+//                  val effect = DslEffect.Update(
+//                    DslExpression.Identifier(id),
+//                    backwardIndex,
+//                    DslExpression.Times(DslExpression.Identifier(OutputId), backwardExpression, outputDeltaType),
+//                    inputMetadataMap(id).deltaType
+//                  )
+                  KernelDefinition(kernelName, backwardParameters, effects)
                 }
                 val backwardSource =
                   OpenCLCodeGenerator.generateSourceCode(backwardKernelDefinition).toArray[CharSequence]
@@ -246,7 +291,7 @@ object DifferentiableKernel extends DifferentiableKernelAbstractFunctions {
                 kernel.setArg(0, outputDelta: OpenCL.Buffer[OutputElementDelta])
                 val inputDeltaBuffer: OpenCL.Buffer[Delta0] =
                   context.createBuffer(expectedSize)(metadata.deltaMemory)
-
+                // TODO: clEnqueueFillBuffer
                 try {
                   kernel.setArg(1, inputDeltaBuffer)
                   val event: OpenCL.Event =
