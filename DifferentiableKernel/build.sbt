@@ -20,11 +20,6 @@ libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.1" % Test /* Runtime */ clas
 
 fork := true
 
-scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value
-
-scalaOrganization := "org.typelevel"
-
-scalacOptions += "-Yliteral-types"
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
