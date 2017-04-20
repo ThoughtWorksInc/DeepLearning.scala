@@ -8,7 +8,7 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.RAIITask
 import jdk.nashorn.internal.objects.annotations.Setter
-import shapeless.labelled.FieldType
+import shapeless.labelled._
 import shapeless._
 
 import scala.concurrent.ExecutionContext
@@ -67,14 +67,14 @@ object DifferentiableKernel {
 
   import StaticDslType._
 
-  final case class OpenCLLayer[OutputElementData, OutputElementDelta, Jacobian <: HList](
+  final case class OpenCLLayer[OutputElementData, OutputElementDelta, LocalDelta <: HList](
       data: StaticDslExpression[OutputElementData],
-      jacobian: Jacobian) {
+      jacobian: LocalDelta) {
 
     import OpenCLLayer._
 
     def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue)(
-        implicit compiler: Compiler[OutputElementData, OutputElementDelta, Jacobian],
+        implicit compiler: Compiler[OutputElementData, OutputElementDelta, LocalDelta],
         outputDataMemory: Memory[OutputElementData],
         outputDeltaMemory: Memory[OutputElementDelta],
         outputDataType: StaticDslType[OutputElementData],
@@ -136,16 +136,27 @@ object DifferentiableKernel {
     @inline private[deeplearning] final val ForwardKernelName = "forward"
     @inline private[deeplearning] final def backwardKernelName(index: Int) = raw"""backward_$index"""
 
-    def floatLiteral(data: Float): OpenCLLayer[Float, Float, HNil] =
-      OpenCLLayer[Float, Float, HNil](
-        StaticDslExpression[Float](DslExpression.FloatLiteral(data)),
-        HNil
+    def floatLiteral(data: Float): OpenCLLayer[Float, Float, HNil] = {
+      OpenCLLayer[Float, Float, HNil](StaticDslExpression[Float](DslExpression.FloatLiteral(data)), HNil)
+    }
+
+    def bufferIdentifier[Data, Delta](implicit key: Witness)
+      : OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil] =
+      OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil](
+        StaticDslExpression(DslExpression.Identifier(key.value)),
+        field[key.T](BufferJacobian.One[Data, Delta]()) :: HNil
       )
+
   }
 
   import OpenCLLayer._
 
-  trait InputCompiler[JacobianCell] {
+  sealed trait BufferJacobian[Data, Delta] //(index: StaticDslExpression[Int], value: StaticDslExpression[Delta])
+  object BufferJacobian {
+    final case class One[Data, Delta]() extends BufferJacobian[Data, Delta]
+  }
+
+  trait InputCompiler[Key, LocalDelta] {
     type Input <: Tape
 
     def forwardParameter: Parameter
@@ -155,13 +166,15 @@ object DifferentiableKernel {
 
   object InputCompiler {
 
-    type Aux[JacobianCell, Input0] = InputCompiler[JacobianCell] {
+    type Aux[Key, LocalDelta, Input0] = InputCompiler[Key, LocalDelta] {
       type Input = Input0
     }
 
+//    implicit def bufferInputCompiler[Key, ]
+
   }
 
-  trait Compiler[OutputElementData, OutputElementDelta, Jacobian <: HList] {
+  trait Compiler[OutputElementData, OutputElementDelta, LocalDelta <: HList] {
     type ParameterRecord <: HList
 
     def forwardInputParameters: List[Parameter]
@@ -173,8 +186,8 @@ object DifferentiableKernel {
   }
 
   object Compiler {
-    type Aux[OutputElementData, OutputElementDelta, Jacobian <: HList, ParameterRecord0] =
-      Compiler[OutputElementData, OutputElementDelta, Jacobian] {
+    type Aux[OutputElementData, OutputElementDelta, LocalDelta <: HList, ParameterRecord0] =
+      Compiler[OutputElementData, OutputElementDelta, LocalDelta] {
         type ParameterRecord = ParameterRecord0
       }
 
@@ -191,17 +204,17 @@ object DifferentiableKernel {
     implicit def hconsFill[OutputElementData,
                            OutputElementDelta0,
                            Key,
-                           JacobianHead,
-                           JacobianTail <: HList,
+                           LocalDeltaHead,
+                           LocalDeltaTail <: HList,
                            Input,
                            TailParameterRecord <: HList](
-        implicit headInputCompiler: InputCompiler.Aux[JacobianHead, Input],
-        tailCompiler: Compiler.Aux[OutputElementData, OutputElementDelta0, JacobianTail, TailParameterRecord])
+        implicit headInputCompiler: InputCompiler.Aux[Key, LocalDeltaHead, Input],
+        tailCompiler: Compiler.Aux[OutputElementData, OutputElementDelta0, LocalDeltaTail, TailParameterRecord])
       : Compiler.Aux[OutputElementData,
                      OutputElementDelta0,
-                     FieldType[Key, JacobianHead] :: JacobianTail,
+                     FieldType[Key, LocalDeltaHead] :: LocalDeltaTail,
                      FieldType[Key, Input] :: TailParameterRecord] =
-      new Compiler[OutputElementData, OutputElementDelta0, FieldType[Key, JacobianHead] :: JacobianTail] {
+      new Compiler[OutputElementData, OutputElementDelta0, FieldType[Key, LocalDeltaHead] :: LocalDeltaTail] {
         override type ParameterRecord = FieldType[Key, Input] :: TailParameterRecord
         override def forwardInputParameters: List[Parameter] =
           headInputCompiler.forwardParameter :: tailCompiler.forwardInputParameters
@@ -218,8 +231,8 @@ object DifferentiableKernel {
 }
 
 //
-//    def compile[OutputElementData, Jacobian <: HList, OutputElementDelta, ParameterRecord <: HList](
-//        layer: OpenCLLayer[OpenCL.Buffer[OutputElementData], Jacobian],
+//    def compile[OutputElementData, LocalDelta <: HList, OutputElementDelta, ParameterRecord <: HList](
+//        layer: OpenCLLayer[OpenCL.Buffer[OutputElementData], LocalDelta],
 //        context: OpenCL.Context,
 //        device: Device,
 //        commandQueue: CommandQueue)(implicit outputDataMemory: Memory[OutputElementData],
@@ -416,15 +429,15 @@ object DifferentiableKernel {
 //      }
 //  }
 //
-//  trait Trainable[Jacobian] {
+//  trait Trainable[LocalDelta] {
 //    type OutputElementDelta
 //    def backward(inputId: Any, // TODO: Give Input a type
 //                 inputType: DslType,
-//                 delta: Jacobian,
+//                 delta: LocalDelta,
 //                 outputElementDelta: StaticDslExpression[OutputElementDelta]): Seq[DslEffect]
 //  }
 //  object Trainable {
-//    type Aux[Jacobian, OutputElementDelta0] = Trainable[Jacobian] {
+//    type Aux[LocalDelta, OutputElementDelta0] = Trainable[LocalDelta] {
 //      type OutputElementDelta = OutputElementDelta0
 //    }
 //
@@ -491,11 +504,11 @@ object DifferentiableKernel {
 //    /**
 //      * @param executor on which the compilation runs
 //      */
-//    def compile[OutputElementData, Jacobian, OutputElementDelta](
-//        layer: OpenCLLayer[StaticDslExpression[OutputElementData], Jacobian],
+//    def compile[OutputElementData, LocalDelta, OutputElementDelta](
+//        layer: OpenCLLayer[StaticDslExpression[OutputElementData], LocalDelta],
 //        context: OpenCL.Context,
 //        device: Device,
-//        commandQueue: CommandQueue)(implicit trainable: Trainable.Aux[Jacobian, OutputElementDelta],
+//        commandQueue: CommandQueue)(implicit trainable: Trainable.Aux[LocalDelta, OutputElementDelta],
 //                                    outputDataMemory: Memory[OutputElementData],
 //                                    outputDeltaMemory: Memory[OutputElementDelta],
 //                                    outputDataType: StaticDslType[OutputElementData],
