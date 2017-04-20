@@ -20,6 +20,7 @@ libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.1" % Test /* Runtime */ clas
 
 fork := true
 
+scalacOptions += "-Ypartial-unification"
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
