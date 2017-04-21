@@ -25,7 +25,7 @@ Like [Theano](http://deeplearning.net/software/theano/) and other deep learning 
 
 ### Differentiable ADTs
 
-Neural networks created by DeepLearning.scala support [ADT](https://en.wikipedia.org/wiki/Algebraic_data_type) data structures (e.g. [HList](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableHList$.html) and [Coproduct](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableCoproduct$.html)), and calculate derivatives using these data structures.
+Neural networks created by DeepLearning.scala support [ADT](https://en.wikipedia.org/wiki/Algebraic_data_type) data structures (e.g. [HList](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableHList$.html) and [Coproduct](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableCoproduct$.html)), and calculate derivatives for these data structures.
 
 ### Differentiable control flow
 
