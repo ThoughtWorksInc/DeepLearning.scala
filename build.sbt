@@ -5,7 +5,8 @@ lazy val DifferentiableKernel =
   project.dependsOn(
     OpenCL,
     OpenCLCodeGenerator,
-    TapeTaskFactory
+    TapeTaskFactory,
+    ProjectRef(file("shapeless"), "coreJVM")
   )
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)

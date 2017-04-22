@@ -1,3 +1,6 @@
 [submodule "RAII.scala"]
 	path = RAII.scala
 	url = https://github.com/ThoughtWorksInc/RAII.scala.git
+[submodule "shapeless"]
+	path = shapeless
+	url = https://github.com/ThoughtWorksInc/shapeless.git
