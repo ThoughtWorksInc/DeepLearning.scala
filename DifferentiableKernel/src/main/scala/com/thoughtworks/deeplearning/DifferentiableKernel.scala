@@ -1,5 +1,6 @@
 package com.thoughtworks.deeplearning
 
+import com.thoughtworks.deeplearning.DifferentiableKernel.Zero.FloatZero
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
@@ -131,6 +132,97 @@ object DifferentiableKernel {
     }
   }
 
+  trait GetElement[Operand0, Operand1] extends DepFn2[Operand0, Operand1]
+  object GetElement {
+    type Aux[Operand0, Operand1, Out0] = GetElement[Operand0, Operand1] {
+      type Out = Out0
+    }
+
+    implicit def bufferJacobianGetElement[Data, Delta]
+      : GetElement.Aux[BufferJacobian[Data, Delta], StaticDslExpression[Int], StaticDslExpression[Delta]] = ???
+
+    implicit def hconsGetElement[Key, Head, Tail <: HList, Operand1, HeadOut, TailOut <: HList](
+        implicit headGetElement: GetElement.Aux[Head, Operand1, HeadOut],
+        tailGetElement: GetElement.Aux[Tail, Operand1, TailOut])
+      : GetElement.Aux[FieldType[Key, Head] :: Tail, Operand1, FieldType[Key, HeadOut] :: TailOut] =
+      new GetElement[FieldType[Key, Head] :: Tail, Operand1] {
+        override type Out = FieldType[Key, HeadOut] :: TailOut
+
+        override def apply(operand0: FieldType[Key, Head] :: Tail, operand1: Operand1): Out = {
+          field[Key](headGetElement(operand0.head, operand1)) :: tailGetElement(operand0.tail, operand1)
+        }
+      }
+
+    implicit def hnilGetElement[Operand1]: GetElement.Aux[HNil, Operand1, HNil] = new GetElement[HNil, Operand1] {
+      override type Out = HNil
+
+      override def apply(operand0: HNil, operand1: Operand1): HNil.type = HNil
+    }
+  }
+  trait Plus[Operand0, Operand1] extends DepFn2[Operand0, Operand1]
+  object Plus {
+    type Aux[Operand0, Operand1, Out0] = Plus[Operand0, Operand1] {
+      type Out = Out0
+    }
+  }
+  trait Times[Operand0, Operand1] extends DepFn2[Operand0, Operand1]
+  abstract class LowPriorityTimes0 {
+    implicit def swap[Operand0, Operand1, Out0](
+        implicit times: Times.Aux[Operand1, Operand0, Out0]): Times.Aux[Operand0, Operand1, Out0] =
+      new Times[Operand0, Operand1] {
+        override type Out = Out0
+
+        override def apply(operand0: Operand0, operand1: Operand1): Out = times(operand1, operand0)
+      }
+  }
+  object Times extends LowPriorityTimes0 {
+    type Aux[Operand0, Operand1, Out0] = Times[Operand0, Operand1] {
+      type Out = Out0
+    }
+
+    implicit def floatTimes = new Times[StaticDslExpression[Float], StaticDslExpression[Float]] {
+      override type Out = StaticDslExpression[Float]
+      override def apply(operand0: StaticDslExpression[Float], operand1: StaticDslExpression[Float]): Out = {
+        StaticDslExpression(DslExpression.Times(operand0, operand1, DslType.DslFloat))
+      }
+    }
+
+    implicit def hconsTimes[Key, Head, Tail <: HList, Operand1, HeadOut, TailOut <: HList](
+        implicit headTimes: Times.Aux[Head, Operand1, HeadOut],
+        tailTimes: Times.Aux[Tail, Operand1, TailOut])
+      : Times.Aux[FieldType[Key, Head] :: Tail, Operand1, FieldType[Key, HeadOut] :: TailOut] =
+      new Times[FieldType[Key, Head] :: Tail, Operand1] {
+        override type Out = FieldType[Key, HeadOut] :: TailOut
+
+        override def apply(operand0: FieldType[Key, Head] :: Tail, operand1: Operand1): Out = {
+          field[Key](headTimes(operand0.head, operand1)) :: tailTimes(operand0.tail, operand1)
+        }
+      }
+
+    implicit def hnilTimes[Operand1]: Times.Aux[HNil, Operand1, HNil] = new Times[HNil, Operand1] {
+      override type Out = HNil
+
+      override def apply(operand0: HNil, operand1: Operand1): HNil.type = HNil
+    }
+  }
+  trait Zero extends DepFn0
+  object Zero {
+    type Aux[Out0] = Zero {
+      type Out = Out0
+    }
+
+    implicit object FloatZero extends Zero {
+      type Out = StaticDslExpression[Float]
+      override def apply(): Out = StaticDslExpression(DslExpression.FloatLiteral(0.0f))
+    }
+  }
+  trait One extends DepFn0
+  object One {
+    type Aux[Out0] = One {
+      type Out = Out0
+    }
+  }
+
   object OpenCLLayer {
     private[deeplearning] final val OutputId = new AnyRef
     @inline private[deeplearning] final val ForwardKernelName = "forward"
@@ -139,13 +231,45 @@ object DifferentiableKernel {
     def floatLiteral(data: Float): OpenCLLayer[Float, Float, HNil] = {
       OpenCLLayer[Float, Float, HNil](StaticDslExpression[Float](DslExpression.FloatLiteral(data)), HNil)
     }
+    def intLiteral(data: Int): OpenCLLayer[Int, Float, HNil] = {
+      OpenCLLayer[Int, Float, HNil](StaticDslExpression[Int](DslExpression.IntLiteral(data)), HNil)
+    }
 
-    def bufferIdentifier[Data, Delta](implicit key: Witness)
-      : OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil] =
+    def bufferIdentifier[Data, Delta](
+        implicit key: Witness): OpenCLLayer[OpenCL.Buffer[Data],
+                                            OpenCL.Buffer[Delta],
+                                            FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil] = {
       OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil](
         StaticDslExpression(DslExpression.Identifier(key.value)),
         field[key.T](BufferJacobian.One[Data, Delta]()) :: HNil
       )
+    }
+
+    def getGlobalId[LocalDelta <: HList](
+        dimension: OpenCLLayer[Int, Float, LocalDelta]): OpenCLLayer[Int, Float, LocalDelta] = {
+      ???
+    }
+
+    def getElement[ElementData,
+                   ElementDelta,
+                   BufferLocalDelta <: HList,
+                   IndexLocalDelta <: HList,
+                   ElementLocalDelta <: HList,
+                   ZeroIndexLocalDelta <: HList,
+                   LocalDelta <: HList](
+        buffer: OpenCLLayer[OpenCL.Buffer[ElementData], OpenCL.Buffer[ElementDelta], BufferLocalDelta],
+        index: OpenCLLayer[Int, Float, IndexLocalDelta])(
+        implicit elementDataType: StaticDslType[ElementData],
+        zero: Zero.Aux[StaticDslExpression[ElementDelta]],
+        timesZero: Times.Aux[IndexLocalDelta, StaticDslExpression[ElementDelta], ZeroIndexLocalDelta],
+        getDeltaElement: GetElement.Aux[BufferLocalDelta, StaticDslExpression[Int], ElementLocalDelta],
+        plus: Plus.Aux[ElementLocalDelta, ZeroIndexLocalDelta, LocalDelta]
+    ): OpenCLLayer[ElementData, ElementDelta, LocalDelta] = {
+      OpenCLLayer[ElementData, ElementDelta, LocalDelta](
+        StaticDslExpression[ElementData](DslExpression.GetElement(buffer.data, index.data, elementDataType)),
+        plus(getDeltaElement(buffer.jacobian, index.data), timesZero(index.jacobian, zero()))
+      )
+    }
 
   }
 
