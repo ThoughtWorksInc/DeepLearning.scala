@@ -107,11 +107,14 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
         import OpenCLLayer._
         import DifferentiableKernel._
         import StaticDslType._
-//        getElement(bufferIdentifier[Float, Float]('input), getGlobalId(intLiteral(0)))
+        getElement(bufferIdentifier[Float, Float]('input), getGlobalId(intLiteral(0)))
       }
 
+      println(differentiableKernel)
+
+      true should be(true)
 //      differentiableKernel.compile(???, device, ???)
-      ???
+
     }
 
   }

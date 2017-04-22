@@ -164,6 +164,40 @@ object DifferentiableKernel {
     type Aux[Operand0, Operand1, Out0] = Plus[Operand0, Operand1] {
       type Out = Out0
     }
+    implicit def floatPlus = new Plus[StaticDslExpression[Float], StaticDslExpression[Float]] {
+      override type Out = StaticDslExpression[Float]
+      override def apply(operand0: StaticDslExpression[Float], operand1: StaticDslExpression[Float]): Out = {
+        StaticDslExpression[Float](DslExpression.Plus(operand0, operand1, DslType.DslFloat))
+      }
+    }
+
+    implicit def pickFieldExistsInOperand0Only[K, V, T <: HList, M <: HList, Out0 <: HList](
+        implicit mt: Plus.Aux[T, M, Out0],
+        lacksKey: shapeless.ops.record.LacksKey[M, K]): Aux[FieldType[K, V] :: T, M, FieldType[K, V] :: Out0] =
+      new Plus[FieldType[K, V] :: T, M] {
+        type Out = FieldType[K, V] :: Out0
+        def apply(l: FieldType[K, V] :: T, m: M): Out = l.head :: mt(l.tail, m)
+      }
+    implicit def mergeFieldExistsBoth[K, V0, V1, V, T <: HList, M <: HList, MT <: HList, Out0 <: HList](
+        implicit rm: shapeless.ops.record.Remover.Aux[M, K, (V1, MT)],
+        mt: Plus.Aux[T, MT, Out0],
+        callback: Plus.Aux[V0, V1, V]): Aux[FieldType[K, V0] :: T, M, FieldType[K, V] :: Out0] = {
+      new Plus[FieldType[K, V0] :: T, M] {
+        type Out = FieldType[K, V] :: Out0
+        def apply(l: FieldType[K, V0] :: T, m: M): Out = {
+          val (mv, mr) = rm(m)
+          val up = field[K](callback(l.head: V0, mv))
+          up :: mt(l.tail, mr)
+        }
+      }
+    }
+
+    implicit def mergeNil[M <: HList]: Aux[HNil, M, M] = {
+      new Plus[HNil, M] {
+        type Out = M
+        def apply(l: HNil, m: M): Out = m
+      }
+    }
   }
   trait Times[Operand0, Operand1] extends DepFn2[Operand0, Operand1]
   abstract class LowPriorityTimes0 {
