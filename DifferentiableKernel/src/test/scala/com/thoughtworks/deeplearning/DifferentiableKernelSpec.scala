@@ -9,7 +9,7 @@ import com.thoughtworks.raii.RAIITask
 import org.lwjgl.BufferUtils
 import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}
 import com.thoughtworks.each.Monadic._
-import shapeless.HNil
+import shapeless.{HNil, Witness}
 
 import scala.concurrent.Promise
 
@@ -101,7 +101,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
     }
 
-    "When fill a buffer with another buffer" ignore {
+    "When fill a buffer with another buffer" in {
 
       val differentiableKernel = {
         import OpenCLLayer._
@@ -111,6 +111,31 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       }
 
       println(differentiableKernel)
+
+      import DifferentiableKernel._
+      import StaticDslType._
+//
+//      val resultTask = openclTask
+//        .flatMap {
+//          case (context, commandQueue) =>
+//            RAIITask.unmanaged(
+//              RAIITask.run(
+//                throwableMonadic[RAIITask] {
+//                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+//                  val outputTape = layer(1, HNil).each
+//                  val delta = RAIITask.managed(context.createBuffer[Float](1))
+//                  RAIITask.unmanaged(outputTape.backward(delta)).each
+//                  val f = BufferUtils.createFloatBuffer(1)
+//                  val event = RAIITask.managed(commandQueue.enqueueReadBuffer(outputTape.data, f)).each
+//                  RAIITask.unmanaged(event.waitForComplete()).each
+//                  f
+//                }
+//              )
+//            )
+//        }
+//        .run
+//        .run
+
 
       true should be(true)
 //      differentiableKernel.compile(???, device, ???)
