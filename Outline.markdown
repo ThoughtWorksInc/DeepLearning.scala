@@ -10,6 +10,13 @@
    * Does not support GPU
    * Impossible to run in parallel
 1. Introducing our approach: monad-based automatic differentiation, and showing some examples written in DeepLearning.scala.
+1. The tech stack of DeepLearning.scala:<br> 
+   * [Scala](http://scala-lang.org/) 
+   * [Scalaz](https://github.com/scalaz/scalaz) 
+   * [ThoughtWorks Each](https://github.com/ThoughtWorksInc/each)
+   * [Shapeless](https://github.com/milessabin/shapeless/)
+   * [nd4j](https://github.com/deeplearning4j/nd4s)
+1. Explain the basis of monad Scalaz.
 1. Explain the detail of our approach:<br> 
    * Unlike TensorFlow's static computational graph, our monad represents a process that dynamically creates computational graph nodes.
    * All Scala features, including any Scala functions and Scala expressions, can be used in the process. (Address TensorFlow's issue 1 and 2)
