@@ -16,7 +16,7 @@
    * [ThoughtWorks Each](https://github.com/ThoughtWorksInc/each)
    * [Shapeless](https://github.com/milessabin/shapeless/)
    * [nd4j](https://github.com/deeplearning4j/nd4s)
-1. Explain the basis of monad Scalaz.
+1. Explain the basis of monad.
 1. Explain the detail of our approach:<br> 
    * Unlike TensorFlow's static computational graph, our monad represents a process that dynamically creates computational graph nodes.
    * All Scala features, including any Scala functions and Scala expressions, can be used in the process. (Address TensorFlow's issue 1 and 2)
