@@ -1,5 +1,6 @@
 package com.thoughtworks.deeplearning
 
+import com.thoughtworks.deeplearning.DifferentiableKernel.BufferJacobian.Fill
 import com.thoughtworks.deeplearning.DifferentiableKernel.Zero.FloatZero
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
@@ -139,7 +140,16 @@ object DifferentiableKernel {
     }
 
     implicit def bufferJacobianGetElement[Data, Delta]
-      : GetElement.Aux[BufferJacobian[Data, Delta], StaticDslExpression[Int], StaticDslExpression[Delta]] = ???
+      : GetElement.Aux[BufferJacobian[Data, Delta], StaticDslExpression[Int], StaticDslExpression[Delta]] = {
+      new GetElement[BufferJacobian[Data, Delta], StaticDslExpression[Int]] {
+        type Out = StaticDslExpression[Delta]
+        override def apply(bufferJacobian: BufferJacobian[Data, Delta], index: StaticDslExpression[Int]): Out = {
+          bufferJacobian match {
+            case Fill(element) => element
+          }
+        }
+      }
+    }
 
     implicit def hconsGetElement[Key, Head, Tail <: HList, Operand1, HeadOut, TailOut <: HList](
         implicit headGetElement: GetElement.Aux[Head, Operand1, HeadOut],
@@ -217,7 +227,7 @@ object DifferentiableKernel {
     implicit def floatTimes = new Times[StaticDslExpression[Float], StaticDslExpression[Float]] {
       override type Out = StaticDslExpression[Float]
       override def apply(operand0: StaticDslExpression[Float], operand1: StaticDslExpression[Float]): Out = {
-        StaticDslExpression(DslExpression.Times(operand0, operand1, DslType.DslFloat))
+        StaticDslExpression[Float](DslExpression.Times(operand0, operand1, DslType.DslFloat))
       }
     }
 
@@ -249,11 +259,22 @@ object DifferentiableKernel {
       type Out = StaticDslExpression[Float]
       override def apply(): Out = StaticDslExpression(DslExpression.FloatLiteral(0.0f))
     }
+
+    implicit object HNilZero extends Zero {
+      type Out = HNil
+      override def apply(): HNil = HNil
+    }
   }
   trait One extends DepFn0
   object One {
     type Aux[Out0] = One {
       type Out = Out0
+    }
+
+    implicit object FloatOne extends One {
+      override def apply(): Out = StaticDslExpression(DslExpression.FloatLiteral(1.0f))
+
+      override type Out = StaticDslExpression[Float]
     }
   }
 
@@ -269,19 +290,22 @@ object DifferentiableKernel {
       OpenCLLayer[Int, Float, HNil](StaticDslExpression[Int](DslExpression.IntLiteral(data)), HNil)
     }
 
-    def bufferIdentifier[Data, Delta](
-        implicit key: Witness): OpenCLLayer[OpenCL.Buffer[Data],
-                                            OpenCL.Buffer[Delta],
-                                            FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil] = {
+    def bufferIdentifier[Data, Delta](key: Witness)(implicit one: One.Aux[StaticDslExpression[Delta]]): OpenCLLayer[
+      OpenCL.Buffer[Data],
+      OpenCL.Buffer[Delta],
+      FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil] = {
       OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil](
         StaticDslExpression(DslExpression.Identifier(key.value)),
-        field[key.T](BufferJacobian.One[Data, Delta]()) :: HNil
+        field[key.T](BufferJacobian.Fill[Data, Delta](one())) :: HNil
       )
     }
 
-    def getGlobalId[LocalDelta <: HList](
-        dimension: OpenCLLayer[Int, Float, LocalDelta]): OpenCLLayer[Int, Float, LocalDelta] = {
-      ???
+    def getGlobalId[LocalDelta <: HList](dimension: OpenCLLayer[Int, Float, LocalDelta])(
+        implicit zero: Zero.Aux[LocalDelta]): OpenCLLayer[Int, Float, LocalDelta] = {
+      OpenCLLayer[Int, Float, LocalDelta](
+        StaticDslExpression(DslExpression.GetGlobalId(dimension.data)),
+        zero()
+      )
     }
 
     def getElement[ElementData,
@@ -289,19 +313,17 @@ object DifferentiableKernel {
                    BufferLocalDelta <: HList,
                    IndexLocalDelta <: HList,
                    ElementLocalDelta <: HList,
-                   ZeroIndexLocalDelta <: HList,
                    LocalDelta <: HList](
         buffer: OpenCLLayer[OpenCL.Buffer[ElementData], OpenCL.Buffer[ElementDelta], BufferLocalDelta],
         index: OpenCLLayer[Int, Float, IndexLocalDelta])(
         implicit elementDataType: StaticDslType[ElementData],
-        zero: Zero.Aux[StaticDslExpression[ElementDelta]],
-        timesZero: Times.Aux[IndexLocalDelta, StaticDslExpression[ElementDelta], ZeroIndexLocalDelta],
+        zero: Zero.Aux[IndexLocalDelta],
         getDeltaElement: GetElement.Aux[BufferLocalDelta, StaticDslExpression[Int], ElementLocalDelta],
-        plus: Plus.Aux[ElementLocalDelta, ZeroIndexLocalDelta, LocalDelta]
+        plus: Plus.Aux[ElementLocalDelta, IndexLocalDelta, LocalDelta]
     ): OpenCLLayer[ElementData, ElementDelta, LocalDelta] = {
       OpenCLLayer[ElementData, ElementDelta, LocalDelta](
         StaticDslExpression[ElementData](DslExpression.GetElement(buffer.data, index.data, elementDataType)),
-        plus(getDeltaElement(buffer.jacobian, index.data), timesZero(index.jacobian, zero()))
+        plus(getDeltaElement(buffer.jacobian, index.data), zero())
       )
     }
 
@@ -311,7 +333,7 @@ object DifferentiableKernel {
 
   sealed trait BufferJacobian[Data, Delta] //(index: StaticDslExpression[Int], value: StaticDslExpression[Delta])
   object BufferJacobian {
-    final case class One[Data, Delta]() extends BufferJacobian[Data, Delta]
+    final case class Fill[Data, Delta](element: StaticDslExpression[Delta]) extends BufferJacobian[Data, Delta]
   }
 
   trait InputCompiler[Key, LocalDelta] {
