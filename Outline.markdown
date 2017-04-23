@@ -10,9 +10,9 @@
    * Does not support GPU
    * Impossible to run in parallel
 1. Introducing our approach: monad-based automatic differentiation, and showing some examples written in DeepLearning.scala.
-1. The tech stack of DeepLearning.scala:<br> 
-   * [Scala](http://scala-lang.org/) 
-   * [Scalaz](https://github.com/scalaz/scalaz) 
+1. The technology stack of DeepLearning.scala:<br> 
+   * [Scala](http://scala-lang.org)
+   * [Scalaz](https://github.com/scalaz/scalaz)
    * [ThoughtWorks Each](https://github.com/ThoughtWorksInc/each)
    * [Shapeless](https://github.com/milessabin/shapeless/)
    * [nd4j](https://github.com/deeplearning4j/nd4s)
