@@ -5,7 +5,7 @@ title: Style Guidelines
 
 ## 循环依赖
 
-所有package之间不应该有循环依赖、所有Scala文件之间不应该有循环依赖。可以用[acyclic](https://github.com/lihaoyi/acyclic)检查循环依赖。
+package之间不应该有循环依赖。Scala文件之间不应该有循环依赖。可以用[acyclic](https://github.com/lihaoyi/acyclic)检查循环依赖。
 
 ## 库的粒度
 
