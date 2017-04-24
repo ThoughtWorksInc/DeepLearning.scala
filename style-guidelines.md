@@ -9,7 +9,9 @@ title: Style Guidelines
 
 ## 库的粒度
 
-每个库应该尽量小，只应包含一个Scala源文件。库名就是文件名（但不包含`.scala`后缀）。
+每个库应该尽量小，只应包含一个Scala源文件。
+
+库名通常是去掉`.scala`后缀的文件名。
 
 ## 避免package object
 
