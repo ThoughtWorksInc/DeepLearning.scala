@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.DifferentiableKernel.BufferJacobian.Fill
 import com.thoughtworks.deeplearning.DifferentiableKernel.Zero.FloatZero
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
@@ -139,13 +138,15 @@ object DifferentiableKernel {
       type Out = Out0
     }
 
-    implicit def bufferJacobianGetElement[Data, Delta]
-      : GetElement.Aux[BufferJacobian[Data, Delta], StaticDslExpression[Int], StaticDslExpression[Delta]] = {
-      new GetElement[BufferJacobian[Data, Delta], StaticDslExpression[Int]] {
-        type Out = StaticDslExpression[Delta]
-        override def apply(bufferJacobian: BufferJacobian[Data, Delta], index: StaticDslExpression[Int]): Out = {
+    implicit def bufferJacobianGetElement[Data, Delta](implicit one: One.Aux[StaticDslExpression[Delta]])
+      : GetElement.Aux[JacobianMatrix[Data, Delta], StaticDslExpression[Int], JacobianMatrix.Row[Data, Delta]] = {
+      new GetElement[JacobianMatrix[Data, Delta], StaticDslExpression[Int]] {
+        type Out = JacobianMatrix.Row[Data, Delta]
+        override def apply(bufferJacobian: JacobianMatrix[Data, Delta], index: StaticDslExpression[Int]): Out = {
           bufferJacobian match {
-            case Fill(element) => element
+            case JacobianMatrix.Identity() =>
+              JacobianMatrix.Row.Sparse(index, one())
+
           }
         }
       }
@@ -290,13 +291,13 @@ object DifferentiableKernel {
       OpenCLLayer[Int, Float, HNil](StaticDslExpression[Int](DslExpression.IntLiteral(data)), HNil)
     }
 
-    def bufferIdentifier[Data, Delta](key: Witness)(implicit one: One.Aux[StaticDslExpression[Delta]]): OpenCLLayer[
-      OpenCL.Buffer[Data],
-      OpenCL.Buffer[Delta],
-      FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil] = {
-      OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, BufferJacobian[Data, Delta]] :: HNil](
+    def bufferIdentifier[Data, Delta](
+        key: Witness): OpenCLLayer[OpenCL.Buffer[Data],
+                                   OpenCL.Buffer[Delta],
+                                   FieldType[key.T, JacobianMatrix[Data, Delta]] :: HNil] = {
+      OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, JacobianMatrix[Data, Delta]] :: HNil](
         StaticDslExpression(DslExpression.Identifier(key.value)),
-        field[key.T](BufferJacobian.Fill[Data, Delta](one())) :: HNil
+        field[key.T](JacobianMatrix.Identity[Data, Delta]()) :: HNil
       )
     }
 
@@ -331,17 +332,30 @@ object DifferentiableKernel {
 
   import OpenCLLayer._
 
-  sealed trait BufferJacobian[Data, Delta] //(index: StaticDslExpression[Int], value: StaticDslExpression[Delta])
-  object BufferJacobian {
-    final case class Fill[Data, Delta](element: StaticDslExpression[Delta]) extends BufferJacobian[Data, Delta]
+  object JacobianMatrix {
+    final case class Identity[Data, Delta]() extends JacobianMatrix[Data, Delta]
+
+    /** Partial derivatives of a scalar-valued function */
+    sealed trait Row[Data, Delta]
+
+    object Row {
+      final case class Sparse[Data, Delta](index: StaticDslExpression[Int], value: StaticDslExpression[Delta])
+          extends Row[Data, Delta]
+    }
+
+    /** A partial derivative of a vector-valued function */
+    sealed trait Column[Data, Delta]
   }
+
+  /** Partial derivatives of a vector-valued function */
+  sealed trait JacobianMatrix[Data, Delta]
 
   trait InputCompiler[Key, LocalDelta] {
     type Input <: Tape
 
     def forwardParameter: Parameter
 
-    def setArgument(kernel: Kernel, startIndex: Int, input: Input): Unit
+    def setArgument(kernel: Kernel, index: Int, input: Input): Unit
   }
 
   object InputCompiler {
@@ -350,7 +364,26 @@ object DifferentiableKernel {
       type Input = Input0
     }
 
-//    implicit def bufferInputCompiler[Key, ]
+    implicit def bufferInputCompile[Key, InputElementData, InputElementDelta](
+        implicit witness: Witness.Aux[Key],
+        elementDataType: StaticDslType[InputElementData])
+      : InputCompiler.Aux[Key,
+                          JacobianMatrix.Row[InputElementData, InputElementDelta],
+                          Tape.Aux[OpenCL.Buffer[InputElementData], OpenCL.Buffer[InputElementDelta]]] =
+      new InputCompiler[Key, JacobianMatrix.Row[InputElementData, InputElementDelta]] {
+
+        override type Input = Tape.Aux[OpenCL.Buffer[InputElementData], OpenCL.Buffer[InputElementDelta]]
+        override def forwardParameter: Parameter = Parameter(witness.value, DslType.DslBuffer(elementDataType))
+
+        override def setArgument(kernel: Kernel, index: Int, input: Input): Unit = {
+          kernel.setArg[OpenCL.Buffer[InputElementData]](index, input.data)
+        }
+      }
+
+    def apply[Key, InputElementData](implicit inputCompiler: InputCompiler[Key, InputElementData])
+      : InputCompiler.Aux[Key, InputElementData, inputCompiler.Input] = {
+      inputCompiler
+    }
 
   }
 
@@ -370,6 +403,10 @@ object DifferentiableKernel {
       Compiler[OutputElementData, OutputElementDelta, LocalDelta] {
         type ParameterRecord = ParameterRecord0
       }
+
+    def apply[OutputElementData, OutputElementDelta, LocalDelta <: HList](
+        implicit compiler: Compiler[OutputElementData, OutputElementDelta, LocalDelta])
+      : Compiler.Aux[OutputElementData, OutputElementDelta, LocalDelta, compiler.ParameterRecord] = compiler
 
     implicit def hnilFill[OutputElementData, OutputElementDelta]
       : Compiler.Aux[OutputElementData, OutputElementDelta, HNil, HNil] =
@@ -406,6 +443,7 @@ object DifferentiableKernel {
           tailCompiler.setKernelInputArguments(kernel, startIndex + 1, parameters.tail)
         }
       }
+
   }
 
 }
