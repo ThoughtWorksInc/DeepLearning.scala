@@ -13,7 +13,7 @@ title: Style Guidelines
 
 ## 避免package object
 
-尽量不要使用package object。应当使用普通object来模拟package。这种情况属于[模拟package](http://docs.scala-lang.org/style/naming-conventions.html#objects)，应该命名小写。
+尽量不使用`package object`。应当使用普通object来模拟package。这种情况属于[模拟package](http://docs.scala-lang.org/style/naming-conventions.html#objects)，命名应该小写。
 
 ## 类型别名的伴生对象
 
