@@ -11,11 +11,15 @@ package之间不应该有循环依赖。Scala文件之间不应该有循环依�
 
 每个库应该尽量小，只应包含一个Scala源文件。
 
-库名通常是去掉`.scala`后缀的文件名。
+库名通常是去掉`.scala`后缀的文件名。但有一个例外：如果文件名是`package.scala`，库名应该是包名。
 
-## 避免package object
+## 模拟package
 
-尽量不使用`package object`。应当使用普通object来模拟package，命名应该小写。
+如果需要提供一个由一组静态成员组成的库，那么这个库不应该是`package object`，而应当使用普通`object`来模拟`package`，命名应该小写。
+
+## package object
+
+如果有若干个相关的库位于同一个package，可以为这一组库提供一个`package object`作为[外观模式](https://zh.wikipedia.org/wiki/%E5%A4%96%E8%A7%80%E6%A8%A1%E5%BC%8F)。这个`package object`的文件名应该是`package.scala`，库名是包名。
 
 ## 类型别名的伴生对象
 
