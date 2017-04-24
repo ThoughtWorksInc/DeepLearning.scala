@@ -19,4 +19,13 @@ package之间不应该有循环依赖。Scala文件之间不应该有循环依�
 
 ## 类型别名的伴生对象
 
-类型别名应当与其伴生对象同名且位于同一文件。这个文件可以是模拟package的object。
+类型别名应当与其伴生对象同名且位于同一文件。这个文件可以是模拟package的object。例如：
+
+``` scala
+object tryT {
+  type TryT[F[_], A] = ???
+  object TryT {
+    ???
+  }
+}
+```
