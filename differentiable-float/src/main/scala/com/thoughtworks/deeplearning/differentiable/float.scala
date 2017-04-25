@@ -1,9 +1,9 @@
 package com.thoughtworks.deeplearning
+package differentiable
 
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.raii.RAIITask
-import com.thoughtworks.deeplearning.float.optimizers.Optimizer
 import com.thoughtworks.deeplearning.LogRecords.{FloatWeightTracker, UncaughtExceptionDuringBackward}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
@@ -21,14 +21,15 @@ object float {
 
   private[deeplearning] type FloatTape = Tape.Aux[Float, Float]
 
-  object optimizers {
-    trait Optimizer {
-      def currentDelta(oldValue: Float, delta: Float): Float = delta
+  trait Optimizer {
+    def currentDelta(oldValue: Float, delta: Float): Float = delta
 
-      final def updateFloat(oldValue: Float, delta: Float): Float = {
-        oldValue - currentDelta(oldValue, delta)
-      }
+    final def updateFloat(oldValue: Float, delta: Float): Float = {
+      oldValue - currentDelta(oldValue, delta)
     }
+  }
+
+  object Optimizer {
 
     trait LearningRate extends Optimizer {
 
