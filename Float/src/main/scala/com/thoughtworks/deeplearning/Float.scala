@@ -63,7 +63,7 @@ object Float {
   final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory,
                                            logger: Logger = Logger.getGlobal)
       extends Tape {
-    private val optimizer: Optimizer = optimizerFactory.FloatOptimizer(this)
+    private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
 
     override type Data = Float
     override type Delta = Float
@@ -96,12 +96,12 @@ object Float {
 
   object OptimizerFactory {
     implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def FloatOptimizer(weight: Weight): Optimizer = optimizer
+      override def floatOptimizer(weight: Weight): Optimizer = optimizer
     }
   }
 
   trait OptimizerFactory {
-    def FloatOptimizer(weight: Weight): Optimizer
+    def floatOptimizer(weight: Weight): Optimizer
   }
 
   implicit object TrainableFloat extends Trainable[Float, Float] {
