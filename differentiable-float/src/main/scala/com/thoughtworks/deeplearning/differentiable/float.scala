@@ -105,7 +105,7 @@ object float {
     @inline
     implicit def liftFloat[A](implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
       typeClass
-    implicit final class ToFloatWeightOps(value: Float) {
+    implicit final class FloatToWeightOps(value: Float) {
       def toWeight(implicit optimizerFactory: OptimizerFactory, logger: Logger = Logger.getGlobal): Weight = {
         Weight(value)
       }
