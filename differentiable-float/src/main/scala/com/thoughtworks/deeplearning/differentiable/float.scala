@@ -278,7 +278,7 @@ object float {
       }
     }
 
-    implicit final class FloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
+    implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
                                                     logger: Logger = Logger.getGlobal) {
       private val operand: RAIITask.Covariant[FloatTape] = lift(from)
       @inline
