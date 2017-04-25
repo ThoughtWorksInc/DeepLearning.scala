@@ -8,7 +8,6 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, Dsl
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.RAIITask
-import jdk.nashorn.internal.objects.annotations.Setter
 import shapeless.labelled._
 import shapeless._
 
