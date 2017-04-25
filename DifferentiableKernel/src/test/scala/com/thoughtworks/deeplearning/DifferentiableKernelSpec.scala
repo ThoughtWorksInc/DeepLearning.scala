@@ -110,8 +110,6 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
         getElement(bufferIdentifier[Float, Float]('input), getGlobalId(intLiteral(0)))
       }
 
-      println(differentiableKernel)
-
       import DifferentiableKernel._
       import StaticDslType._
 
