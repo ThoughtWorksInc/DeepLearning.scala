@@ -3,10 +3,10 @@ package com.thoughtworks.deeplearning
 import java.util.logging.Level
 
 import org.scalatest._
-import com.thoughtworks.deeplearning.Float.{FloatOps, TrainableFloat, toFloatTapeTask, _}
+import com.thoughtworks.deeplearning.float._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import PolyFunctions._
-import com.thoughtworks.deeplearning.Float.Optimizers.{L1Regularization, LearningRate, Optimizer}
+import com.thoughtworks.deeplearning.float.optimizers.{L1Regularization, LearningRate, Optimizer}
 import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
 import com.thoughtworks.deeplearning.TapeTask.train
 import com.thoughtworks.deeplearning.TapeTask.predict
@@ -19,6 +19,7 @@ import com.thoughtworks.raii.ResourceFactoryT.ResourceT
 import org.scalactic.ErrorMessage
 import org.slf4j.bridge.SLF4JBridgeHandler
 import shapeless.Lazy
+import float.implicits._
 
 import scala.annotation.tailrec
 import scalaz.{-\/, EitherT, Foldable, \/, \/-}
@@ -28,7 +29,7 @@ import scalaz.std.iterable._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
+final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   case class Boom(errorMessage: ErrorMessage) extends RuntimeException
 
@@ -48,7 +49,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
     }
   }
 
-  implicit val logger: java.util.logging.Logger = java.util.logging.Logger.getLogger("FloatSpec")
+  implicit val logger: java.util.logging.Logger = java.util.logging.Logger.getLogger("floatSpec")
   logger.setLevel(Level.ALL)
   SLF4JBridgeHandler.install()
 
@@ -627,7 +628,6 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
     val weight: Weight = 5.0f.toWeight
 
     def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      import com.thoughtworks.deeplearning.Float.toFloatOps
       abs(-RAIITask.now(weight))
     }
 
