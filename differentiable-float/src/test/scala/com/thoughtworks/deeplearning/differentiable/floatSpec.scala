@@ -1,12 +1,13 @@
 package com.thoughtworks.deeplearning
+package differentiable
 
 import java.util.logging.Level
 
 import org.scalatest._
-import com.thoughtworks.deeplearning.float._
+import float._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import PolyFunctions._
-import com.thoughtworks.deeplearning.float.optimizers.{L1Regularization, LearningRate, Optimizer}
+import float.Optimizer._
 import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
 import com.thoughtworks.deeplearning.TapeTask.train
 import com.thoughtworks.deeplearning.TapeTask.predict

@@ -1,9 +1,9 @@
 package com.thoughtworks.deeplearning
+package differentiable
 
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.raii.RAIITask
-import com.thoughtworks.deeplearning.float.optimizers.Optimizer
 import com.thoughtworks.deeplearning.LogRecords.{FloatWeightTracker, UncaughtExceptionDuringBackward}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
@@ -21,14 +21,15 @@ object float {
 
   private[deeplearning] type FloatTape = Tape.Aux[Float, Float]
 
-  object optimizers {
-    trait Optimizer {
-      def currentDelta(oldValue: Float, delta: Float): Float = delta
+  trait Optimizer {
+    def currentDelta(oldValue: Float, delta: Float): Float = delta
 
-      final def updateFloat(oldValue: Float, delta: Float): Float = {
-        oldValue - currentDelta(oldValue, delta)
-      }
+    final def updateFloat(oldValue: Float, delta: Float): Float = {
+      oldValue - currentDelta(oldValue, delta)
     }
+  }
+
+  object Optimizer {
 
     trait LearningRate extends Optimizer {
 
@@ -104,7 +105,7 @@ object float {
     @inline
     implicit def liftFloat[A](implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
       typeClass
-    implicit final class ToFloatWeightOps(value: Float) {
+    implicit final class FloatToWeightOps(value: Float) {
       def toWeight(implicit optimizerFactory: OptimizerFactory, logger: Logger = Logger.getGlobal): Weight = {
         Weight(value)
       }
@@ -277,7 +278,7 @@ object float {
       }
     }
 
-    implicit final class FloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
+    implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
                                                     logger: Logger = Logger.getGlobal) {
       private val operand: RAIITask.Covariant[FloatTape] = lift(from)
       @inline
