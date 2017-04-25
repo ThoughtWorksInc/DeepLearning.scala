@@ -9,6 +9,7 @@ import com.thoughtworks.raii.RAIITask
 import org.lwjgl.BufferUtils
 import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}
 import com.thoughtworks.each.Monadic._
+import shapeless._
 
 import scala.concurrent.Promise
 
@@ -16,6 +17,8 @@ import scala.concurrent.Promise
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
+//  def compileNil(OpenCL.Context): Unit = {}
+
   "Given an new OpenCL context" - {
     val platform = OpenCL.platforms.head
 
@@ -68,8 +71,8 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = OpenCLLayer.compile(differentiableKernel, context, device, commandQueue).each
-                  val outputTape = layer(1, Map.empty).each
+                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+                  val outputTape = layer(1, HNil).each
                   val delta = RAIITask.managed(context.createBuffer[Float](1))
                   RAIITask.unmanaged(outputTape.backward(delta)).each
                   val f = BufferUtils.createFloatBuffer(1)
@@ -98,18 +101,42 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
     }
 
-    "When fill a buffer with another buffer" ignore {
+    "When fill a buffer with another buffer" in {
 
       val differentiableKernel = {
         import OpenCLLayer._
         import DifferentiableKernel._
         import StaticDslType._
-        identifier[OpenCL.Buffer[Float], OpenCL.Buffer[Float]]('input)
-        getGlobalId(intLiteral(0))
-
+        getElement(bufferIdentifier[Float, Float]('input), getGlobalId(intLiteral(0)))
       }
 
-      ???
+      import DifferentiableKernel._
+      import StaticDslType._
+
+      val resultTask = openclTask
+        .flatMap {
+          case (context, commandQueue) =>
+            RAIITask.unmanaged(
+              RAIITask.run(
+                throwableMonadic[RAIITask] {
+                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+                  val outputTape = layer(1, ??? :: HNil).each
+                  val delta = RAIITask.managed(context.createBuffer[Float](1))
+                  RAIITask.unmanaged(outputTape.backward(delta)).each
+                  val f = BufferUtils.createFloatBuffer(1)
+                  val event = RAIITask.managed(commandQueue.enqueueReadBuffer(outputTape.data, f)).each
+                  RAIITask.unmanaged(event.waitForComplete()).each
+                  f
+                }
+              )
+            )
+        }
+        .run
+        .run
+
+      true should be(true)
+//      differentiableKernel.compile(???, device, ???)
+
     }
 
   }
