@@ -122,8 +122,7 @@ object DifferentiableKernel {
 
             override def data: Data = pendingBuffer
 
-            override def backward[OutputDeltaBuffer <: PendingBuffer[OutputElementDelta]](
-                outputDeltaTask: RAIITask[OutputDeltaBuffer]): Future[Unit] = {
+            override def backward(outputDeltaTask: RAIITask[_ <: Delta]): Future[Unit] = {
               Future.suspend {
                 Future.now(()) // TODO: backward
               }
