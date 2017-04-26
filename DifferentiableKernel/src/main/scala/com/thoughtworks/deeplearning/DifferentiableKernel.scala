@@ -1,30 +1,21 @@
 package com.thoughtworks.deeplearning
 
-import java.util.concurrent.Semaphore
-
-import com.thoughtworks.deeplearning.Closeables.{AssertionAutoCloseable, AssertionFinalizer}
-import com.thoughtworks.deeplearning.DifferentiableKernel.Zero.FloatZero
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
+import com.thoughtworks.raii.RAIITask
 import com.thoughtworks.raii.ResourceFactoryT.ResourceT
-import com.thoughtworks.raii.{RAIITask, ResourceFactoryT}
-import shapeless.labelled._
 import shapeless._
+import shapeless.labelled._
 
 import scala.concurrent.ExecutionContext
-import scala.util.control.NonFatal
-import scalaz.{@@, Monad, Monoid, \/, \/-}
-import scalaz.Tags.{Multiplication, Parallel}
-import scalaz.concurrent.Future
-import scalaz.concurrent.Future.{ParallelFuture, futureParallelApplicativeInstance}
-import scalaz.std.anyVal._
-import scalaz.std.iterable._
-import scalaz.syntax.foldable._
 import scala.language.higherKinds
+import scala.util.control.NonFatal
+import scalaz.concurrent.Future
+import scalaz.{\/, \/-}
 
 object DifferentiableKernel {
 
@@ -70,8 +61,6 @@ object DifferentiableKernel {
   // TODO: https://github.com/ClaireNeveu/macrame/issues/7
   type StaticDslType[A] = StaticDslType.AbstractType[A]
   type StaticDslExpression[A] = StaticDslExpression.AbstractType[A]
-
-  import StaticDslType._
 
   final case class OpenCLLayer[OutputElementData, OutputElementDelta, LocalDelta <: HList](
       data: StaticDslExpression[OutputElementData],
