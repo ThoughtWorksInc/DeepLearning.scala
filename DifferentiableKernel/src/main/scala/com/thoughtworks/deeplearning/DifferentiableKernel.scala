@@ -117,9 +117,10 @@ object DifferentiableKernel {
           }
 
           RAIITask.unmanaged(event.waitForComplete()).each
+          val pendingBuffer = PendingBuffer(outputBuffer, List(event))
           new Tape {
-            // borrow
-            override val data: PendingBuffer[OutputElementData] = PendingBuffer(outputBuffer, List(event))
+
+            override def data: Data = pendingBuffer
 
             override def backward[OutputDeltaBuffer <: PendingBuffer[OutputElementDelta]](
                 outputDeltaTask: RAIITask[OutputDeltaBuffer]): Future[Unit] = {
