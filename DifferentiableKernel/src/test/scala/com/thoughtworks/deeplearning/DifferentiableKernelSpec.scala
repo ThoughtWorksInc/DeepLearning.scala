@@ -56,6 +56,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
       (context, commandQueue)
     }
+    val semaphore = AsynchronousSemaphore(3)
 
     "When fill a buffer with 42.0f" - {
       val differentiableKernel = {
@@ -71,12 +72,14 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+                  val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
                   val outputTape = layer(1, HNil).each
-                  val delta = RAIITask.managed(context.createBuffer[Float](1))
+                  val delta = RAIITask.managed(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
                   RAIITask.unmanaged(outputTape.backward(delta)).each
                   val f = BufferUtils.createFloatBuffer(1)
-                  val event = RAIITask.managed(commandQueue.enqueueReadBuffer(outputTape.data, f)).each
+                  val event = RAIITask
+                    .managed(commandQueue.enqueueReadBuffer(outputTape.data.buffer, f, outputTape.data.events: _*))
+                    .each
                   RAIITask.unmanaged(event.waitForComplete()).each
                   f
                 }
@@ -119,12 +122,14 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = differentiableKernel.compile(context, device, commandQueue).each
+                  val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
                   val outputTape = layer(1, ??? :: HNil).each
-                  val delta = RAIITask.managed(context.createBuffer[Float](1))
+                  val delta = RAIITask.managed(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
                   RAIITask.unmanaged(outputTape.backward(delta)).each
                   val f = BufferUtils.createFloatBuffer(1)
-                  val event = RAIITask.managed(commandQueue.enqueueReadBuffer(outputTape.data, f)).each
+                  val event = RAIITask
+                    .managed(commandQueue.enqueueReadBuffer(outputTape.data.buffer, f, outputTape.data.events: _*))
+                    .each
                   RAIITask.unmanaged(event.waitForComplete()).each
                   f
                 }

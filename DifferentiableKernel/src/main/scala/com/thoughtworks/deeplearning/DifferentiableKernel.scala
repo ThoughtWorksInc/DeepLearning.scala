@@ -1,5 +1,8 @@
 package com.thoughtworks.deeplearning
 
+import java.util.concurrent.Semaphore
+
+import com.thoughtworks.deeplearning.Closeables.{AssertionAutoCloseable, AssertionFinalizer}
 import com.thoughtworks.deeplearning.DifferentiableKernel.Zero.FloatZero
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
@@ -7,13 +10,14 @@ import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.RAIITask
+import com.thoughtworks.raii.ResourceFactoryT.ResourceT
+import com.thoughtworks.raii.{RAIITask, ResourceFactoryT}
 import shapeless.labelled._
 import shapeless._
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
-import scalaz.{@@, Monad, Monoid}
+import scalaz.{@@, Monad, Monoid, \/, \/-}
 import scalaz.Tags.{Multiplication, Parallel}
 import scalaz.concurrent.Future
 import scalaz.concurrent.Future.{ParallelFuture, futureParallelApplicativeInstance}
@@ -24,13 +28,15 @@ import scala.language.higherKinds
 
 object DifferentiableKernel {
 
+  final case class PendingBuffer[Element](buffer: OpenCL.Buffer[Element], events: List[OpenCL.Event])
+
   private[DifferentiableKernel] trait StaticDslTypeExtractor {
     type AbstractType[A] <: DslType
 
     implicit def dslDouble: AbstractType[Double]
     implicit def dslFloat: AbstractType[Float]
     implicit def dslInt: AbstractType[Int]
-    implicit def dslBuffer[Element: AbstractType]: AbstractType[OpenCL.Buffer[Element]]
+    implicit def dslBuffer[Element: AbstractType]: AbstractType[PendingBuffer[Element]]
   }
 
   private[DifferentiableKernel] trait StaticDslExpressionExtractor {
@@ -73,14 +79,14 @@ object DifferentiableKernel {
 
     import OpenCLLayer._
 
-    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue)(
+    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue, semaphore: AsynchronousSemaphore)(
         implicit compiler: Compiler[OutputElementData, OutputElementDelta, LocalDelta],
         outputDataMemory: Memory[OutputElementData],
         outputDeltaMemory: Memory[OutputElementDelta],
         outputDataType: StaticDslType[OutputElementData],
         outputDeltaType: StaticDslType[OutputElementDelta],
         executor: ExecutionContext): RAIITask[(Int, compiler.ParameterRecord) => RAIITask[
-      Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
+      Tape.Aux[PendingBuffer[OutputElementData], PendingBuffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
 
       RAIITask.jump().each
 
@@ -101,20 +107,32 @@ object DifferentiableKernel {
       { (expectedSize: Int, inputParameterMap: compiler.ParameterRecord) =>
         throwableMonadic[RAIITask] {
           val kernel = forwardKernelTask.each
-          val outputBuffer =
-            RAIITask.managed(context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)).each
+          val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
+
           compiler.setKernelInputArguments(kernel, 1, inputParameterMap)
           kernel.setArg(0, outputBuffer)
-          val event =
+
+          RAIITask.unmanaged(semaphore.acquire()).each
+          val event = try {
             RAIITask
               .managed(
                 commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize)))))
               .each
+          } catch {
+            case e if NonFatal(e) =>
+              semaphore.release().run
+              (throw e): OpenCL.Event
+          }
+          event.waitForComplete().unsafePerformAsync { _ =>
+            semaphore.release().run
+          }
+
           RAIITask.unmanaged(event.waitForComplete()).each
           new Tape {
-            override def data: OpenCL.Buffer[OutputElementData] = outputBuffer
+            // borrow
+            override val data: PendingBuffer[OutputElementData] = PendingBuffer(outputBuffer, List(event))
 
-            override def backward[OutputDeltaBuffer <: OpenCL.Buffer[OutputElementDelta]](
+            override def backward[OutputDeltaBuffer <: PendingBuffer[OutputElementDelta]](
                 outputDeltaTask: RAIITask[OutputDeltaBuffer]): Future[Unit] = {
               Future.suspend {
                 Future.now(()) // TODO: backward
@@ -123,9 +141,9 @@ object DifferentiableKernel {
             }
 
             // TODO: Change OutputData and OutputDelta to a pair of OpenCL.Buffer and OpenCL.Event
-            override type Data = OpenCL.Buffer[OutputElementData]
-            override type Delta = OpenCL.Buffer[OutputElementDelta]
-          }: Tape.Aux[OpenCL.Buffer[OutputElementData], OpenCL.Buffer[OutputElementDelta]]
+            override type Data = PendingBuffer[OutputElementData]
+            override type Delta = PendingBuffer[OutputElementDelta]
+          }: Tape.Aux[PendingBuffer[OutputElementData], PendingBuffer[OutputElementDelta]]
         }
       }
     }
@@ -291,10 +309,10 @@ object DifferentiableKernel {
     }
 
     def bufferIdentifier[Data, Delta](
-        key: Witness): OpenCLLayer[OpenCL.Buffer[Data],
-                                   OpenCL.Buffer[Delta],
+        key: Witness): OpenCLLayer[PendingBuffer[Data],
+                                   PendingBuffer[Delta],
                                    FieldType[key.T, JacobianMatrix[Data, Delta]] :: HNil] = {
-      OpenCLLayer[OpenCL.Buffer[Data], OpenCL.Buffer[Delta], FieldType[key.T, JacobianMatrix[Data, Delta]] :: HNil](
+      OpenCLLayer[PendingBuffer[Data], PendingBuffer[Delta], FieldType[key.T, JacobianMatrix[Data, Delta]] :: HNil](
         StaticDslExpression(DslExpression.Identifier(key.value)),
         field[key.T](JacobianMatrix.Identity[Data, Delta]()) :: HNil
       )
@@ -314,7 +332,7 @@ object DifferentiableKernel {
                    IndexLocalDelta <: HList,
                    ElementLocalDelta <: HList,
                    LocalDelta <: HList](
-        buffer: OpenCLLayer[OpenCL.Buffer[ElementData], OpenCL.Buffer[ElementDelta], BufferLocalDelta],
+        buffer: OpenCLLayer[PendingBuffer[ElementData], PendingBuffer[ElementDelta], BufferLocalDelta],
         index: OpenCLLayer[Int, Float, IndexLocalDelta])(
         implicit elementDataType: StaticDslType[ElementData],
         zero: Zero.Aux[IndexLocalDelta],
@@ -355,6 +373,8 @@ object DifferentiableKernel {
     def forwardParameter: Parameter
 
     def setArgument(kernel: Kernel, index: Int, input: Input): Unit
+
+    def borrowEvents(input: Input): List[OpenCL.Event]
   }
 
   object InputCompiler {
@@ -368,14 +388,19 @@ object DifferentiableKernel {
         elementDataType: StaticDslType[InputElementData])
       : InputCompiler.Aux[Key,
                           JacobianMatrix.Row[InputElementData, InputElementDelta],
-                          Tape.Aux[OpenCL.Buffer[InputElementData], OpenCL.Buffer[InputElementDelta]]] =
+                          Tape.Aux[PendingBuffer[InputElementData], PendingBuffer[InputElementDelta]]] =
       new InputCompiler[Key, JacobianMatrix.Row[InputElementData, InputElementDelta]] {
 
-        override type Input = Tape.Aux[OpenCL.Buffer[InputElementData], OpenCL.Buffer[InputElementDelta]]
+        override type Input = Tape.Aux[PendingBuffer[InputElementData], PendingBuffer[InputElementDelta]]
         override def forwardParameter: Parameter = Parameter(witness.value, DslType.DslBuffer(elementDataType))
 
         override def setArgument(kernel: Kernel, index: Int, input: Input): Unit = {
-          kernel.setArg[OpenCL.Buffer[InputElementData]](index, input.data)
+          kernel.setArg[OpenCL.Buffer[InputElementData]](index, input.data.buffer)
+        }
+
+        override def borrowEvents(
+            input: Tape.Aux[PendingBuffer[InputElementData], PendingBuffer[InputElementDelta]]): List[OpenCL.Event] = {
+          input.data.events
         }
       }
 
@@ -395,6 +420,8 @@ object DifferentiableKernel {
       Parameter(OutputId, DslType.DslBuffer(outputDataType)) :: forwardInputParameters
 
     def setKernelInputArguments(kernel: Kernel, startIndex: Int, parameters: ParameterRecord)
+
+    def borrowEvents(parameters: ParameterRecord): List[OpenCL.Event]
   }
 
   object Compiler {
@@ -415,6 +442,8 @@ object DifferentiableKernel {
         override def forwardInputParameters: Nil.type = Nil
 
         override def setKernelInputArguments(kernel: Kernel, startIndex: Int, parameters: HNil): Unit = {}
+
+        override def borrowEvents(parameters: HNil): List[OpenCL.Event] = Nil
       }
 
     implicit def hconsFill[OutputElementData,
@@ -440,6 +469,10 @@ object DifferentiableKernel {
                                              parameters: FieldType[Key, Input] :: TailParameterRecord): Unit = {
           headInputCompiler.setArgument(kernel, startIndex, parameters.head)
           tailCompiler.setKernelInputArguments(kernel, startIndex + 1, parameters.tail)
+        }
+
+        override def borrowEvents(parameters: ::[FieldType[Key, Input], TailParameterRecord]): List[OpenCL.Event] = {
+          headInputCompiler.borrowEvents(parameters.head) ::: tailCompiler.borrowEvents(parameters.tail)
         }
       }
 
