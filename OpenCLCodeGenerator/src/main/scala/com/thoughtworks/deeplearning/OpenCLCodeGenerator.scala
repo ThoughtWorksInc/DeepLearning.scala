@@ -13,7 +13,7 @@ import scala.collection.{SeqView, mutable}
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object OpenCLCodeGenerator { // TODO: rename to OpenCLCodeGenerator
+object OpenCLCodeGenerator {
 
   trait Context {
     def freshName(prefix: String): String
