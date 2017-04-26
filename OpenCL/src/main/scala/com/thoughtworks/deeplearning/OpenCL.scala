@@ -495,7 +495,10 @@ data: $data""")
 
   final class Event(val handle: Address) extends AssertionAutoCloseable with AssertionFinalizer {
 
-    def duplicate = new Event(handle)
+    def duplicate(): Event = {
+      checkErrorCode(clRetainEvent(handle.toLong))
+      new Event(handle)
+    }
 
     override protected def forceClose(): Unit = {
       checkErrorCode(clReleaseEvent(handle.toLong))
