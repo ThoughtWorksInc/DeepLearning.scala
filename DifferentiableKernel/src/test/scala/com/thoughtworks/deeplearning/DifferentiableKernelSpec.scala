@@ -72,7 +72,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
+                  val layer = differentiableKernel.compile(context, commandQueue, semaphore).each
                   val outputTape = layer(1, HNil).each
                   val delta = RAIITask.managed(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
                   RAIITask.unmanaged(outputTape.backward(delta)).each
@@ -122,7 +122,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
             RAIITask.unmanaged(
               RAIITask.run(
                 throwableMonadic[RAIITask] {
-                  val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
+                  val layer = differentiableKernel.compile(context, commandQueue, semaphore).each
                   val outputTape = layer(1, ??? :: HNil).each
                   val delta = RAIITask.managed(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
                   RAIITask.unmanaged(outputTape.backward(delta)).each

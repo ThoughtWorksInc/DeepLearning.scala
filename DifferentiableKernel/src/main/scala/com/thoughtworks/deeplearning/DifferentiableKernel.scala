@@ -68,7 +68,7 @@ object DifferentiableKernel {
 
     import OpenCLLayer._
 
-    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue, semaphore: AsynchronousSemaphore)(
+    def compile(context: OpenCL.Context, commandQueue: CommandQueue, semaphore: AsynchronousSemaphore)(
         implicit compiler: Compiler[OutputElementData, OutputElementDelta, LocalDelta],
         outputDataMemory: Memory[OutputElementData],
         outputDeltaMemory: Memory[OutputElementDelta],
