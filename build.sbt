@@ -5,7 +5,9 @@ lazy val DifferentiableKernel =
   project.dependsOn(
     OpenCL,
     OpenCLCodeGenerator,
-    TapeTaskFactory
+    TapeTaskFactory,
+    FutureIsomorphism,
+    AsynchronousSemaphore
   )
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
@@ -39,6 +41,10 @@ lazy val PolyFunctions = project.dependsOn(ToTapeTask)
 lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "RAIITask"))
 
 lazy val LogRecords = project
+
+lazy val AsynchronousSemaphore = project
+
+lazy val FutureIsomorphism = project
 
 //lazy val DifferentiableDouble =
 //  project.dependsOn(Layer,
