@@ -53,7 +53,7 @@ object TapeTaskFactory {
     @volatile
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
 
-    final override def backward[CovariantDelta <: OutputDelta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
+    final override def backward(deltaFuture: RAIITask[_ <: OutputDelta]): Future[Unit] = {
       val eitherTRAIIFuture: EitherT[RAIIFuture, Throwable, Unit] = deltaFuture.map { delta =>
         synchronized {
           if (logger.isLoggable(Level.FINER)) {

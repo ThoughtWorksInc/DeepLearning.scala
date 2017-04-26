@@ -64,7 +64,7 @@ object float {
     override type Data = Float
     override type Delta = Float
 
-    override def backward[CovariantDelta <: Delta](deltaFuture: RAIITask[CovariantDelta]): Future[Unit] = {
+    override def backward(deltaFuture: RAIITask[_ <: Delta]): Future[Unit] = {
       val eitherTRAIIFuture = deltaFuture.map { delta =>
         synchronized {
           if (logger.isLoggable(Level.FINER)) {
