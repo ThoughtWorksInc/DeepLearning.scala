@@ -19,6 +19,12 @@ import scalaz.{\/, \/-}
 
 object DifferentiableKernel {
 
+  final case class Weight() extends Tape{
+    override def data: Data = ???
+
+    override def backward[CovariantDelta <: Delta](outputDelta: RAIITask[CovariantDelta]): Future[Unit] = ???
+  }
+
   final case class PendingBuffer[Element](buffer: OpenCL.Buffer[Element], events: List[OpenCL.Event])
 
   private[DifferentiableKernel] trait StaticDslTypeExtractor {
