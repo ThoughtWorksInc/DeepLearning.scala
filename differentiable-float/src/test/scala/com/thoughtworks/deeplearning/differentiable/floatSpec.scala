@@ -3,29 +3,31 @@ package differentiable
 
 import java.util.logging.Level
 
-import org.scalatest._
-import float._
+import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
-import PolyFunctions._
-import float.Optimizer._
-import com.thoughtworks.raii.{RAIIFuture, RAIITask, ResourceFactoryT}
-import com.thoughtworks.deeplearning.TapeTask.train
-import com.thoughtworks.deeplearning.TapeTask.predict
+import com.thoughtworks.deeplearning.TapeTask.{predict, train}
 import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.MultipleException
-
-import scala.concurrent.{ExecutionContext, Promise}
-import scalaz.concurrent.{Future, Task}
+import com.thoughtworks.deeplearning.differentiable.float.Optimizer._
+import com.thoughtworks.deeplearning.differentiable.float._
+import com.thoughtworks.deeplearning.differentiable.float.implicits._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.ResourceFactoryT.ResourceT
+import com.thoughtworks.raii.future.Do
+import com.thoughtworks.raii.transformers
+import com.thoughtworks.raii.transformers.{ResourceFactoryT, ResourceT}
+import com.thoughtworks.tryt.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
+import org.scalatest._
 import org.slf4j.bridge.SLF4JBridgeHandler
-import shapeless.Lazy
-import float.implicits._
+import com.thoughtworks.raii.future.Do._
 
-import scala.annotation.tailrec
-import scalaz.{-\/, EitherT, Foldable, \/, \/-}
+import scalaz.concurrent.Future.futureInstance
+import scala.concurrent.{ExecutionContext, Promise}
+import scala.util.Try
+import scalaz.concurrent.{Future, Task}
 import scalaz.std.option._
-import scalaz.std.iterable._
+import scalaz.{-\/, EitherT, MonadError, \/, \/-}
+import scalaz.syntax.all._
+import scalaz.std.`try`.toDisjunction
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -34,10 +36,20 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   case class Boom(errorMessage: ErrorMessage) extends RuntimeException
 
-  private def throwableFloatTapeTask(throwable: Throwable): RAIITask[Tape.Aux[Float, Float]] = {
-    EitherT
-      .eitherTMonadError[ResourceFactoryT[Future, ?], Throwable]
-      .raiseError[Tape.Aux[Float, Float]](throwable)
+  private def throwableFloatTapeTask(throwable: Throwable): Do[Tape.Aux[Float, Float]] = {
+    import com.thoughtworks.raii.transformers.ResourceFactoryT._
+    import scalaz.concurrent.Future._
+
+    val value1: TryT[ResourceFactoryT[Future, ?], Aux[Float, Float]] = TryT
+      .tryTMonadError[ResourceFactoryT[Future, ?]]
+      .raiseError[Aux[Float, Float]](throwable)
+
+    val value3: ResourceFactoryT[Future, Try[Aux[Float, Float]]] =
+      TryT.unapply[ResourceFactoryT[Future, ?], Aux[Float, Float]](value1).get
+
+    val value2: Future[ResourceT[Future, Try[Aux[Float, Float]]]] = ResourceFactoryT.unapply(value3).get
+
+    Do[Tape.Aux[Float, Float]](value2)
   }
 
   private def jump()(implicit executionContext: ExecutionContext): Task[Unit] = {
@@ -62,16 +74,24 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val weight: Weight = 1.0f.toWeight
 
-    def myNetwork(input: RAIITask[Tape.Aux[Float, Float]]): RAIITask[Tape.Aux[Float, Float]] = {
+    def myNetwork(input: Do[Tape.Aux[Float, Float]]): Do[Tape.Aux[Float, Float]] = {
       6.7f + input + weight + 5.5f
     }
 
     def train(inputData: Float): Task[Unit] = {
-      val c: RAIITask[Unit] = myNetwork(RAIITask.now(Literal(inputData): Tape.Aux[Float, Float])).flatMap {
-        outputTape =>
-          RAIITask.unmanaged(outputTape.backward(RAIITask.now(1.0f)))
+      import com.thoughtworks.raii.transformers.ResourceFactoryT._
+      import scalaz.concurrent.Future._
+      import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+      val c: Do[Unit] = myNetwork(Do.now(Literal(inputData): Tape.Aux[Float, Float])).flatMap { outputTape =>
+        Do.unmanaged(outputTape.backward(Do.now(1.0f)))
       }
-      new Task(c.run.run)
+
+      val Do(futureAsyncReleasable) = c
+
+      val map: Future[\/[Throwable, Unit]] = ResourceFactoryT.run(ResourceFactoryT(futureAsyncReleasable)).map {
+        toDisjunction
+      }
+      new Task(map)
     }
 
     val task: Task[Unit] = throwableMonadic[Task] {
@@ -104,7 +124,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val weight: Weight = 1.0f.toWeight
 
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
+    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
       6.7f + input + weight + 5.5f
     }
 
@@ -141,7 +161,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val weight: Weight = 1.0f.toWeight
 
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
+    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
       1.0f + input + weight + 4.0f
     }
 
@@ -186,7 +206,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val weight: Weight = 1.0f.toWeight
 
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
+    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
       -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
       //10.0f - (input - weight + 4.0f) //6
     }
@@ -194,13 +214,18 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
     def trainMyNetwork(inputData: Float): Task[Float] = {
       train(myNetwork(inputData))
     }
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
+      import scalaz.std.iterable._
       for (_ <- 1 to 6) {
         trainMyNetwork(1.0f).each
       }
     }
+
+    //implicit val xxx: MonadError[Do[?],Throwable] = ???
 
     val result = throwableMonadic[Task] {
       task.each
@@ -223,443 +248,443 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "Predict -- one exception" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      10.0f - ((input - weight + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / 2.0f)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    val p = Promise[Assertion]
-
-    recoverToSucceededIf[MultipleException] {
-      p.future
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 6) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) =>
-            e should be(a[Boom])
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "Predict -- two exception" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
-        + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / 2.0f)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 6) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => {
-            e should be(a[MultipleException])
-            inside(e) {
-              case MultipleException(multipleException) => multipleException.size should be(2)
-            }
-          }
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "Predict -- three exception" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
-        + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / throwableFloatTapeTask(Boom("2.0f")))
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 6) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => {
-            e should be(a[MultipleException])
-            inside(e) {
-              case MultipleException(multipleException) => multipleException.size should be(3)
-            }
-          }
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "will not stackOverFlow" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 1000) {
-        Task.apply(()).each
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) => true should be(true)
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "min" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      5.0f - min(5.0f, weight)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 4) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be(0.0f)
-            weight.data should be(5)
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "max" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      10.0f - max(0.0f, weight)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 9) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be(0.0f)
-            weight.data should be(10)
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "log" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 0.5f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    val log5 = math.log(5).toFloat
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      log5 - log(weight)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 23) {
-        jump().each
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            math.abs(weight.data - 5) should be < 0.1f
-            loss should be < 0.1f
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "exp" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 0.1f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    val exp3 = math.exp(3).toFloat
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      exp3 - exp(weight)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 4) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            math.abs(weight.data - 3) should be < 0.1f
-            loss should be < 0.5f
-        }
-      }
-    }
-
-    p.future
-  }
-
-  "abs" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 1.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      5.0f - abs(weight)
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 4) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            weight.data should be(5.0f)
-            loss should be(0)
-        }
-      }
-    }
-    p.future
-  }
-
-  "unary_-" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight: Weight = 5.0f.toWeight
-
-    def myNetwork(input: Float): RAIITask[Tape.Aux[Float, Float]] = {
-      abs(-RAIITask.now(weight))
-    }
-
-    def trainMyNetwork(inputData: Float): Task[Float] = {
-      train(myNetwork(inputData))
-    }
-
-    @monadic[Task]
-    val task: Task[Unit] = {
-      for (_ <- 1 to 5) {
-        trainMyNetwork(1.0f).each
-      }
-    }
-
-    val result = throwableMonadic[Task] {
-      task.each
-      predict(myNetwork(1.0f)).each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            weight.data should be(0.0f)
-            loss should be(0)
-        }
-      }
-    }
-    p.future
-  }
+//  "Predict -- one exception" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      10.0f - ((input - weight + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / 2.0f)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    recoverToSucceededIf[MultipleException] {
+//      p.future
+//    }
+//
+//    @monadic[Do]
+//    val task: Do[Unit] = {
+//      for (_ <- 1 to 6) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) =>
+//            e should be(a[Boom])
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "Predict -- two exception" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
+//        + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / 2.0f)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 6) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => {
+//            e should be(a[MultipleException])
+//            inside(e) {
+//              case MultipleException(multipleException) => multipleException.size should be(2)
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "Predict -- three exception" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
+//        + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / throwableFloatTapeTask(Boom("2.0f")))
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 6) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => {
+//            e should be(a[MultipleException])
+//            inside(e) {
+//              case MultipleException(multipleException) => multipleException.size should be(3)
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "will not stackOverFlow" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 1000) {
+//        Task.apply(()).each
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) => true should be(true)
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "min" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      5.0f - min(5.0f, weight)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 4) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) =>
+//            loss should be(0.0f)
+//            weight.data should be(5)
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "max" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      10.0f - max(0.0f, weight)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 9) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) =>
+//            loss should be(0.0f)
+//            weight.data should be(10)
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "log" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 0.5f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    val log5 = math.log(5).toFloat
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      log5 - log(weight)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 23) {
+//        jump().each
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) =>
+//            math.abs(weight.data - 5) should be < 0.1f
+//            loss should be < 0.1f
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "exp" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 0.1f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    val exp3 = math.exp(3).toFloat
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      exp3 - exp(weight)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 4) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) =>
+//            math.abs(weight.data - 3) should be < 0.1f
+//            loss should be < 0.5f
+//        }
+//      }
+//    }
+//
+//    p.future
+//  }
+//
+//  "abs" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 1.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      5.0f - abs(weight)
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 4) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) =>
+//            weight.data should be(5.0f)
+//            loss should be(0)
+//        }
+//      }
+//    }
+//    p.future
+//  }
+//
+//  "unary_-" in {
+//    implicit def optimizer: Optimizer = new LearningRate {
+//      def currentLearningRate() = 1.0f
+//    }
+//
+//    val weight: Weight = 5.0f.toWeight
+//
+//    def myNetwork(input: Float): Do[Tape.Aux[Float, Float]] = {
+//      abs(-Do.now(weight))
+//    }
+//
+//    def trainMyNetwork(inputData: Float): Task[Float] = {
+//      train(myNetwork(inputData))
+//    }
+//
+//    @monadic[Task]
+//    val task: Task[Unit] = {
+//      for (_ <- 1 to 5) {
+//        trainMyNetwork(1.0f).each
+//      }
+//    }
+//
+//    val result = throwableMonadic[Task] {
+//      task.each
+//      predict(myNetwork(1.0f)).each
+//    }
+//
+//    val p = Promise[Assertion]
+//
+//    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+//      p.success {
+//        inside(either) {
+//          case -\/(e) => throw e
+//          case \/-(loss) =>
+//            weight.data should be(0.0f)
+//            loss should be(0)
+//        }
+//      }
+//    }
+//    p.future
+//  }
 }

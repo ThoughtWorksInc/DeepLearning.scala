@@ -135,7 +135,7 @@ object TapeTaskFactory {
         : Do[Tape.Aux[OutputData, OutputDelta]] = {
 
         import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTParallelApplicative
-        import com.thoughtworks.raii.future.doParallelApplicative
+        import com.thoughtworks.raii.future.Do.doParallelApplicative
 
         val parallelTuple =
           Applicative[Lambda[x => Do[x] @@ Parallel]]
@@ -143,7 +143,7 @@ object TapeTaskFactory {
 
         val tuple = Parallel.unwrap(parallelTuple)
 
-        import com.thoughtworks.raii.future.doMonadInstances
+        import com.thoughtworks.raii.future.Do.doMonadErrorInstances
 
         tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
@@ -202,7 +202,7 @@ object TapeTaskFactory {
           computeForward: Data => Task[(OutputData, OutputDelta => Do[_ <: Delta])])
         : Do[Tape.Aux[OutputData, OutputDelta]] = {
         import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
-        import com.thoughtworks.raii.future.doMonadInstances
+        import com.thoughtworks.raii.future.Do.doMonadErrorInstances
         operand.flatMap {
           case (upstream) =>
             val resource: RAIIFuture[Try[Tape.Aux[OutputData, OutputDelta]]] = {

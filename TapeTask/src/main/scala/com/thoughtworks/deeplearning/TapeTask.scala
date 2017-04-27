@@ -7,9 +7,9 @@ import scalaz.concurrent.Future._
 import scalaz.syntax.all._
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTParallelApplicative
-import com.thoughtworks.raii.future.doParallelApplicative
+import com.thoughtworks.raii.future.Do.doParallelApplicative
 import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
-import com.thoughtworks.raii.future.doMonadInstances
+import com.thoughtworks.raii.future.Do.doMonadErrorInstances
 import com.thoughtworks.raii.transformers.ResourceFactoryT
 import com.thoughtworks.tryt.TryT
 
