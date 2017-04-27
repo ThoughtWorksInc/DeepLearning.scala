@@ -17,9 +17,10 @@ lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 // TODO: Move to a separate repository
 lazy val Memory = project
 
-lazy val Tape = project.dependsOn(ProjectRef(file("RAII.scala"), "packageJVM"), LogRecords)
+lazy val Tape =
+  project.dependsOn(ProjectRef(file("RAII.scala"), "packageJVM"), LogRecords, ProjectRef(file("RAII.scala"), "Do"))
 
-lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "RAIITask"))
+lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
 
 lazy val Closeables = project
 
@@ -34,11 +35,11 @@ lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.sc
 
 lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions)
 
-lazy val ToTapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "RAIITask"))
+lazy val ToTapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
 
 lazy val PolyFunctions = project.dependsOn(ToTapeTask)
 
-lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "RAIITask"))
+lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
 
 lazy val LogRecords = project
 

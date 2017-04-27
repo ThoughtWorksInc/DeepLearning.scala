@@ -1,26 +1,46 @@
 package com.thoughtworks.deeplearning
-import com.thoughtworks.raii.RAIITask
 
-import scalaz.concurrent.Task
+import com.thoughtworks.raii.RAIIFuture
+import com.thoughtworks.raii.future.Do
 
+import scalaz.concurrent.Future._
+import scalaz.syntax.all._
+import scalaz.concurrent.{Future, Task}
+import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTParallelApplicative
+import com.thoughtworks.raii.future.doParallelApplicative
+import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
+import com.thoughtworks.raii.future.doMonadInstances
+import com.thoughtworks.raii.transformers.ResourceFactoryT
+import com.thoughtworks.tryt.TryT
+
+import scala.util.Try
+import scalaz.\/
+import scalaz.std.`try`.toDisjunction
 object TapeTask {
 
-  def predict[OutputData, OutputDelta](forward: RAIITask[_ <: Tape.Aux[OutputData, OutputDelta]]): Task[OutputData] = {
-    new Task(forward.map(_.data).run.run)
+  def predict[OutputData, OutputDelta](forward: Do[_ <: Tape.Aux[OutputData, OutputDelta]]): Task[OutputData] = {
+    val Do(doOutputData) = forward.map(_.data)
+    import com.thoughtworks.raii.transformers.ResourceFactoryT._
+    new Task(ResourceFactoryT.run(ResourceFactoryT(doOutputData).map(toDisjunction)))
   }
 
-  def train[OutputData, OutputDelta](forward: RAIITask[_ <: Tape.Aux[OutputData, OutputDelta]])(
+  def train[OutputData, OutputDelta](forward: Do[_ <: Tape.Aux[OutputData, OutputDelta]])(
       implicit trainable: Trainable[OutputData, OutputDelta]): Task[OutputData] = {
-    val c: RAIITask[OutputData] = forward.flatMap[OutputData] { outputTape =>
-      RAIITask.unmanaged(outputTape.backward(trainable(outputTape.data))).map { _ =>
+
+    val doOutputData: Do[OutputData] = forward.flatMap[OutputData] { outputTape =>
+      Do.unmanaged(outputTape.backward(trainable(outputTape.data))).map { _ =>
         outputTape.data
       }
     }
-    new Task(c.run.run)
+
+    val Do(futureOutputData) = doOutputData
+
+    import com.thoughtworks.raii.transformers.ResourceFactoryT._
+    new Task(ResourceFactoryT.run(ResourceFactoryT(futureOutputData).map(toDisjunction)))
   }
 
   trait Trainable[-Data, +Delta] {
-    def apply(data: Data): RAIITask[_ <: Delta]
+    def apply(data: Data): Do[_ <: Delta]
   }
 
 }
