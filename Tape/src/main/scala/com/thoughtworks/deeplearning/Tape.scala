@@ -15,12 +15,6 @@ trait Tape {
 
   def data: Data
   def backward(outputDelta: Do[_ <: Delta]): Future[Unit]
-
-  /** @see https://github.com/scala/bug/issues/10251 */
-  @inline private[deeplearning] final def workaround10251: {
-    type Data = Tape.this.Data
-    type Delta = Tape.this.Delta
-  } = this
 }
 
 object Tape {
