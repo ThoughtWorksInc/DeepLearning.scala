@@ -12,7 +12,6 @@ import com.thoughtworks.deeplearning.differentiable.float._
 import com.thoughtworks.deeplearning.differentiable.float.implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.transformers
 import com.thoughtworks.raii.transformers.{ResourceFactoryT, ResourceT}
 import com.thoughtworks.tryt.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
