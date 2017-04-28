@@ -10,6 +10,7 @@ import scalaz.Free.Trampoline
 object AsynchronousSemaphore {
   sealed trait State
   final case class Available(restNumberOfPermits: Int) extends State
+  final val Available1 = Available(1)
   final case class Unavailable(waiters: Queue[Unit => Trampoline[Unit]]) extends State
 
   @inline
@@ -61,11 +62,19 @@ trait AsynchronousSemaphore {
   final def release(): Trampoline[Unit] = {
     state.get() match {
       case oldState @ Unavailable(waiters) =>
-        val (head, tail) = waiters.dequeue
-        if (state.compareAndSet(oldState, Unavailable(tail))) {
-          head(())
+        if (waiters.nonEmpty) {
+          val (head, tail) = waiters.dequeue
+          if (state.compareAndSet(oldState, Unavailable(tail))) {
+            head(())
+          } else {
+            release()
+          }
         } else {
-          release()
+          if (state.compareAndSet(oldState, Available1)) {
+            Trampoline.done(())
+          } else {
+            release()
+          }
         }
       case oldState @ Available(restNumberOfPermits) =>
         if (state.compareAndSet(oldState, Available(restNumberOfPermits + 1))) {

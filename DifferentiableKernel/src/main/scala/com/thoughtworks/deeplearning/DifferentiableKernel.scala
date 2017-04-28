@@ -1,5 +1,9 @@
 package com.thoughtworks.deeplearning
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.logging.Logger
+
+import com.thoughtworks.deeplearning.LogRecords.UncaughtExceptionDuringUpdatingWeights
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
@@ -8,21 +12,74 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do._
+import com.thoughtworks.raii.transformers.ResourceT
 import shapeless._
 import shapeless.labelled._
 
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
+import scala.util.{Success, Try}
 import scala.util.control.NonFatal
-import scalaz.concurrent.Future
-import scalaz.{\/, \/-}
+import scalaz.Free.Trampoline
+import scalaz.concurrent.{Future, Task}
+import scalaz.{-\/, Trampoline, \/, \/-}
 
 object DifferentiableKernel {
 
-  final case class Weight() extends Tape{
-    override def data: Data = ???
+  def acquire(semaphore: AsynchronousSemaphore): Do[Unit] = {
+    Do(FutureIsomorphism.from(semaphore.acquire()).map { _ =>
+      new ResourceT[Future, Try[Unit]] {
+        override def value: Try[Unit] = Success(())
+        override def release(): Future[Unit] = Future.delay(semaphore.release().run)
+      }
+    })
+  }
 
-    override def backward[CovariantDelta <: Delta](outputDelta: RAIITask[CovariantDelta]): Future[Unit] = ???
+  trait Optimizer[Element] {
+    def currentDelta(oldValue: PendingBuffer[Element], delta: PendingBuffer[Element]): Task[PendingBuffer[Element]]
+    def updateBuffer(oldValue: PendingBuffer[Element], delta: PendingBuffer[Element]): Task[PendingBuffer[Element]]
+  }
+
+  trait OptimizerFactory {
+    def bufferOptimizer[Element](weight: Weight[Element]): Optimizer[Element]
+  }
+
+  final case class Weight[Element: Memory](
+      var data: PendingBuffer[Element],
+      context: OpenCL.Context,
+      commandQueue: CommandQueue,
+      commandQueueSemaphore: AsynchronousSemaphore)(implicit optimizerFactory: OptimizerFactory, logger: Logger)
+      extends Tape {
+    import Weight._
+    override type Data = PendingBuffer[Element]
+    override type Delta = PendingBuffer[Element]
+
+    private val localSemaphore = AsynchronousSemaphore(1)
+    private val optimizer = optimizerFactory.bufferOptimizer(this)
+
+    private def doBackward[B <: PendingBuffer[Element]](doDelta: Do[B]): Do[Unit] = {
+      throwableMonadic[Do] {
+        val delta: PendingBuffer[Element] = doDelta.each
+        acquire(localSemaphore).each
+        val newData = Do.unmanaged(optimizer.updateBuffer(data, delta)).each
+        val oldData = data
+        data = newData
+        oldData.buffer.close()
+        oldData.events.foreach(_.close())
+      }
+    }
+
+    override def backward(doDelta: Do[_ <: PendingBuffer[Element]]): Future[Unit] = {
+      Do.run(doBackward(doDelta)).get.flatMap {
+        case -\/(e) =>
+          logger.log(UncaughtExceptionDuringUpdatingWeights(e))
+          Future.now(())
+        case \/-(()) =>
+          Future.now(())
+      }
+    }
   }
 
   final case class PendingBuffer[Element](buffer: OpenCL.Buffer[Element], events: List[OpenCL.Event])
