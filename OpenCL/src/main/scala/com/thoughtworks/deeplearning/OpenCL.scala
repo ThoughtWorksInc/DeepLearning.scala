@@ -564,6 +564,8 @@ data: $data""")
       }
     }
 
+    def length(implicit memory: Memory[Element]): Int = numberOfBytes / memory.numberOfBytesPerElement
+
     def duplicate(): Buffer[Element] = {
       checkErrorCode(clRetainMemObject(handle.toLong))
       new Buffer(handle)
