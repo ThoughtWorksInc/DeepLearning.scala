@@ -2,7 +2,7 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
-libraryDependencies += "org.scalaz" %% "scalaz-effect" % "7.2.10" % Test
+libraryDependencies += "org.scalaz" %% "scalaz-effect" % "7.2.11" % Test
 
 libraryDependencies += "org.slf4j" % "jul-to-slf4j" % "1.7.25" % Test
 
