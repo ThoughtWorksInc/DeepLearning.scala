@@ -46,11 +46,11 @@ object TapeTaskFactory {
   private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)(
       implicit logger: Logger)
       extends Tape
-      with ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]] {
+      with ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] {
 
     override final type Delta = OutputDelta
     override final type Data = OutputData
-    final override def value: \/-[this.type] = \/-(this)
+    final override def value: Try[this.type] = Success(this)
 
     @volatile
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
@@ -148,10 +148,10 @@ object TapeTaskFactory {
         tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
           val resource: RAIIFuture[Try[Tape.Aux[OutputData, OutputDelta]]] = {
-            val futureResourceT: Future[ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]]] =
+            val futureResourceT: Future[ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
-                case left @ -\/(_) =>
-                  ResourceT.unmanaged(left)
+                case left @ -\/(e) =>
+                  ResourceT.unmanaged(Failure(e))
                 case right @ \/-((forwardData, computeBackward)) =>
                   new Output[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
@@ -167,14 +167,7 @@ object TapeTaskFactory {
                     }
                   }
               }
-
-            val resourceFactoryTFutureEither: ResourceFactoryT[Future, \/[Throwable, Aux[OutputData, OutputDelta]]] =
-              ResourceFactoryT(futureResourceT)
-
-            import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonad
-            import scalaz.std.`try`.fromDisjunction
-
-            resourceFactoryTFutureEither.map(fromDisjunction)
+            ResourceFactoryT(futureResourceT)
           }
 
           val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] =
@@ -206,11 +199,12 @@ object TapeTaskFactory {
         operand.flatMap {
           case (upstream) =>
             val resource: RAIIFuture[Try[Tape.Aux[OutputData, OutputDelta]]] = {
-              val futureResourceT: Future[ResourceT[Future, Throwable \/ Tape.Aux[OutputData, OutputDelta]]] =
+              val futureResourceT: Future[ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]]] =
                 computeForward(upstream.data).get.map {
-                  case left @ -\/(_) =>
-                    ResourceT.unmanaged(left)
+                  case left @ -\/(e) =>
+                    ResourceT.unmanaged(Failure(e))
                   case right @ \/-((forwardData, computeBackward)) =>
+                    //TODO:Remove
                     upstream.workaround10251 match {
                       case trainable: Tape =>
                         new Output[OutputData, OutputDelta](forwardData) {
@@ -220,13 +214,7 @@ object TapeTaskFactory {
                         }
                     }
                 }
-              val resourceFactoryTFutureEither: ResourceFactoryT[Future, \/[Throwable, Aux[OutputData, OutputDelta]]] =
-                ResourceFactoryT(futureResourceT)
-
-              import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonad
-              import scalaz.std.`try`.fromDisjunction
-
-              resourceFactoryTFutureEither.map(fromDisjunction)
+              ResourceFactoryT(futureResourceT)
             }
             val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] =
               resource.shared
