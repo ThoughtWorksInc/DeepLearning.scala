@@ -204,14 +204,10 @@ object TapeTaskFactory {
                   case left @ -\/(e) =>
                     ResourceT.unmanaged(Failure(e))
                   case right @ \/-((forwardData, computeBackward)) =>
-                    //TODO:Remove
-                    upstream.workaround10251 match {
-                      case trainable: Tape =>
-                        new Output[OutputData, OutputDelta](forwardData) {
-                          override def release(): Future[Unit] = {
-                            trainable.backward(computeBackward(deltaAccumulator))
-                          }
-                        }
+                    new Output[OutputData, OutputDelta](forwardData) {
+                      override def release(): Future[Unit] = {
+                        upstream.backward(computeBackward(deltaAccumulator))
+                      }
                     }
                 }
               ResourceFactoryT(futureResourceT)
