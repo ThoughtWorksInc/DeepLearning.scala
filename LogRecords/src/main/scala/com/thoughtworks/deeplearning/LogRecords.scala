@@ -33,13 +33,15 @@ object LogRecords {
     override protected def makeDefaultMessage = fast"An exception raised during backward"
   }
 
-  final case class DeltaAccumulatorTracker[Delta](deltaAccumulator: Delta, delta: Delta)
+  final case class DeltaAccumulatorIsUpdating[Delta](deltaAccumulator: Delta, delta: Delta)
       extends LazyLogRecord(Level.FINER) {
-    override protected def makeDefaultMessage: Fastring = fast"deltaAccumulator : $deltaAccumulator, delta : $delta"
+    override protected def makeDefaultMessage: Fastring =
+      fast"Before deltaAccumulator update, deltaAccumulator is : $deltaAccumulator, delta is : $delta"
   }
 
-  final case class FloatWeightTracker[Delta](data: Delta, delta: Delta) extends LazyLogRecord(Level.FINER) {
-    override protected def makeDefaultMessage: Fastring = fast"weight : $data, delta : $delta"
+  final case class WeightIsUpdating[Delta](data: Delta, delta: Delta) extends LazyLogRecord(Level.FINER) {
+    override protected def makeDefaultMessage: Fastring =
+      fast"Before weight update, weight is : $data, delta is : $delta"
   }
 
 }

@@ -3,7 +3,7 @@ package differentiable
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{FloatWeightTracker, UncaughtExceptionDuringBackward}
+import com.thoughtworks.deeplearning.LogRecords.{WeightIsUpdating, UncaughtExceptionDuringBackward}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.raii.future.Do
@@ -78,7 +78,7 @@ object float {
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
-              logger.log(FloatWeightTracker(data, delta))
+              logger.log(WeightIsUpdating(data, delta))
             }
             data = optimizer.updateFloat(data, delta)
           }

@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{DeltaAccumulatorTracker, UncaughtExceptionDuringBackward}
+import com.thoughtworks.deeplearning.LogRecords.{DeltaAccumulatorIsUpdating, UncaughtExceptionDuringBackward}
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.raii._
 
@@ -67,7 +67,7 @@ object TapeTaskFactory {
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
-              logger.log(DeltaAccumulatorTracker(deltaAccumulator, delta))
+              logger.log(DeltaAccumulatorIsUpdating(deltaAccumulator, delta))
             }
             deltaAccumulator |+|= delta
           }
