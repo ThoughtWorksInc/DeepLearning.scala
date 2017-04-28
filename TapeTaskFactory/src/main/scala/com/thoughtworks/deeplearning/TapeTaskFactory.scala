@@ -67,7 +67,7 @@ object TapeTaskFactory {
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
-              logger.log(DeltaAccumulatorTracker(s"deltaAccumulator:$deltaAccumulator, delta: $delta"))
+              logger.log(DeltaAccumulatorTracker(deltaAccumulator, delta))
             }
             deltaAccumulator |+|= delta
           }
@@ -76,7 +76,7 @@ object TapeTaskFactory {
 
       ResourceFactoryT.run(tryTRAIIFuture).flatMap {
         case Failure(e) =>
-          logger.log(UncaughtExceptionDuringBackward(e, "An exception raised during backward"))
+          logger.log(UncaughtExceptionDuringBackward(e))
           Future.now(())
         case Success(()) =>
           Future.now(())

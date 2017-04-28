@@ -78,7 +78,7 @@ object float {
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
-              logger.log(FloatWeightTracker(s"weight: $data, delta:$delta"))
+              logger.log(FloatWeightTracker(data, delta))
             }
             data = optimizer.updateFloat(data, delta)
           }
@@ -87,7 +87,7 @@ object float {
 
       ResourceFactoryT.run(tryTRAIIFuture).flatMap {
         case Failure(e) =>
-          logger.log(UncaughtExceptionDuringBackward(e, "An exception raised during backward"))
+          logger.log(UncaughtExceptionDuringBackward(e))
           Future.now(())
         case Success(()) =>
           Future.now(())

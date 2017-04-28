@@ -28,18 +28,18 @@ object LogRecords {
 
   }
 
-  final case class UncaughtExceptionDuringBackward(thrown: Throwable, customMessage: String = null)
-      extends LazyLogRecord(Level.SEVERE, customMessage) {
+  final case class UncaughtExceptionDuringBackward(thrown: Throwable) extends LazyLogRecord(Level.SEVERE) {
     setThrown(thrown)
     override protected def makeDefaultMessage = fast"An exception raised during backward"
   }
 
-  final case class DeltaAccumulatorTracker(customMessage: String) extends LazyLogRecord(Level.FINER, customMessage) {
-    override protected def makeDefaultMessage: Fastring = fast"DeltaAccumulatorTracker default message"
+  final case class DeltaAccumulatorTracker[Delta](deltaAccumulator: Delta, delta: Delta)
+      extends LazyLogRecord(Level.FINER) {
+    override protected def makeDefaultMessage: Fastring = fast"deltaAccumulator : $deltaAccumulator, delta : $delta"
   }
 
-  final case class FloatWeightTracker(customMessage: String) extends LazyLogRecord(Level.FINER, customMessage) {
-    override protected def makeDefaultMessage: Fastring = fast"FloatWeightTracker default message"
+  final case class FloatWeightTracker[Delta](data: Delta, delta: Delta) extends LazyLogRecord(Level.FINER) {
+    override protected def makeDefaultMessage: Fastring = fast"weight : $data, delta : $delta"
   }
 
 }
