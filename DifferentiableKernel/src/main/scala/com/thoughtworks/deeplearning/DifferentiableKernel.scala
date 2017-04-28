@@ -6,8 +6,8 @@ import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.RAIITask
-import com.thoughtworks.raii.ResourceFactoryT.ResourceT
+import com.thoughtworks.raii.future.Do
+import com.thoughtworks.raii.future.Do._
 import shapeless._
 import shapeless.labelled._
 
@@ -80,10 +80,10 @@ object DifferentiableKernel {
         outputDeltaMemory: Memory[OutputElementDelta],
         outputDataType: StaticDslType[OutputElementData],
         outputDeltaType: StaticDslType[OutputElementDelta],
-        executor: ExecutionContext): RAIITask[(Int, compiler.ParameterRecord) => RAIITask[
-      Tape.Aux[PendingBuffer[OutputElementData], PendingBuffer[OutputElementDelta]]]] = throwableMonadic[RAIITask] {
+        executor: ExecutionContext): Do[(Int, compiler.ParameterRecord) => Do[
+      Tape.Aux[PendingBuffer[OutputElementData], PendingBuffer[OutputElementDelta]]]] = throwableMonadic[Do] {
 
-      RAIITask.jump().each
+      Do.jump().each
 
       def forwardKernelDefinition: KernelDefinition = {
         val outputIndex = {
@@ -95,22 +95,21 @@ object DifferentiableKernel {
       }
 
       val forwardSource = OpenCLCodeGenerator.generateSourceCode(forwardKernelDefinition).toArray[CharSequence]
-      val forwordProgram = RAIITask.managed(context.createProgramWithSource(forwardSource)).each
-      RAIITask.unmanaged(forwordProgram.build()).each
-      val forwardKernelTask = RAIITask.managed(forwordProgram.createKernel(ForwardKernelName))
+      val forwordProgram = Do.managed(context.createProgramWithSource(forwardSource)).each
+      Do.unmanaged(forwordProgram.build()).each
+      val forwardKernelTask = Do.managed(forwordProgram.createKernel(ForwardKernelName))
 
       { (expectedSize: Int, inputParameterMap: compiler.ParameterRecord) =>
-        throwableMonadic[RAIITask] {
+        throwableMonadic[Do] {
           val kernel = forwardKernelTask.each
           val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
 
           compiler.setKernelInputArguments(kernel, 1, inputParameterMap)
           kernel.setArg(0, outputBuffer)
 
-          RAIITask.unmanaged(semaphore.acquire()).each
+          Do.unmanaged(semaphore.acquire()).each
           val event = try {
-            RAIITask
-              .managed(
+            Do.managed(
                 commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize)))))
               .each
           } catch {
@@ -122,13 +121,13 @@ object DifferentiableKernel {
             semaphore.release().run
           }
 
-          RAIITask.unmanaged(event.waitForComplete()).each
+          Do.unmanaged(event.waitForComplete()).each
           val pendingBuffer = PendingBuffer(outputBuffer, List(event))
           new Tape {
 
             override def data: Data = pendingBuffer
 
-            override def backward(outputDeltaTask: RAIITask[_ <: Delta]): Future[Unit] = {
+            override def backward(outputDeltaTask: Do[_ <: Delta]): Future[Unit] = {
               Future.suspend {
                 Future.now(()) // TODO: backward
               }

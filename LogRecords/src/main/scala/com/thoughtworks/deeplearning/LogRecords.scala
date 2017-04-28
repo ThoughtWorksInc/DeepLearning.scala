@@ -10,11 +10,11 @@ object LogRecords {
   private[LogRecords] abstract class LazyLogRecord(level: Level, customMessage: String = null)(
       implicit fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
-      fileName: sourcecode.File)
+      className: Caller[_])
       extends LogRecord(level, customMessage) {
 
     setLoggerName(fullName.value)
-    setSourceClassName(fileName.value)
+    setSourceClassName(className.value.getClass.getName)
     setSourceMethodName(methodName.value)
 
     protected def makeDefaultMessage: Fastring
@@ -28,18 +28,27 @@ object LogRecords {
 
   }
 
-  final case class UncaughtExceptionDuringBackward(thrown: Throwable, customMessage: String = null)
-      extends LazyLogRecord(Level.SEVERE, customMessage) {
+  final case class UncaughtExceptionDuringBackward(
+      thrown: Throwable)(implicit fullName: sourcecode.FullName, methodName: sourcecode.Name, className: Caller[_])
+      extends LazyLogRecord(Level.SEVERE) {
     setThrown(thrown)
     override protected def makeDefaultMessage = fast"An exception raised during backward"
   }
 
-  final case class DeltaAccumulatorTracker(customMessage: String) extends LazyLogRecord(Level.FINER, customMessage) {
-    override protected def makeDefaultMessage: Fastring = fast"DeltaAccumulatorTracker default message"
+  final case class DeltaAccumulatorIsUpdating[Delta](
+      deltaAccumulator: Delta,
+      delta: Delta)(implicit fullName: sourcecode.FullName, methodName: sourcecode.Name, className: Caller[_])
+      extends LazyLogRecord(Level.FINER) {
+    override protected def makeDefaultMessage: Fastring =
+      fast"Before deltaAccumulator update, deltaAccumulator is : $deltaAccumulator, delta is : $delta"
   }
 
-  final case class FloatWeightTracker(customMessage: String) extends LazyLogRecord(Level.FINER, customMessage) {
-    override protected def makeDefaultMessage: Fastring = fast"FloatWeightTracker default message"
+  final case class WeightIsUpdating[Delta](data: Delta, delta: Delta)(implicit fullName: sourcecode.FullName,
+                                                                      methodName: sourcecode.Name,
+                                                                      className: Caller[_])
+      extends LazyLogRecord(Level.FINER) {
+    override protected def makeDefaultMessage: Fastring =
+      fast"Before weight update, weight is : $data, delta is : $delta"
   }
 
 }
