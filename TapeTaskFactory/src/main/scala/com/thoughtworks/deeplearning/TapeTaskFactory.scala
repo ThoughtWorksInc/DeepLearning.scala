@@ -31,7 +31,10 @@ object TapeTaskFactory {
                                                                     operand1: Do[_ <: Tape.Aux[Data1, Delta1]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[_ <: Delta0], Do[_ <: Delta1]))])(
       implicit binaryTapeTaskFactory: BinaryTapeTaskFactory[OutputData, OutputDelta],
-      logger: Logger): Do[Tape.Aux[OutputData, OutputDelta]] = {
+      logger: Logger,
+      fullName: sourcecode.FullName,
+      methodName: sourcecode.Name,
+      className: Caller[_]): Do[Tape.Aux[OutputData, OutputDelta]] = {
     binaryTapeTaskFactory(operand0, operand1)(computeForward)
   }
 
@@ -39,12 +42,18 @@ object TapeTaskFactory {
   def unary[Data, Delta, OutputData, OutputDelta](operand: Do[_ <: Tape.Aux[Data, Delta]])(
       computeForward: (Data) => Task[(OutputData, OutputDelta => Do[_ <: Delta])])(
       implicit unaryTapeTaskFactory: UnaryTapeTaskFactory[OutputData, OutputDelta],
-      logger: Logger): Do[Tape.Aux[OutputData, OutputDelta]] = {
+      logger: Logger,
+      fullName: sourcecode.FullName,
+      methodName: sourcecode.Name,
+      className: Caller[_]): Do[Tape.Aux[OutputData, OutputDelta]] = {
     unaryTapeTaskFactory(operand)(computeForward)
   }
 
   private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)(
-      implicit logger: Logger)
+      implicit logger: Logger,
+      fullName: sourcecode.FullName,
+      methodName: sourcecode.Name,
+      className: Caller[_])
       extends Tape
       with ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] {
 
@@ -126,7 +135,10 @@ object TapeTaskFactory {
         }
     }
 
-    final class MonoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid](implicit logger: Logger)
+    final class MonoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid](implicit logger: Logger,
+                                                                             fullName: sourcecode.FullName,
+                                                                             methodName: sourcecode.Name,
+                                                                             className: Caller[_])
         extends BinaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
       override def apply[Data0, Delta0, Data1, Delta1](operand0: Do[_ <: Tape.Aux[Data0, Delta0]],
@@ -182,13 +194,19 @@ object TapeTaskFactory {
 
     @inline
     implicit def monoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid](
-        implicit logger: Logger): BinaryTapeTaskFactory[OutputData, OutputDelta] = {
+        implicit logger: Logger,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): BinaryTapeTaskFactory[OutputData, OutputDelta] = {
       new MonoidBinaryTapeTaskFactory[OutputData, OutputDelta]
     }
   }
 
   object UnaryTapeTaskFactory {
-    final class MonoidUnaryTapeTaskFactory[OutputData, OutputDelta: Monoid](implicit logger: Logger)
+    final class MonoidUnaryTapeTaskFactory[OutputData, OutputDelta: Monoid](implicit logger: Logger,
+                                                                            fullName: sourcecode.FullName,
+                                                                            methodName: sourcecode.Name,
+                                                                            className: Caller[_])
         extends UnaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
       override def apply[Data, Delta](operand: Do[_ <: Tape.Aux[Data, Delta]])(
@@ -224,7 +242,10 @@ object TapeTaskFactory {
 
     @inline
     implicit def monoidUnaryTapeTaskFactory[OutputData, OutputDelta: Monoid](
-        implicit logger: Logger): UnaryTapeTaskFactory[OutputData, OutputDelta] = {
+        implicit logger: Logger,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): UnaryTapeTaskFactory[OutputData, OutputDelta] = {
       new MonoidUnaryTapeTaskFactory[OutputData, OutputDelta]
     }
   }

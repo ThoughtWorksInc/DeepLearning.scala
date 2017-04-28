@@ -60,7 +60,10 @@ object float {
   }
 
   final case class Weight(var data: Float)(implicit optimizerFactory: OptimizerFactory,
-                                           logger: Logger = Logger.getGlobal)
+                                           logger: Logger = Logger.getGlobal,
+                                           fullName: sourcecode.FullName,
+                                           className: Caller[_],
+                                           methodName: sourcecode.Name)
       extends Tape {
     private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
 
@@ -117,7 +120,11 @@ object float {
     implicit def liftFloat[A](implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
       typeClass
     implicit final class FloatToWeightOps(value: Float) {
-      def toWeight(implicit optimizerFactory: OptimizerFactory, logger: Logger = Logger.getGlobal): Weight = {
+      def toWeight(implicit optimizerFactory: OptimizerFactory,
+                   logger: Logger = Logger.getGlobal,
+                   fullName: sourcecode.FullName,
+                   className: Caller[_],
+                   methodName: sourcecode.Name): Weight = {
         Weight(value)
       }
     }
@@ -127,7 +134,10 @@ object float {
     }
 
     @inline
-    implicit def `Float+Float`(implicit logger: Logger = Logger.getGlobal)
+    implicit def `Float+Float`(implicit logger: Logger = Logger.getGlobal,
+                               fullName: sourcecode.FullName,
+                               className: Caller[_],
+                               methodName: sourcecode.Name)
       : PolyMethods.+.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyMethods.+.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -145,7 +155,10 @@ object float {
     }
 
     @inline
-    implicit def `Float-Float`(implicit logger: Logger = Logger.getGlobal)
+    implicit def `Float-Float`(implicit logger: Logger = Logger.getGlobal,
+                               fullName: sourcecode.FullName,
+                               className: Caller[_],
+                               methodName: sourcecode.Name)
       : PolyMethods.-.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyMethods.-.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -163,7 +176,10 @@ object float {
     }
 
     @inline
-    implicit def `Float*Float`(implicit logger: Logger = Logger.getGlobal)
+    implicit def `Float*Float`(implicit logger: Logger = Logger.getGlobal,
+                               fullName: sourcecode.FullName,
+                               className: Caller[_],
+                               methodName: sourcecode.Name)
       : PolyMethods.*.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyMethods.*.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -181,7 +197,10 @@ object float {
     }
 
     @inline
-    implicit def `Float/Float`(implicit logger: Logger = Logger.getGlobal)
+    implicit def `Float/Float`(implicit logger: Logger = Logger.getGlobal,
+                               fullName: sourcecode.FullName,
+                               className: Caller[_],
+                               methodName: sourcecode.Name)
       : PolyMethods./.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyMethods./.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -199,7 +218,10 @@ object float {
     }
 
     @inline
-    implicit def `min(Float,Float)`(implicit logger: Logger = Logger.getGlobal)
+    implicit def `min(Float,Float)`(implicit logger: Logger = Logger.getGlobal,
+                                    fullName: sourcecode.FullName,
+                                    className: Caller[_],
+                                    methodName: sourcecode.Name)
       : PolyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyFunctions.min.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -218,7 +240,10 @@ object float {
     }
 
     @inline
-    implicit def `max(Float,Float)`(implicit logger: Logger = Logger.getGlobal)
+    implicit def `max(Float,Float)`(implicit logger: Logger = Logger.getGlobal,
+                                    fullName: sourcecode.FullName,
+                                    className: Caller[_],
+                                    methodName: sourcecode.Name)
       : PolyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyFunctions.max.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
@@ -237,8 +262,11 @@ object float {
     }
 
     @inline
-    implicit def `log(Float)`(implicit logger: Logger = Logger.getGlobal)
-      : PolyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `log(Float)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): PolyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyFunctions.log.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
@@ -253,8 +281,11 @@ object float {
     }
 
     @inline
-    implicit def `exp(Float)`(implicit logger: Logger = Logger.getGlobal)
-      : PolyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `exp(Float)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): PolyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyFunctions.exp.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
@@ -269,8 +300,11 @@ object float {
     }
 
     @inline
-    implicit def `abs(Float)`(implicit logger: Logger = Logger.getGlobal)
-      : PolyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `abs(Float)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): PolyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       PolyFunctions.abs.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
@@ -286,7 +320,10 @@ object float {
     }
 
     implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
-                                                                  logger: Logger = Logger.getGlobal) {
+                                                                  logger: Logger = Logger.getGlobal,
+                                                                  fullName: sourcecode.FullName,
+                                                                  methodName: sourcecode.Name,
+                                                                  className: Caller[_]) {
       private val operand: Do.Covariant[FloatTape] = lift(from)
       @inline
       def unary_- : Do[FloatTape] = {

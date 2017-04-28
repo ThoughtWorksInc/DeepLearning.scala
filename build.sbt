@@ -20,9 +20,11 @@ lazy val Memory = project
 lazy val Tape =
   project.dependsOn(ProjectRef(file("RAII.scala"), "packageJVM"), LogRecords, ProjectRef(file("RAII.scala"), "Do"))
 
-lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
+lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"), Caller)
 
 lazy val Closeables = project
+
+lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
@@ -30,9 +32,9 @@ lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.sc
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
-lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions)
+lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
 
-lazy val `differentiable-double` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions)
+lazy val `differentiable-double` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
 
 val FloatRegex = """(?i:float)""".r
 
@@ -62,7 +64,7 @@ lazy val PolyFunctions = project.dependsOn(ToTapeTask)
 
 lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
 
-lazy val LogRecords = project
+lazy val LogRecords = project.dependsOn(Caller)
 
 lazy val AsynchronousSemaphore = project
 
