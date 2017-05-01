@@ -18,7 +18,7 @@ Unfortunately, those libraries have bad performance. They cannot perform multipl
 
 ### Our approach
 
-In DeepLearning.scala, we introduce a new approach that treats neural networks as `Monad`s. Users create neural networks in a way almost the same as ordinary programs, and all Scala language features are available in neural networks. At the mean time, the DeepLearning.scala runtime is still able to schedule computation onto GPU and CPU parallelly.
+In DeepLearning.scala, we introduce a new approach that treats neural networks as `Monad`s. Users create neural networks dynamically, in a way almost the same as ordinary programs. All Scala language features are available in neural networks. At the mean time, the DeepLearning.scala runtime is still able to schedule computation onto GPU and CPU parallelly.
 
 In addition, our monads manage resource automatically, without depending on garbage collection. As a result, unlike other Lua or JVM frameworks, our framework never leaks memory.
 
