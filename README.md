@@ -1,4 +1,4 @@
-# <img src="http://deeplearning.thoughtworks.school/assets/images/logo-text-black.png" alt="DeepLearning.scala" height="40"/>  <a href="http://thoughtworks.com/"><img align="right" src="https://www.thoughtworks.com/imgs/tw-logo.png" alt="ThoughtWorks" height="15"/></a>
+# <a href="http://deeplearning.thoughtworks.school/"><img src="http://deeplearning.thoughtworks.school/assets/images/logo-text-black.png" alt="DeepLearning.scala" height="40"/></a>  <a href="http://thoughtworks.com/"><img align="right" src="https://www.thoughtworks.com/imgs/tw-logo.png" alt="ThoughtWorks" height="15"/></a>
 
 [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/ThoughtWorksInc/DeepLearning.scala.svg?branch=1.0.x)](https://travis-ci.org/ThoughtWorksInc/DeepLearning.scala)
