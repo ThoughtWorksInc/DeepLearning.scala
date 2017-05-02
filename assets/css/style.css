@@ -117,7 +117,7 @@
 			padding: 0 0 0.5em 0;
 		}
 
-		header .darker
+		header:before
 		{
 		    position: absolute;
 		    left: 0px;
