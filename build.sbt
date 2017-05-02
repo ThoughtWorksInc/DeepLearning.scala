@@ -33,29 +33,29 @@ lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.sc
 
 lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
 
-lazy val `differentiable-double` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
-
 val FloatRegex = """(?i:float)""".r
 
-sourceGenerators in Compile in `differentiable-double` += Def.task {
-  for {
-    floatFile <- (unmanagedSources in Compile in `differentiable-float`).value
-    relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in `differentiable-float`).value)
-  } yield {
-    val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
+lazy val `differentiable-double` = project
+  .dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
+  .settings(sourceGenerators in Compile += Def.task {
+    for {
+      floatFile <- (unmanagedSources in Compile in `differentiable-float`).value
+      relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in `differentiable-float`).value)
+    } yield {
+      val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
 
-    val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
-      m.matched match {
-        case "Float" => "Double"
-        case "float" => "double"
-      }
-    })
+      val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
+        m.matched match {
+          case "Float" => "Double"
+          case "float" => "double"
+        }
+      })
 
-    val outputFile = (sourceManaged in Compile in `differentiable-double`).value / relativeFile.getPath
-    IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
-    outputFile
-  }
-}.taskValue
+      val outputFile = (sourceManaged in Compile in `differentiable-float`).value / relativeFile.getPath
+      IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
+      outputFile
+    }
+  }.taskValue)
 
 lazy val ToTapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
 

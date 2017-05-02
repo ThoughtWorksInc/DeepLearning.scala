@@ -111,7 +111,7 @@ object float {
   object implicits {
 
     private implicit object FloatMonoid extends Monoid[Float] {
-      override def zero: Float = the[Numeric[Float]].zero
+      override def zero: Float = 0
 
       override def append(f1: Float, f2: => Float): Float = f1 + f2
     }
@@ -130,7 +130,7 @@ object float {
     }
 
     implicit object FloatTrainable extends Trainable[Float, Float] {
-      override def apply(data: Float): Do[Float] = Do.now(the[Numeric[Float]].one)
+      override def apply(data: Float): Do[Float] = Do.now(1)
     }
 
     @inline
