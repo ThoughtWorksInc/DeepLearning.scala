@@ -159,7 +159,7 @@ object TapeTaskFactory {
 
         tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
-          val resource: RAIIFuture[Try[Tape.Aux[OutputData, OutputDelta]]] = {
+          val resource: ResourceFactoryT[Future, Try[Aux[OutputData, OutputDelta]]] = {
             val futureResourceT: Future[ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(e) =>
@@ -216,7 +216,7 @@ object TapeTaskFactory {
         import com.thoughtworks.raii.future.Do.doMonadErrorInstances
         operand.flatMap {
           case (upstream) =>
-            val resource: RAIIFuture[Try[Tape.Aux[OutputData, OutputDelta]]] = {
+            val resource: ResourceFactoryT[Future, Try[Aux[OutputData, OutputDelta]]] = {
               val futureResourceT: Future[ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]]] =
                 computeForward(upstream.data).get.map {
                   case left @ -\/(e) =>
