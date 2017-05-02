@@ -3,7 +3,13 @@
 	<nav id="nav">
 		<ul>
 			{% assign current = page.url | downcase | split: '/' %}
-			<li {% if current[1] == 'index.html' %}class='current'{% endif %}><a href="{{ site.github.url }}/index.html"><img alt="DeepLearning.scala" src="http://deeplearning.thoughtworks.school/assets/images/logo-text-white.png" style="width: 11em; vertical-align: bottom;"></a></li>
+			<li {% if current[1] == 'index.html' %}class='current'{% endif %}>
+				<a href="{{ site.github.url }}/index.html">
+					<img alt="DeepLearning.scala"
+					     src="http://deeplearning.thoughtworks.school/assets/images/logo-text-white.png" 
+					     style="height: 1.5em; vertical-align: text-bottom;">
+				</a>
+			</li>
 			<li {% if current[1] == 'doc' %}class='current'{% endif %}><a href="{{ site.github.url }}/doc">Documentation</a></li>
 			<li {% if current[1] == 'news' %}class='current'{% endif %}><a href="{{ site.github.url }}/news">News</a></li>
 			<li {% if current[1] == 'get-involved.html' %}class='current'{% endif %}><a href="{{ site.github.url }}/get-involved">Get Involved</a></li>
