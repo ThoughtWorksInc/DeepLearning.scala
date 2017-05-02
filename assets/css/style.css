@@ -117,16 +117,6 @@
 			padding: 0 0 0.5em 0;
 		}
 
-		header:before
-		{
-		    position: absolute;
-		    left: 0px;
-		    right: 0px;
-		    top: 0px;
-		    bottom: 0px;
-		    background: rgba(0, 0, 0, 0.4);
-		}
-
 	footer
 	{
 		margin-top: 1em;
@@ -1027,7 +1017,7 @@
 			top: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(64,64,64,0.125);
+			background: rgba(0,0,0,0.4);
 		}
 
 /*********************************************************************************/
