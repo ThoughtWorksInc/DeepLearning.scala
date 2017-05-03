@@ -8,7 +8,7 @@ import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.ownership.Borrowing
+import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.ownership.implicits._
 import com.thoughtworks.raii.transformers.ResourceFactoryT
 import shapeless.the
@@ -132,7 +132,7 @@ object float {
                    fullName: sourcecode.FullName,
                    className: Caller[_],
                    methodName: sourcecode.Name): Do[Borrowing[Tape.Aux[Float, Float]]] = {
-        val myWeight = this.own(Weight(value))
+        val myWeight = garbageCollectable(Weight(value))
         Do.now(myWeight)
       }
     }

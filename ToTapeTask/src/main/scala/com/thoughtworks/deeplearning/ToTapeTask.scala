@@ -36,7 +36,7 @@ object ToTapeTask {
 
       @inline
       override def apply(a: Data): Out = {
-        val myLiteral = this.own(Literal(a))
+        val myLiteral = garbageCollectable(Literal(a))
         Do.now(myLiteral)
       }
     }
