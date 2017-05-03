@@ -1,14 +1,14 @@
 parallelExecution in Global := false
 
 // TODO: Rename to OpenCLLayer
-lazy val DifferentiableKernel =
-  project.dependsOn(
-    OpenCL,
-    OpenCLCodeGenerator,
-    TapeTaskFactory,
-    FutureIsomorphism,
-    AsynchronousSemaphore
-  )
+//lazy val DifferentiableKernel =
+//  project.dependsOn(
+//    OpenCL,
+//    OpenCLCodeGenerator,
+//    TapeTaskFactory,
+//    FutureIsomorphism,
+//    AsynchronousSemaphore
+//  )
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 

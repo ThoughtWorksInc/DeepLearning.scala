@@ -20,6 +20,8 @@ import scala.util.control.NoStackTrace
 import scalaz.Tags.Parallel
 import scalaz.syntax.all._
 import scala.util.control.NonFatal
+import com.thoughtworks.raii.ownership._
+import com.thoughtworks.raii.ownership.implicits._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -27,25 +29,26 @@ import scala.util.control.NonFatal
 object TapeTaskFactory {
 
   @inline
-  def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Do[_ <: Tape.Aux[Data0, Delta0]],
-                                                                    operand1: Do[_ <: Tape.Aux[Data1, Delta1]])(
+  def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](
+      operand0: Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]],
+      operand1: Do[_ <: Borrowing[Tape.Aux[Data1, Delta1]]])(
       computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[_ <: Delta0], Do[_ <: Delta1]))])(
       implicit binaryTapeTaskFactory: BinaryTapeTaskFactory[OutputData, OutputDelta],
       logger: Logger,
       fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
-      className: Caller[_]): Do[Tape.Aux[OutputData, OutputDelta]] = {
+      className: Caller[_]): Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
     binaryTapeTaskFactory(operand0, operand1)(computeForward)
   }
 
   @inline
-  def unary[Data, Delta, OutputData, OutputDelta](operand: Do[_ <: Tape.Aux[Data, Delta]])(
+  def unary[Data, Delta, OutputData, OutputDelta](operand: Do[_ <: Borrowing[Tape.Aux[Data, Delta]]])(
       computeForward: (Data) => Task[(OutputData, OutputDelta => Do[_ <: Delta])])(
       implicit unaryTapeTaskFactory: UnaryTapeTaskFactory[OutputData, OutputDelta],
       logger: Logger,
       fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
-      className: Caller[_]): Do[Tape.Aux[OutputData, OutputDelta]] = {
+      className: Caller[_]): Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
     unaryTapeTaskFactory(operand)(computeForward)
   }
 
@@ -55,11 +58,13 @@ object TapeTaskFactory {
       methodName: sourcecode.Name,
       className: Caller[_])
       extends Tape
-      with ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] {
+      with ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
 
     override final type Delta = OutputDelta
     override final type Data = OutputData
-    final override def value: Try[this.type] = Success(this)
+
+    // TODO: Output should be managed by `Do.managed`, not own itself.
+    final override def value: Try[this.type Owned this.type] = Success(this.own(this))
 
     @volatile
     protected var deltaAccumulator: OutputDelta = mzero[OutputDelta]
@@ -96,18 +101,18 @@ object TapeTaskFactory {
 
   trait BinaryTapeTaskFactory[OutputData, OutputDelta] {
 
-    def apply[Data0, Delta0, Data1, Delta1](operand0: Do[_ <: Tape.Aux[Data0, Delta0]],
-                                            operand1: Do[_ <: Tape.Aux[Data1, Delta1]])(
+    def apply[Data0, Delta0, Data1, Delta1](operand0: Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]],
+                                            operand1: Do[_ <: Borrowing[Tape.Aux[Data1, Delta1]]])(
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[_ <: Delta0], Do[_ <: Delta1]))])
-      : Do[Tape.Aux[OutputData, OutputDelta]]
+      : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]]
 
   }
 
   trait UnaryTapeTaskFactory[OutputData, OutputDelta] {
 
-    def apply[Data, Delta](operand: Do[_ <: Tape.Aux[Data, Delta]])(
+    def apply[Data, Delta](operand: Do[_ <: Borrowing[Tape.Aux[Data, Delta]]])(
         computeForward: (Data) => Task[(OutputData, OutputDelta => Do[_ <: Delta])])
-      : Do[Tape.Aux[OutputData, OutputDelta]]
+      : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]]
   }
 
   object BinaryTapeTaskFactory {
@@ -141,10 +146,10 @@ object TapeTaskFactory {
                                                                              className: Caller[_])
         extends BinaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
-      override def apply[Data0, Delta0, Data1, Delta1](operand0: Do[_ <: Tape.Aux[Data0, Delta0]],
-                                                       operand1: Do[_ <: Tape.Aux[Data1, Delta1]])(
+      override def apply[Data0, Delta0, Data1, Delta1](operand0: Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]],
+                                                       operand1: Do[_ <: Borrowing[Tape.Aux[Data1, Delta1]]])(
           computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[_ <: Delta0], Do[_ <: Delta1]))])
-        : Do[Tape.Aux[OutputData, OutputDelta]] = {
+        : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
 
         import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTParallelApplicative
         import com.thoughtworks.raii.future.Do.doParallelApplicative
@@ -159,8 +164,8 @@ object TapeTaskFactory {
 
         tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
-          val resource: ResourceFactoryT[Future, Try[Aux[OutputData, OutputDelta]]] = {
-            val futureResourceT: Future[ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]]] =
+          val resource: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
+            val futureResourceT: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(e) =>
                   ResourceT.unmanaged(Failure(e))
@@ -182,7 +187,7 @@ object TapeTaskFactory {
             ResourceFactoryT(futureResourceT)
           }
 
-          val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] =
+          val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] =
             resource.shared
 
           val ResourceFactoryT(future) = sharedResourceFactoryT
@@ -209,15 +214,15 @@ object TapeTaskFactory {
                                                                             className: Caller[_])
         extends UnaryTapeTaskFactory[OutputData, OutputDelta] {
       @inline
-      override def apply[Data, Delta](operand: Do[_ <: Tape.Aux[Data, Delta]])(
+      override def apply[Data, Delta](operand: Do[_ <: Borrowing[Tape.Aux[Data, Delta]]])(
           computeForward: Data => Task[(OutputData, OutputDelta => Do[_ <: Delta])])
-        : Do[Tape.Aux[OutputData, OutputDelta]] = {
+        : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
         import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
         import com.thoughtworks.raii.future.Do.doMonadErrorInstances
         operand.flatMap {
           case (upstream) =>
-            val resource: ResourceFactoryT[Future, Try[Aux[OutputData, OutputDelta]]] = {
-              val futureResourceT: Future[ResourceT[Future, Try[Tape.Aux[OutputData, OutputDelta]]]] =
+            val resource: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
+              val futureResourceT: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
                 computeForward(upstream.data).get.map {
                   case left @ -\/(e) =>
                     ResourceT.unmanaged(Failure(e))
@@ -230,7 +235,7 @@ object TapeTaskFactory {
                 }
               ResourceFactoryT(futureResourceT)
             }
-            val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Tape.Aux[OutputData, OutputDelta]]] =
+            val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] =
               resource.shared
 
             val ResourceFactoryT(future) = sharedResourceFactoryT

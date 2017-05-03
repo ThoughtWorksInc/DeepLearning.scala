@@ -3,10 +3,13 @@ package differentiable
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{WeightIsUpdating, UncaughtExceptionDuringBackward}
+import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
+import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.raii.future.Do
+import com.thoughtworks.raii.ownership._
+import com.thoughtworks.raii.ownership.implicits._
 import com.thoughtworks.raii.transformers.ResourceFactoryT
 import shapeless.the
 
@@ -22,7 +25,7 @@ import scalaz.syntax.all._
   */
 object float {
 
-  private[deeplearning] type FloatTape = Tape.Aux[Float, Float]
+  private[deeplearning] type FloatTape = Borrowing[Tape.Aux[Float, Float]]
 
   trait Optimizer {
     def currentDelta(oldValue: Float, delta: Float): Float = delta
@@ -116,16 +119,21 @@ object float {
       override def append(f1: Float, f2: => Float): Float = f1 + f2
     }
 
+    def infer(self: AnyRef): self.type = self
+
     @inline
-    implicit def liftFloat[A](implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
+    implicit def liftFloat[A](
+        implicit typeClass: LowPriorityToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
       typeClass
+
     implicit final class FloatToWeightOps(value: Float) {
       def toWeight(implicit optimizerFactory: OptimizerFactory,
                    logger: Logger = Logger.getGlobal,
                    fullName: sourcecode.FullName,
                    className: Caller[_],
-                   methodName: sourcecode.Name): Weight = {
-        Weight(value)
+                   methodName: sourcecode.Name): Do[Borrowing[Tape.Aux[Float, Float]]] = {
+        val myWeight = garbageCollectable(Weight(value))
+        Do.now(myWeight)
       }
     }
 
