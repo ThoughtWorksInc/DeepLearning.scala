@@ -60,7 +60,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
     }
     val semaphore = AsynchronousSemaphore(3)
 
-    "When fill a buffer with 42.0f" - {
+    "When filling a buffer with 42.0f" - {
       val differentiableKernel = {
         import OpenCLLayer._
         floatLiteral(42.0f)
@@ -106,7 +106,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
     }
 
-    "When fill a buffer with another buffer" in {
+    "When filling a buffer with another buffer" in {
 
       val differentiableKernel = {
         import OpenCLLayer._
