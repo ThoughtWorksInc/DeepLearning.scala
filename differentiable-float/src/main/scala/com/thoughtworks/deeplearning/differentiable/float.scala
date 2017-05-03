@@ -3,10 +3,11 @@ package differentiable
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{WeightIsUpdating, UncaughtExceptionDuringBackward}
+import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.raii.future.Do
+import com.thoughtworks.raii.ownership.Borrowing
 import com.thoughtworks.raii.transformers.ResourceFactoryT
 import shapeless.the
 
@@ -22,7 +23,7 @@ import scalaz.syntax.all._
   */
 object float {
 
-  private[deeplearning] type FloatTape = Tape.Aux[Float, Float]
+  private[deeplearning] type FloatTape = Borrowing[Tape.Aux[Float, Float]]
 
   trait Optimizer {
     def currentDelta(oldValue: Float, delta: Float): Float = delta
@@ -119,6 +120,7 @@ object float {
     @inline
     implicit def liftFloat[A](implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
       typeClass
+
     implicit final class FloatToWeightOps(value: Float) {
       def toWeight(implicit optimizerFactory: OptimizerFactory,
                    logger: Logger = Logger.getGlobal,
