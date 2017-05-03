@@ -12,7 +12,7 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do._
-import com.thoughtworks.raii.ownership.Borrowing
+import com.thoughtworks.raii.ownership.{Borrowing, Scoped}
 import com.thoughtworks.raii.transformers.ResourceT
 import shapeless._
 import shapeless.labelled._
@@ -64,7 +64,7 @@ object DifferentiableKernel {
       throwableMonadic[Do] {
         val delta: PendingBuffer[Element] = doDelta.each
         acquire(localSemaphore).each
-        val newData = Do.unmanaged(optimizer.updateBuffer(data, delta)).each
+        val newData = Do.delay(optimizer.updateBuffer(data, delta)).each
         val oldData = data
         data = newData
         oldData.buffer.close()
@@ -153,9 +153,9 @@ object DifferentiableKernel {
       }
 
       val forwardSource = OpenCLCodeGenerator.generateSourceCode(forwardKernelDefinition).toArray[CharSequence]
-      val forwordProgram = Do.managed(context.createProgramWithSource(forwardSource)).each
-      Do.unmanaged(forwordProgram.build()).each
-      val forwardKernelTask = Do.managed(forwordProgram.createKernel(ForwardKernelName))
+      val forwordProgram = Do.scoped(context.createProgramWithSource(forwardSource)).each
+      Do.delay(forwordProgram.build()).each
+      val forwardKernelTask = Do.scoped(forwordProgram.createKernel(ForwardKernelName))
 
       { (expectedSize: Int, inputParameterMap: compiler.ParameterRecord) =>
         throwableMonadic[Do] {
@@ -165,21 +165,21 @@ object DifferentiableKernel {
           compiler.setKernelInputArguments(kernel, 1, inputParameterMap)
           kernel.setArg(0, outputBuffer)
 
-          Do.unmanaged(semaphore.acquire()).each
+          Do.delay(semaphore.acquire()).each
           val event = try {
-            Do.managed(
+            Do.scoped(
                 commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize)))))
               .each
           } catch {
             case e if NonFatal(e) =>
               semaphore.release().run
-              (throw e): Borrowing[OpenCL.Event]
+              (throw e): Scoped[OpenCL.Event]
           }
           event.waitForComplete().unsafePerformAsync { _ =>
             semaphore.release().run
           }
 
-          Do.unmanaged(event.waitForComplete()).each
+          Do.delay(event.waitForComplete()).each
           val pendingBuffer = PendingBuffer(outputBuffer, List(event))
           new Tape {
 
