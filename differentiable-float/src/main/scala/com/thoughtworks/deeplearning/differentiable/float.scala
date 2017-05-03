@@ -6,8 +6,10 @@ import java.util.logging.{Level, Logger}
 import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
+import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.ownership.Borrowing
+import com.thoughtworks.raii.ownership.implicits._
 import com.thoughtworks.raii.transformers.ResourceFactoryT
 import shapeless.the
 
@@ -117,8 +119,11 @@ object float {
       override def append(f1: Float, f2: => Float): Float = f1 + f2
     }
 
+    def infer(self: AnyRef): self.type = self
+
     @inline
-    implicit def liftFloat[A](implicit typeClass: ToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
+    implicit def liftFloat[A](
+        implicit typeClass: LowPriorityToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
       typeClass
 
     implicit final class FloatToWeightOps(value: Float) {
@@ -126,8 +131,9 @@ object float {
                    logger: Logger = Logger.getGlobal,
                    fullName: sourcecode.FullName,
                    className: Caller[_],
-                   methodName: sourcecode.Name): Weight = {
-        Weight(value)
+                   methodName: sourcecode.Name): Do[Borrowing[Tape.Aux[Float, Float]]] = {
+        val myWeight = this.own(Weight(value))
+        Do.now(myWeight)
       }
     }
 

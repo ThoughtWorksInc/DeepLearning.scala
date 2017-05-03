@@ -15,38 +15,22 @@ trait ToTapeTask[From] extends DepFn1[From] {
 
 object ToTapeTask {
 
+  trait LowPriorityToTapeTask[From] extends ToTapeTask[From]
+  object LowPriorityToTapeTask {
+    type Aux[From, Data0, Delta0] = LowPriorityToTapeTask[From] {
+      type Data = Data0
+      type Delta = Delta0
+    }
+  }
+
   type Aux[From, Data0, Delta0] = ToTapeTask[From] {
     type Data = Data0
     type Delta = Delta0
   }
 
   @inline
-  implicit def fromTape[Data0, Delta0, From <: Borrowing[Tape.Aux[Data0, Delta0]]]
-    : ToTapeTask.Aux[From, Data0, Delta0] = {
-    new ToTapeTask[From] {
-      override type Data = Data0
-      override type Delta = Delta0
-
-      @inline
-      override def apply(a: From): Out = Do.now(a)
-    }
-  }
-
-  @inline
-  implicit def fromSubtype[Data0, Delta0, From <: Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]]]
-    : ToTapeTask.Aux[From, Data0, Delta0] = {
-    new ToTapeTask[From] {
-      override type Data = Data0
-      override type Delta = Delta0
-
-      @inline
-      override def apply(a: From): Out = a
-    }
-  }
-
-  @inline
-  implicit def fromData[From, Delta0]: ToTapeTask.Aux[From, From, Delta0] = {
-    new ToTapeTask[From] {
+  implicit def fromData[From, Delta0]: LowPriorityToTapeTask.Aux[From, From, Delta0] = {
+    new LowPriorityToTapeTask[From] {
       override type Data = From
       override type Delta = Delta0
 
@@ -56,8 +40,23 @@ object ToTapeTask {
         Do.now(myLiteral)
       }
     }
-
   }
+
+  @inline
+  implicit def fromSubtype[Data0, Delta0, From](
+      implicit constraint: From <:< Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]])
+    : LowPriorityToTapeTask.Aux[From, Data0, Delta0] = {
+    new LowPriorityToTapeTask[From] {
+      override type Data = Data0
+      override type Delta = Delta0
+
+      @inline
+      override def apply(a: From): Out = a
+    }
+  }
+
+  def apply[From](implicit toTapeTask: ToTapeTask[From]): ToTapeTask.Aux[From, toTapeTask.Data, toTapeTask.Delta] =
+    toTapeTask
 
   trait Poly1 extends shapeless.Poly1 {
     @inline
