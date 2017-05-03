@@ -20,7 +20,7 @@ import scala.util.control.NoStackTrace
 import scalaz.Tags.Parallel
 import scalaz.syntax.all._
 import scala.util.control.NonFatal
-import com.thoughtworks.raii.ownership.{Borrowing, Owned}
+import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.ownership.implicits._
 
 /**
