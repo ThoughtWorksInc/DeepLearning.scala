@@ -12,6 +12,7 @@ import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do._
+import com.thoughtworks.raii.ownership.Borrowing
 import com.thoughtworks.raii.transformers.ResourceT
 import shapeless._
 import shapeless.labelled._
@@ -172,7 +173,7 @@ object DifferentiableKernel {
           } catch {
             case e if NonFatal(e) =>
               semaphore.release().run
-              (throw e): OpenCL.Event
+              (throw e): Borrowing[OpenCL.Event]
           }
           event.waitForComplete().unsafePerformAsync { _ =>
             semaphore.release().run
