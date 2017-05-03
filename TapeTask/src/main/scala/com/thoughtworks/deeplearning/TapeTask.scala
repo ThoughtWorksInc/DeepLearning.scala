@@ -27,7 +27,7 @@ object TapeTask {
       implicit trainable: Trainable[OutputData, OutputDelta]): Task[OutputData] = {
 
     val doOutputData: Do[OutputData] = forward.flatMap[OutputData] { outputTape =>
-      Do.unmanaged(outputTape.backward(trainable(outputTape.data))).map { _ =>
+      Do.delay(outputTape.backward(trainable(outputTape.data))).map { _ =>
         outputTape.data
       }
     }

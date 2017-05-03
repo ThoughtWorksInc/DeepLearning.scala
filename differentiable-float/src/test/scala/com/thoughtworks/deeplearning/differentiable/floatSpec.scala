@@ -97,7 +97,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
       import scalaz.concurrent.Future._
       import com.thoughtworks.raii.future.Do.doMonadErrorInstances
       val c: Do[Unit] = myNetwork(ToTapeTask[Float].apply(inputData)).flatMap { outputTape: Tape.Aux[Float, Float] =>
-        Do.unmanaged(outputTape.backward(Do.now(1.0f)))
+        Do.delay(outputTape.backward(Do.now(1.0f)))
       }
 
       val Do(futureAsyncReleasable) = c

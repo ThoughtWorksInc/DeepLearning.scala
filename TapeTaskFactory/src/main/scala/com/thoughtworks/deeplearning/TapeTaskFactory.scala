@@ -63,7 +63,7 @@ object TapeTaskFactory {
     override final type Delta = OutputDelta
     override final type Data = OutputData
 
-    // TODO: Output should be managed by `Do.managed`, not own itself.
+    // TODO: Output should be scoped by `Do.scoped`, not own itself.
     final override def value: Try[this.type Owned this.type] = Success(this.own(this))
 
     @volatile
@@ -168,7 +168,7 @@ object TapeTaskFactory {
             val futureResourceT: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(e) =>
-                  ResourceT.unmanaged(Failure(e))
+                  ResourceT.delay(Failure(e))
                 case right @ \/-((forwardData, computeBackward)) =>
                   new Output[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
@@ -225,7 +225,7 @@ object TapeTaskFactory {
               val futureResourceT: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
                 computeForward(upstream.data).get.map {
                   case left @ -\/(e) =>
-                    ResourceT.unmanaged(Failure(e))
+                    ResourceT.delay(Failure(e))
                   case right @ \/-((forwardData, computeBackward)) =>
                     new Output[OutputData, OutputDelta](forwardData) {
                       override def release(): Future[Unit] = {
