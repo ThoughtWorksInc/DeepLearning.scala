@@ -1,7 +1,7 @@
 ---
 layout: markdown
 title: Get Involved
-background: beach_cliffs.jpg
+background: cn-chengdu-tw-logo-in-flowers.jpg.small.jpg
 ---
 
 ## How can I get help?
