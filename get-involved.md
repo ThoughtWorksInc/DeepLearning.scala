@@ -1,7 +1,6 @@
 ---
 layout: markdown
 title: Get Involved
-background: cn-chengdu-tw-logo-in-flowers.jpg.small.jpg
 ---
 
 ## How can I get help?
