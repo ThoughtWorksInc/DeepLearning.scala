@@ -89,9 +89,9 @@ object DifferentiableKernel {
       }
 
       val forwardSource = OpenCLCodeGenerator.generateSourceCode(forwardKernelDefinition).toArray[CharSequence]
-      val forwordProgram = Do.managed(context.createProgramWithSource(forwardSource)).each
-      Do.unmanaged(forwordProgram.build()).each
-      val forwardKernelTask = Do.managed(forwordProgram.createKernel(ForwardKernelName))
+      val forwordProgram = Do.scoped(context.createProgramWithSource(forwardSource)).each
+      Do.delay(forwordProgram.build()).each
+      val forwardKernelTask = Do.scoped(forwordProgram.createKernel(ForwardKernelName))
 
       { (expectedSize: Int, inputParameterMap: compiler.ParameterRecord) =>
         throwableMonadic[Do] {
@@ -101,9 +101,9 @@ object DifferentiableKernel {
           compiler.setKernelInputArguments(kernel, 1, inputParameterMap)
           kernel.setArg(0, outputBuffer)
 
-          Do.unmanaged(semaphore.acquire()).each
+          Do.delay(semaphore.acquire()).each
           val event = try {
-            Do.managed(
+            Do.scoped(
                 commandQueue.enqueueNDRangeKernel(kernel, Seq(GlobalWorkSizeOnlyDimension(Address(expectedSize)))))
               .each
           } catch {
@@ -115,7 +115,7 @@ object DifferentiableKernel {
             semaphore.release().run
           }
 
-          Do.unmanaged(event.waitForComplete()).each
+          Do.delay(event.waitForComplete()).each
           val pendingBuffer = PendingBuffer(outputBuffer, List(event))
           new Tape {
 

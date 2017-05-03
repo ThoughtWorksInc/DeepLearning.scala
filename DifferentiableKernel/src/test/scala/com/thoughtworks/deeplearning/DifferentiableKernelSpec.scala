@@ -31,13 +31,13 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       val supportedProperties = device.queueProperties
 
       val context = Do
-        .managed(platform.createContext({ (errorInfo, data) =>
+        .scoped(platform.createContext({ (errorInfo, data) =>
           info(errorInfo)
         }, device))
         .each
 
       val commandQueue = Do
-        .managed(
+        .scoped(
           context.createCommandQueue(
             device,
             Map(
@@ -73,18 +73,18 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
           openclTask
             .flatMap {
               case (context, commandQueue) =>
-                Do.unmanaged(
+                Do.delay(
                   Do.run(
                     throwableMonadic[Do] {
                       val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
                       val outputTape = layer(1, HNil).each
-                      val delta = Do.managed(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
-                      Do.unmanaged(outputTape.backward(delta)).each
+                      val delta = Do.scoped(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
+                      Do.delay(outputTape.backward(delta)).each
                       val f = BufferUtils.createFloatBuffer(1)
                       val event = Do
-                        .managed(commandQueue.enqueueReadBuffer(outputTape.data.buffer, f, outputTape.data.events: _*))
+                        .scoped(commandQueue.enqueueReadBuffer(outputTape.data.buffer, f, outputTape.data.events: _*))
                         .each
-                      Do.unmanaged(event.waitForComplete()).each
+                      Do.delay(event.waitForComplete()).each
                       f
                     }
                   )
@@ -122,18 +122,18 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
       val resultTask =
         Do.run(openclTask.flatMap {
             case (context, commandQueue) =>
-              Do.unmanaged(
+              Do.delay(
                 Do.run(
                   throwableMonadic[Do] {
                     val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
                     val outputTape = layer(1, ??? :: HNil).each
-                    val delta = Do.managed(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
-                    Do.unmanaged(outputTape.backward(delta)).each
+                    val delta = Do.scoped(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
+                    Do.delay(outputTape.backward(delta)).each
                     val f = BufferUtils.createFloatBuffer(1)
                     val event = Do
-                      .managed(commandQueue.enqueueReadBuffer(outputTape.data.buffer, f, outputTape.data.events: _*))
+                      .scoped(commandQueue.enqueueReadBuffer(outputTape.data.buffer, f, outputTape.data.events: _*))
                       .each
-                    Do.unmanaged(event.waitForComplete()).each
+                    Do.delay(event.waitForComplete()).each
                     f
                   }
                 )
