@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.raii.RAIIFuture
 import com.thoughtworks.raii.future.Do
 
 import scalaz.concurrent.Future._
