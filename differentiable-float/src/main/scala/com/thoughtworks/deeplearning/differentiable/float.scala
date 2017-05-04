@@ -329,6 +329,22 @@ object float {
       }
     }
 
+    def reciprocal(operand: Do.Covariant[FloatTape])(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): Do.Covariant[FloatTape] = {
+      TapeTaskFactory.unary(operand) { data: Float =>
+        Task.delay {
+          val outputData = 1 / data
+          val computeBackward = { outputDelta: Float =>
+            Do.delay(-outputDelta / (data * data))
+          }
+          (outputData, computeBackward)
+        }
+      }
+    }
+
     implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
                                                                   logger: Logger = Logger.getGlobal,
                                                                   fullName: sourcecode.FullName,
