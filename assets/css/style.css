@@ -1085,10 +1085,6 @@
 			border-color: rgba(255,255,255,.1);
 		}
 
-			#nav > ul > li.current
-			{
-				border-color: rgba(255,255,255,.3);
-			}
 			#nav > ul > li:last-child
 			{
 				padding-right: 0;
