@@ -3,7 +3,7 @@
 	<nav id="nav">
 		<ul>
 			{% assign current = page.url | downcase | split: '/' %}
-			<li {% if current[1] == 'index.html' %}class='current'{% endif %}>
+			<li style="float: left" {% if current[1] == 'index.html' %}class='current'{% endif %}>
 				<a href="{{ site.github.url }}/index.html">
 					<img alt="DeepLearning.scala"
 					     src="{{ site.github.url }}/assets/images/logo-text-white-opacity.png" 
