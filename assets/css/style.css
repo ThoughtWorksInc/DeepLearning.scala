@@ -1003,9 +1003,11 @@
 	#header
 	{
 		position: relative;
-		background: url(../images/header.jpg) no-repeat bottom center;
+		background-image: url(../images/header.jpg);
+		background-repeat: no-repeat;
 		background-attachment: fixed;
 		background-size: cover;
+		background-position: center;
 		text-align: center;
 	}
 
@@ -1017,7 +1019,7 @@
 			top: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(11, 143, 147, 0.3);
+			background: rgba(0, 100, 100, 0.6);
 		}
 
 /*********************************************************************************/
@@ -1327,14 +1329,14 @@
 			top: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(11, 143, 147, 0.3);
+			background: rgba(0, 100, 100, 0.6);
 		}
 
 		#tweet section
 		{
 			border-top: 1px solid;
 			border-bottom: 1px solid;
-			border-color: rgba(255,255,255,.1);
+			border-color: #ffffff;
 		}
 
 		#tweet blockquote
@@ -1343,5 +1345,5 @@
 			border: none;
 			margin: 0;
 			font-weight: 300;
-			color: rgba(255,255,255,.6);
+			color: rgba(255,255,255,0.6);
 		}
