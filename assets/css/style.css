@@ -1017,7 +1017,7 @@
 			top: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(0,0,0,0.4);
+			background: rgba(20,88,0,0.5);
 		}
 
 /*********************************************************************************/
@@ -1064,7 +1064,7 @@
 
 		#nav-wrapper
 		{
-			background: rgba(0,0,0,.3);
+			background: rgba(0,0,0,0.5);
 			position: absolute;
 			top: 0;
 			left: 0;
@@ -1085,6 +1085,10 @@
 			border-color: rgba(255,255,255,.1);
 		}
 
+			#nav > ul > li.current
+			{
+				border-color: rgba(255,255,255,.3);
+			}
 			#nav > ul > li:last-child
 			{
 				padding-right: 0;
@@ -1323,7 +1327,7 @@
 			top: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(0,0,0,0.4);
+			background: rgba(20,88,0,0.5);
 		}
 
 		#tweet section
