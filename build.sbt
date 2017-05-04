@@ -40,7 +40,8 @@ lazy val `differentiable-double` = project
   .settings(sourceGenerators in Compile += Def.task {
     for {
       floatFile <- (unmanagedSources in Compile in `differentiable-float`).value
-      relativeFile <- floatFile.relativeTo((sourceDirectory in Compile in `differentiable-float`).value)
+      floatDirectory <- (unmanagedSourceDirectories in Compile in `differentiable-float`).value
+      relativeFile <- floatFile.relativeTo(floatDirectory)
     } yield {
       val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
 
@@ -51,7 +52,7 @@ lazy val `differentiable-double` = project
         }
       })
 
-      val outputFile = (sourceManaged in Compile in `differentiable-float`).value / relativeFile.getPath
+      val outputFile = (sourceManaged in Compile).value / relativeFile.getPath
       IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
       outputFile
     }
