@@ -83,7 +83,7 @@ object DifferentiableKernel {
     }
   }
 
-  final case class PendingBuffer[Element](buffer: OpenCL.Buffer[Element], events: List[OpenCL.Event])
+  final case class PendingBuffer[Element](buffer: Scoped[OpenCL.Buffer[Element]], events: List[Scoped[OpenCL.Event]])
 
   private[DifferentiableKernel] trait StaticDslTypeExtractor {
     type AbstractType[A] <: DslType
@@ -160,10 +160,10 @@ object DifferentiableKernel {
       { (expectedSize: Int, inputParameterMap: compiler.ParameterRecord) =>
         throwableMonadic[Do] {
           val kernel = forwardKernelTask.each
-          val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
+          val outputBuffer = Do.scoped(context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)).each
 
           compiler.setKernelInputArguments(kernel, 1, inputParameterMap)
-          kernel.setArg(0, outputBuffer)
+          kernel.setArg[OpenCL.Buffer[OutputElementData]](0, outputBuffer)
 
           Do.delay(semaphore.acquire()).each
           val event = try {

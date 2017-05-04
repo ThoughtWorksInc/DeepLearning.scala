@@ -538,7 +538,7 @@ data: $data""")
 
   object Buffer {
 
-    implicit def bufferBox[Element]: Box.Aux[Buffer[Element], Address] = new Box[Buffer[Element]] {
+    implicit def bufferBox[Element, BufferElemen]: Box.Aux[Buffer[Element], Address] = new Box[Buffer[Element]] {
       override type Raw = Address
 
       override def box(raw: Raw): Buffer[Element] =
