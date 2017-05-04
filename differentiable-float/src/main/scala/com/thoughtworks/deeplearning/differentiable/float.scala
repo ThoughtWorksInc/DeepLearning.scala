@@ -112,6 +112,8 @@ object float {
   }
 
   object implicits {
+    import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.monoidBinaryTapeTaskFactory
+    import com.thoughtworks.deeplearning.TapeTaskFactory.UnaryTapeTaskFactory.monoidUnaryTapeTaskFactory
 
     private implicit object FloatMonoid extends Monoid[Float] {
       override def zero: Float = 0
