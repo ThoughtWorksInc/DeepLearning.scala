@@ -1085,10 +1085,14 @@
 			border-color: rgba(255,255,255,.1);
 		}
 
-			#nav > ul > li:last-child
+			#nav > ul > li:last-child, #nav > ul > li:first-child
 			{
 				padding-right: 0;
 				border-right: none;
+			}
+			#nav > ul > li:first-child
+			{
+				float: left;
 			}
 
 			#nav > ul > li > a,
