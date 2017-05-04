@@ -33,6 +33,8 @@ lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.sc
 
 lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
 
+lazy val `differentiable-indarray` = project.dependsOn(`differentiable-double`)
+
 val FloatRegex = """(?i:float)""".r
 
 lazy val `differentiable-double` = project
