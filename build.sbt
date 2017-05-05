@@ -25,7 +25,7 @@ lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"))
+lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.scala"), "resourcetJVM"))
 
 //lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
