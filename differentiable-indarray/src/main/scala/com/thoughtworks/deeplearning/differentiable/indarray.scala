@@ -4,6 +4,7 @@ import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.PolyFunctions.PolyMethods
+import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
@@ -22,6 +23,7 @@ import org.nd4j.linalg.ops.transforms.Transforms.{sign, sqrt}
 import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
 import com.thoughtworks.each.Monadic._
+import com.thoughtworks.raii.future
 import com.thoughtworks.raii.ownership.{Borrowing, garbageCollectable}
 import shapeless.the
 
@@ -615,7 +617,7 @@ object indarray {
             val computeBackward = { outputDelta: INDArray =>
               throwableMonadic[Do] {
                 Do.jump().each
-                data * outputDelta
+                outputData * outputDelta
               }
             }
             (outputData, computeBackward)
