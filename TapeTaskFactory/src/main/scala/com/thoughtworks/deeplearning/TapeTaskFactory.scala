@@ -60,6 +60,10 @@ object TapeTaskFactory {
       extends Tape
       with Releaseable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
 
+    override def release: Future[Unit] = releaseValue
+
+    override def releaseDependencies: Future[Unit] = Future.now(())
+
     override final type Delta = OutputDelta
     override final type Data = OutputData
 
@@ -168,10 +172,10 @@ object TapeTaskFactory {
             val futureResourceT: Future[Releaseable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(e) =>
-                  Releaseable.delay(Failure(e))
+                  Releaseable.now(Failure(e))
                 case right @ \/-((forwardData, computeBackward)) =>
                   new Output[OutputData, OutputDelta](forwardData) {
-                    override def release(): Future[Unit] = {
+                    override def releaseValue: Future[Unit] = {
                       val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
                       Parallel.unwrap {
                         Future.futureParallelApplicativeInstance.apply2(
@@ -217,7 +221,7 @@ object TapeTaskFactory {
       override def apply[Data, Delta](operand: Do[_ <: Borrowing[Tape.Aux[Data, Delta]]])(
           computeForward: Data => Task[(OutputData, OutputDelta => Do[_ <: Delta])])
         : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
-        import com.thoughtworks.raii.resourcet.ResourceT.resourceFactoryTMonadError
+        import com.thoughtworks.raii.resourcet.ResourceT._
         import com.thoughtworks.raii.future.Do.doMonadErrorInstances
         operand.flatMap {
           case (upstream) =>
@@ -225,10 +229,10 @@ object TapeTaskFactory {
               val futureResourceT: Future[Releaseable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
                 computeForward(upstream.data).get.map {
                   case left @ -\/(e) =>
-                    Releaseable.delay(Failure(e))
+                    Releaseable.now(Failure(e))
                   case right @ \/-((forwardData, computeBackward)) =>
                     new Output[OutputData, OutputDelta](forwardData) {
-                      override def release(): Future[Unit] = {
+                      override def releaseValue: Future[Unit] = {
                         upstream.backward(computeBackward(deltaAccumulator))
                       }
                     }
