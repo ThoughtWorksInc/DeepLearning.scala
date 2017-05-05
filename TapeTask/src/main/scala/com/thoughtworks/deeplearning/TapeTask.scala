@@ -5,11 +5,11 @@ import com.thoughtworks.raii.future.Do
 import scalaz.concurrent.Future._
 import scalaz.syntax.all._
 import scalaz.concurrent.{Future, Task}
-import com.thoughtworks.raii.resourcet.ResourceT.resourceFactoryTParallelApplicative
+import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTParallelApplicative
 import com.thoughtworks.raii.future.Do.doParallelApplicative
-import com.thoughtworks.raii.resourcet.ResourceT.resourceFactoryTMonadError
+import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
 import com.thoughtworks.raii.future.Do.doMonadErrorInstances
-import com.thoughtworks.raii.resourcet.ResourceT
+import com.thoughtworks.raii.transformers.ResourceFactoryT
 import com.thoughtworks.tryt.TryT
 
 import scala.util.Try
@@ -19,8 +19,8 @@ object TapeTask {
 
   def predict[OutputData, OutputDelta](forward: Do[_ <: Tape.Aux[OutputData, OutputDelta]]): Task[OutputData] = {
     val Do(doOutputData) = forward.map(_.data)
-    import com.thoughtworks.raii.resourcet.ResourceT._
-    new Task(ResourceT.run(ResourceT(doOutputData).map(toDisjunction)))
+    import com.thoughtworks.raii.transformers.ResourceFactoryT._
+    new Task(ResourceFactoryT.run(ResourceFactoryT(doOutputData).map(toDisjunction)))
   }
 
   def train[OutputData, OutputDelta](forward: Do[_ <: Tape.Aux[OutputData, OutputDelta]])(
@@ -34,8 +34,8 @@ object TapeTask {
 
     val Do(futureOutputData) = doOutputData
 
-    import com.thoughtworks.raii.resourcet.ResourceT._
-    new Task(ResourceT.run(ResourceT(futureOutputData).map(toDisjunction)))
+    import com.thoughtworks.raii.transformers.ResourceFactoryT._
+    new Task(ResourceFactoryT.run(ResourceFactoryT(futureOutputData).map(toDisjunction)))
   }
 
   trait Trainable[-Data, +Delta] {
