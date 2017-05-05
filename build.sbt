@@ -12,8 +12,6 @@ parallelExecution in Global := false
 
 lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
 
-//lazy val CheckedTape = project.dependsOn(Layer, Closeables)
-
 // TODO: Move to a separate repository
 lazy val Memory = project
 
