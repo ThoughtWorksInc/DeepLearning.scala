@@ -12,7 +12,7 @@ cache:
   directories:
 
 script:
-  - sbt +test
+  - sbt +test +unidoc
 
 before_deploy:
 
