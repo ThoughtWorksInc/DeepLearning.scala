@@ -10,7 +10,7 @@ import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.ownership.implicits._
-import com.thoughtworks.raii.resourcet.ResourceT
+import com.thoughtworks.raii.transformers.ResourceFactoryT
 import shapeless.the
 
 import scala.util.{Failure, Success, Try}
@@ -74,13 +74,13 @@ object float {
     override type Delta = Float
 
     override def backward(deltaFuture: Do[_ <: Delta]): Future[Unit] = {
-      import com.thoughtworks.raii.resourcet.ResourceT.resourceFactoryTMonad
+      import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonad
 
       val Do(resourceFactoryTFuture) = deltaFuture
 
-      val resourceFactoryT: ResourceT[Future, Try[Delta]] = ResourceT(resourceFactoryTFuture)
+      val resourceFactoryT: ResourceFactoryT[Future, Try[Delta]] = ResourceFactoryT(resourceFactoryTFuture)
 
-      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[Delta] =>
+      val tryTRAIIFuture: ResourceFactoryT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[Delta] =>
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
@@ -91,7 +91,7 @@ object float {
         }
       }
 
-      ResourceT.run(tryTRAIIFuture).flatMap {
+      ResourceFactoryT.run(tryTRAIIFuture).flatMap {
         case Failure(e) =>
           logger.log(UncaughtExceptionDuringBackward(e))
           Future.now(())

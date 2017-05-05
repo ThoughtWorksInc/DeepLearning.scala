@@ -13,8 +13,8 @@ import com.thoughtworks.deeplearning.differentiable.float.implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do._
-import com.thoughtworks.raii.resourcet
-import com.thoughtworks.raii.resourcet.{ResourceT, Releaseable}
+import com.thoughtworks.raii.transformers
+import com.thoughtworks.raii.transformers.{ResourceFactoryT, ResourceT}
 import com.thoughtworks.tryt.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
@@ -39,18 +39,18 @@ object floatSpec {
   case class Boom(errorMessage: ErrorMessage) extends RuntimeException
 
   private def throwableFloatTapeTask(throwable: Throwable): Do[Borrowing[Tape.Aux[Float, Float]]] = {
-    import com.thoughtworks.raii.resourcet.ResourceT._
+    import com.thoughtworks.raii.transformers.ResourceFactoryT._
     import scalaz.concurrent.Future._
 
-    val value1: TryT[ResourceT[Future, ?], Borrowing[Tape.Aux[Float, Float]]] = TryT
-      .tryTMonadError[ResourceT[Future, ?]]
+    val value1: TryT[ResourceFactoryT[Future, ?], Borrowing[Tape.Aux[Float, Float]]] = TryT
+      .tryTMonadError[ResourceFactoryT[Future, ?]]
       .raiseError[Borrowing[Tape.Aux[Float, Float]]](throwable)
 
-    val value3: ResourceT[Future, Try[Borrowing[Tape.Aux[Float, Float]]]] =
-      TryT.unapply[ResourceT[Future, ?], Borrowing[Tape.Aux[Float, Float]]](value1).get
+    val value3: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[Float, Float]]]] =
+      TryT.unapply[ResourceFactoryT[Future, ?], Borrowing[Tape.Aux[Float, Float]]](value1).get
 
-    val value2: Future[Releaseable[Future, Try[Borrowing[Tape.Aux[Float, Float]]]]] =
-      ResourceT.unapply(value3).get
+    val value2: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[Float, Float]]]]] =
+      ResourceFactoryT.unapply(value3).get
 
     Do[Borrowing[Tape.Aux[Float, Float]]](value2)
   }
@@ -93,7 +93,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
     }
 
     def train(inputData: Float): Task[Unit] = {
-      import com.thoughtworks.raii.resourcet.ResourceT._
+      import com.thoughtworks.raii.transformers.ResourceFactoryT._
       import scalaz.concurrent.Future._
       import com.thoughtworks.raii.future.Do.doMonadErrorInstances
       val c: Do[Unit] = myNetwork(ToTapeTask[Float].apply(inputData)).flatMap { outputTape: Tape.Aux[Float, Float] =>
@@ -102,7 +102,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
       val Do(futureAsyncReleasable) = c
 
-      val map: Future[\/[Throwable, Unit]] = ResourceT.run(ResourceT(futureAsyncReleasable)).map {
+      val map: Future[\/[Throwable, Unit]] = ResourceFactoryT.run(ResourceFactoryT(futureAsyncReleasable)).map {
         toDisjunction
       }
       new Task(map)
