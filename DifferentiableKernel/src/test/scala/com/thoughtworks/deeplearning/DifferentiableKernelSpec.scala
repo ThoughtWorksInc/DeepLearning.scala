@@ -145,5 +145,9 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
     }
 
+    "xxx" in {
+      ???
+    }
+
   }
 }
