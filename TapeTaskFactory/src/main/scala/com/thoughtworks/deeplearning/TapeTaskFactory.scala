@@ -11,7 +11,7 @@ import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.Shared._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do.AsyncReleasable
-import com.thoughtworks.raii.resourcet.{ResourceT, Releaseable}
+import com.thoughtworks.raii.resourcet.{ResourceT, Releasable}
 import com.thoughtworks.tryt.TryT
 
 import scala.language.existentials
@@ -58,7 +58,7 @@ object TapeTaskFactory {
       methodName: sourcecode.Name,
       className: Caller[_])
       extends Tape
-      with Releaseable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
+      with Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
 
     override def release: Future[Unit] = releaseValue
 
@@ -169,10 +169,10 @@ object TapeTaskFactory {
         tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
           val resource: ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
-            val futureResourceT: Future[Releaseable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
+            val futureResourceT: Future[Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(e) =>
-                  Releaseable.now(Failure(e))
+                  Releasable.now(Failure(e))
                 case right @ \/-((forwardData, computeBackward)) =>
                   new Output[OutputData, OutputDelta](forwardData) {
                     override def releaseValue: Future[Unit] = {
@@ -226,10 +226,10 @@ object TapeTaskFactory {
         operand.flatMap {
           case (upstream) =>
             val resource: ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
-              val futureResourceT: Future[Releaseable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
+              val futureResourceT: Future[Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
                 computeForward(upstream.data).get.map {
                   case left @ -\/(e) =>
-                    Releaseable.now(Failure(e))
+                    Releasable.now(Failure(e))
                   case right @ \/-((forwardData, computeBackward)) =>
                     new Output[OutputData, OutputDelta](forwardData) {
                       override def releaseValue: Future[Unit] = {
