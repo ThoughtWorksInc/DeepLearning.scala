@@ -1,5 +1,20 @@
 parallelExecution in Global := false
 
+// TODO: Rename to OpenCLLayer
+//lazy val DifferentiableKernel =
+//  project.dependsOn(
+//    OpenCL,
+//    OpenCLCodeGenerator,
+//    TapeTaskFactory,
+//    FutureIsomorphism,
+//    AsynchronousSemaphore
+//  )
+
+lazy val OpenCLCodeGenerator = project.dependsOn(Memory)
+
+// TODO: Move to a separate repository
+lazy val Memory = project
+
 lazy val Tape = project.dependsOn(LogRecords, ProjectRef(file("RAII.scala"), "Do"))
 
 lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"), Caller)
@@ -9,6 +24,10 @@ lazy val Closeables = project
 lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
+
+lazy val OpenCL = project.dependsOn(Closeables, Memory, ProjectRef(file("RAII.scala"), "ResourceFactoryTJVM"))
+
+//lazy val LayerFactory = project.dependsOn(DifferentiableKernel)
 
 lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
 
@@ -44,6 +63,10 @@ lazy val PolyFunctions = project.dependsOn(ToTapeTask)
 lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"))
 
 lazy val LogRecords = project.dependsOn(Caller)
+
+lazy val AsynchronousSemaphore = project
+
+lazy val FutureIsomorphism = project
 
 publishArtifact := false
 
