@@ -9,7 +9,6 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do._
 import com.thoughtworks.raii.ownership.{Borrowing, Scoped}
-import com.thoughtworks.raii.resourcet.Releaseable
 import shapeless._
 import shapeless.labelled._
 
