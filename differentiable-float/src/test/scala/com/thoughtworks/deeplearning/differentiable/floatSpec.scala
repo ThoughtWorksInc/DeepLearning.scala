@@ -14,7 +14,7 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.future.Do
 import com.thoughtworks.raii.future.Do._
 import com.thoughtworks.raii.resourcet
-import com.thoughtworks.raii.resourcet.{ResourceT, Releaseable}
+import com.thoughtworks.raii.resourcet.{ResourceT, Releasable}
 import com.thoughtworks.tryt.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
@@ -49,7 +49,7 @@ object floatSpec {
     val value3: ResourceT[Future, Try[Borrowing[Tape.Aux[Float, Float]]]] =
       TryT.unapply[ResourceT[Future, ?], Borrowing[Tape.Aux[Float, Float]]](value1).get
 
-    val value2: Future[Releaseable[Future, Try[Borrowing[Tape.Aux[Float, Float]]]]] =
+    val value2: Future[Releasable[Future, Try[Borrowing[Tape.Aux[Float, Float]]]]] =
       ResourceT.unapply(value3).get
 
     Do[Borrowing[Tape.Aux[Float, Float]]](value2)
