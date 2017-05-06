@@ -6,8 +6,8 @@ import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.future.Do._
+import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.ownership.{Borrowing, Scoped}
 import shapeless._
 import shapeless.labelled._

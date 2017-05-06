@@ -5,8 +5,8 @@ import CL10._
 import CL12._
 import CL20._
 import com.thoughtworks.deeplearning.DifferentiableKernel.OpenCLLayer
-import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.future.Do._
+import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous.Do._
 import scalaz.syntax.all._
 import org.lwjgl.BufferUtils
 import org.scalatest.{Assertion, AsyncFreeSpec, Matchers}

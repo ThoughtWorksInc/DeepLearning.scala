@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.raii.future.Do
+import com.thoughtworks.raii.asynchronous.Do
 
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Future
