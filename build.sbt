@@ -52,7 +52,14 @@ publishArtifact := false
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
-    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject),
+    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
+      import Ordering.Implicits._
+      if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
+        inAggregates(LocalRootProject) -- inProjects(`differentiable-indarray`)
+      } else {
+        inAggregates(LocalRootProject)
+      }
+    },
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     scalacOptions += "-Xexperimental"
