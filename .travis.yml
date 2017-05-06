@@ -36,7 +36,7 @@ cache:
     - $HOME/.sbt/boot/
 
 script:
-  - sbt +test
+  - sbt +test +unidoc
 
 before_deploy:
 

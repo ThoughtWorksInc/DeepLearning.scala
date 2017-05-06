@@ -10,10 +10,10 @@ import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator.DslType.{DslBuffer, DslDouble, DslFloat, DslInt}
 import com.thoughtworks.deeplearning.OpenCLCodeGenerator._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.future.Do._
+import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.ownership.{Borrowing, Scoped}
-import com.thoughtworks.raii.transformers.ResourceT
+import com.thoughtworks.raii.resourcet.Releasable
 import shapeless._
 import shapeless.labelled._
 
@@ -31,7 +31,7 @@ object DifferentiableKernel {
 
   def acquire(semaphore: AsynchronousSemaphore): Do[Unit] = {
     Do(FutureIsomorphism.from(semaphore.acquire()).map { _ =>
-      new ResourceT[Future, Try[Unit]] {
+      new Releasable[Future, Try[Unit]] {
         override def value: Try[Unit] = Success(())
         override def release(): Future[Unit] = Future.delay(semaphore.release().run)
       }
