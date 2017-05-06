@@ -1,8 +1,8 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Tape.Literal
-import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.ownership.implicits._
+import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.ownership._
 import shapeless.PolyDefns.{Case1, Case2}
 import shapeless._

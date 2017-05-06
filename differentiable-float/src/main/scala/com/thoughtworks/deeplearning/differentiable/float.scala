@@ -7,9 +7,9 @@ import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward
 import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
-import com.thoughtworks.raii.future.Do
+import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.ownership._
-import com.thoughtworks.raii.ownership.implicits._
+import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.resourcet.ResourceT
 import shapeless.the
 
@@ -74,13 +74,13 @@ object float {
     override type Delta = Float
 
     override def backward(deltaFuture: Do[_ <: Delta]): Future[Unit] = {
-      import com.thoughtworks.raii.resourcet.ResourceT.resourceFactoryTMonad
+      import com.thoughtworks.raii.resourcet.ResourceT.resourceTMonad
 
-      val Do(resourceFactoryTFuture) = deltaFuture
+      val Do(resourceTFuture) = deltaFuture
 
-      val resourceFactoryT: ResourceT[Future, Try[Delta]] = ResourceT(resourceFactoryTFuture)
+      val resourceT: ResourceT[Future, Try[Delta]] = ResourceT(resourceTFuture)
 
-      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[Delta] =>
+      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceT.map { tryDelta: Try[Delta] =>
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
