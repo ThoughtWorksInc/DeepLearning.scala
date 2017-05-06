@@ -8,13 +8,13 @@ import com.thoughtworks.deeplearning.differentiable.indarray.{INDArrayTape, Opti
 import com.thoughtworks.deeplearning.differentiable.indarray.Optimizer.LearningRate
 import com.thoughtworks.deeplearning.differentiable.indarray.implicits._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.future.Do._
+import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
 import com.thoughtworks.deeplearning.differentiable.double.implicits._
 import com.thoughtworks.deeplearning.differentiable.double._
-import com.thoughtworks.raii.transformers
-import com.thoughtworks.raii.transformers.{ResourceFactoryT, ResourceT}
+import com.thoughtworks.raii.resourcet
+import com.thoughtworks.raii.resourcet.{Releasable, ResourceT}
 import com.thoughtworks.tryt.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
@@ -62,7 +62,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -259,7 +259,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -332,7 +332,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -376,7 +376,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -420,7 +420,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -464,7 +464,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -508,7 +508,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(kernel, stride, padding))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val p = Promise[Assertion]
 
@@ -540,7 +540,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       train(myNetwork(kernel, stride, padding))
     }
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -584,7 +584,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     }
 
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val p = Promise[Assertion]
 
@@ -617,7 +617,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     }
 
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -661,7 +661,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     }
 
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val p = Promise[Assertion]
 
@@ -694,7 +694,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     }
 
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Task]
     val task: Task[Unit] = {
@@ -722,33 +722,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "shape(INDArray)" in {
-
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
-
-    val weight: Do[INDArrayTape] = Nd4j.zeros(2, 3, 3, 3).toWeight
-    val task: Task[Array[Int]] = Do.run(shape(weight))
-
-    val promise = Promise[Assertion]
-
-    task.unsafePerformAsync { either: \/[Throwable, Array[Int]] =>
-      promise.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(weightShape) => {
-            weightShape(0) should be(2)
-            weightShape(1) should be(3)
-            weightShape(2) should be(3)
-            weightShape(3) should be(3)
-          }
-        }
-      }
-    }
-    promise.future
-  }
-
   "conv2d(INDArray, INDArray, INDArray, kernel, stride, padding)" in {
 
     implicit def optimizer: Optimizer = new LearningRate {
@@ -769,7 +742,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     }
 
     import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val p = Promise[Assertion]
 

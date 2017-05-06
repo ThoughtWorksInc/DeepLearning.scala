@@ -6,13 +6,13 @@ import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward
 import com.thoughtworks.deeplearning.PolyFunctions.PolyMethods
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.TapeTask.Trainable
-import com.thoughtworks.deeplearning.TapeTaskFactory.SemigroupOutput
+import com.thoughtworks.deeplearning.TapeTaskFactory.{Output, SemigroupOutput, UnaryTapeTaskFactory}
 import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
 import com.thoughtworks.deeplearning._
-import com.thoughtworks.raii.future.Do
-import com.thoughtworks.raii.future.Do._
-import com.thoughtworks.raii.transformers.{ResourceFactoryT, ResourceT}
+import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.resourcet.{Releasable, ResourceT}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
 import org.nd4j.linalg.convolution.Convolution
@@ -24,10 +24,10 @@ import org.nd4j.linalg.ops.transforms.Transforms.{sign, sqrt}
 import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.future
+import com.thoughtworks.raii.asynchronous
 import com.thoughtworks.raii.ownership.{Borrowing, garbageCollectable}
 import shapeless.the
-
+import com.thoughtworks.deeplearning.PolyFunctions._
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, Monoid, Semigroup, \/, \/-}
@@ -180,11 +180,11 @@ object indarray {
     override type Delta = INDArray
 
     override def backward(outputDelta: Do[_ <: Delta]): Future[Unit] = {
-      import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonad
+      import com.thoughtworks.raii.resourcet.ResourceT.resourceTMonad
       val Do(resourceFactoryTFuture) = outputDelta
-      val resourceFactoryT: ResourceFactoryT[Future, Try[Delta]] = ResourceFactoryT(resourceFactoryTFuture)
+      val resourceFactoryT: ResourceT[Future, Try[Delta]] = ResourceT(resourceFactoryTFuture)
 
-      val tryTRAIIFuture: ResourceFactoryT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[Delta] =>
+      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[Delta] =>
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
@@ -194,7 +194,7 @@ object indarray {
           }
         }
       }
-      ResourceFactoryT.run(tryTRAIIFuture).flatMap {
+      ResourceT.run(tryTRAIIFuture).flatMap {
         case Failure(e) =>
           logger.log(UncaughtExceptionDuringBackward(e))
           Future.now(())
@@ -342,7 +342,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : PolyMethods.+.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyMethods.+.at { (operand0, operand1) =>
-        `INDArray+Double`.apply(operand1, operand0)
+        operand1 + operand0
       }
     }
 
@@ -412,7 +412,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : PolyMethods.-.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyMethods.-.at { (operand0, operand1) =>
-        `INDArray+Double`.apply(negative(operand1), operand0)
+        -operand1 + operand0
       }
     }
 
@@ -484,7 +484,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : PolyMethods.*.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyMethods.*.at { (operand0, operand1) =>
-        `INDArray*Double`.apply(operand1, operand0)
+        operand1 * operand0
       }
     }
 
@@ -496,7 +496,7 @@ object indarray {
                                      executionContext: ExecutionContext)
       : PolyMethods./.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyMethods./.at { (operand0, operand1) =>
-        `INDArray*INDArray`.apply(operand0, reciprocal(operand1))
+        operand0 * reciprocal(operand1)
       }
     }
 
@@ -508,7 +508,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : PolyMethods./.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
       PolyMethods./.at { (operand0, operand1) =>
-        `INDArray*Double`.apply(operand0, double.implicits.reciprocal(operand1))
+        operand0 * double.implicits.reciprocal(operand1)
       }
     }
 
@@ -520,7 +520,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : PolyMethods./.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyMethods./.at { (operand0, operand1) =>
-        `Double*INDArray`.apply(operand0, reciprocal(operand1))
+        operand0 * reciprocal(operand1)
       }
     }
 
@@ -677,12 +677,11 @@ object indarray {
     }
 
     @inline
-    def reciprocal(operand: Do.Covariant[INDArrayTape])(
-        implicit logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): Do.Covariant[INDArrayTape] = {
+    def reciprocal(operand: Do[_ <: INDArrayTape])(implicit logger: Logger = Logger.getGlobal,
+                                                   fullName: sourcecode.FullName,
+                                                   className: Caller[_],
+                                                   methodName: sourcecode.Name,
+                                                   executionContext: ExecutionContext): Do[INDArrayTape] = {
       TapeTaskFactory.unary(operand) { data: INDArray =>
         throwableMonadic[Task] {
           val outputData = data rdiv 1.0
@@ -698,44 +697,60 @@ object indarray {
     }
 
     @inline
-    def conv2d(input: Do[_ <: INDArrayTape],
-               weight: Do[_ <: INDArrayTape],
-               bias: Do.Covariant[INDArrayTape],
-               kernel: (Int, Int),
-               stride: (Int, Int),
-               padding: (Int, Int))(implicit logger: Logger = Logger.getGlobal,
-                                    fullName: sourcecode.FullName,
-                                    className: Caller[_],
-                                    methodName: sourcecode.Name,
-                                    executionContext: ExecutionContext): Do[INDArrayTape] = monadic[Do] {
+    def conv2d[Input, Weight, Bias](input: Input,
+                                    weight: Weight,
+                                    bias: Bias,
+                                    kernel: (Int, Int),
+                                    stride: (Int, Int),
+                                    padding: (Int, Int))(
+        implicit inputToTapeTask: ToTapeTask.Aux[Input, INDArray, INDArray],
+        weightToTapeTask: ToTapeTask.Aux[Weight, INDArray, INDArray],
+        biasToTapeTask: ToTapeTask.Aux[Bias, INDArray, INDArray],
+        logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name,
+        executionContext: ExecutionContext): Do[INDArrayTape] = {
+      def monadicConv2d[InputTape <: Borrowing[Tape.Aux[INDArray, INDArray]],
+                        WeightTape <: Borrowing[Tape.Aux[INDArray, INDArray]],
+                        Bias <: Borrowing[Tape.Aux[INDArray, INDArray]]](input: Do[InputTape],
+                                                                         weight: Do[WeightTape],
+                                                                         bias: Do[Bias]) = monadic[Do] {
+        val inputShape: Array[Int] = input.each.data.shape()
+        val count = inputShape(0)
+        val depth = inputShape(1)
+        val yAxis = inputShape(2)
+        val xAxis = inputShape(3)
 
-      val inputShape: Array[Int] = shape(input).each
-      val count = inputShape(0)
-      val depth = inputShape(1)
-      val yAxis = inputShape(2)
-      val xAxis = inputShape(3)
+        val weightShape: Array[Int] = weight.each.data.shape()
 
-      val weightShape = shape(weight).each
+        val kernelNumber = weightShape(0)
+        val col = im2col(input, kernel, stride, padding)
+        val permutedCol: Do[INDArrayTape] = permute(col, 0, 4, 5, 1, 2, 3)
+        val depthKernelKernel = depth * kernel._1 * kernel._2
+        val countXAisYAis = count * yAxis * xAxis
 
-      val kernelNumber = weightShape(0)
-      val col = im2col(input, kernel, stride, padding)
-      val permutedCol: Do[INDArrayTape] = permute(col, 0, 4, 5, 1, 2, 3)
-      val depthKernelKernel = depth * kernel._1 * kernel._2
-      val countXAisYAis = count * yAxis * xAxis
+        val operandCol2d = reshape(permutedCol, countXAisYAis, depthKernelKernel)
 
-      val operandCol2d = reshape(permutedCol, countXAisYAis, depthKernelKernel)
+        val reshapedWeight = reshape(weight, kernelNumber, depthKernelKernel)
 
-      val reshapedWeight = reshape(weight, kernelNumber, depthKernelKernel)
+        val permutedWeight = permute(reshapedWeight, 1, 0)
 
-      val permutedWeight = permute(reshapedWeight, 1, 0)
+        val dotResult: Do[INDArrayTape] = dot(operandCol2d, permutedWeight)
 
-      val dotResult: Do.Covariant[INDArrayTape] = dot(operandCol2d, permutedWeight)
+        val plusResult: Do[INDArrayTape] = dotResult + bias
 
-      val plusResult = `INDArray+INDArray`.apply(dotResult, bias)
+        val reshapeResult = reshape(plusResult, count, yAxis, xAxis, kernelNumber)
 
-      val reshapeResult = reshape(plusResult, count, yAxis, xAxis, kernelNumber)
+        permute(reshapeResult, 0, 3, 1, 2).each
 
-      permute(reshapeResult, 0, 3, 1, 2).each
+      }
+
+      monadicConv2d(
+        inputToTapeTask(input): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]],
+        weightToTapeTask(weight): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]],
+        biasToTapeTask(bias): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]]
+      )
     }
 
     @inline
@@ -850,33 +865,24 @@ object indarray {
         }
       }
     }
-
     @inline
-    def shape(operand: Do[_ <: INDArrayTape])(implicit logger: Logger = Logger.getGlobal,
-                                              fullName: sourcecode.FullName,
-                                              className: Caller[_],
-                                              methodName: sourcecode.Name,
-                                              executionContext: ExecutionContext): Do[Array[Int]] = {
-      import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
-      import com.thoughtworks.raii.future.Do.doMonadErrorInstances
-      import com.thoughtworks.raii.Shared._
-      import com.thoughtworks.raii.Shared.SharedOps
-      operand.flatMap {
-        case (upstream) =>
-          val resource: ResourceFactoryT[Future, Try[Array[Int]]] = {
-            val futureResourceT: Future[ResourceT[Future, Try[Array[Int]]]] = throwableMonadic[Task] {
-              jumpTask().each
-              upstream.data.shape()
-            }.get.map {
-              case -\/(e) =>
-                ResourceT.delay(Failure(e))
-              case \/-(shape) =>
-                ResourceT.delay(Success(shape))
+    def unary_-(operand: Do.Covariant[INDArrayTape])(implicit logger: Logger = Logger.getGlobal,
+                                                     fullName: sourcecode.FullName,
+                                                     className: Caller[_],
+                                                     methodName: sourcecode.Name,
+                                                     executionContext: ExecutionContext): Do[INDArrayTape] = {
+      TapeTaskFactory.unary(operand) { data =>
+        throwableMonadic[Task] {
+          jumpTask().each
+          val outputData = -data
+          val computeBackward = { outputDelta: INDArray =>
+            throwableMonadic[Do] {
+              Do.jump().each
+              -outputDelta
             }
-            ResourceFactoryT(futureResourceT)
           }
-          val ResourceFactoryT(future) = resource
-          Do(future)
+          (outputData, computeBackward)
+        }
       }
     }
 

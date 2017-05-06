@@ -10,7 +10,7 @@ import scalaz.{-\/, @@, Applicative, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import com.thoughtworks.raii.shared._
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.resourcet.{ResourceT, Releasable}
+import com.thoughtworks.raii.resourcet.{Releasable, ResourceT}
 import com.thoughtworks.tryt.TryT
 
 import scala.language.existentials
@@ -105,7 +105,7 @@ object TapeTaskFactory {
       methodName: sourcecode.Name,
       className: Caller[_])
       extends Tape
-      with ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
+      with Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
 
     override final type Delta = OutputDelta
     override final type Data = OutputData
@@ -117,13 +117,13 @@ object TapeTaskFactory {
 
     final override def backward(deltaFuture: Do[_ <: OutputDelta]): Future[Unit] = {
 
-      import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonad
+      import com.thoughtworks.raii.resourcet.ResourceT.resourceTMonad
 
       val Do(resourceFactoryTFuture) = deltaFuture
 
-      val resourceFactoryT: ResourceFactoryT[Future, Try[OutputDelta]] = ResourceFactoryT(resourceFactoryTFuture)
+      val resourceFactoryT: ResourceT[Future, Try[OutputDelta]] = ResourceT(resourceFactoryTFuture)
 
-      val tryTRAIIFuture: ResourceFactoryT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[OutputDelta] =>
+      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[OutputDelta] =>
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
@@ -134,7 +134,7 @@ object TapeTaskFactory {
         }
       }
 
-      ResourceFactoryT.run(tryTRAIIFuture).flatMap {
+      ResourceT.run(tryTRAIIFuture).flatMap {
         case Failure(e) =>
           logger.log(UncaughtExceptionDuringBackward(e))
           Future.now(())
@@ -264,8 +264,8 @@ object TapeTaskFactory {
                                               operand1: Do[_ <: Borrowing[Tape.Aux[Data1, Delta1]]])(
           computeForward: (Data0, Data1) => Task[(OutputData, (OutputDelta) => (Do[_ <: Delta0], Do[_ <: Delta1]))])
         : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
-        import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTParallelApplicative
-        import com.thoughtworks.raii.future.Do.doParallelApplicative
+        import com.thoughtworks.raii.resourcet.ResourceT.resourceTParallelApplicative
+        import com.thoughtworks.raii.asynchronous.Do.doParallelApplicative
 
         val parallelTuple =
           Applicative[Lambda[x => Do[x] @@ Parallel]]
@@ -273,15 +273,18 @@ object TapeTaskFactory {
 
         val tuple = Parallel.unwrap(parallelTuple)
 
-        import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+        import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
         tuple.flatMap { pair =>
           val (upstream0, upstream1) = pair
-          val resource: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
-            val futureResourceT: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
+          val resource: ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
+            val futureResourceT: Future[Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
               computeForward(upstream0.data, upstream1.data).get.map {
                 case left @ -\/(e) =>
-                  ResourceT.delay(Failure(e))
+                  new Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
+                    override def release(): Future[Unit] = Future.now(())
+                    override def value: Try[Borrowing[Aux[OutputData, OutputDelta]]] = Failure(e)
+                  }
                 case right @ \/-((forwardData, computeBackward)) =>
                   new SemigroupOutput[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
@@ -301,13 +304,13 @@ object TapeTaskFactory {
                     }
                   }
               }
-            ResourceFactoryT(futureResourceT)
+            ResourceT(futureResourceT)
           }
 
-          val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] =
+          val sharedResourceFactoryT: ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] =
             resource.shared
 
-          val ResourceFactoryT(future) = sharedResourceFactoryT
+          val ResourceT(future) = sharedResourceFactoryT
 
           Do(future)
         }
@@ -383,15 +386,18 @@ object TapeTaskFactory {
       override def apply[Data, Delta](operand: Do[_ <: Borrowing[Tape.Aux[Data, Delta]]])(
           computeForward: Data => Task[(OutputData, OutputDelta => Do[_ <: Delta])])
         : Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
-        import com.thoughtworks.raii.transformers.ResourceFactoryT.resourceFactoryTMonadError
-        import com.thoughtworks.raii.future.Do.doMonadErrorInstances
+        import com.thoughtworks.raii.resourcet.ResourceT.resourceTMonadError
+        import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
         operand.flatMap {
           case (upstream) =>
-            val resource: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
-              val futureResourceT: Future[ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
+            val resource: ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] = {
+              val futureResourceT: Future[Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]]] =
                 computeForward(upstream.data).get.map {
                   case left @ -\/(e) =>
-                    ResourceT.delay(Failure(e))
+                    new Releasable[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] {
+                      override def release(): Future[Unit] = Future.now(())
+                      override def value: Try[Borrowing[Aux[OutputData, OutputDelta]]] = Failure(e)
+                    }
                   case right @ \/-((forwardData, computeBackward)) =>
                     new SemigroupOutput[OutputData, OutputDelta](forwardData) {
                       override def release(): Future[Unit] = {
@@ -403,12 +409,12 @@ object TapeTaskFactory {
                       }
                     }
                 }
-              ResourceFactoryT(futureResourceT)
+              ResourceT(futureResourceT)
             }
-            val sharedResourceFactoryT: ResourceFactoryT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] =
+            val sharedResourceFactoryT: ResourceT[Future, Try[Borrowing[Tape.Aux[OutputData, OutputDelta]]]] =
               resource.shared
 
-            val ResourceFactoryT(future) = sharedResourceFactoryT
+            val ResourceT(future) = sharedResourceFactoryT
 
             Do(future)
         }
