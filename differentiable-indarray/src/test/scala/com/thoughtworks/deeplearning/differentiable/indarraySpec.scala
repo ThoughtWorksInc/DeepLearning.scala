@@ -948,4 +948,29 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     }
     p.future
   }
+
+  "should compile" in {
+
+    val promise = Promise[Assertion]
+
+    promise.success {
+      "abs(1.0)" should compile
+      "abs(??? : Do[DoubleTape])" should compile
+      "abs(??? : Do[_<: DoubleTape])" should compile
+      "abs(??? : Do.Covariant[DoubleTape])" should compile
+      "abs(??? : Do[Borrowing[Tape.Aux[Double, Double]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape.Aux[Double, Double]]])" should compile
+      "abs(??? : Do.Covariant[Borrowing[Tape.Aux[Double, Double]]])" should compile
+
+      "abs(Nd4j.ones(2, 3, 3, 3))" should compile
+      "abs(??? : Do[INDArrayTape])" should compile
+      "abs(??? : Do[_<: INDArrayTape])" should compile
+      "abs(??? : Do.Covariant[INDArrayTape])" should compile
+      "abs(??? : Do[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+      "abs(??? : Do.Covariant[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+    }
+
+    promise.future
+  }
 }
