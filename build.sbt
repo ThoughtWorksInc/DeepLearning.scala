@@ -39,9 +39,9 @@ lazy val `differentiable-double` = project
     }
   }.taskValue)
 
-lazy val ToTapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
+lazy val Lift = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
 
-lazy val math = project.dependsOn(ToTapeTask)
+lazy val math = project.dependsOn(Lift)
 
 lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
 

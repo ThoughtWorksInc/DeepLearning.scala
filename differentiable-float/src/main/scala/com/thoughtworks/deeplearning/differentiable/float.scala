@@ -6,7 +6,7 @@ import java.util.logging.{Level, Logger}
 import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
-import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
+import com.thoughtworks.deeplearning.Lift.LowPriorityLift
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.ownership._
@@ -124,8 +124,7 @@ object float {
     def infer(self: AnyRef): self.type = self
 
     @inline
-    implicit def liftFloat[A](
-        implicit typeClass: LowPriorityToTapeTask.Aux[A, Float, Float]): ToTapeTask.Aux[A, Float, Float] =
+    implicit def liftFloat[A](implicit typeClass: LowPriorityLift.Aux[A, Float, Float]): Lift.Aux[A, Float, Float] =
       typeClass
 
     implicit final class FloatToWeightOps(value: Float) {
@@ -272,11 +271,11 @@ object float {
     }
 
     @inline
-    implicit def `log(Float)`(implicit logger: Logger = Logger.getGlobal,
-                              fullName: sourcecode.FullName,
-                              className: Caller[_],
-                              methodName: sourcecode.Name)
-      : math.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `log(Float)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): math.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.log.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
@@ -330,12 +329,12 @@ object float {
     }
 
     @inline
-    def reciprocal[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, Float, Float],
+    def reciprocal[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, Float, Float],
                                               logger: Logger = Logger.getGlobal,
                                               fullName: sourcecode.FullName,
                                               methodName: sourcecode.Name,
                                               className: Caller[_]): Do[FloatTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: Float =>
+      TapeTaskFactory.unary(liftOperand(operand)) { data: Float =>
         Task.delay {
           val outputData = 1 / data
           val computeBackward = { outputDelta: Float =>
@@ -346,7 +345,7 @@ object float {
       }
     }
 
-    implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: ToTapeTask.Aux[From, Float, Float],
+    implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: Lift.Aux[From, Float, Float],
                                                                   logger: Logger = Logger.getGlobal,
                                                                   fullName: sourcecode.FullName,
                                                                   methodName: sourcecode.Name,

@@ -7,17 +7,17 @@ import com.thoughtworks.raii.ownership._
 import shapeless.PolyDefns.{Case1, Case2}
 import shapeless._
 
-trait ToTapeTask[From] extends DepFn1[From] {
+trait Lift[From] extends DepFn1[From] {
   type Data
   type Delta
   override final type Out = Do.Covariant[Borrowing[Tape.Aux[Data, Delta]]]
 }
 
-private[deeplearning] trait LowPriorityToTapeTaskFunctions { this: ToTapeTask.type =>
+private[deeplearning] trait LowPriorityLiftFunctions { this: Lift.type =>
 
   @inline
-  implicit def fromData[From, Delta0]: LowPriorityToTapeTask.Aux[From, From, Delta0] = {
-    new LowPriorityToTapeTask[From] {
+  implicit def fromData[From, Delta0]: LowPriorityLift.Aux[From, From, Delta0] = {
+    new LowPriorityLift[From] {
       override type Data = From
       override type Delta = Delta0
 
@@ -30,7 +30,7 @@ private[deeplearning] trait LowPriorityToTapeTaskFunctions { this: ToTapeTask.ty
   }
 }
 
-object ToTapeTask extends LowPriorityToTapeTaskFunctions {
+object Lift extends LowPriorityLiftFunctions {
 
   trait LiftCase1[P <: Poly, From] extends DepFn1[From]
   object LiftCase1 {
@@ -38,7 +38,7 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
       type Out = Out0
     }
     implicit def liftCase1[P <: Poly, From, Data0, Delta0, Out0](
-        implicit lift: ToTapeTask.Aux[From, Data0, Delta0],
+        implicit lift: Lift.Aux[From, Data0, Delta0],
         case1: shapeless.PolyDefns.Case1.Aux[P, Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]], Out0])
       : LiftCase1.Aux[P, From, Out0] = {
       new LiftCase1[P, From] {
@@ -55,8 +55,8 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
       type Out = Out0
     }
     implicit def liftCase2[P <: Poly, Operand0, Operand1, Data0, Delta0, Data1, Delta1, Out0](
-        implicit lift0: ToTapeTask.Aux[Operand0, Data0, Delta0],
-        lift1: ToTapeTask.Aux[Operand1, Data1, Delta1],
+        implicit lift0: Lift.Aux[Operand0, Data0, Delta0],
+        lift1: Lift.Aux[Operand1, Data1, Delta1],
         case2: shapeless.PolyDefns.Case2.Aux[P,
                                              Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]],
                                              Do.Covariant[Borrowing[Tape.Aux[Data1, Delta1]]],
@@ -69,15 +69,15 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
     }
   }
 
-  trait LowPriorityToTapeTask[From] extends ToTapeTask[From]
-  object LowPriorityToTapeTask {
-    type Aux[From, Data0, Delta0] = LowPriorityToTapeTask[From] {
+  trait LowPriorityLift[From] extends Lift[From]
+  object LowPriorityLift {
+    type Aux[From, Data0, Delta0] = LowPriorityLift[From] {
       type Data = Data0
       type Delta = Delta0
     }
   }
 
-  type Aux[From, Data0, Delta0] = ToTapeTask[From] {
+  type Aux[From, Data0, Delta0] = Lift[From] {
     type Data = Data0
     type Delta = Delta0
   }
@@ -85,8 +85,8 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
   @inline
   implicit def fromSubtype[Data0, Delta0, From](
       implicit constraint: From <:< Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]])
-    : LowPriorityToTapeTask.Aux[From, Data0, Delta0] = {
-    new LowPriorityToTapeTask[From] {
+    : LowPriorityLift.Aux[From, Data0, Delta0] = {
+    new LowPriorityLift[From] {
       override type Data = Data0
       override type Delta = Delta0
 
@@ -95,7 +95,6 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
     }
   }
 
-  def apply[From](implicit toTapeTask: ToTapeTask[From]): ToTapeTask.Aux[From, toTapeTask.Data, toTapeTask.Delta] =
-    toTapeTask
+  def apply[From](implicit lift: Lift[From]): Lift.Aux[From, lift.Data, lift.Delta] = lift
 
 }

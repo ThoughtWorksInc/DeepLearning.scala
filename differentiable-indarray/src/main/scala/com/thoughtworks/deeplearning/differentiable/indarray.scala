@@ -8,7 +8,7 @@ import com.thoughtworks.deeplearning.math.polyFunctions
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.TapeTaskFactory.{MonoidOutput, SemigroupOutput, UnaryTapeTaskFactory}
-import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
+import com.thoughtworks.deeplearning.Lift.LowPriorityLift
 import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
 import com.thoughtworks.deeplearning._
 import com.thoughtworks.raii.asynchronous.Do
@@ -250,7 +250,7 @@ object indarray {
 
     @inline
     implicit def liftINDArray[A](
-        implicit typeClass: LowPriorityToTapeTask.Aux[A, INDArray, INDArray]): ToTapeTask.Aux[A, INDArray, INDArray] =
+        implicit typeClass: LowPriorityLift.Aux[A, INDArray, INDArray]): Lift.Aux[A, INDArray, INDArray] =
       typeClass
 
     implicit final class INDArrayToWeightOps(value: INDArray) {
@@ -657,13 +657,13 @@ object indarray {
     }
 
     @inline
-    def negative[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+    def negative[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
                                             logger: Logger = Logger.getGlobal,
                                             fullName: sourcecode.FullName,
                                             className: Caller[_],
                                             methodName: sourcecode.Name,
                                             executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data =>
+      TapeTaskFactory.unary(liftOperand(operand)) { data =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = -data
@@ -679,13 +679,13 @@ object indarray {
     }
 
     @inline
-    def reciprocal[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+    def reciprocal[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
                                               logger: Logger = Logger.getGlobal,
                                               fullName: sourcecode.FullName,
                                               className: Caller[_],
                                               methodName: sourcecode.Name,
                                               executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: INDArray =>
+      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           val outputData = data rdiv 1.0
           val computeBackward = { outputDelta: INDArray =>
@@ -705,15 +705,14 @@ object indarray {
                                     bias: Bias,
                                     kernel: (Int, Int),
                                     stride: (Int, Int),
-                                    padding: (Int, Int))(
-        implicit inputToTapeTask: ToTapeTask.Aux[Input, INDArray, INDArray],
-        weightToTapeTask: ToTapeTask.Aux[Weight, INDArray, INDArray],
-        biasToTapeTask: ToTapeTask.Aux[Bias, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): Do[INDArrayTape] = {
+                                    padding: (Int, Int))(implicit liftInput: Lift.Aux[Input, INDArray, INDArray],
+                                                         liftWeight: Lift.Aux[Weight, INDArray, INDArray],
+                                                         liftBias: Lift.Aux[Bias, INDArray, INDArray],
+                                                         logger: Logger = Logger.getGlobal,
+                                                         fullName: sourcecode.FullName,
+                                                         className: Caller[_],
+                                                         methodName: sourcecode.Name,
+                                                         executionContext: ExecutionContext): Do[INDArrayTape] = {
       def monadicConv2d[InputTape <: Borrowing[Tape.Aux[INDArray, INDArray]],
                         WeightTape <: Borrowing[Tape.Aux[INDArray, INDArray]],
                         Bias <: Borrowing[Tape.Aux[INDArray, INDArray]]](input: Do[InputTape],
@@ -750,21 +749,21 @@ object indarray {
       }
 
       monadicConv2d(
-        inputToTapeTask(input): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]],
-        weightToTapeTask(weight): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]],
-        biasToTapeTask(bias): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]]
+        liftInput(input): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]],
+        liftWeight(weight): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]],
+        liftBias(bias): Do[_ <: Borrowing[Tape.Aux[INDArray, INDArray]]]
       )
     }
 
     @inline
-    def dot[Left, Right](left: Left, right: Right)(implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-                                                   rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
+    def dot[Left, Right](left: Left, right: Right)(implicit liftLeft: Lift.Aux[Left, INDArray, INDArray],
+                                                   liftRight: Lift.Aux[Right, INDArray, INDArray],
                                                    logger: Logger = Logger.getGlobal,
                                                    fullName: sourcecode.FullName,
                                                    className: Caller[_],
                                                    methodName: sourcecode.Name,
                                                    executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: INDArray) =>
+      TapeTaskFactory.binary(liftLeft(left), liftRight(right)) { (data0: INDArray, data1: INDArray) =>
         throwableMonadic[Task] {
           jumpTask().each
 
@@ -796,13 +795,13 @@ object indarray {
 
     @inline
     def im2col[Operand](operand: Operand, kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int))(
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+        implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         className: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: INDArray =>
+      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val dataShape = data.shape()
@@ -821,14 +820,13 @@ object indarray {
     }
 
     @inline
-    def reshape[Operand](operand: Operand, newShape: Int*)(
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { (data: INDArray) =>
+    def reshape[Operand](operand: Operand, newShape: Int*)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
+                                                           logger: Logger = Logger.getGlobal,
+                                                           fullName: sourcecode.FullName,
+                                                           className: Caller[_],
+                                                           methodName: sourcecode.Name,
+                                                           executionContext: ExecutionContext): Do[INDArrayTape] = {
+      TapeTaskFactory.unary(liftOperand(operand)) { (data: INDArray) =>
         throwableMonadic[Task] {
           jumpTask().each
           val dataShape = data.shape()
@@ -846,13 +844,13 @@ object indarray {
 
     @inline
     def permute[Operand](operand: Operand, dimensions: Int*)(
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+        implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         className: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { (data: INDArray) =>
+      TapeTaskFactory.unary(liftOperand(operand)) { (data: INDArray) =>
         throwableMonadic[Task] {
           jumpTask().each
           val dataShape = data.shape()
@@ -873,13 +871,13 @@ object indarray {
     }
 
     @inline
-    def sumT[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+    def sumT[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
                                         logger: Logger = Logger.getGlobal,
                                         fullName: sourcecode.FullName,
                                         className: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext): Do[DoubleTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: INDArray =>
+      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sumT
@@ -895,14 +893,13 @@ object indarray {
     }
 
     @inline
-    def sum[Operand](operand: Operand, dimensions: Int*)(
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: INDArray =>
+    def sum[Operand](operand: Operand, dimensions: Int*)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
+                                                         logger: Logger = Logger.getGlobal,
+                                                         fullName: sourcecode.FullName,
+                                                         className: Caller[_],
+                                                         methodName: sourcecode.Name,
+                                                         executionContext: ExecutionContext): Do[INDArrayTape] = {
+      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sum(dimensions: _*)
@@ -918,13 +915,13 @@ object indarray {
     }
 
     @inline
-    def mean[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+    def mean[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
                                         logger: Logger = Logger.getGlobal,
                                         fullName: sourcecode.FullName,
                                         className: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext): Do[DoubleTape] = {
-      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: INDArray =>
+      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sumT / ArrayUtil.prod(data.shape(): _*)
@@ -940,7 +937,7 @@ object indarray {
     }
 
     implicit final class DifferentiableINDArrayOps[Operand](operand: Operand)(
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
+        implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
@@ -948,7 +945,7 @@ object indarray {
         executionContext: ExecutionContext) {
       @inline
       def unary_- : Do[INDArrayTape] = {
-        TapeTaskFactory.unary(operandToTapeTask(operand)) { data =>
+        TapeTaskFactory.unary(liftOperand(operand)) { data =>
           Task.delay {
             val outputData = -data
             val computeBackward = { outputDelta: INDArray =>
