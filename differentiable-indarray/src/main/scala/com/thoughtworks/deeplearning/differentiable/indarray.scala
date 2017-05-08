@@ -661,7 +661,7 @@ object indarray {
                                             fullName: sourcecode.FullName,
                                             className: Caller[_],
                                             methodName: sourcecode.Name,
-                                            executionContext: ExecutionContext): Do.Covariant[INDArrayTape] = {
+                                            executionContext: ExecutionContext): Do[INDArrayTape] = {
       TapeTaskFactory.unary(operandToTapeTask(operand)) { data =>
         throwableMonadic[Task] {
           jumpTask().each
@@ -938,17 +938,16 @@ object indarray {
       }
     }
 
-    implicit final class DifferentiableINDArrayOps[From](from: From)(
-        implicit lift: ToTapeTask.Aux[From, INDArray, INDArray],
+    implicit final class DifferentiableINDArrayOps[Operand](operand: Operand)(
+        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
         className: Caller[_],
         executionContext: ExecutionContext) {
-      private val operand: Do.Covariant[INDArrayTape] = lift(from)
       @inline
       def unary_- : Do[INDArrayTape] = {
-        TapeTaskFactory.unary(operand) { data =>
+        TapeTaskFactory.unary(operandToTapeTask(operand)) { data =>
           Task.delay {
             val outputData = -data
             val computeBackward = { outputDelta: INDArray =>

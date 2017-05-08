@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.differentiable
 
 import com.thoughtworks.deeplearning.PolyFunctions._
-import com.thoughtworks.deeplearning.Tape
+import com.thoughtworks.deeplearning.{PolyFunctions, Tape, ToTapeTask}
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.TapeTask.{predict, train}
 import com.thoughtworks.deeplearning.differentiable.indarray._
@@ -30,6 +30,8 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.ops.transforms.Transforms.{sign, sqrt}
 import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
+import shapeless.Lazy
+import shapeless.PolyDefns.Case
 
 import scalaz.concurrent.Future.futureInstance
 import scala.concurrent.{ExecutionContext, Promise}
@@ -318,6 +320,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     trainAndAssertLossAndWeight(myNetwork, weight, trainTimes = 10, expectedWeightSum = 0)
   }
 
+  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "exp(INDArray)" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 1
@@ -326,7 +329,8 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      exp(weight) + 0.0
+      val result = exp(weight)
+      result
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -362,6 +366,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
+  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "log(INDArray)" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 1
@@ -370,7 +375,8 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      log(weight) + 0.0
+      val result = log(weight)
+      result
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -406,6 +412,7 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
+  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "abs(INDArray)" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 1
@@ -414,7 +421,8 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      abs(weight) + 0.0
+      val result = abs(weight)
+      result
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
