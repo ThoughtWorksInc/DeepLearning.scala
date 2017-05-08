@@ -329,11 +329,12 @@ object float {
       }
     }
 
-    def reciprocal(operand: Do.Covariant[FloatTape])(implicit logger: Logger = Logger.getGlobal,
-                                                     fullName: sourcecode.FullName,
-                                                     methodName: sourcecode.Name,
-                                                     className: Caller[_]): Do.Covariant[FloatTape] = {
-      TapeTaskFactory.unary(operand) { data: Float =>
+    def reciprocal[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, Float, Float],
+                                              logger: Logger = Logger.getGlobal,
+                                              fullName: sourcecode.FullName,
+                                              methodName: sourcecode.Name,
+                                              className: Caller[_]): Do.Covariant[FloatTape] = {
+      TapeTaskFactory.unary(operandToTapeTask(operand)) { data: Float =>
         Task.delay {
           val outputData = 1 / data
           val computeBackward = { outputDelta: Float =>
