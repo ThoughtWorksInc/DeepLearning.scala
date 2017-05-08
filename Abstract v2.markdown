@@ -4,6 +4,6 @@ DeepLearning.scala is a simple Domain Specific Language(DSL) for creating comple
  1. DeepLearning.scala's DSL represents the process that dynamically creates computational graph nodes, instead of static computational graphs.
  2. Our neural networks are programs. All Scala features, including functions and expressions, are available in the DSL.
  3. The DSL is based on `Monad`s, which are composable, thus a complex layer can be built from atomic operators.
- 4. Along with Monad, we also provide an `Applicative` type class, which calculate multiple operations in parallel.
+ 4. Along with Monad, we provide an `Applicative` type class, to calculate multiple operations in parallel.
 
-In brief, in DeepLearning.scala 2.0, you can create neural networks the same as ordinary Scala code, and the computation in the networks still get scheduled onto GPU and CPU in parallel.
+In brief, in DeepLearning.scala 2.0, you can create neural networks in the same way as ordinary Scala code, and the computation in the networks still get scheduled onto GPU and CPU in parallel.
