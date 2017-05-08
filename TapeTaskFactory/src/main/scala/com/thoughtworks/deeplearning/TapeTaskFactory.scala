@@ -52,7 +52,7 @@ object TapeTaskFactory {
     unaryTapeTaskFactory(operand)(computeForward)
   }
 
-  private abstract class Output[OutputData, OutputDelta: Monoid](override val data: OutputData)(
+  private abstract class MonoidOutput[OutputData, OutputDelta: Monoid](override val data: OutputData)(
       implicit logger: Logger,
       fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
@@ -63,7 +63,7 @@ object TapeTaskFactory {
     override final type Delta = OutputDelta
     override final type Data = OutputData
 
-    // TODO: Output should be scoped by `Do.scoped`, not own itself.
+    // TODO: MonoidOutput should be scoped by `Do.scoped`, not own itself.
     final override def value: Try[this.type Owned this.type] = Success(this.own(this))
 
     @volatile
@@ -109,7 +109,7 @@ object TapeTaskFactory {
 
     override final type Delta = OutputDelta
     override final type Data = OutputData
-    // TODO: Output should be managed by `Do.managed`, not own itself.
+    // TODO: SemigroupOutput should be managed by `Do.managed`, not own itself.
     override def value: Try[this.type Owned this.type] = Success(this.own(this))
 
     @volatile
@@ -218,7 +218,7 @@ object TapeTaskFactory {
                     override def value: Try[Borrowing[Aux[OutputData, OutputDelta]]] = Failure(e)
                   }
                 case right @ \/-((forwardData, computeBackward)) =>
-                  new Output[OutputData, OutputDelta](forwardData) {
+                  new MonoidOutput[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
                       val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
                       Parallel.unwrap {
@@ -350,7 +350,7 @@ object TapeTaskFactory {
                       override def value: Try[Borrowing[Aux[OutputData, OutputDelta]]] = Failure(e)
                     }
                   case right @ \/-((forwardData, computeBackward)) =>
-                    new Output[OutputData, OutputDelta](forwardData) {
+                    new MonoidOutput[OutputData, OutputDelta](forwardData) {
                       override def release(): Future[Unit] = {
                         upstream.backward(computeBackward(deltaAccumulator))
                       }
