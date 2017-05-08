@@ -2,7 +2,7 @@ Most of current deep learning frameworks are static. The structure of neural net
 
 DeepLearning.scala is a simple Domain Specific Language(DSL) for creating complex neural networks, which has the following advantages in comparison to TensorFlow:
  1. DeepLearning.scala's DSL represents a process that dynamically creates computational graph nodes, instead of a static computational graph.
- 2. Our neural networks are programs. All Scala features, including any Scala functions and Scala expressions are available in the DSL.
+ 2. Our neural networks are programs. All Scala features, including Scala functions and Scala expressions, are available in the DSL.
  3. The DSL is based on `Monad`s, which are composable, thus a complex layer can be built from atomic operators.
  4. Along with Monad, we also provide an `Applicative` type class, which calculate multiple operations in parallel.
 
