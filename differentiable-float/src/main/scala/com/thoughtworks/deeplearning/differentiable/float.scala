@@ -148,8 +148,8 @@ object float {
                                fullName: sourcecode.FullName,
                                className: Caller[_],
                                methodName: sourcecode.Name)
-      : PolyMethods.+.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyMethods.+.at { (operand0, operand1) =>
+      : polyFunctions.+.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      polyFunctions.+.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 + data1
@@ -169,8 +169,8 @@ object float {
                                fullName: sourcecode.FullName,
                                className: Caller[_],
                                methodName: sourcecode.Name)
-      : PolyMethods.-.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyMethods.-.at { (operand0, operand1) =>
+      : polyFunctions.-.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      polyFunctions.-.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 - data1
@@ -190,8 +190,8 @@ object float {
                                fullName: sourcecode.FullName,
                                className: Caller[_],
                                methodName: sourcecode.Name)
-      : PolyMethods.*.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyMethods.*.at { (operand0, operand1) =>
+      : polyFunctions.*.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      polyFunctions.*.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 * data1
@@ -211,8 +211,8 @@ object float {
                                fullName: sourcecode.FullName,
                                className: Caller[_],
                                methodName: sourcecode.Name)
-      : PolyMethods./.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyMethods./.at { (operand0, operand1) =>
+      : polyFunctions./.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      polyFunctions./.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 / data1
@@ -232,8 +232,8 @@ object float {
                                     fullName: sourcecode.FullName,
                                     className: Caller[_],
                                     methodName: sourcecode.Name)
-      : PolyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.min.at { (operand0, operand1) =>
+      : PolyFunctions.polyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      PolyFunctions.polyFunctions.min.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val leftLessThenRight = data0 < data1
@@ -254,8 +254,8 @@ object float {
                                     fullName: sourcecode.FullName,
                                     className: Caller[_],
                                     methodName: sourcecode.Name)
-      : PolyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.max.at { (operand0, operand1) =>
+      : PolyFunctions.polyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      PolyFunctions.polyFunctions.max.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val leftLessThenRight = data0 < data1
@@ -272,12 +272,12 @@ object float {
     }
 
     @inline
-    implicit def `log(Float)`(
-        implicit logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name): PolyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.log.at { operand =>
+    implicit def `log(Float)`(implicit logger: Logger = Logger.getGlobal,
+                              fullName: sourcecode.FullName,
+                              className: Caller[_],
+                              methodName: sourcecode.Name)
+      : PolyFunctions.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+      PolyFunctions.polyFunctions.log.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
             val outputData = math.log(data).toFloat
@@ -295,8 +295,8 @@ object float {
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
-        className: Caller[_]): PolyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.exp.at { operand =>
+        className: Caller[_]): PolyFunctions.polyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+      PolyFunctions.polyFunctions.exp.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
             val outputData = math.exp(data).toFloat
@@ -314,8 +314,8 @@ object float {
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
-        className: Caller[_]): PolyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.abs.at { operand =>
+        className: Caller[_]): PolyFunctions.polyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+      PolyFunctions.polyFunctions.abs.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
             val isDataPositive = data >= 0

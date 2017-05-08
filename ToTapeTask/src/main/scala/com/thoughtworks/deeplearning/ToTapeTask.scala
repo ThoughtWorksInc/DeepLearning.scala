@@ -32,6 +32,43 @@ private[deeplearning] trait LowPriorityToTapeTaskFunctions { this: ToTapeTask.ty
 
 object ToTapeTask extends LowPriorityToTapeTaskFunctions {
 
+  trait LiftCase1[P <: Poly, From] extends DepFn1[From]
+  object LiftCase1 {
+    type Aux[P <: Poly, From, Out0] = LiftCase1[P, From] {
+      type Out = Out0
+    }
+    implicit def liftCase1[P <: Poly, From, Data0, Delta0, Out0](
+        implicit lift: ToTapeTask.Aux[From, Data0, Delta0],
+        case1: shapeless.PolyDefns.Case1.Aux[P, Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]], Out0])
+      : LiftCase1.Aux[P, From, Out0] = {
+      new LiftCase1[P, From] {
+        override type Out = Out0
+
+        override def apply(t: From): Out = case1(lift(t))
+      }
+    }
+  }
+
+  trait LiftCase2[P <: Poly, Operand0, Operand1] extends DepFn2[Operand0, Operand1]
+  object LiftCase2 {
+    type Aux[P <: Poly, Operand0, Operand1, Out0] = LiftCase2[P, Operand0, Operand1] {
+      type Out = Out0
+    }
+    implicit def liftCase2[P <: Poly, Operand0, Operand1, Data0, Delta0, Data1, Delta1, Out0](
+        implicit lift0: ToTapeTask.Aux[Operand0, Data0, Delta0],
+        lift1: ToTapeTask.Aux[Operand1, Data1, Delta1],
+        case2: shapeless.PolyDefns.Case2.Aux[P,
+                                             Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]],
+                                             Do.Covariant[Borrowing[Tape.Aux[Data1, Delta1]]],
+                                             Out0]): LiftCase2.Aux[P, Operand0, Operand1, Out0] = {
+      new LiftCase2[P, Operand0, Operand1] {
+        override type Out = Out0
+
+        override def apply(operand0: Operand0, operand1: Operand1): Out = case2(lift0(operand0), lift1(operand1))
+      }
+    }
+  }
+
   trait LowPriorityToTapeTask[From] extends ToTapeTask[From]
   object LowPriorityToTapeTask {
     type Aux[From, Data0, Delta0] = LowPriorityToTapeTask[From] {
@@ -44,7 +81,6 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
     type Data = Data0
     type Delta = Delta0
   }
-
 
   @inline
   implicit def fromSubtype[Data0, Delta0, From](
@@ -61,31 +97,5 @@ object ToTapeTask extends LowPriorityToTapeTaskFunctions {
 
   def apply[From](implicit toTapeTask: ToTapeTask[From]): ToTapeTask.Aux[From, toTapeTask.Data, toTapeTask.Delta] =
     toTapeTask
-
-  trait Poly1 extends shapeless.Poly1 {
-    @inline
-    implicit def tapeTaskCase[Operand0, Data0, Delta0](
-        implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
-        tapeTaskCase: Lazy[Case[Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]]]]
-    ): Case.Aux[Operand0, tapeTaskCase.value.Result] = {
-      at { (operand0: Operand0) =>
-        tapeTaskCase.value(toTapeTask0(operand0))
-      }
-    }
-  }
-
-  trait Poly2 extends shapeless.Poly2 {
-    @inline
-    implicit def tapeTaskCase[F, Operand0, Operand1, Data0, Delta0, Data1, Delta1](
-        implicit toTapeTask0: ToTapeTask.Aux[Operand0, Data0, Delta0],
-        toTapeTask1: ToTapeTask.Aux[Operand1, Data1, Delta1],
-        tapeTaskCase: Lazy[
-          Case[Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]], Do.Covariant[Borrowing[Tape.Aux[Data1, Delta1]]]]]
-    ): Case.Aux[Operand0, Operand1, tapeTaskCase.value.Result] = {
-      at { (operand0: Operand0, operand1: Operand1) =>
-        tapeTaskCase.value(toTapeTask0(operand0), toTapeTask1(operand1))
-      }
-    }
-  }
 
 }

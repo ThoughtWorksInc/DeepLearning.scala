@@ -282,14 +282,12 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     trainAndAssertLossAndWeight(myNetwork, weight, trainTimes = 10, expectedWeightSum = 0)
   }
 
-  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "exp(INDArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      val result = exp(weight)
-      result
+      exp(weight)
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -325,14 +323,12 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "log(INDArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      val result = log(weight)
-      result
+      log(weight)
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -368,14 +364,12 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "abs(INDArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      val result = abs(weight)
-      result
+      abs(weight)
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
