@@ -6,7 +6,7 @@ import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward
 import com.thoughtworks.deeplearning.PolyFunctions.PolyMethods
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.TapeTask.Trainable
-import com.thoughtworks.deeplearning.TapeTaskFactory.{Output, SemigroupOutput, UnaryTapeTaskFactory}
+import com.thoughtworks.deeplearning.TapeTaskFactory.{MonoidOutput, SemigroupOutput, UnaryTapeTaskFactory}
 import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
 import com.thoughtworks.deeplearning._
