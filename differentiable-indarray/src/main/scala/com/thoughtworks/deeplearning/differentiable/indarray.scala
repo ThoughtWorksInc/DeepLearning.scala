@@ -278,16 +278,14 @@ object indarray {
     }
 
     @inline
-    implicit def `INDArray+INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.+.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.+.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: INDArray) =>
+    implicit def `INDArray+INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                     fullName: sourcecode.FullName,
+                                     className: Caller[_],
+                                     methodName: sourcecode.Name,
+                                     executionContext: ExecutionContext)
+      : PolyMethods.+.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods.+.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
@@ -312,16 +310,14 @@ object indarray {
     }
 
     @inline
-    implicit def `INDArray+Double`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, Double, Double],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.+.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.+.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: Double) =>
+    implicit def `INDArray+Double`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods.+.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      PolyMethods.+.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 + data1
@@ -340,30 +336,26 @@ object indarray {
     }
 
     @inline
-    implicit def `Double+INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, Double, Double],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.+.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.+.at { (left, right) =>
-        right + left
+    implicit def `Double+INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods.+.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods.+.at { (operand0, operand1) =>
+        operand1 + operand0
       }
     }
 
     @inline
-    implicit def `INDArray-INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.-.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.-.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: INDArray) =>
+    implicit def `INDArray-INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                     fullName: sourcecode.FullName,
+                                     className: Caller[_],
+                                     methodName: sourcecode.Name,
+                                     executionContext: ExecutionContext)
+      : PolyMethods.-.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods.-.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
@@ -388,16 +380,14 @@ object indarray {
     }
 
     @inline
-    implicit def `INDArray-Double`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, Double, Double],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.-.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.-.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: Double) =>
+    implicit def `INDArray-Double`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods.-.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      PolyMethods.-.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 - data1
@@ -416,30 +406,26 @@ object indarray {
     }
 
     @inline
-    implicit def `Double-INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, Double, Double],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.-.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.-.at { (left, right) =>
-        -right + left
+    implicit def `Double-INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods.-.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods.-.at { (operand0, operand1) =>
+        -operand1 + operand0
       }
     }
 
     @inline
-    implicit def `INDArray*INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.*.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.*.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: INDArray) =>
+    implicit def `INDArray*INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                     fullName: sourcecode.FullName,
+                                     className: Caller[_],
+                                     methodName: sourcecode.Name,
+                                     executionContext: ExecutionContext)
+      : PolyMethods.*.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods.*.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
@@ -464,16 +450,14 @@ object indarray {
     }
 
     @inline
-    implicit def `INDArray*Double`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, Double, Double],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.*.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods.*.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: Double) =>
+    implicit def `INDArray*Double`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods.*.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      PolyMethods.*.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 * data1
@@ -494,72 +478,62 @@ object indarray {
     }
 
     @inline
-    implicit def `Double*INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, Double, Double],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods.*.Case.Aux[Left, Right, Do[INDArrayTape]] = {
+    implicit def `Double*INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods.*.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyMethods.*.at { (operand0, operand1) =>
         operand1 * operand0
       }
     }
 
     @inline
-    implicit def `INDArray/INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods./.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods./.at { (left, right) =>
-        left * reciprocal(right)
+    implicit def `INDArray/INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                     fullName: sourcecode.FullName,
+                                     className: Caller[_],
+                                     methodName: sourcecode.Name,
+                                     executionContext: ExecutionContext)
+      : PolyMethods./.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods./.at { (operand0, operand1) =>
+        operand0 * reciprocal(operand1)
       }
     }
 
     @inline
-    implicit def `INDArray/Double`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, Double, Double],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods./.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods./.at { (left, right) =>
-        left * double.implicits.reciprocal(right)
+    implicit def `INDArray/Double`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods./.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      PolyMethods./.at { (operand0, operand1) =>
+        operand0 * double.implicits.reciprocal(operand1)
       }
     }
 
     @inline
-    implicit def `Double/INDArray`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, Double, Double],
-        rightToTapeTask: ToTapeTask.Aux[Right, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyMethods./.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyMethods./.at { (left, right) =>
-        left * reciprocal(right)
+    implicit def `Double/INDArray`(implicit logger: Logger = Logger.getGlobal,
+                                   fullName: sourcecode.FullName,
+                                   className: Caller[_],
+                                   methodName: sourcecode.Name,
+                                   executionContext: ExecutionContext)
+      : PolyMethods./.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      PolyMethods./.at { (operand0, operand1) =>
+        operand0 * reciprocal(operand1)
       }
     }
 
     @inline
-    implicit def `max(INDArray,Double)`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, Double, Double],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyFunctions.max.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyFunctions.max.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: Double) =>
+    implicit def `max(INDArray,Double)`(implicit logger: Logger = Logger.getGlobal,
+                                        fullName: sourcecode.FullName,
+                                        className: Caller[_],
+                                        methodName: sourcecode.Name,
+                                        executionContext: ExecutionContext)
+      : PolyFunctions.max.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      PolyFunctions.max.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.max(data0, data1)
@@ -581,16 +555,14 @@ object indarray {
     }
 
     @inline
-    implicit def `min(INDArray,Double)`[Left, Right](
-        implicit leftToTapeTask: ToTapeTask.Aux[Left, INDArray, INDArray],
-        rightToTapeTask: ToTapeTask.Aux[Right, Double, Double],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyFunctions.min.Case.Aux[Left, Right, Do[INDArrayTape]] = {
-      PolyFunctions.min.at { (left, right) =>
-        TapeTaskFactory.binary(leftToTapeTask(left), rightToTapeTask(right)) { (data0: INDArray, data1: Double) =>
+    implicit def `min(INDArray,Double)`(implicit logger: Logger = Logger.getGlobal,
+                                        fullName: sourcecode.FullName,
+                                        className: Caller[_],
+                                        methodName: sourcecode.Name,
+                                        executionContext: ExecutionContext)
+      : PolyFunctions.min.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      PolyFunctions.min.at { (operand0, operand1) =>
+        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.min(data0, data1)
@@ -612,15 +584,14 @@ object indarray {
     }
 
     @inline
-    implicit def `exp(INDArray)`[Operand](
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyFunctions.exp.Case.Aux[Operand, Do[INDArrayTape]] = {
+    implicit def `exp(INDArray)`(implicit logger: Logger = Logger.getGlobal,
+                                 fullName: sourcecode.FullName,
+                                 className: Caller[_],
+                                 methodName: sourcecode.Name,
+                                 executionContext: ExecutionContext)
+      : PolyFunctions.exp.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyFunctions.exp.at { operand =>
-        TapeTaskFactory.unary(operandToTapeTask(operand)) { (data: INDArray) =>
+        TapeTaskFactory.unary(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.exp(data)
@@ -637,15 +608,14 @@ object indarray {
     }
 
     @inline
-    implicit def `log(INDArray)`[Operand](
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyFunctions.log.Case.Aux[Operand, Do[INDArrayTape]] = {
+    implicit def `log(INDArray)`(implicit logger: Logger = Logger.getGlobal,
+                                 fullName: sourcecode.FullName,
+                                 className: Caller[_],
+                                 methodName: sourcecode.Name,
+                                 executionContext: ExecutionContext)
+      : PolyFunctions.log.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyFunctions.log.at { operand =>
-        TapeTaskFactory.unary(operandToTapeTask(operand)) { (data: INDArray) =>
+        TapeTaskFactory.unary(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.log(data)
@@ -662,15 +632,14 @@ object indarray {
     }
 
     @inline
-    implicit def `abs(INDArray)`[Operand](
-        implicit operandToTapeTask: ToTapeTask.Aux[Operand, INDArray, INDArray],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        className: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext): PolyFunctions.abs.Case.Aux[Operand, Do[INDArrayTape]] = {
+    implicit def `abs(INDArray)`(implicit logger: Logger = Logger.getGlobal,
+                                 fullName: sourcecode.FullName,
+                                 className: Caller[_],
+                                 methodName: sourcecode.Name,
+                                 executionContext: ExecutionContext)
+      : PolyFunctions.abs.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       PolyFunctions.abs.at { operand =>
-        TapeTaskFactory.unary(operandToTapeTask(operand)) { (data: INDArray) =>
+        TapeTaskFactory.unary(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.abs(data)
