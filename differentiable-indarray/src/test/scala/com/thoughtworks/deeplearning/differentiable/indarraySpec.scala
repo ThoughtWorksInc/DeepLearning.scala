@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.differentiable
 
-import com.thoughtworks.deeplearning.PolyFunctions._
-import com.thoughtworks.deeplearning.{PolyFunctions, Tape, ToTapeTask}
+import com.thoughtworks.deeplearning.math._
+import com.thoughtworks.deeplearning.{math, Tape, Lift}
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.TapeTask.{predict, train}
 import com.thoughtworks.deeplearning.differentiable.indarray._
@@ -282,14 +282,12 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     trainAndAssertLossAndWeight(myNetwork, weight, trainTimes = 10, expectedWeightSum = 0)
   }
 
-  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "exp(INDArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      val result = exp(weight)
-      result
+      exp(weight)
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -325,14 +323,12 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "log(INDArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      val result = log(weight)
-      result
+      log(weight)
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -368,14 +364,12 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "abs(INDArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
     def myNetwork(input: INDArray): Do[INDArrayTape] = {
-      val result = abs(weight)
-      result
+      abs(weight)
     }
 
     def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
@@ -953,5 +947,30 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
       }
     }
     p.future
+  }
+
+  "should compile" in {
+
+    val promise = Promise[Assertion]
+
+    promise.success {
+      "abs(1.0)" should compile
+      "abs(??? : Do[DoubleTape])" should compile
+      "abs(??? : Do[_<: DoubleTape])" should compile
+      "abs(??? : Do.Covariant[DoubleTape])" should compile
+      "abs(??? : Do[Borrowing[Tape.Aux[Double, Double]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape.Aux[Double, Double]]])" should compile
+      "abs(??? : Do.Covariant[Borrowing[Tape.Aux[Double, Double]]])" should compile
+
+      "abs(Nd4j.ones(2, 3, 3, 3))" should compile
+      "abs(??? : Do[INDArrayTape])" should compile
+      "abs(??? : Do[_<: INDArrayTape])" should compile
+      "abs(??? : Do.Covariant[INDArrayTape])" should compile
+      "abs(??? : Do[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+      "abs(??? : Do.Covariant[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+    }
+
+    promise.future
   }
 }
