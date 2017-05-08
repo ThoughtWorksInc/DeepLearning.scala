@@ -115,7 +115,7 @@ object float {
     import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.monoidBinaryTapeTaskFactory
     import com.thoughtworks.deeplearning.TapeTaskFactory.UnaryTapeTaskFactory.monoidUnaryTapeTaskFactory
 
-    private implicit object FloatMonoid extends Monoid[Float] {
+    private[deeplearning] implicit object FloatMonoid extends Monoid[Float] {
       override def zero: Float = 0
 
       override def append(f1: Float, f2: => Float): Float = f1 + f2
@@ -329,11 +329,10 @@ object float {
       }
     }
 
-    def reciprocal(operand: Do.Covariant[FloatTape])(
-        implicit logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        methodName: sourcecode.Name,
-        className: Caller[_]): Do.Covariant[FloatTape] = {
+    def reciprocal(operand: Do.Covariant[FloatTape])(implicit logger: Logger = Logger.getGlobal,
+                                                     fullName: sourcecode.FullName,
+                                                     methodName: sourcecode.Name,
+                                                     className: Caller[_]): Do.Covariant[FloatTape] = {
       TapeTaskFactory.unary(operand) { data: Float =>
         Task.delay {
           val outputData = 1 / data

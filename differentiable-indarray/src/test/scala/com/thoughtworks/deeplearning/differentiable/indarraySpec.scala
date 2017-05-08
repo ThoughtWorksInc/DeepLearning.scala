@@ -4,7 +4,8 @@ import com.thoughtworks.deeplearning.PolyFunctions._
 import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.TapeTask.{predict, train}
-import com.thoughtworks.deeplearning.differentiable.indarray.{INDArrayTape, Optimizer}
+import com.thoughtworks.deeplearning.differentiable.indarray._
+import com.thoughtworks.deeplearning.differentiable.indarray.Optimizer
 import com.thoughtworks.deeplearning.differentiable.indarray.Optimizer.LearningRate
 import com.thoughtworks.deeplearning.differentiable.indarray.implicits._
 import com.thoughtworks.each.Monadic._
@@ -763,4 +764,180 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
+  "sumT(INDArray)" in {
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
+    }
+
+    val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
+
+    def myNetwork(): Do[DoubleTape] = {
+      sumT(weight)
+    }
+
+    def trainMyNetwork(): Task[Double] = {
+      train(myNetwork())
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    @monadic[Task]
+    val task: Task[Unit] = {
+      for (_ <- 1 to 54) {
+        trainMyNetwork().each
+      }
+    }
+
+    val result = throwableMonadic[Task] {
+      task.each
+      predict(myNetwork()).each
+    }
+
+    val p = Promise[Assertion]
+
+    result.unsafePerformAsync { either: \/[Throwable, Double] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(loss) =>
+            loss should be < 1.0
+        }
+      }
+    }
+    p.future
+  }
+
+  "sum(INDArray,dimensions) --2 dimensions" in {
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
+    }
+
+    val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(6, 9).toWeight
+
+    def myNetwork(dimensions: Int*): Do[INDArrayTape] = {
+      sum(weight, dimensions: _*)
+    }
+
+    def trainMyNetwork(): Task[INDArray] = {
+      train(myNetwork(0))
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    @monadic[Task]
+    val task: Task[Unit] = {
+      for (_ <- 1 to 54) {
+        trainMyNetwork().each
+      }
+    }
+
+    val result = throwableMonadic[Task] {
+      task.each
+      predict(myNetwork(0)).each
+    }
+
+    val p = Promise[Assertion]
+
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(loss) =>
+            loss.sumT should be < 1.0
+        }
+      }
+    }
+    p.future
+  }
+
+  // Failed due to nd4j bugs in broadcasting. TODO: Try to upgrade nd4j to a new version.
+  "sum(INDArray,dimensions) --4 dimensions" ignore {
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
+    }
+
+    val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
+
+    def myNetwork(dimensions: Int*): Do[INDArrayTape] = {
+      sum(weight, dimensions: _*)
+    }
+
+    def trainMyNetwork(): Task[INDArray] = {
+      train(myNetwork(0, 1))
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    @monadic[Task]
+    val task: Task[Unit] = {
+      for (_ <- 1 to 54) {
+        trainMyNetwork().each
+      }
+    }
+
+    val result = throwableMonadic[Task] {
+      task.each
+      predict(myNetwork(0, 1)).each
+    }
+
+    val p = Promise[Assertion]
+
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(loss) =>
+            loss.sumT should be < 1.0
+        }
+      }
+    }
+    p.future
+  }
+
+  "mean(INDArray)" in {
+    implicit def optimizer: Optimizer = new LearningRate {
+      def currentLearningRate() = 1
+    }
+
+    val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
+
+    def myNetwork(): Do[DoubleTape] = {
+      mean(weight)
+    }
+
+    def trainMyNetwork(): Task[Double] = {
+      train(myNetwork())
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    @monadic[Task]
+    val task: Task[Unit] = {
+      for (_ <- 1 to 27) {
+        trainMyNetwork().each
+      }
+    }
+
+    val result = throwableMonadic[Task] {
+      task.each
+      predict(myNetwork()).each
+    }
+
+    val p = Promise[Assertion]
+
+    result.unsafePerformAsync { either: \/[Throwable, Double] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(loss) =>
+            loss should be < 1.0
+        }
+      }
+    }
+    p.future
+  }
 }
