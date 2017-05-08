@@ -329,6 +329,7 @@ object float {
       }
     }
 
+    @inline
     def reciprocal[Operand](operand: Operand)(implicit operandToTapeTask: ToTapeTask.Aux[Operand, Float, Float],
                                               logger: Logger = Logger.getGlobal,
                                               fullName: sourcecode.FullName,
