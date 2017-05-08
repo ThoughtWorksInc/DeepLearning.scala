@@ -4,7 +4,7 @@ package differentiable
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
-import com.thoughtworks.deeplearning.PolyFunctions._
+import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.ToTapeTask.LowPriorityToTapeTask
 import com.thoughtworks.raii.asynchronous.Do
@@ -48,7 +48,7 @@ object float {
       protected def l1Regularization: Float
 
       override def currentDelta(oldValue: Float, delta: Float): Float = {
-        super.currentDelta(oldValue, delta + math.signum(oldValue) * l1Regularization)
+        super.currentDelta(oldValue, delta + scala.math.signum(oldValue) * l1Regularization)
       }
     }
 
@@ -232,8 +232,8 @@ object float {
                                     fullName: sourcecode.FullName,
                                     className: Caller[_],
                                     methodName: sourcecode.Name)
-      : PolyFunctions.polyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.polyFunctions.min.at { (operand0, operand1) =>
+      : math.polyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      math.polyFunctions.min.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val leftLessThenRight = data0 < data1
@@ -254,8 +254,8 @@ object float {
                                     fullName: sourcecode.FullName,
                                     className: Caller[_],
                                     methodName: sourcecode.Name)
-      : PolyFunctions.polyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.polyFunctions.max.at { (operand0, operand1) =>
+      : math.polyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+      math.polyFunctions.max.at { (operand0, operand1) =>
         TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val leftLessThenRight = data0 < data1
@@ -276,11 +276,11 @@ object float {
                               fullName: sourcecode.FullName,
                               className: Caller[_],
                               methodName: sourcecode.Name)
-      : PolyFunctions.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.polyFunctions.log.at { operand =>
+      : math.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+      math.polyFunctions.log.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
-            val outputData = math.log(data).toFloat
+            val outputData = scala.math.log(data).toFloat
             val computeBackward = { outputDelta: Float =>
               Do.delay(outputDelta / data)
             }
@@ -295,11 +295,11 @@ object float {
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
-        className: Caller[_]): PolyFunctions.polyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.polyFunctions.exp.at { operand =>
+        className: Caller[_]): math.polyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+      math.polyFunctions.exp.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
-            val outputData = math.exp(data).toFloat
+            val outputData = scala.math.exp(data).toFloat
             val computeBackward = { outputDelta: Float =>
               Do.delay(outputDelta * outputData)
             }
@@ -314,8 +314,8 @@ object float {
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
-        className: Caller[_]): PolyFunctions.polyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
-      PolyFunctions.polyFunctions.abs.at { operand =>
+        className: Caller[_]): math.polyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+      math.polyFunctions.abs.at { operand =>
         TapeTaskFactory.unary(operand) { data =>
           Task.delay {
             val isDataPositive = data >= 0

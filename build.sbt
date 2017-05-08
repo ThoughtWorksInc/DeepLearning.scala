@@ -10,14 +10,14 @@ lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
+lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, math, Caller)
 
 lazy val `differentiable-indarray` = project.dependsOn(`differentiable-double`)
 
 val FloatRegex = """(?i:float)""".r
 
 lazy val `differentiable-double` = project
-  .dependsOn(TapeTask, TapeTaskFactory, PolyFunctions, Caller)
+  .dependsOn(TapeTask, TapeTaskFactory, math, Caller)
   .settings(sourceGenerators in Compile += Def.task {
     for {
       floatFile <- (unmanagedSources in Compile in `differentiable-float`).value
@@ -41,7 +41,7 @@ lazy val `differentiable-double` = project
 
 lazy val ToTapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
 
-lazy val PolyFunctions = project.dependsOn(ToTapeTask)
+lazy val math = project.dependsOn(ToTapeTask)
 
 lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
 

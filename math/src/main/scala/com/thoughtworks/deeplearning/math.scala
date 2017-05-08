@@ -12,7 +12,7 @@ import shapeless.{DepFn1, DepFn2, Poly, Poly1, Poly2}
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object PolyFunctions {
+object math {
 
   implicit final class PolyOps[Operand0](operand0: Operand0) {
     def -[Operand1](operand1: Operand1)(

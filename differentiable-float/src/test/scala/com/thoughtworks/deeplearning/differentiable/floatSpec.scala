@@ -3,7 +3,7 @@ package differentiable
 
 import java.util.logging.Level
 
-import com.thoughtworks.deeplearning.PolyFunctions._
+import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.TapeTask.{predict, train}
 import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.MultipleException
@@ -532,7 +532,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val weight: Do[Borrowing[Tape.Aux[Float, Float]]] = 1.0f.toWeight
 
-    val log5 = math.log(5).toFloat
+    val log5 = scala.math.log(5).toFloat
 
     def myNetwork(input: Float): Do[Borrowing[Tape.Aux[Float, Float]]] = {
       log5 - log(weight)
@@ -562,7 +562,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
         inside(either) {
           case -\/(e) => throw e
           case \/-(loss) =>
-            math.abs(weight.data - 5) should be < 0.1f
+            scala.math.abs(weight.data - 5) should be < 0.1f
             loss should be < 0.1f
         }
       }
@@ -578,7 +578,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val weight: Do[Borrowing[Tape.Aux[Float, Float]]] = 1.0f.toWeight
 
-    val exp3 = math.exp(3).toFloat
+    val exp3 = scala.math.exp(3).toFloat
 
     def myNetwork(input: Float): Do[Borrowing[Tape.Aux[Float, Float]]] = {
       exp3 - exp(weight)
@@ -607,7 +607,7 @@ final class floatSpec extends AsyncFreeSpec with Matchers with Inside {
         inside(either) {
           case -\/(e) => throw e
           case \/-(loss) =>
-            math.abs(weight.data - 3) should be < 0.1f
+            scala.math.abs(weight.data - 3) should be < 0.1f
             loss should be < 0.5f
         }
       }

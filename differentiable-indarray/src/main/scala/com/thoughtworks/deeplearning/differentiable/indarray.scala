@@ -3,8 +3,8 @@ package com.thoughtworks.deeplearning.differentiable
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
-import com.thoughtworks.deeplearning.PolyFunctions._
-import com.thoughtworks.deeplearning.PolyFunctions.polyFunctions
+import com.thoughtworks.deeplearning.math._
+import com.thoughtworks.deeplearning.math.polyFunctions
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.TapeTaskFactory.{MonoidOutput, SemigroupOutput, UnaryTapeTaskFactory}
@@ -28,7 +28,7 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous
 import com.thoughtworks.raii.ownership.{Borrowing, garbageCollectable}
 import shapeless.the
-import com.thoughtworks.deeplearning.PolyFunctions._
+import com.thoughtworks.deeplearning.math._
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -161,9 +161,9 @@ object indarray {
 
         times += 1
 
-        val coef1 = 1 - math.pow(beta1, times)
+        val coef1 = 1 - scala.math.pow(beta1, times)
 
-        val coef2 = math.sqrt(1 - math.pow(beta2, times))
+        val coef2 = scala.math.sqrt(1 - scala.math.pow(beta2, times))
 
         super.currentDelta(oldValue, m.get * (coef2 / coef1)) / (sqrt(v.get) + eps)
       }

@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.differentiable
 
-import com.thoughtworks.deeplearning.PolyFunctions._
-import com.thoughtworks.deeplearning.{PolyFunctions, Tape, ToTapeTask}
+import com.thoughtworks.deeplearning.math._
+import com.thoughtworks.deeplearning.{math, Tape, ToTapeTask}
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.TapeTask.{predict, train}
 import com.thoughtworks.deeplearning.differentiable.indarray._
