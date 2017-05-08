@@ -13,20 +13,7 @@ trait ToTapeTask[From] extends DepFn1[From] {
   override final type Out = Do.Covariant[Borrowing[Tape.Aux[Data, Delta]]]
 }
 
-object ToTapeTask {
-
-  trait LowPriorityToTapeTask[From] extends ToTapeTask[From]
-  object LowPriorityToTapeTask {
-    type Aux[From, Data0, Delta0] = LowPriorityToTapeTask[From] {
-      type Data = Data0
-      type Delta = Delta0
-    }
-  }
-
-  type Aux[From, Data0, Delta0] = ToTapeTask[From] {
-    type Data = Data0
-    type Delta = Delta0
-  }
+private[deeplearning] trait LowPriorityToTapeTaskFunctions { this: ToTapeTask.type =>
 
   @inline
   implicit def fromData[From, Delta0]: LowPriorityToTapeTask.Aux[From, From, Delta0] = {
@@ -41,6 +28,23 @@ object ToTapeTask {
       }
     }
   }
+}
+
+object ToTapeTask extends LowPriorityToTapeTaskFunctions {
+
+  trait LowPriorityToTapeTask[From] extends ToTapeTask[From]
+  object LowPriorityToTapeTask {
+    type Aux[From, Data0, Delta0] = LowPriorityToTapeTask[From] {
+      type Data = Data0
+      type Delta = Delta0
+    }
+  }
+
+  type Aux[From, Data0, Delta0] = ToTapeTask[From] {
+    type Data = Data0
+    type Delta = Delta0
+  }
+
 
   @inline
   implicit def fromSubtype[Data0, Delta0, From](
