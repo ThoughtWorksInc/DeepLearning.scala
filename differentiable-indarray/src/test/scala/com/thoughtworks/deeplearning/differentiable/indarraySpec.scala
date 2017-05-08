@@ -94,10 +94,11 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
+  implicit def optimizer: Optimizer = new LearningRate {
+    def currentLearningRate() = 1
+  }
+
   "INDArray + INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
@@ -109,9 +110,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray + Double" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
@@ -123,9 +121,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Double + INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
@@ -136,9 +131,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray - INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
@@ -150,9 +142,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray - Double" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
@@ -164,9 +153,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Double - INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (-Nd4j.ones(4, 4)).toWeight
 
@@ -178,9 +164,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray * INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
@@ -192,9 +175,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray * Double" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
@@ -206,9 +186,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Double * INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
@@ -220,9 +197,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray / INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
@@ -234,9 +208,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray / Double" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
@@ -248,9 +219,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Double / INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
@@ -292,9 +260,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "max(INDArray,Double)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -307,9 +272,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "min(INDArray,Double)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -322,9 +284,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "exp(INDArray)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -368,9 +327,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "log(INDArray)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -414,9 +370,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   //TODO : see https://github.com/ThoughtWorksInc/DeepLearning.scala/issues/76
   "abs(INDArray)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -459,9 +412,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray dot INDArray" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -578,9 +528,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray reshape shapes --forward" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -655,9 +602,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "INDArray permute dimensions --forward" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 9).toWeight
 
@@ -773,9 +717,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "sumT(INDArray)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -817,9 +758,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "sum(INDArray,dimensions) --2 dimensions" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(6, 9).toWeight
 
@@ -862,9 +800,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   // Failed due to nd4j bugs in broadcasting. TODO: Try to upgrade nd4j to a new version.
   "sum(INDArray,dimensions) --4 dimensions" ignore {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -906,9 +841,6 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "mean(INDArray)" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1
-    }
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -943,6 +875,80 @@ final class indarraySpec extends AsyncFreeSpec with Matchers with Inside {
           case -\/(e) => throw e
           case \/-(loss) =>
             loss should be < 1.0
+        }
+      }
+    }
+    p.future
+  }
+
+  "4D INDArray * 4D INDArray -- forward" in {
+
+    val weight = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4).toWeight
+
+    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+      weight * input
+    }
+
+    def trainMyNetwork(input: INDArray): Task[INDArray] = {
+      train(myNetwork(input))
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    val input = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
+
+    val p = Promise[Assertion]
+
+    trainMyNetwork(input).unsafePerformAsync { either: \/[Throwable, INDArray] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(result) =>
+            result.meanNumber.doubleValue should be(180.16666666666666667 +- 0.1)
+        }
+      }
+    }
+    p.future
+  }
+
+  "4D INDArray * 4D INDArray -- train" in {
+
+    val weight = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4).toWeight
+
+    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+      weight * input
+    }
+
+    def trainMyNetwork(input: INDArray): Task[INDArray] = {
+      train(myNetwork(input))
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    val input = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
+
+    @monadic[Task]
+    val task: Task[Unit] = {
+      for (_ <- 1 to 100) {
+        trainMyNetwork(input).each
+      }
+    }
+
+    val result = throwableMonadic[Task] {
+      task.each
+      predict(myNetwork(input)).each
+    }
+
+    val p = Promise[Assertion]
+
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(loss: INDArray) =>
+            loss.meanNumber.doubleValue should be < 1.0
         }
       }
     }
