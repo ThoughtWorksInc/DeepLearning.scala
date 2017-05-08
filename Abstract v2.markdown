@@ -1,4 +1,4 @@
-TensorFlow and most of current deep learning frameworks are static. The structure of neural networks in those frameworks must be determined before running. In this talk, we will present the design and implementation tips of the dynamic neural network feature in [DeepLearning.scala](https://github.com/ThoughtWorksInc/DeepLearning.scala/) 2.0.
+Most of current deep learning frameworks are static. The structure of neural networks in those frameworks must be determined before running. In this talk, we will present the design and implementation tips of the dynamic neural network feature in [DeepLearning.scala](https://github.com/ThoughtWorksInc/DeepLearning.scala/) 2.0.
 
 DeepLearning.scalais a simple DSL for creating complex neural networks. DeepLearning.scala 2.0 have the following advantages in comparison to TensorFlow:
  1. DeepLearning.scala's DSL represents a process that dynamically creates computational graph nodes, instead of a static computational graph.
