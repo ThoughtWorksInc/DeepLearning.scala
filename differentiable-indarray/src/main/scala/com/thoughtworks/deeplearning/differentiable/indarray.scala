@@ -2,12 +2,12 @@ package com.thoughtworks.deeplearning.differentiable
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
+import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.math.polyFunctions
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.TapeTask.Trainable
-import com.thoughtworks.deeplearning.TapeTaskFactory.{MonoidOutput, SemigroupOutput, UnaryTapeTaskFactory}
+import com.thoughtworks.deeplearning.differentiableoperatorfactory.{MonoidOutput, SemigroupOutput, UnaryTapeTaskFactory}
 import com.thoughtworks.deeplearning.Lift.LowPriorityLift
 import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
 import com.thoughtworks.deeplearning._
@@ -241,8 +241,8 @@ object indarray {
     import com.thoughtworks.deeplearning.differentiable.double
     import com.thoughtworks.deeplearning.differentiable.double.implicits._
     import com.thoughtworks.deeplearning.differentiable.double.DoubleTape
-    import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.semigroupBinaryTapeTaskFactory
-    import com.thoughtworks.deeplearning.TapeTaskFactory.UnaryTapeTaskFactory.semigroupUnaryTapeTaskFactory
+    import com.thoughtworks.deeplearning.differentiableoperatorfactory.BinaryTapeTaskFactory.semigroupBinaryTapeTaskFactory
+    import com.thoughtworks.deeplearning.differentiableoperatorfactory.UnaryTapeTaskFactory.semigroupUnaryTapeTaskFactory
 
     private implicit object INDArraySemigroup extends Semigroup[INDArray] {
       override def append(f1: INDArray, f2: => INDArray): INDArray = f1 + f2
@@ -286,7 +286,7 @@ object indarray {
                                      executionContext: ExecutionContext)
       : polyFunctions.+.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
@@ -318,7 +318,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : polyFunctions.+.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 + data1
@@ -356,7 +356,7 @@ object indarray {
                                      executionContext: ExecutionContext)
       : polyFunctions.-.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
@@ -388,7 +388,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : polyFunctions.-.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 - data1
@@ -426,7 +426,7 @@ object indarray {
                                      executionContext: ExecutionContext)
       : polyFunctions.*.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
@@ -458,7 +458,7 @@ object indarray {
                                    executionContext: ExecutionContext)
       : polyFunctions.*.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 * data1
@@ -534,7 +534,7 @@ object indarray {
                                         executionContext: ExecutionContext)
       : polyFunctions.max.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.max.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.max(data0, data1)
@@ -563,7 +563,7 @@ object indarray {
                                         executionContext: ExecutionContext)
       : polyFunctions.min.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.min.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0: INDArray, data1: Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.min(data0, data1)
@@ -592,7 +592,7 @@ object indarray {
                                  executionContext: ExecutionContext)
       : polyFunctions.exp.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.exp.at { operand =>
-        TapeTaskFactory.unary(operand) { (data: INDArray) =>
+        differentiableoperatorfactory.unary(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.exp(data)
@@ -616,7 +616,7 @@ object indarray {
                                  executionContext: ExecutionContext)
       : polyFunctions.log.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.log.at { operand =>
-        TapeTaskFactory.unary(operand) { (data: INDArray) =>
+        differentiableoperatorfactory.unary(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.log(data)
@@ -640,7 +640,7 @@ object indarray {
                                  executionContext: ExecutionContext)
       : polyFunctions.abs.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.abs.at { operand =>
-        TapeTaskFactory.unary(operand) { (data: INDArray) =>
+        differentiableoperatorfactory.unary(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.abs(data)
@@ -663,7 +663,7 @@ object indarray {
                                             className: Caller[_],
                                             methodName: sourcecode.Name,
                                             executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = -data
@@ -685,7 +685,7 @@ object indarray {
                                               className: Caller[_],
                                               methodName: sourcecode.Name,
                                               executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           val outputData = data rdiv 1.0
           val computeBackward = { outputDelta: INDArray =>
@@ -763,7 +763,7 @@ object indarray {
                                                    className: Caller[_],
                                                    methodName: sourcecode.Name,
                                                    executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.binary(liftLeft(left), liftRight(right)) { (data0: INDArray, data1: INDArray) =>
+      differentiableoperatorfactory.binary(liftLeft(left), liftRight(right)) { (data0: INDArray, data1: INDArray) =>
         throwableMonadic[Task] {
           jumpTask().each
 
@@ -801,7 +801,7 @@ object indarray {
         className: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val dataShape = data.shape()
@@ -826,7 +826,7 @@ object indarray {
                                                            className: Caller[_],
                                                            methodName: sourcecode.Name,
                                                            executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { (data: INDArray) =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { (data: INDArray) =>
         throwableMonadic[Task] {
           jumpTask().each
           val dataShape = data.shape()
@@ -850,7 +850,7 @@ object indarray {
         className: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { (data: INDArray) =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { (data: INDArray) =>
         throwableMonadic[Task] {
           jumpTask().each
           val dataShape = data.shape()
@@ -877,7 +877,7 @@ object indarray {
                                         className: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext): Do[DoubleTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sumT
@@ -899,7 +899,7 @@ object indarray {
                                                          className: Caller[_],
                                                          methodName: sourcecode.Name,
                                                          executionContext: ExecutionContext): Do[INDArrayTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sum(dimensions: _*)
@@ -921,7 +921,7 @@ object indarray {
                                         className: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext): Do[DoubleTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data: INDArray =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sumT / ArrayUtil.prod(data.shape(): _*)
@@ -945,7 +945,7 @@ object indarray {
         executionContext: ExecutionContext) {
       @inline
       def unary_- : Do[INDArrayTape] = {
-        TapeTaskFactory.unary(liftOperand(operand)) { data =>
+        differentiableoperatorfactory.unary(liftOperand(operand)) { data =>
           Task.delay {
             val outputData = -data
             val computeBackward = { outputDelta: INDArray =>

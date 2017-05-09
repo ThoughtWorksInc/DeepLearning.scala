@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{DeltaAccumulatorIsUpdating, UncaughtExceptionDuringBackward}
+import com.thoughtworks.deeplearning.logs.{DeltaAccumulatorIsUpdating, UncaughtExceptionDuringBackward}
 import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.raii._
 
@@ -26,7 +26,7 @@ import com.thoughtworks.raii.ownership._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object TapeTaskFactory {
+object differentiableoperatorfactory {
 
   @inline
   def binary[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](

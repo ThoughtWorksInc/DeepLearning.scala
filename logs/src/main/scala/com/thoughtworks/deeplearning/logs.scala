@@ -5,9 +5,9 @@ import java.util.logging.{Level, LogRecord}
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
 
-object LogRecords {
+object logs {
 
-  private[LogRecords] abstract class LazyLogRecord(level: Level, customMessage: String = null)(
+  private[logs] abstract class LazyLogRecord(level: Level, customMessage: String = null)(
       implicit fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
       className: Caller[_])

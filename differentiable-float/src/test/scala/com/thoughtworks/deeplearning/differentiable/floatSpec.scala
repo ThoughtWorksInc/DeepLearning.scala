@@ -6,7 +6,7 @@ import java.util.logging.Level
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.TapeTask.{predict, train}
-import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.MultipleException
+import com.thoughtworks.deeplearning.differentiableoperatorfactory.BinaryTapeTaskFactory.MultipleException
 import com.thoughtworks.deeplearning.differentiable.float.Optimizer._
 import com.thoughtworks.deeplearning.differentiable.float._
 import com.thoughtworks.deeplearning.differentiable.float.implicits._

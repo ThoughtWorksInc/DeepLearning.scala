@@ -1,8 +1,8 @@
 parallelExecution in Global := false
 
-lazy val Tape = project.dependsOn(LogRecords, ProjectRef(file("RAII.scala"), "asynchronous"))
+lazy val Tape = project.dependsOn(logs, ProjectRef(file("RAII.scala"), "asynchronous"))
 
-lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
+lazy val differentiableoperatorfactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
 
 lazy val Closeables = project
 
@@ -10,14 +10,14 @@ lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val `differentiable-float` = project.dependsOn(TapeTask, TapeTaskFactory, math, Caller)
+lazy val `differentiable-float` = project.dependsOn(TapeTask, differentiableoperatorfactory, math, Caller)
 
 lazy val `differentiable-indarray` = project.dependsOn(`differentiable-double`)
 
 val FloatRegex = """(?i:float)""".r
 
 lazy val `differentiable-double` = project
-  .dependsOn(TapeTask, TapeTaskFactory, math, Caller)
+  .dependsOn(TapeTask, differentiableoperatorfactory, math, Caller)
   .settings(sourceGenerators in Compile += Def.task {
     for {
       floatFile <- (unmanagedSources in Compile in `differentiable-float`).value
@@ -45,7 +45,7 @@ lazy val math = project.dependsOn(Lift)
 
 lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
 
-lazy val LogRecords = project.dependsOn(Caller)
+lazy val logs = project.dependsOn(Caller)
 
 publishArtifact := false
 

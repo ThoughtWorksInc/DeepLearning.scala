@@ -3,7 +3,7 @@ package differentiable
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.deeplearning.LogRecords.{UncaughtExceptionDuringBackward, WeightIsUpdating}
+import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.TapeTask.Trainable
 import com.thoughtworks.deeplearning.Lift.LowPriorityLift
@@ -112,8 +112,8 @@ object float {
   }
 
   object implicits {
-    import com.thoughtworks.deeplearning.TapeTaskFactory.BinaryTapeTaskFactory.monoidBinaryTapeTaskFactory
-    import com.thoughtworks.deeplearning.TapeTaskFactory.UnaryTapeTaskFactory.monoidUnaryTapeTaskFactory
+    import com.thoughtworks.deeplearning.differentiableoperatorfactory.BinaryTapeTaskFactory.monoidBinaryTapeTaskFactory
+    import com.thoughtworks.deeplearning.differentiableoperatorfactory.UnaryTapeTaskFactory.monoidUnaryTapeTaskFactory
 
     private[deeplearning] implicit object FloatMonoid extends Monoid[Float] {
       override def zero: Float = 0
@@ -149,7 +149,7 @@ object float {
                                methodName: sourcecode.Name)
       : polyFunctions.+.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 + data1
             val computeBackward = { outputDelta: Float =>
@@ -170,7 +170,7 @@ object float {
                                methodName: sourcecode.Name)
       : polyFunctions.-.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 - data1
             val computeBackward = { outputDelta: Float =>
@@ -191,7 +191,7 @@ object float {
                                methodName: sourcecode.Name)
       : polyFunctions.*.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 * data1
             val computeBackward = { outputDelta: Float =>
@@ -212,7 +212,7 @@ object float {
                                methodName: sourcecode.Name)
       : polyFunctions./.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       polyFunctions./.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 / data1
             val computeBackward = { outputDelta: Float =>
@@ -233,7 +233,7 @@ object float {
                                     methodName: sourcecode.Name)
       : math.polyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.min.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val leftLessThenRight = data0 < data1
             val outputData = if (leftLessThenRight) data0 else data1
@@ -255,7 +255,7 @@ object float {
                                     methodName: sourcecode.Name)
       : math.polyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.max.at { (operand0, operand1) =>
-        TapeTaskFactory.binary(operand0, operand1) { (data0, data1) =>
+        differentiableoperatorfactory.binary(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val leftLessThenRight = data0 < data1
             val outputData = if (leftLessThenRight) data1 else data0
@@ -277,7 +277,7 @@ object float {
         className: Caller[_],
         methodName: sourcecode.Name): math.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.log.at { operand =>
-        TapeTaskFactory.unary(operand) { data =>
+        differentiableoperatorfactory.unary(operand) { data =>
           Task.delay {
             val outputData = scala.math.log(data).toFloat
             val computeBackward = { outputDelta: Float =>
@@ -296,7 +296,7 @@ object float {
         methodName: sourcecode.Name,
         className: Caller[_]): math.polyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.exp.at { operand =>
-        TapeTaskFactory.unary(operand) { data =>
+        differentiableoperatorfactory.unary(operand) { data =>
           Task.delay {
             val outputData = scala.math.exp(data).toFloat
             val computeBackward = { outputDelta: Float =>
@@ -315,7 +315,7 @@ object float {
         methodName: sourcecode.Name,
         className: Caller[_]): math.polyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.abs.at { operand =>
-        TapeTaskFactory.unary(operand) { data =>
+        differentiableoperatorfactory.unary(operand) { data =>
           Task.delay {
             val isDataPositive = data >= 0
             val outputData = if (isDataPositive) data else -data
@@ -334,7 +334,7 @@ object float {
                                               fullName: sourcecode.FullName,
                                               methodName: sourcecode.Name,
                                               className: Caller[_]): Do[FloatTape] = {
-      TapeTaskFactory.unary(liftOperand(operand)) { data: Float =>
+      differentiableoperatorfactory.unary(liftOperand(operand)) { data: Float =>
         Task.delay {
           val outputData = 1 / data
           val computeBackward = { outputDelta: Float =>
@@ -353,7 +353,7 @@ object float {
       private val operand: Do.Covariant[FloatTape] = lift(from)
       @inline
       def unary_- : Do[FloatTape] = {
-        TapeTaskFactory.unary(operand) { data =>
+        differentiableoperatorfactory.unary(operand) { data =>
           Task.delay {
             val outputData = -data
             val computeBackward = { outputDelta: Float =>
