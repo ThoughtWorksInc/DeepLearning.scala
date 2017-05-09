@@ -2,26 +2,25 @@ parallelExecution in Global := false
 
 lazy val Tape = project.dependsOn(logs, ProjectRef(file("RAII.scala"), "asynchronous"))
 
-lazy val differentiableoperatorfactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
-
-lazy val Closeables = project
+lazy val tapefactories =
+  project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
 
 lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val `differentiable-float` = project.dependsOn(TapeTask, differentiableoperatorfactory, math, Caller)
+lazy val `differentiable-Float` = project.dependsOn(`differentiable-Any`, tapefactories, math, Caller)
 
-lazy val `differentiable-indarray` = project.dependsOn(`differentiable-double`)
+lazy val `differentiable-INDArray` = project.dependsOn(`differentiable-Double`)
 
 val FloatRegex = """(?i:float)""".r
 
-lazy val `differentiable-double` = project
-  .dependsOn(TapeTask, differentiableoperatorfactory, math, Caller)
+lazy val `differentiable-Double` = project
+  .dependsOn(`differentiable-Any`, tapefactories, math, Caller)
   .settings(sourceGenerators in Compile += Def.task {
     for {
-      floatFile <- (unmanagedSources in Compile in `differentiable-float`).value
-      floatDirectory <- (unmanagedSourceDirectories in Compile in `differentiable-float`).value
+      floatFile <- (unmanagedSources in Compile in `differentiable-Float`).value
+      floatDirectory <- (unmanagedSourceDirectories in Compile in `differentiable-Float`).value
       relativeFile <- floatFile.relativeTo(floatDirectory)
     } yield {
       val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
@@ -43,9 +42,11 @@ lazy val Lift = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchro
 
 lazy val math = project.dependsOn(Lift)
 
-lazy val TapeTask = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
+lazy val `differentiable-Any` = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
 
 lazy val logs = project.dependsOn(Caller)
+
+lazy val `differentiable` = project.dependsOn(`differentiable-Float`, `differentiable-INDArray`)
 
 publishArtifact := false
 
@@ -55,7 +56,7 @@ lazy val unidoc = project
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       import Ordering.Implicits._
       if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
-        inAggregates(LocalRootProject) -- inProjects(`differentiable-indarray`)
+        inAggregates(LocalRootProject) -- inProjects(`differentiable-INDArray`)
       } else {
         inAggregates(LocalRootProject)
       }
