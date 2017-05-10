@@ -4,8 +4,6 @@ lazy val Tape = project.dependsOn(LogRecords, ProjectRef(file("RAII.scala"), "as
 
 lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
 
-lazy val Closeables = project
-
 lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
