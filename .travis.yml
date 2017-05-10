@@ -25,6 +25,7 @@ matrix:
       before_install:
         - brew update
         - brew install sbt
+        - brew install graphviz
 
 before_cache:
   - find $HOME/.sbt -name '*.lock' -delete
