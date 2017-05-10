@@ -4,6 +4,8 @@ lazy val Tape = project.dependsOn(logs)
 
 lazy val tapefactories = project.dependsOn(Tape, Caller)
 
+lazy val Closeables = project
+
 lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
