@@ -34,12 +34,10 @@ import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import scalaz.syntax.all._
+import scala.{Double => ScalaDouble}
+import org.nd4j.linalg.api.ndarray.{INDArray => ND4JArray}
 
-object INDArray {
-  import scala.{Double => ScalaDouble}
-  import org.nd4j.linalg.api.ndarray.{INDArray => ND4JArray}
-
-  private[deeplearning] type INDArrayTape = Borrowing[Tape.Aux[ND4JArray, ND4JArray]]
+object INDArray extends INDArrayCompanion {
 
   trait Optimizer {
 
@@ -962,4 +960,9 @@ object INDArray {
       }
     }
   }
+}
+
+//workaround for https://github.com/scala/bug/issues/10306
+abstract class INDArrayCompanion {
+  private[deeplearning] type INDArrayTape = Borrowing[Tape.Aux[ND4JArray, ND4JArray]]
 }

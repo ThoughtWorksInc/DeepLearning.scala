@@ -1,6 +1,8 @@
 package com.thoughtworks.deeplearning
 package differentiable
 
+import scala.{Float => ScalaFloat}
+
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
@@ -24,10 +26,7 @@ import scalaz.syntax.all._
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-object Float {
-  import scala.{Float => ScalaFloat}
-
-  private[deeplearning] type FloatTape = Borrowing[Tape.Aux[ScalaFloat, ScalaFloat]]
+object Float extends FloatCompanion {
 
   trait Optimizer {
     def currentDelta(oldValue: ScalaFloat, delta: ScalaFloat): ScalaFloat = delta
@@ -65,10 +64,10 @@ object Float {
   }
 
   final case class Weight(var data: ScalaFloat)(implicit optimizerFactory: OptimizerFactory,
-                                           logger: Logger = Logger.getGlobal,
-                                           fullName: sourcecode.FullName,
-                                           className: Caller[_],
-                                           methodName: sourcecode.Name)
+                                                logger: Logger = Logger.getGlobal,
+                                                fullName: sourcecode.FullName,
+                                                className: Caller[_],
+                                                methodName: sourcecode.Name)
       extends Tape {
     private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
 
@@ -126,7 +125,8 @@ object Float {
     def infer(self: AnyRef): self.type = self
 
     @inline
-    implicit def liftFloat[A](implicit typeClass: LowPriorityLift.Aux[A, ScalaFloat, ScalaFloat]): Lift.Aux[A, ScalaFloat, ScalaFloat] =
+    implicit def liftFloat[A](
+        implicit typeClass: LowPriorityLift.Aux[A, ScalaFloat, ScalaFloat]): Lift.Aux[A, ScalaFloat, ScalaFloat] =
       typeClass
 
     implicit final class FloatToWeightOps(value: ScalaFloat) {
@@ -347,11 +347,12 @@ object Float {
       }
     }
 
-    implicit final class DifferentiableFloatOps[From](from: From)(implicit lift: Lift.Aux[From, ScalaFloat, ScalaFloat],
-                                                                  logger: Logger = Logger.getGlobal,
-                                                                  fullName: sourcecode.FullName,
-                                                                  methodName: sourcecode.Name,
-                                                                  className: Caller[_]) {
+    implicit final class DifferentiableFloatOps[From](from: From)(
+        implicit lift: Lift.Aux[From, ScalaFloat, ScalaFloat],
+        logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]) {
       private val operand: Do.Covariant[FloatTape] = lift(from)
       @inline
       def unary_- : Do[FloatTape] = {
@@ -368,4 +369,9 @@ object Float {
     }
 
   }
+}
+
+//workaround for https://github.com/scala/bug/issues/10306
+abstract class FloatCompanion {
+  private[deeplearning] type FloatTape = Borrowing[Tape.Aux[ScalaFloat, ScalaFloat]]
 }

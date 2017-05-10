@@ -143,11 +143,11 @@ object tapefactories {
         operand0: Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]],
         operand1: Do[_ <: Borrowing[Tape.Aux[Data1, Delta1]]])(
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[_ <: Delta0], Do[_ <: Delta1]))])(
-                                                                       implicit binaryTapeTaskFactory: Binary[OutputData, OutputDelta],
-                                                                       logger: Logger,
-                                                                       fullName: sourcecode.FullName,
-                                                                       methodName: sourcecode.Name,
-                                                                       className: Caller[_]): Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
+        implicit binaryTapeTaskFactory: Binary[OutputData, OutputDelta],
+        logger: Logger,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
       binaryTapeTaskFactory(operand0, operand1)(computeForward)
     }
 
@@ -321,11 +321,11 @@ object tapefactories {
     @inline
     def doTape[Data, Delta, OutputData, OutputDelta](operand: Do[_ <: Borrowing[Tape.Aux[Data, Delta]]])(
         computeForward: (Data) => Task[(OutputData, OutputDelta => Do[_ <: Delta])])(
-                                                      implicit unaryTapeTaskFactory: Unary[OutputData, OutputDelta],
-                                                      logger: Logger,
-                                                      fullName: sourcecode.FullName,
-                                                      methodName: sourcecode.Name,
-                                                      className: Caller[_]): Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
+        implicit unaryTapeTaskFactory: Unary[OutputData, OutputDelta],
+        logger: Logger,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): Do[Borrowing[Tape.Aux[OutputData, OutputDelta]]] = {
       unaryTapeTaskFactory(operand)(computeForward)
     }
 

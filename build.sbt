@@ -9,14 +9,14 @@ lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val `differentiable-Float` = project.dependsOn(`differentiable-Any`, tapefactories, math, Caller)
+lazy val `differentiable-Float` = project.dependsOn(`differentiable-Any`, tapefactories, math)
 
 lazy val `differentiable-INDArray` = project.dependsOn(`differentiable-Double`)
 
 val FloatRegex = """(?i:float)""".r
 
 lazy val `differentiable-Double` = project
-  .dependsOn(`differentiable-Any`, tapefactories, math, Caller)
+  .dependsOn(`differentiable-Any`, tapefactories, math)
   .settings(sourceGenerators in Compile += Def.task {
     for {
       floatFile <- (unmanagedSources in Compile in `differentiable-Float`).value

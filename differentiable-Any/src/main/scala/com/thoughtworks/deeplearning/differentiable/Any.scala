@@ -11,7 +11,7 @@ import scalaz.concurrent.Task
 import scalaz.std.`try`.toDisjunction
 import scalaz.syntax.all._
 
-object Any {
+object Any extends AnyCompanion {
 
   def predict[OutputData, OutputDelta](forward: Do[_ <: Tape.Aux[OutputData, OutputDelta]]): Task[OutputData] = {
     val Do(doOutputData) = forward.map(_.data)
@@ -30,9 +30,11 @@ object Any {
     val Do(futureOutputData) = doOutputData
     new Task(ResourceT.run(ResourceT(futureOutputData).map(toDisjunction)))
   }
+}
 
+//workaround for https://github.com/scala/bug/issues/10306
+private[deeplearning] abstract class AnyCompanion {
   trait Trainable[-Data, +Delta] {
     def apply(data: Data): Do[_ <: Delta]
   }
-
 }
