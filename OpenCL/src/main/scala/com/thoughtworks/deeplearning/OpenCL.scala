@@ -538,7 +538,7 @@ data: $data""")
 
   object Buffer {
 
-    implicit def bufferBox[Element]: Box.Aux[Buffer[Element], Address] = new Box[Buffer[Element]] {
+    implicit def bufferBox[Element, BufferElemen]: Box.Aux[Buffer[Element], Address] = new Box[Buffer[Element]] {
       override type Raw = Address
 
       override def box(raw: Raw): Buffer[Element] =
@@ -563,6 +563,8 @@ data: $data""")
         throw new IllegalStateException(s"Buffer's numberOfBytes($value) is too large")
       }
     }
+
+    def length(implicit memory: Memory[Element]): Int = numberOfBytes / memory.numberOfBytesPerElement
 
     def duplicate(): Buffer[Element] = {
       checkErrorCode(clRetainMemObject(handle.toLong))

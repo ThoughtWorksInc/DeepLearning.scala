@@ -1,5 +1,9 @@
 package com.thoughtworks.deeplearning
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.logging.Logger
+
+import com.thoughtworks.deeplearning.LogRecords.UncaughtExceptionDuringUpdatingWeights
 import com.thoughtworks.deeplearning.Memory.Address
 import com.thoughtworks.deeplearning.OpenCL.CommandQueue.GlobalWorkSizeOnlyDimension
 import com.thoughtworks.deeplearning.OpenCL.{CommandQueue, Device, Kernel}
@@ -9,18 +13,77 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.ownership.{Borrowing, Scoped}
+import com.thoughtworks.raii.resourcet.Releasable
 import shapeless._
 import shapeless.labelled._
 
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
+import scala.util.{Success, Try}
 import scala.util.control.NonFatal
-import scalaz.concurrent.Future
-import scalaz.{\/, \/-}
+import scalaz.Free.Trampoline
+import scalaz.concurrent.{Future, Task}
+import scalaz.{-\/, Trampoline, \/, \/-}
 
 object DifferentiableKernel {
 
-  final case class PendingBuffer[Element](buffer: OpenCL.Buffer[Element], events: List[OpenCL.Event])
+  def acquire(semaphore: AsynchronousSemaphore): Do[Unit] = {
+    Do(FutureIsomorphism.from(semaphore.acquire()).map { _ =>
+      new Releasable[Future, Try[Unit]] {
+        override def value: Try[Unit] = Success(())
+        override def release(): Future[Unit] = Future.delay(semaphore.release().run)
+      }
+    })
+  }
+
+  trait Optimizer[Element] {
+    def currentDelta(oldValue: PendingBuffer[Element], delta: PendingBuffer[Element]): Task[PendingBuffer[Element]]
+    def updateBuffer(oldValue: PendingBuffer[Element], delta: PendingBuffer[Element]): Task[PendingBuffer[Element]]
+  }
+
+  trait OptimizerFactory {
+    def bufferOptimizer[Element](weight: Weight[Element]): Optimizer[Element]
+  }
+
+  final case class Weight[Element: Memory](
+      var data: PendingBuffer[Element],
+      context: OpenCL.Context,
+      commandQueue: CommandQueue,
+      commandQueueSemaphore: AsynchronousSemaphore)(implicit optimizerFactory: OptimizerFactory, logger: Logger)
+      extends Tape {
+    import Weight._
+    override type Data = PendingBuffer[Element]
+    override type Delta = PendingBuffer[Element]
+
+    private val localSemaphore = AsynchronousSemaphore(1)
+    private val optimizer = optimizerFactory.bufferOptimizer(this)
+
+    private def doBackward[B <: PendingBuffer[Element]](doDelta: Do[B]): Do[Unit] = {
+      throwableMonadic[Do] {
+        val delta: PendingBuffer[Element] = doDelta.each
+        acquire(localSemaphore).each
+        val newData = Do.delay(optimizer.updateBuffer(data, delta)).each
+        val oldData = data
+        data = newData
+        oldData.buffer.close()
+        oldData.events.foreach(_.close())
+      }
+    }
+
+    override def backward(doDelta: Do[_ <: PendingBuffer[Element]]): Future[Unit] = {
+      Do.run(doBackward(doDelta)).get.flatMap {
+        case -\/(e) =>
+          logger.log(UncaughtExceptionDuringUpdatingWeights(e))
+          Future.now(())
+        case \/-(()) =>
+          Future.now(())
+      }
+    }
+  }
+
+  final case class PendingBuffer[Element](buffer: Scoped[OpenCL.Buffer[Element]], events: List[Scoped[OpenCL.Event]])
 
   private[DifferentiableKernel] trait StaticDslTypeExtractor {
     type AbstractType[A] <: DslType
@@ -69,7 +132,7 @@ object DifferentiableKernel {
 
     import OpenCLLayer._
 
-    def compile(context: OpenCL.Context, device: Device, commandQueue: CommandQueue, semaphore: AsynchronousSemaphore)(
+    def compile(context: OpenCL.Context, commandQueue: CommandQueue, semaphore: AsynchronousSemaphore)(
         implicit compiler: Compiler[OutputElementData, OutputElementDelta, LocalDelta],
         outputDataMemory: Memory[OutputElementData],
         outputDeltaMemory: Memory[OutputElementDelta],
@@ -97,10 +160,10 @@ object DifferentiableKernel {
       { (expectedSize: Int, inputParameterMap: compiler.ParameterRecord) =>
         throwableMonadic[Do] {
           val kernel = forwardKernelTask.each
-          val outputBuffer = context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)
+          val outputBuffer = Do.scoped(context.createBuffer[OutputElementData](expectedSize)(outputDataMemory)).each
 
           compiler.setKernelInputArguments(kernel, 1, inputParameterMap)
-          kernel.setArg(0, outputBuffer)
+          kernel.setArg[OpenCL.Buffer[OutputElementData]](0, outputBuffer)
 
           Do.delay(semaphore.acquire()).each
           val event = try {

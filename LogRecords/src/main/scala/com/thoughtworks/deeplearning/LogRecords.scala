@@ -51,4 +51,9 @@ object LogRecords {
       fast"Before weight update, weight is : $data, delta is : $delta"
   }
 
+  final case class UncaughtExceptionDuringUpdatingWeights(thrown: Throwable, customMessage: String = null)
+      extends LazyLogRecord(Level.SEVERE, customMessage) {
+    setThrown(thrown)
+    override protected def makeDefaultMessage = fast"An exception raised during updating weights"
+  }
 }

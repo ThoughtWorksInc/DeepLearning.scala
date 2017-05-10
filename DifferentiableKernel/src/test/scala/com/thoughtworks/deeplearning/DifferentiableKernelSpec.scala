@@ -60,14 +60,13 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
     }
     val semaphore = AsynchronousSemaphore(3)
 
-    "When fill a buffer with 42.0f" - {
+    "When filling a buffer with 42.0f" - {
       val differentiableKernel = {
         import OpenCLLayer._
         floatLiteral(42.0f)
       }
       import DifferentiableKernel._
       import StaticDslType._
-
       val resultTask = Do
         .run(
           openclTask
@@ -76,7 +75,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
                 Do.delay(
                   Do.run(
                     throwableMonadic[Do] {
-                      val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
+                      val layer = differentiableKernel.compile(context, commandQueue, semaphore).each
                       val outputTape = layer(1, HNil).each
                       val delta = Do.scoped(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
                       Do.delay(outputTape.backward(delta)).each
@@ -107,7 +106,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
 
     }
 
-    "When fill a buffer with another buffer" in {
+    "When filling a buffer with another buffer" in {
 
       val differentiableKernel = {
         import OpenCLLayer._
@@ -125,7 +124,7 @@ class DifferentiableKernelSpec extends AsyncFreeSpec with Matchers {
               Do.delay(
                 Do.run(
                   throwableMonadic[Do] {
-                    val layer = differentiableKernel.compile(context, device, commandQueue, semaphore).each
+                    val layer = differentiableKernel.compile(context, commandQueue, semaphore).each
                     val outputTape = layer(1, ??? :: HNil).each
                     val delta = Do.scoped(context.createBuffer[Float](1)).map(PendingBuffer(_, Nil))
                     Do.delay(outputTape.backward(delta)).each
