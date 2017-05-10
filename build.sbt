@@ -21,8 +21,6 @@ lazy val Tape = project.dependsOn(LogRecords, ProjectRef(file("RAII.scala"), "Do
 
 lazy val TapeTaskFactory = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "Do"), Caller)
 
-lazy val Closeables = project
-
 lazy val Caller = project
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
