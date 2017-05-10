@@ -1,8 +1,8 @@
 parallelExecution in Global := false
 
-lazy val Tape = project.dependsOn(logs, ProjectRef(file("RAII.scala"), "asynchronous"))
+lazy val Tape = project.dependsOn(logs)
 
-lazy val tapefactories = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
+lazy val tapefactories = project.dependsOn(Tape, Caller)
 
 lazy val Caller = project
 
@@ -37,11 +37,11 @@ lazy val `differentiable-Double` = project
     }
   }.taskValue)
 
-lazy val Lift = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
+lazy val Lift = project.dependsOn(Tape)
 
 lazy val math = project.dependsOn(Lift)
 
-lazy val `differentiable-Any` = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"))
+lazy val `differentiable-Any` = project.dependsOn(Tape)
 
 lazy val logs = project.dependsOn(Caller)
 
