@@ -45,7 +45,7 @@ lazy val `differentiable-Any` = project.dependsOn(Tape, ProjectRef(file("RAII.sc
 
 lazy val logs = project.dependsOn(Caller)
 
-lazy val `differentiable` = project.dependsOn(`differentiable-Float`, `differentiable-INDArray`)
+lazy val `differentiable` = project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
 
 publishArtifact := false
 
