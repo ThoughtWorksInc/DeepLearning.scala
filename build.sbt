@@ -2,8 +2,7 @@ parallelExecution in Global := false
 
 lazy val Tape = project.dependsOn(logs, ProjectRef(file("RAII.scala"), "asynchronous"))
 
-lazy val tapefactories =
-  project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
+lazy val tapefactories = project.dependsOn(Tape, ProjectRef(file("RAII.scala"), "asynchronous"), Caller)
 
 lazy val Caller = project
 
