@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning
 
-import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.asynchronous
