@@ -19,6 +19,13 @@ matrix:
         apt:
           packages:
             - graphviz
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: sbt "release with-defaults"
+        on:
+          condition: -e ./deploy.sbt
+          all_branches: true
     - os: osx
       osx_image: xcode8
       language: java
@@ -40,10 +47,3 @@ script:
 
 before_deploy:
 
-deploy:
-  skip_cleanup: true
-  provider: script
-  script: sbt "release with-defaults"
-  on:
-    condition: -e ./deploy.sbt
-    all_branches: true
