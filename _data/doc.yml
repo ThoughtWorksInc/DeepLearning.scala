@@ -13,3 +13,8 @@
       url: /demo/TwoLayerNet.html
     - text: CNNs
       url: /demo/CNNs.html
+- text: 2.0.0-Preview
+  url: /doc/
+  subitems:
+    - text: GettingStarted
+      url: /demo/2.0.0-Preview/GettingStarted.html
