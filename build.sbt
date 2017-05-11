@@ -45,7 +45,11 @@ lazy val `differentiable-Any` = project.dependsOn(Tape)
 
 lazy val logs = project.dependsOn(Caller)
 
-lazy val `differentiable` = project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
+lazy val `differentiable` =
+  project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
+
+lazy val `jupyter-differentiable` =
+  project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
 
 publishArtifact := false
 
