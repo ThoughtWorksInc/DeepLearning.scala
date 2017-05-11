@@ -1,0 +1,787 @@
+---
+layout: demo
+title: GettingStarted
+download_path: demo_download/./2.0.0-Preview
+filename: GettingStarted.ipynb
+---
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Deep learning is a great tool that helps us efficiently summarize inherent patterns from tons of input data. I'd like to introduce DeepLearning.scala by letting the framework learn the common difference from Arithmetic progression.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Background">Background<a class="anchor-link" href="#Background">&#182;</a></h2><p><strong>Input</strong>:
+ Arithmetic progression(AP) as:
+<code>val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray</code></p>
+<p><strong>Output</strong>: 
+ Common Difference of the certain AP as: 
+<code>val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray</code></p>
+<p>So here we want DeepLearning.scala to learn the common difference from the AP, i.e. <code>{1} from {0, 1, 2}</code> 
+in which <code>2-1 = 1-0 = 1</code></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Install-DeepLearning.scala">Install DeepLearning.scala<a class="anchor-link" href="#Install-DeepLearning.scala">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>DeepLearning.scala is hosted on Maven Central repository.</p>
+<p>You can use magic imports in <a href="https://github.com/alexarchambault/jupyter-scala">jupyter-scala</a> or <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite-REPL</a> to download DeepLearning.scala and its dependencies.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::jupyter-differentiable:2.0.0-M1`</span>
+<span class="n">interp</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="n">plugin</span><span class="o">.</span><span class="n">ivy</span><span class="o">(</span><span class="s">&quot;org.scalamacros&quot;</span> <span class="o">%</span> <span class="s">&quot;paradise_2.11.11&quot;</span> <span class="o">%</span> <span class="s">&quot;2.1.0&quot;</span><span class="o">)</span>
+
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j:nd4j-native-platform:0.7.2`</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[1]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                                     
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                    </span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If you use <a href="http://www.scala-sbt.org">sbt</a>, please add the following settings into your <code>build.sbt</code>:</p>
+<div class="highlight"><pre><span></span><span class="n">libraryDependencies</span> <span class="o">+=</span> <span class="s">&quot;com.thoughtworks.deeplearning&quot;</span> <span class="o">%%</span> <span class="s">&quot;differentiable&quot;</span> <span class="o">%</span> <span class="s">&quot;latest.release&quot;</span>
+
+<span class="n">addCompilerPlugin</span><span class="o">(</span><span class="s">&quot;org.scalamacros&quot;</span> <span class="o">%</span> <span class="s">&quot;paradise&quot;</span> <span class="o">%</span> <span class="s">&quot;2.1.0&quot;</span> <span class="n">cross</span> <span class="nc">CrossVersion</span><span class="o">.</span><span class="n">full</span><span class="o">)</span>
+
+<span class="n">fork</span> <span class="o">:=</span> <span class="kc">true</span>
+
+<span class="n">scalaVersion</span> <span class="o">:=</span> <span class="s">&quot;2.11.11&quot;</span>
+</pre></div>
+<p>Note that this example must run on Scala 2.11.11 because <a href="http://nd4j.org/scala">nd4s</a> does not support Scala 2.12. Make sure there is not a setting like <code>scalaVersion := "2.12.x"</code> in your <code>build.sbt</code>.</p>
+<p>See <a href="https://index.scala-lang.org/thoughtworksinc/deeplearning.scala">Scaladex</a> to install DeepLearning.scala in other build tools!</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Then, you may want to import classes in DeepLearning.scala and its dependencies.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.math._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Any._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.Optimizer</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.Optimizer.LearningRate</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.each.Monadic._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.raii.asynchronous.Do</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Double._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Double.implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Tape</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.factory.Nd4j</span>
+<span class="k">import</span> <span class="nn">org.nd4s.Implicits._</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+<span class="k">import</span> <span class="nn">scalaz.concurrent.Task</span>
+<span class="k">import</span> <span class="nn">scalaz.</span><span class="o">{-\/,</span> <span class="o">\/,</span> <span class="o">\/-}</span>
+<span class="k">import</span> <span class="nn">scalaz.std.vector._</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[2]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.math._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Any._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.Optimizer
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.Optimizer.LearningRate
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.each.Monadic._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.raii.asynchronous.Do
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Double._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Double.implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Tape
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4j.linalg.api.ndarray.INDArray
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4j.linalg.factory.Nd4j
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4s.Implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scala.concurrent.ExecutionContext.Implicits.global
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.concurrent.Task
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.{-\/, \/, \/-}
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.std.vector._</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Design-your-neural-network">Design your neural network<a class="anchor-link" href="#Design-your-neural-network">&#182;</a></h2><p>DeepLearning.scala is also a language that we can use to create complex neural networks.</p>
+<p>In the following sections, you will learn:</p>
+<ul>
+<li>how to create your neural network</li>
+<li>how to train your neural network</li>
+<li>how to predict your neural network</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Create-your-neural-network">Create your neural network<a class="anchor-link" href="#Create-your-neural-network">&#182;</a></h3><p>Same as the definition of a normal Scala function, the definition of neural network consists of a type definition for its parameter, a type definition for its return value, and a body that contains mathematical formulas, function-calls, and control flows.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Weight-Intialization">Weight Intialization<a class="anchor-link" href="#Weight-Intialization">&#182;</a></h4><p>We will create a trainable neural network.
+It means that some variables in the neural network can be changed automatically according to some goals. Those variables are called <code>weight</code>.
+You can create weight variables via <code>toWeight</code> method, given its initial value.</p>
+<p>In order to create a weight, you must create an <code>Optimizer</code>, which contains the rule that manages how the weight changes.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">implicit</span> <span class="k">def</span> <span class="n">optimizer</span><span class="k">:</span> <span class="kt">Optimizer</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LearningRate</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="n">currentLearningRate</span><span class="o">()</span> <span class="k">=</span> <span class="mf">0.001</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[3]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">optimizer</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">weight</span> <span class="k">=</span> <span class="o">(</span><span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">1</span><span class="o">)</span> <span class="o">/</span> <span class="n">scala</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="o">(</span><span class="mf">3.0</span><span class="o">)).</span><span class="n">toWeight</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>SLF4J: Failed to load class &#34;org.slf4j.impl.StaticLoggerBinder&#34;.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[4]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">weight</span>: <span class="ansi-green-fg">Do</span>[<span class="ansi-green-fg">differentiable</span>.<span class="ansi-green-fg">package</span>.<span class="ansi-green-fg">INDArray</span>.<span class="ansi-green-fg">INDArrayTape</span>] = Suspend(&lt;function0&gt;)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="define-your-neural-network">define your neural network<a class="anchor-link" href="#define-your-neural-network">&#182;</a></h4><p>Your neural network is just a normal scala function:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">dot</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">weight</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[5]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">myNeuralNetwork</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Train-your-Neural-Network">Train your Neural Network<a class="anchor-link" href="#Train-your-Neural-Network">&#182;</a></h2><p>You have learned that weight will be automatically changed due to some goals.</p>
+<p>In DeepLearning.scala, when we train a neural network, our goal should always be minimizing the absolute of the return value.</p>
+<p>For example, if someone repeatedly call <code>train(myNeuralNetwork(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray))</code>,
+the neural network would try to minimize <code>input dot weight</code>.
+Soon <code>weight</code> would become an array of zeros in order to make <code>input dot weight</code> zeros,
+and <code>predict(myNeuralNetwork(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray))</code> would return <code>Array(Array(0), Array(0), Array(0)).toNDArray</code>.</p>
+<p>What if you expect <code>predict(myNeuralNetwork(Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray))</code> to return <code>Array(Array(1), Array(3), Array(2)).toNDArray</code>?</p>
+<p>You can create another neural network that evaluates how far between the result of <code>myNeuralNetwork</code> and your expectation. The new neural network is usually called <strong>loss function</strong>.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">lossFunction</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">,</span>
+                 <span class="n">expectOutput</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.Double</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">sumT</span><span class="o">(</span><span class="n">abs</span><span class="o">(</span><span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="o">-</span> <span class="n">expectOutput</span><span class="o">))</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[6]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">lossFunction</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>When the <code>lossFunction</code> get trained continuously, its return value will be close to zero, and the result of  <code>myNeuralNetwork</code> must be close to the expected result at the same time.</p>
+<p>Note the <code>lossFunction</code> accepts a <code>input</code> and <code>expectOutput</code> as its parameter.
+The first array is the input data used to train the neural network, and the second array is the expected output.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">trainMyNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">,</span> <span class="n">expectedOutput</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">Task</span><span class="o">[</span><span class="kt">Double</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="n">train</span><span class="o">(</span><span class="n">lossFunction</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">expectedOutput</span><span class="o">))</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[7]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">trainMyNetwork</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Then we create a plot to show how the loss changed during iterations.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.2`</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[8]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             </span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">plotly._</span>
+<span class="k">import</span> <span class="nn">plotly.element._</span>
+<span class="k">import</span> <span class="nn">plotly.layout._</span>
+<span class="k">import</span> <span class="nn">plotly.JupyterScala._</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[9]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.element._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.layout._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.JupyterScala._</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">polyLoss</span><span class="o">(</span><span class="n">lossSeq</span><span class="k">:</span> <span class="kt">IndexedSeq</span><span class="o">[</span><span class="kt">Double</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+
+  <span class="k">val</span> <span class="n">plot</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+    <span class="nc">Scatter</span><span class="o">(</span><span class="n">lossSeq</span><span class="o">.</span><span class="n">indices</span><span class="o">,</span> <span class="n">lossSeq</span><span class="o">)</span>
+  <span class="o">)</span>
+
+  <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="o">(</span>
+    <span class="n">title</span> <span class="k">=</span> <span class="s">&quot;loss by time&quot;</span>
+  <span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[10]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">polyLoss</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, we hard-code some data to train the network:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="nc">Array</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">6</span><span class="o">,</span> <span class="mi">9</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">13</span><span class="o">,</span> <span class="mi">15</span><span class="o">,</span> <span class="mi">17</span><span class="o">)).</span><span class="n">toNDArray</span>
+
+<span class="k">val</span> <span class="n">expectedOutput</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="nc">Array</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">3</span><span class="o">),</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">2</span><span class="o">)).</span><span class="n">toNDArray</span>
+
+<span class="nd">@monadic</span><span class="o">[</span><span class="kt">Task</span><span class="o">]</span>
+<span class="k">val</span> <span class="n">trainTask</span><span class="k">:</span> <span class="kt">Task</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+
+  <span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span> <span class="k">for</span> <span class="o">(</span><span class="k">_</span> <span class="k">&lt;-</span> <span class="o">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">400</span><span class="o">).</span><span class="n">toVector</span><span class="o">)</span> <span class="k">yield</span> <span class="o">{</span>
+    <span class="n">trainMyNetwork</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">expectedOutput</span><span class="o">).</span><span class="n">each</span>
+  <span class="o">}</span>
+
+  <span class="n">polyLoss</span><span class="o">(</span><span class="n">lossSeq</span><span class="o">)</span>
+
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[11]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">input</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 1.00, 2.00],
+ [3.00, 6.00, 9.00],
+ [13.00, 15.00, 17.00]]
+<span class="ansi-cyan-fg">expectedOutput</span>: <span class="ansi-green-fg">INDArray</span> = [1.00, 3.00, 2.00]
+<span class="ansi-cyan-fg">trainTask</span>: <span class="ansi-green-fg">Task</span>[<span class="ansi-green-fg">Unit</span>] = scalaz.concurrent.Task@28748c42</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><code>@monadic</code> and <code>throwableMonadic</code> is a syntax sugar provide by <a href="https://github.com/ThoughtWorksInc/each">each</a>.</p>
+<p>After those iterations, the loss should close to zero.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Predict--your-Neural-Network">Predict  your Neural Network<a class="anchor-link" href="#Predict--your-Neural-Network">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">predictResult</span> <span class="k">=</span> <span class="n">throwableMonadic</span><span class="o">[</span><span class="kt">Task</span><span class="o">]</span> <span class="o">{</span>
+  <span class="n">trainTask</span><span class="o">.</span><span class="n">each</span>
+  <span class="n">predict</span><span class="o">(</span><span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="o">)).</span><span class="n">each</span>
+<span class="o">}</span>
+
+<span class="n">predictResult</span><span class="o">.</span><span class="n">unsafePerformSyncAttempt</span> <span class="k">match</span> <span class="o">{</span>
+  <span class="k">case</span> <span class="o">-\/(</span><span class="n">e</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="k">throw</span> <span class="n">e</span>
+  <span class="k">case</span> <span class="o">\/-(</span><span class="n">result</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="n">println</span><span class="o">(</span><span class="n">result</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+
+      <script type="text/javascript">
+        require.config({
+  paths: {
+    d3: 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min',
+    plotly: 'https://cdn.plot.ly/plotly-1.12.0.min'
+  },
+
+  shim: {
+    plotly: {
+      deps: ['d3', 'jquery'],
+      exports: 'plotly'
+    }
+  }
+});
+        
+
+        require(['plotly'], function(Plotly) {
+          window.Plotly = Plotly;
+        });
+      </script>
+    
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+<div class="chart" id="plot-1485440668"></div>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+
+
+<div id="4ad264ab-2763-40ff-a90e-5c03092aa836"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#4ad264ab-2763-40ff-a90e-5c03092aa836');
+requirejs(["plotly"], function(Plotly) {
+  (function () {
+  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0,96.0,97.0,98.0,99.0,100.0,101.0,102.0,103.0,104.0,105.0,106.0,107.0,108.0,109.0,110.0,111.0,112.0,113.0,114.0,115.0,116.0,117.0,118.0,119.0,120.0,121.0,122.0,123.0,124.0,125.0,126.0,127.0,128.0,129.0,130.0,131.0,132.0,133.0,134.0,135.0,136.0,137.0,138.0,139.0,140.0,141.0,142.0,143.0,144.0,145.0,146.0,147.0,148.0,149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0,203.0,204.0,205.0,206.0,207.0,208.0,209.0,210.0,211.0,212.0,213.0,214.0,215.0,216.0,217.0,218.0,219.0,220.0,221.0,222.0,223.0,224.0,225.0,226.0,227.0,228.0,229.0,230.0,231.0,232.0,233.0,234.0,235.0,236.0,237.0,238.0,239.0,240.0,241.0,242.0,243.0,244.0,245.0,246.0,247.0,248.0,249.0,250.0,251.0,252.0,253.0,254.0,255.0,256.0,257.0,258.0,259.0,260.0,261.0,262.0,263.0,264.0,265.0,266.0,267.0,268.0,269.0,270.0,271.0,272.0,273.0,274.0,275.0,276.0,277.0,278.0,279.0,280.0,281.0,282.0,283.0,284.0,285.0,286.0,287.0,288.0,289.0,290.0,291.0,292.0,293.0,294.0,295.0,296.0,297.0,298.0,299.0,300.0,301.0,302.0,303.0,304.0,305.0,306.0,307.0,308.0,309.0,310.0,311.0,312.0,313.0,314.0,315.0,316.0,317.0,318.0,319.0,320.0,321.0,322.0,323.0,324.0,325.0,326.0,327.0,328.0,329.0,330.0,331.0,332.0,333.0,334.0,335.0,336.0,337.0,338.0,339.0,340.0,341.0,342.0,343.0,344.0,345.0,346.0,347.0,348.0,349.0,350.0,351.0,352.0,353.0,354.0,355.0,356.0,357.0,358.0,359.0,360.0,361.0,362.0,363.0,364.0,365.0,366.0,367.0,368.0,369.0,370.0,371.0,372.0,373.0,374.0,375.0,376.0,377.0,378.0,379.0,380.0,381.0,382.0,383.0,384.0,385.0,386.0,387.0,388.0,389.0,390.0,391.0,392.0,393.0,394.0,395.0,396.0,397.0,398.0,399.0],"y":[33.51244354248047,31.98844337463379,30.46444320678711,28.94044303894043,27.41644287109375,25.892440795898438,24.368440628051758,22.84444236755371,21.3204402923584,19.79644012451172,18.272441864013672,16.74843978881836,15.224440574645996,13.700439453125,12.176441192626953,10.652441024780273,9.128440856933594,7.604440689086914,6.080440998077393,4.556440353393555,4.484380722045898,4.284380912780762,4.084381103515625,4.544440746307373,4.388381004333496,4.188381195068359,4.028439521789551,4.4923810958862305,4.292381286621094,4.092381477355957,4.016439437866211,4.396381378173828,4.196381568908691,3.9963815212249756,4.004439353942871,4.300381660461426,4.100381851196289,3.900381565093994,3.9924402236938477,4.204381465911865,4.0043816566467285,3.8043813705444336,3.980440378189087,4.1083807945251465,3.908381462097168,3.708381175994873,3.968440532684326,4.012381076812744,3.8123810291290283,3.6123807430267334,3.9564409255981445,3.916381359100342,3.716381072998047,3.516380786895752,3.944441795349121,3.820380687713623,3.6203806400299072,3.4284420013427734,3.9243807792663574,3.7243804931640625,3.5243804454803467,3.4164419174194336,3.8283803462982178,3.62838077545166,3.4283804893493652,3.4044418334960938,3.7323803901672363,3.5323805809020996,3.3323802947998047,3.392441749572754,3.636380195617676,3.43638014793396,3.2363803386688232,3.380441904067993,3.5403800010681152,3.3403801918029785,3.1403801441192627,3.368441581726074,3.444380283355713,3.244380474090576,3.0443804264068604,3.3564414978027344,3.3483805656433105,3.148380756378174,2.948380470275879,3.3444414138793945,3.25238037109375,3.0523808002471924,2.8523805141448975,3.3324410915374756,3.1563806533813477,2.956380605697632,2.816441059112549,3.260380506515503,3.060380697250366,2.8603806495666504,2.804441452026367,3.1643805503845215,2.9643807411193848,2.76438045501709,2.7924413681030273,3.068380355834961,2.868380308151245,2.6683802604675293,2.7804412841796875,2.9723806381225586,2.7723803520202637,2.572380304336548,2.7684412002563477,2.876380443572998,2.6763806343078613,2.4763803482055664,2.756441354751587,2.7803802490234375,2.580380439758301,2.380380630493164,2.744441270828247,2.684380531311035,2.4843802452087402,2.2843801975250244,2.732440948486328,2.5883803367614746,2.388380527496338,2.2164411544799805,2.69238018989563,2.492380142211914,2.292379856109619,2.2044413089752197,2.5963802337646484,2.3963801860809326,2.196380138397217,2.1924426555633545,2.5003795623779297,2.300379753112793,2.100379467010498,2.180443525314331,2.4043798446655273,2.2043795585632324,2.0043797492980957,2.168444871902466,2.308379650115967,2.108379602432251,1.9083791971206665,2.1564459800720215,2.2123796939849854,2.0123796463012695,1.8123794794082642,2.144446611404419,2.1163792610168457,1.9163789749145508,1.716378927230835,2.132448673248291,2.0203793048858643,1.8203787803649902,1.6203784942626953,2.1204495429992676,1.9243782758712769,1.7243783473968506,1.6044509410858154,2.0283777713775635,1.8283778429031372,1.6283776760101318,1.5924524068832397,1.932377576828003,1.7323778867721558,1.5323773622512817,1.580453634262085,1.8363771438598633,1.6363770961761475,1.436376929283142,1.5684548616409302,1.7403769493103027,1.540377140045166,1.340376615524292,1.5564559698104858,1.644376516342163,1.4443764686584473,1.2443759441375732,1.544458031654358,1.5483758449554443,1.3483762741088867,1.148376226425171,1.532458782196045,1.4523755311965942,1.252375602722168,1.052375316619873,1.5204603672027588,1.3563753366470337,1.1563750505447388,1.004460334777832,1.4603753089904785,1.2603752613067627,1.0603755712509155,0.9924613833427429,1.364375352859497,1.1643755435943604,0.9643751382827759,0.9804624319076538,1.2683753967285156,1.068375587463379,0.8683751225471497,0.9684625864028931,1.1723761558532715,0.9723756313323975,0.7723758220672607,0.9564638733863831,1.0763756036758423,0.8763758540153503,0.6763758659362793,0.9444640278816223,0.980376124382019,0.7803756594657898,0.5803754329681396,0.932464599609375,0.8843756914138794,0.6843758821487427,0.4843754172325134,0.9204657077789307,0.7883760929107666,0.5883758068084717,0.4044637680053711,1.1865503787994385,0.4283756613731384,0.7524640560150146,0.8585512638092041,0.5964633226394653,0.9945511817932129,0.44046199321746826,1.130551815032959,0.34837639331817627,0.7884618043899536,0.8025524020195007,0.6324611306190491,0.938552737236023,0.4764612317085266,1.0745521783828735,0.3204615116119385,1.2105518579483032,0.308377742767334,0.6684608459472656,0.8825533986091614,0.512459933757782,1.0185534954071045,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595,1.1675395965576172,0.3564600348472595]};
+
+  var data = [data0];
+  var layout = {"title":"loss by time"};
+
+  Plotly.plot('plot-1485440668', data, layout);
+})();
+});
+      
+</script>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[1.01, 3.23, 2.93]
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[12]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">predictResult</span>: <span class="ansi-green-fg">Task</span>[<span class="ansi-green-fg">Tape</span>.<span class="ansi-green-fg">&lt;refinement&gt;</span>.this.type.<span class="ansi-green-fg">Data</span>] = scalaz.concurrent.Task@c06831b</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">&#182;</a></h2><p>In this article, you have learned:</p>
+<ul>
+<li>to create neural networks dealing with complex data structures like <code>Double</code> and <code>INDArray</code> like ordinary programming language</li>
+<li>to train your neural network</li>
+<li>to predict your neural network</li>
+</ul>
+
+</div>
+</div>
+</div>
+ 
+
