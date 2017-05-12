@@ -1,0 +1,861 @@
+---
+layout: demo
+title: SoftmaxLinearClassifier
+download_path: demo_download/./2.0.0-Preview
+filename: SoftmaxLinearClassifier.ipynb
+---
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Background">Background<a class="anchor-link" href="#Background">&#182;</a></h2><p>In this article, we will use <a href="https://en.wikipedia.org/wiki/Softmax_function">softmax</a> classifier to build a simple image classification neural network with an accuracy of 32%. In a Softmax classifier, binary logic is generalized and regressed to multiple logic. Softmax classifier will output the probability of the corresponding category.</p>
+<p>We will first define a softmax classifier, then use the training set of <a href="https://www.cs.toronto.edu/~kriz/cifar.html">CIFAR10</a> to train the neural network, and finally use the test set to verify the accuracy of the neural network.</p>
+<p>Let’s get started.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Import-dependencies">Import dependencies<a class="anchor-link" href="#Import-dependencies">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Like the previous course <a href="https://thoughtworksinc.github.io/DeepLearning.scala/demo/GettingStarted.html">GettingStarted</a>, we need to introduce each class of DeepLearning.scala.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`org.scalamacros:paradise_2.11.11:2.1.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::jupyter-differentiable:2.0.0-M1`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j:nd4j-native-platform:0.7.2`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.rauschig:jarchivelib:0.5.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.2`</span>
+
+<span class="k">import</span> <span class="nn">java.io.</span><span class="o">{</span><span class="nc">FileInputStream</span><span class="o">,</span> <span class="nc">InputStream</span><span class="o">}</span>
+
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.math._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Any._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.</span><span class="o">{</span>
+  <span class="nc">Optimizer</span> <span class="k">=&gt;</span> <span class="nc">INDArrayOptimizer</span>
+<span class="o">}</span>
+<span class="k">import</span> <span class="nn">INDArrayOptimizer.LearningRate</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.each.Monadic._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.raii.asynchronous.Do</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Double._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Double.implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Tape</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.factory.Nd4j</span>
+<span class="k">import</span> <span class="nn">org.nd4s.Implicits._</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+<span class="k">import</span> <span class="nn">scalaz.concurrent.Task</span>
+<span class="k">import</span> <span class="nn">scalaz.</span><span class="o">{-\/,</span> <span class="o">\/,</span> <span class="o">\/-}</span>
+<span class="k">import</span> <span class="nn">scalaz.std.vector._</span>
+
+<span class="k">import</span> <span class="nn">plotly._</span>
+<span class="k">import</span> <span class="nn">plotly.element._</span>
+<span class="k">import</span> <span class="nn">plotly.layout._</span>
+<span class="k">import</span> <span class="nn">plotly.JupyterScala._</span>
+
+<span class="k">import</span> <span class="nn">scala.collection.immutable.IndexedSeq</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[12]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$plugin.$                                            
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                               
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                    
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                               
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">java.io.{FileInputStream, InputStream}
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.math._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Any._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.{
+  Optimizer =&gt; INDArrayOptimizer
+}
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">INDArrayOptimizer.LearningRate
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.each.Monadic._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.raii.asynchronous.Do
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Double._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Double.implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Tape
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4j.linalg.api.ndarray.INDArray
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4j.linalg.factory.Nd4j
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4s.Implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scala.concurrent.ExecutionContext.Implicits.global
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.concurrent.Task
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.{-\/, \/, \/-}
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.std.vector._
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.element._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.layout._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.JupyterScala._
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scala.collection.immutable.IndexedSeq</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To reduce the line numbers outputted by <code>jupyter-scala</code> and to make sure that the page output will not be too long, we need to set <code>pprintConfig</code>.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">2</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Build-your-own-neural-network.">Build your own neural network.<a class="anchor-link" href="#Build-your-own-neural-network.">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Set-learning-rate">Set learning rate<a class="anchor-link" href="#Set-learning-rate">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Learning rate need to be set for the full connection layer. Learning rate visually describes the change rate of <code>weight</code>. A too-low learning rate will result in slow decrease of <code>loss</code>, which will require longer time for training; A too-high learning rate will result in rapid decrease of <code>loss</code> at first while fluctuation around the lowest point afterward.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">implicit</span> <span class="k">def</span> <span class="n">optimizer</span><span class="k">:</span> <span class="kt">INDArrayOptimizer</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LearningRate</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="n">currentLearningRate</span><span class="o">()</span> <span class="k">=</span> <span class="mf">0.00001</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[14]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">optimizer</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Write-softmax">Write softmax<a class="anchor-link" href="#Write-softmax">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To use <code>softmax</code> classifier (softmax classifier is a neural network combined by <code>softmax</code> and a full connection), we first need to write softmax function, formula: <img src="https://www.zhihu.com/equation?tex=f_j%28z%29%3D%5Cfrac%7Be%5E%7Bz_j%7D%7D%7B%5Csum_ke%5E%7Bz_k%7D%7D" alt=""></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="n">scores</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">expScores</span> <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
+  <span class="n">expScores</span> <span class="o">/</span> <span class="n">sum</span><span class="o">(</span><span class="n">expScores</span><span class="o">,</span> <span class="mi">1</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[15]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">softmax</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Compose-your--neural-network">Compose your  neural network<a class="anchor-link" href="#Compose-your--neural-network">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Define a full connection layer and <a href="https://github.com/ThoughtWorksInc/DeepLearning.scala/wiki/Getting-Started#231--weight-intialization">initialize Weight</a>, <code>Weight</code> shall be a two-dimension <code>INDArray</code> of <code>NumberOfPixels × NumberOfClasses</code>. <code>scores</code> is the score of each image corresponding to each category, representing the feasible probability of each category corresponding to each image.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="c1">//10 label of CIFAR10 images(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)</span>
+<span class="k">val</span> <span class="nc">NumberOfClasses</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="k">val</span> <span class="nc">NumberOfPixels</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">3072</span>
+
+<span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span>
+  <span class="o">(</span><span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="nc">NumberOfPixels</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span> <span class="o">*</span> <span class="mf">0.001</span><span class="o">).</span><span class="n">toWeight</span>
+
+<span class="k">def</span> <span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">softmax</span><span class="o">(</span><span class="n">dot</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">weight</span><span class="o">))</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[16]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">NumberOfClasses</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">10</span>
+<span class="ansi-cyan-fg">NumberOfPixels</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">3072</span>
+<span class="ansi-cyan-fg">weight</span>: <span class="ansi-green-fg">differentiable</span>.<span class="ansi-green-fg">package</span>.<span class="ansi-green-fg">INDArray</span> = Suspend(&lt;function0&gt;)
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">myNeuralNetwork</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Create-LossFunction">Create LossFunction<a class="anchor-link" href="#Create-LossFunction">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To learn about the prediction result of the neural network, we need to write the loss function <code>lossFunction</code>. We use <a href="https://en.wikipedia.org/wiki/Cross_entropy">cross-entropy loss</a> to make comparison between this result and the actual result before return the score. Formula:
+<img src="https://zhihu.com/equation?tex=%5Cdisplaystyle+H%28p%2Cq%29%3D-%5Csum_xp%28x%29+logq%28x%29" alt=""></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">lossFunction</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">,</span>
+                 <span class="n">expectOutput</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.Double</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">probabilities</span> <span class="k">=</span> <span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="o">)</span>
+  <span class="o">-</span><span class="n">mean</span><span class="o">(</span><span class="n">log</span><span class="o">(</span><span class="n">probabilities</span><span class="o">)</span> <span class="o">*</span> <span class="n">expectOutput</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[17]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">lossFunction</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Prepare-data">Prepare data<a class="anchor-link" href="#Prepare-data">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Read-data">Read data<a class="anchor-link" href="#Read-data">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To read the images and corresponding label information for test data from CIFAR10 database and process them, we need <a href="https://github.com/ThoughtWorksInc/DeepLearning.scala-website/blob/master/ipynbs/ReadCIFAR10ToNDArray.sc"><code>import $file.ReadCIFAR10ToNDArray</code></a>. This is a script file containing the read and processed CIFAR10 data, provided in this course.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$url.</span><span class="o">{</span><span class="n">`https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/ReadCIFAR10ToNDArray.sc`</span> <span class="k">=&gt;</span> <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">}</span>
+
+<span class="k">val</span> <span class="n">trainNDArray</span> <span class="k">=</span>
+  <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/data_batch_1.bin&quot;</span><span class="o">,</span> <span class="mi">1000</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">testNDArray</span> <span class="k">=</span>
+  <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/test_batch.bin&quot;</span><span class="o">,</span> <span class="mi">100</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Compiling https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/ReadCIFAR10ToNDArray.sc
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[18]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$url.$                                                                                                                                             
+
+</span>
+<span class="ansi-cyan-fg">trainNDArray</span>: <span class="ansi-green-fg">shapeless</span>.<span class="ansi-green-fg">::</span>[<span class="ansi-green-fg">INDArray</span>, <span class="ansi-green-fg">shapeless</span>.<span class="ansi-green-fg">::</span>[<span class="ansi-green-fg">INDArray</span>, <span class="ansi-green-fg">shapeless</span>.<span class="ansi-green-fg">HNil</span>]] = [[0.23, 0.17, 0.20, 0.27, 0.38, 0.46, 0.54, 0.57, 0.58, 0.58, 0.51, 0.49, 0.55, 0.56, 0.54, 0.50, 0.54, 0.52, 0.48, 0.54, 0.54, 0.52, 0.53, 0.54, 0.59, 0.64, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testNDArray</span>: <span class="ansi-green-fg">shapeless</span>.<span class="ansi-green-fg">::</span>[<span class="ansi-green-fg">INDArray</span>, <span class="ansi-green-fg">shapeless</span>.<span class="ansi-green-fg">::</span>[<span class="ansi-green-fg">INDArray</span>, <span class="ansi-green-fg">shapeless</span>.<span class="ansi-green-fg">HNil</span>]] = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.<span class="ansi-yellow-fg">...</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Process-data">Process data<a class="anchor-link" href="#Process-data">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Before passing data to the softmax classifier, we first process label data with (<a href="https://en.wikipedia.org/wiki/One-hot">one hot encoding</a>): transform INDArray of <code>NumberOfPixels × 1</code> into INDArray of <code>NumberOfPixels × NumberOfClasses</code>. The value of correct classification corresponding to each line is 1, and the values of other columns are 0. The reason for differentiating the training set and test set is to make it clear that whether the network is over trained which leads to <a href="https://en.wikipedia.org/wiki/Overfitting">overfitting</a>. While processing label data, we used <a href="https://github.com/ThoughtWorksInc/DeepLearning.scala-website/blob/master/ipynbs/Utils.sc">Utils</a>, which is also provided in this course.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">trainData</span> <span class="k">=</span> <span class="n">trainNDArray</span><span class="o">.</span><span class="n">head</span>
+<span class="k">val</span> <span class="n">testData</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">trainExpectResult</span> <span class="k">=</span> <span class="n">trainNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
+<span class="k">val</span> <span class="n">testExpectResult</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">import</span> <span class="nn">$url.</span><span class="o">{</span><span class="n">`https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/Utils.sc`</span> <span class="k">=&gt;</span> <span class="nc">Utils</span><span class="o">}</span>
+
+<span class="k">val</span> <span class="n">vectorizedTrainExpectResult</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">trainExpectResult</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">vectorizedTestExpectResult</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">testExpectResult</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Compiling https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/Utils.sc
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[19]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">trainData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.23, 0.17, 0.20, 0.27, 0.38, 0.46, 0.54, 0.57, 0.58, 0.58, 0.51, 0.49, 0.55, 0.56, 0.54, 0.50, 0.54, 0.52, 0.48, 0.54, 0.54, 0.52, 0.53, 0.54, 0.59, 0.64, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">trainExpectResult</span>: <span class="ansi-green-fg">INDArray</span> = [6.00, 9.00, 9.00, 4.00, 1.00, 1.00, 2.00, 7.00, 8.00, 3.00, 4.00, 7.00, 7.00, 2.00, 9.00, 9.00, 9.00, 3.00, 2.00, 6.00, 4.00, 3.00, 6.00, 6.00, 2.00, 6.00, 3.0<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testExpectResult</span>: <span class="ansi-green-fg">INDArray</span> = [3.00, 8.00, 8.00, 0.00, 6.00, 6.00, 1.00, 6.00, 3.00, 1.00, 0.00, 9.00, 5.00, 7.00, 9.00, 8.00, 5.00, 7.00, 8.00, 6.00, 7.00, 0.00, 4.00, 9.00, 5.00, 2.00, 4.0<span class="ansi-yellow-fg">...</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$url.$                                                                                                               
+
+</span>
+<span class="ansi-cyan-fg">vectorizedTrainExpectResult</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00],
+<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">vectorizedTestExpectResult</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
+<span class="ansi-yellow-fg">...</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Train-your-neural-network">Train your neural network<a class="anchor-link" href="#Train-your-neural-network">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To observe the training process of the neural network, we need to output <code>loss</code>; while training the neural network, the <code>loss</code> shall be deceasing.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+<span class="k">def</span> <span class="n">polyLoss</span><span class="o">(</span><span class="n">lossSeq</span><span class="k">:</span> <span class="kt">IndexedSeq</span><span class="o">[</span><span class="kt">Double</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+
+  <span class="k">val</span> <span class="n">plot</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+    <span class="nc">Scatter</span><span class="o">(</span><span class="n">lossSeq</span><span class="o">.</span><span class="n">indices</span><span class="o">,</span> <span class="n">lossSeq</span><span class="o">)</span>
+  <span class="o">)</span>
+
+  <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="o">(</span>
+    <span class="n">title</span> <span class="k">=</span> <span class="s">&quot;loss by time&quot;</span>
+  <span class="o">)</span>
+<span class="o">}</span>
+
+<span class="nd">@monadic</span><span class="o">[</span><span class="kt">Task</span><span class="o">]</span>
+<span class="k">val</span> <span class="n">trainTask</span><span class="k">:</span> <span class="kt">Task</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+
+  <span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span> <span class="k">for</span> <span class="o">(</span><span class="k">_</span> <span class="k">&lt;-</span> <span class="o">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">2000</span><span class="o">).</span><span class="n">toVector</span><span class="o">)</span> <span class="k">yield</span> <span class="o">{</span>
+    <span class="n">train</span><span class="o">(</span><span class="n">lossFunction</span><span class="o">(</span><span class="n">trainData</span><span class="o">,</span> <span class="n">vectorizedTrainExpectResult</span><span class="o">)).</span><span class="n">each</span>
+  <span class="o">}</span>
+
+  <span class="n">polyLoss</span><span class="o">(</span><span class="n">lossSeq</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+
+      <script type="text/javascript">
+        require.config({
+  paths: {
+    d3: 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min',
+    plotly: 'https://cdn.plot.ly/plotly-1.12.0.min'
+  },
+
+  shim: {
+    plotly: {
+      deps: ['d3', 'jquery'],
+      exports: 'plotly'
+    }
+  }
+});
+        
+
+        require(['plotly'], function(Plotly) {
+          window.Plotly = Plotly;
+        });
+      </script>
+    
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[20]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">polyLoss</span>
+<span class="ansi-cyan-fg">trainTask</span>: <span class="ansi-green-fg">Task</span>[<span class="ansi-green-fg">Unit</span>] = scalaz.concurrent.Task@99d9545</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Predict--your-Neural-Network">Predict  your Neural Network<a class="anchor-link" href="#Predict--your-Neural-Network">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We use the processed test data to verify the prediction result of the neural network and compute the accuracy. The accuracy shall be about 32%.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">predictResult</span> <span class="k">=</span> <span class="n">throwableMonadic</span><span class="o">[</span><span class="kt">Task</span><span class="o">]</span> <span class="o">{</span>
+  <span class="n">trainTask</span><span class="o">.</span><span class="n">each</span>
+  <span class="n">predict</span><span class="o">(</span><span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">testData</span><span class="o">)).</span><span class="n">each</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[21]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">predictResult</span>: <span class="ansi-green-fg">Task</span>[<span class="ansi-green-fg">Tape</span>.<span class="ansi-green-fg">&lt;refinement&gt;</span>.this.type.<span class="ansi-green-fg">Data</span>] = scalaz.concurrent.Task@6916cc60</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">predictResult</span><span class="o">.</span><span class="n">unsafePerformSyncAttempt</span> <span class="k">match</span> <span class="o">{</span>
+  <span class="k">case</span> <span class="o">-\/(</span><span class="n">e</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="n">e</span>
+  <span class="o">}</span>
+  <span class="k">case</span> <span class="o">\/-(</span><span class="n">result</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="n">println</span><span class="o">(</span><span class="s">&quot;The accuracy is &quot;</span> <span class="o">+</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">getAccuracy</span><span class="o">(</span><span class="n">result</span><span class="o">,</span><span class="n">testExpectResult</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;%&quot;</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+
+      <script type="text/javascript">
+        require.config({
+  paths: {
+    d3: 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min',
+    plotly: 'https://cdn.plot.ly/plotly-1.12.0.min'
+  },
+
+  shim: {
+    plotly: {
+      deps: ['d3', 'jquery'],
+      exports: 'plotly'
+    }
+  }
+});
+        
+
+        require(['plotly'], function(Plotly) {
+          window.Plotly = Plotly;
+        });
+      </script>
+    
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+<div class="chart" id="plot-1937908255"></div>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+
+
+<div id="3febcb21-7f39-4f26-97a3-6b670ba485df"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#3febcb21-7f39-4f26-97a3-6b670ba485df');
+requirejs(["plotly"], function(Plotly) {
+  (function () {
+  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0,96.0,97.0,98.0,99.0,100.0,101.0,102.0,103.0,104.0,105.0,106.0,107.0,108.0,109.0,110.0,111.0,112.0,113.0,114.0,115.0,116.0,117.0,118.0,119.0,120.0,121.0,122.0,123.0,124.0,125.0,126.0,127.0,128.0,129.0,130.0,131.0,132.0,133.0,134.0,135.0,136.0,137.0,138.0,139.0,140.0,141.0,142.0,143.0,144.0,145.0,146.0,147.0,148.0,149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0,203.0,204.0,205.0,206.0,207.0,208.0,209.0,210.0,211.0,212.0,213.0,214.0,215.0,216.0,217.0,218.0,219.0,220.0,221.0,222.0,223.0,224.0,225.0,226.0,227.0,228.0,229.0,230.0,231.0,232.0,233.0,234.0,235.0,236.0,237.0,238.0,239.0,240.0,241.0,242.0,243.0,244.0,245.0,246.0,247.0,248.0,249.0,250.0,251.0,252.0,253.0,254.0,255.0,256.0,257.0,258.0,259.0,260.0,261.0,262.0,263.0,264.0,265.0,266.0,267.0,268.0,269.0,270.0,271.0,272.0,273.0,274.0,275.0,276.0,277.0,278.0,279.0,280.0,281.0,282.0,283.0,284.0,285.0,286.0,287.0,288.0,289.0,290.0,291.0,292.0,293.0,294.0,295.0,296.0,297.0,298.0,299.0,300.0,301.0,302.0,303.0,304.0,305.0,306.0,307.0,308.0,309.0,310.0,311.0,312.0,313.0,314.0,315.0,316.0,317.0,318.0,319.0,320.0,321.0,322.0,323.0,324.0,325.0,326.0,327.0,328.0,329.0,330.0,331.0,332.0,333.0,334.0,335.0,336.0,337.0,338.0,339.0,340.0,341.0,342.0,343.0,344.0,345.0,346.0,347.0,348.0,349.0,350.0,351.0,352.0,353.0,354.0,355.0,356.0,357.0,358.0,359.0,360.0,361.0,362.0,363.0,364.0,365.0,366.0,367.0,368.0,369.0,370.0,371.0,372.0,373.0,374.0,375.0,376.0,377.0,378.0,379.0,380.0,381.0,382.0,383.0,384.0,385.0,386.0,387.0,388.0,389.0,390.0,391.0,392.0,393.0,394.0,395.0,396.0,397.0,398.0,399.0,400.0,401.0,402.0,403.0,404.0,405.0,406.0,407.0,408.0,409.0,410.0,411.0,412.0,413.0,414.0,415.0,416.0,417.0,418.0,419.0,420.0,421.0,422.0,423.0,424.0,425.0,426.0,427.0,428.0,429.0,430.0,431.0,432.0,433.0,434.0,435.0,436.0,437.0,438.0,439.0,440.0,441.0,442.0,443.0,444.0,445.0,446.0,447.0,448.0,449.0,450.0,451.0,452.0,453.0,454.0,455.0,456.0,457.0,458.0,459.0,460.0,461.0,462.0,463.0,464.0,465.0,466.0,467.0,468.0,469.0,470.0,471.0,472.0,473.0,474.0,475.0,476.0,477.0,478.0,479.0,480.0,481.0,482.0,483.0,484.0,485.0,486.0,487.0,488.0,489.0,490.0,491.0,492.0,493.0,494.0,495.0,496.0,497.0,498.0,499.0,500.0,501.0,502.0,503.0,504.0,505.0,506.0,507.0,508.0,509.0,510.0,511.0,512.0,513.0,514.0,515.0,516.0,517.0,518.0,519.0,520.0,521.0,522.0,523.0,524.0,525.0,526.0,527.0,528.0,529.0,530.0,531.0,532.0,533.0,534.0,535.0,536.0,537.0,538.0,539.0,540.0,541.0,542.0,543.0,544.0,545.0,546.0,547.0,548.0,549.0,550.0,551.0,552.0,553.0,554.0,555.0,556.0,557.0,558.0,559.0,560.0,561.0,562.0,563.0,564.0,565.0,566.0,567.0,568.0,569.0,570.0,571.0,572.0,573.0,574.0,575.0,576.0,577.0,578.0,579.0,580.0,581.0,582.0,583.0,584.0,585.0,586.0,587.0,588.0,589.0,590.0,591.0,592.0,593.0,594.0,595.0,596.0,597.0,598.0,599.0,600.0,601.0,602.0,603.0,604.0,605.0,606.0,607.0,608.0,609.0,610.0,611.0,612.0,613.0,614.0,615.0,616.0,617.0,618.0,619.0,620.0,621.0,622.0,623.0,624.0,625.0,626.0,627.0,628.0,629.0,630.0,631.0,632.0,633.0,634.0,635.0,636.0,637.0,638.0,639.0,640.0,641.0,642.0,643.0,644.0,645.0,646.0,647.0,648.0,649.0,650.0,651.0,652.0,653.0,654.0,655.0,656.0,657.0,658.0,659.0,660.0,661.0,662.0,663.0,664.0,665.0,666.0,667.0,668.0,669.0,670.0,671.0,672.0,673.0,674.0,675.0,676.0,677.0,678.0,679.0,680.0,681.0,682.0,683.0,684.0,685.0,686.0,687.0,688.0,689.0,690.0,691.0,692.0,693.0,694.0,695.0,696.0,697.0,698.0,699.0,700.0,701.0,702.0,703.0,704.0,705.0,706.0,707.0,708.0,709.0,710.0,711.0,712.0,713.0,714.0,715.0,716.0,717.0,718.0,719.0,720.0,721.0,722.0,723.0,724.0,725.0,726.0,727.0,728.0,729.0,730.0,731.0,732.0,733.0,734.0,735.0,736.0,737.0,738.0,739.0,740.0,741.0,742.0,743.0,744.0,745.0,746.0,747.0,748.0,749.0,750.0,751.0,752.0,753.0,754.0,755.0,756.0,757.0,758.0,759.0,760.0,761.0,762.0,763.0,764.0,765.0,766.0,767.0,768.0,769.0,770.0,771.0,772.0,773.0,774.0,775.0,776.0,777.0,778.0,779.0,780.0,781.0,782.0,783.0,784.0,785.0,786.0,787.0,788.0,789.0,790.0,791.0,792.0,793.0,794.0,795.0,796.0,797.0,798.0,799.0,800.0,801.0,802.0,803.0,804.0,805.0,806.0,807.0,808.0,809.0,810.0,811.0,812.0,813.0,814.0,815.0,816.0,817.0,818.0,819.0,820.0,821.0,822.0,823.0,824.0,825.0,826.0,827.0,828.0,829.0,830.0,831.0,832.0,833.0,834.0,835.0,836.0,837.0,838.0,839.0,840.0,841.0,842.0,843.0,844.0,845.0,846.0,847.0,848.0,849.0,850.0,851.0,852.0,853.0,854.0,855.0,856.0,857.0,858.0,859.0,860.0,861.0,862.0,863.0,864.0,865.0,866.0,867.0,868.0,869.0,870.0,871.0,872.0,873.0,874.0,875.0,876.0,877.0,878.0,879.0,880.0,881.0,882.0,883.0,884.0,885.0,886.0,887.0,888.0,889.0,890.0,891.0,892.0,893.0,894.0,895.0,896.0,897.0,898.0,899.0,900.0,901.0,902.0,903.0,904.0,905.0,906.0,907.0,908.0,909.0,910.0,911.0,912.0,913.0,914.0,915.0,916.0,917.0,918.0,919.0,920.0,921.0,922.0,923.0,924.0,925.0,926.0,927.0,928.0,929.0,930.0,931.0,932.0,933.0,934.0,935.0,936.0,937.0,938.0,939.0,940.0,941.0,942.0,943.0,944.0,945.0,946.0,947.0,948.0,949.0,950.0,951.0,952.0,953.0,954.0,955.0,956.0,957.0,958.0,959.0,960.0,961.0,962.0,963.0,964.0,965.0,966.0,967.0,968.0,969.0,970.0,971.0,972.0,973.0,974.0,975.0,976.0,977.0,978.0,979.0,980.0,981.0,982.0,983.0,984.0,985.0,986.0,987.0,988.0,989.0,990.0,991.0,992.0,993.0,994.0,995.0,996.0,997.0,998.0,999.0,1000.0,1001.0,1002.0,1003.0,1004.0,1005.0,1006.0,1007.0,1008.0,1009.0,1010.0,1011.0,1012.0,1013.0,1014.0,1015.0,1016.0,1017.0,1018.0,1019.0,1020.0,1021.0,1022.0,1023.0,1024.0,1025.0,1026.0,1027.0,1028.0,1029.0,1030.0,1031.0,1032.0,1033.0,1034.0,1035.0,1036.0,1037.0,1038.0,1039.0,1040.0,1041.0,1042.0,1043.0,1044.0,1045.0,1046.0,1047.0,1048.0,1049.0,1050.0,1051.0,1052.0,1053.0,1054.0,1055.0,1056.0,1057.0,1058.0,1059.0,1060.0,1061.0,1062.0,1063.0,1064.0,1065.0,1066.0,1067.0,1068.0,1069.0,1070.0,1071.0,1072.0,1073.0,1074.0,1075.0,1076.0,1077.0,1078.0,1079.0,1080.0,1081.0,1082.0,1083.0,1084.0,1085.0,1086.0,1087.0,1088.0,1089.0,1090.0,1091.0,1092.0,1093.0,1094.0,1095.0,1096.0,1097.0,1098.0,1099.0,1100.0,1101.0,1102.0,1103.0,1104.0,1105.0,1106.0,1107.0,1108.0,1109.0,1110.0,1111.0,1112.0,1113.0,1114.0,1115.0,1116.0,1117.0,1118.0,1119.0,1120.0,1121.0,1122.0,1123.0,1124.0,1125.0,1126.0,1127.0,1128.0,1129.0,1130.0,1131.0,1132.0,1133.0,1134.0,1135.0,1136.0,1137.0,1138.0,1139.0,1140.0,1141.0,1142.0,1143.0,1144.0,1145.0,1146.0,1147.0,1148.0,1149.0,1150.0,1151.0,1152.0,1153.0,1154.0,1155.0,1156.0,1157.0,1158.0,1159.0,1160.0,1161.0,1162.0,1163.0,1164.0,1165.0,1166.0,1167.0,1168.0,1169.0,1170.0,1171.0,1172.0,1173.0,1174.0,1175.0,1176.0,1177.0,1178.0,1179.0,1180.0,1181.0,1182.0,1183.0,1184.0,1185.0,1186.0,1187.0,1188.0,1189.0,1190.0,1191.0,1192.0,1193.0,1194.0,1195.0,1196.0,1197.0,1198.0,1199.0,1200.0,1201.0,1202.0,1203.0,1204.0,1205.0,1206.0,1207.0,1208.0,1209.0,1210.0,1211.0,1212.0,1213.0,1214.0,1215.0,1216.0,1217.0,1218.0,1219.0,1220.0,1221.0,1222.0,1223.0,1224.0,1225.0,1226.0,1227.0,1228.0,1229.0,1230.0,1231.0,1232.0,1233.0,1234.0,1235.0,1236.0,1237.0,1238.0,1239.0,1240.0,1241.0,1242.0,1243.0,1244.0,1245.0,1246.0,1247.0,1248.0,1249.0,1250.0,1251.0,1252.0,1253.0,1254.0,1255.0,1256.0,1257.0,1258.0,1259.0,1260.0,1261.0,1262.0,1263.0,1264.0,1265.0,1266.0,1267.0,1268.0,1269.0,1270.0,1271.0,1272.0,1273.0,1274.0,1275.0,1276.0,1277.0,1278.0,1279.0,1280.0,1281.0,1282.0,1283.0,1284.0,1285.0,1286.0,1287.0,1288.0,1289.0,1290.0,1291.0,1292.0,1293.0,1294.0,1295.0,1296.0,1297.0,1298.0,1299.0,1300.0,1301.0,1302.0,1303.0,1304.0,1305.0,1306.0,1307.0,1308.0,1309.0,1310.0,1311.0,1312.0,1313.0,1314.0,1315.0,1316.0,1317.0,1318.0,1319.0,1320.0,1321.0,1322.0,1323.0,1324.0,1325.0,1326.0,1327.0,1328.0,1329.0,1330.0,1331.0,1332.0,1333.0,1334.0,1335.0,1336.0,1337.0,1338.0,1339.0,1340.0,1341.0,1342.0,1343.0,1344.0,1345.0,1346.0,1347.0,1348.0,1349.0,1350.0,1351.0,1352.0,1353.0,1354.0,1355.0,1356.0,1357.0,1358.0,1359.0,1360.0,1361.0,1362.0,1363.0,1364.0,1365.0,1366.0,1367.0,1368.0,1369.0,1370.0,1371.0,1372.0,1373.0,1374.0,1375.0,1376.0,1377.0,1378.0,1379.0,1380.0,1381.0,1382.0,1383.0,1384.0,1385.0,1386.0,1387.0,1388.0,1389.0,1390.0,1391.0,1392.0,1393.0,1394.0,1395.0,1396.0,1397.0,1398.0,1399.0,1400.0,1401.0,1402.0,1403.0,1404.0,1405.0,1406.0,1407.0,1408.0,1409.0,1410.0,1411.0,1412.0,1413.0,1414.0,1415.0,1416.0,1417.0,1418.0,1419.0,1420.0,1421.0,1422.0,1423.0,1424.0,1425.0,1426.0,1427.0,1428.0,1429.0,1430.0,1431.0,1432.0,1433.0,1434.0,1435.0,1436.0,1437.0,1438.0,1439.0,1440.0,1441.0,1442.0,1443.0,1444.0,1445.0,1446.0,1447.0,1448.0,1449.0,1450.0,1451.0,1452.0,1453.0,1454.0,1455.0,1456.0,1457.0,1458.0,1459.0,1460.0,1461.0,1462.0,1463.0,1464.0,1465.0,1466.0,1467.0,1468.0,1469.0,1470.0,1471.0,1472.0,1473.0,1474.0,1475.0,1476.0,1477.0,1478.0,1479.0,1480.0,1481.0,1482.0,1483.0,1484.0,1485.0,1486.0,1487.0,1488.0,1489.0,1490.0,1491.0,1492.0,1493.0,1494.0,1495.0,1496.0,1497.0,1498.0,1499.0,1500.0,1501.0,1502.0,1503.0,1504.0,1505.0,1506.0,1507.0,1508.0,1509.0,1510.0,1511.0,1512.0,1513.0,1514.0,1515.0,1516.0,1517.0,1518.0,1519.0,1520.0,1521.0,1522.0,1523.0,1524.0,1525.0,1526.0,1527.0,1528.0,1529.0,1530.0,1531.0,1532.0,1533.0,1534.0,1535.0,1536.0,1537.0,1538.0,1539.0,1540.0,1541.0,1542.0,1543.0,1544.0,1545.0,1546.0,1547.0,1548.0,1549.0,1550.0,1551.0,1552.0,1553.0,1554.0,1555.0,1556.0,1557.0,1558.0,1559.0,1560.0,1561.0,1562.0,1563.0,1564.0,1565.0,1566.0,1567.0,1568.0,1569.0,1570.0,1571.0,1572.0,1573.0,1574.0,1575.0,1576.0,1577.0,1578.0,1579.0,1580.0,1581.0,1582.0,1583.0,1584.0,1585.0,1586.0,1587.0,1588.0,1589.0,1590.0,1591.0,1592.0,1593.0,1594.0,1595.0,1596.0,1597.0,1598.0,1599.0,1600.0,1601.0,1602.0,1603.0,1604.0,1605.0,1606.0,1607.0,1608.0,1609.0,1610.0,1611.0,1612.0,1613.0,1614.0,1615.0,1616.0,1617.0,1618.0,1619.0,1620.0,1621.0,1622.0,1623.0,1624.0,1625.0,1626.0,1627.0,1628.0,1629.0,1630.0,1631.0,1632.0,1633.0,1634.0,1635.0,1636.0,1637.0,1638.0,1639.0,1640.0,1641.0,1642.0,1643.0,1644.0,1645.0,1646.0,1647.0,1648.0,1649.0,1650.0,1651.0,1652.0,1653.0,1654.0,1655.0,1656.0,1657.0,1658.0,1659.0,1660.0,1661.0,1662.0,1663.0,1664.0,1665.0,1666.0,1667.0,1668.0,1669.0,1670.0,1671.0,1672.0,1673.0,1674.0,1675.0,1676.0,1677.0,1678.0,1679.0,1680.0,1681.0,1682.0,1683.0,1684.0,1685.0,1686.0,1687.0,1688.0,1689.0,1690.0,1691.0,1692.0,1693.0,1694.0,1695.0,1696.0,1697.0,1698.0,1699.0,1700.0,1701.0,1702.0,1703.0,1704.0,1705.0,1706.0,1707.0,1708.0,1709.0,1710.0,1711.0,1712.0,1713.0,1714.0,1715.0,1716.0,1717.0,1718.0,1719.0,1720.0,1721.0,1722.0,1723.0,1724.0,1725.0,1726.0,1727.0,1728.0,1729.0,1730.0,1731.0,1732.0,1733.0,1734.0,1735.0,1736.0,1737.0,1738.0,1739.0,1740.0,1741.0,1742.0,1743.0,1744.0,1745.0,1746.0,1747.0,1748.0,1749.0,1750.0,1751.0,1752.0,1753.0,1754.0,1755.0,1756.0,1757.0,1758.0,1759.0,1760.0,1761.0,1762.0,1763.0,1764.0,1765.0,1766.0,1767.0,1768.0,1769.0,1770.0,1771.0,1772.0,1773.0,1774.0,1775.0,1776.0,1777.0,1778.0,1779.0,1780.0,1781.0,1782.0,1783.0,1784.0,1785.0,1786.0,1787.0,1788.0,1789.0,1790.0,1791.0,1792.0,1793.0,1794.0,1795.0,1796.0,1797.0,1798.0,1799.0,1800.0,1801.0,1802.0,1803.0,1804.0,1805.0,1806.0,1807.0,1808.0,1809.0,1810.0,1811.0,1812.0,1813.0,1814.0,1815.0,1816.0,1817.0,1818.0,1819.0,1820.0,1821.0,1822.0,1823.0,1824.0,1825.0,1826.0,1827.0,1828.0,1829.0,1830.0,1831.0,1832.0,1833.0,1834.0,1835.0,1836.0,1837.0,1838.0,1839.0,1840.0,1841.0,1842.0,1843.0,1844.0,1845.0,1846.0,1847.0,1848.0,1849.0,1850.0,1851.0,1852.0,1853.0,1854.0,1855.0,1856.0,1857.0,1858.0,1859.0,1860.0,1861.0,1862.0,1863.0,1864.0,1865.0,1866.0,1867.0,1868.0,1869.0,1870.0,1871.0,1872.0,1873.0,1874.0,1875.0,1876.0,1877.0,1878.0,1879.0,1880.0,1881.0,1882.0,1883.0,1884.0,1885.0,1886.0,1887.0,1888.0,1889.0,1890.0,1891.0,1892.0,1893.0,1894.0,1895.0,1896.0,1897.0,1898.0,1899.0,1900.0,1901.0,1902.0,1903.0,1904.0,1905.0,1906.0,1907.0,1908.0,1909.0,1910.0,1911.0,1912.0,1913.0,1914.0,1915.0,1916.0,1917.0,1918.0,1919.0,1920.0,1921.0,1922.0,1923.0,1924.0,1925.0,1926.0,1927.0,1928.0,1929.0,1930.0,1931.0,1932.0,1933.0,1934.0,1935.0,1936.0,1937.0,1938.0,1939.0,1940.0,1941.0,1942.0,1943.0,1944.0,1945.0,1946.0,1947.0,1948.0,1949.0,1950.0,1951.0,1952.0,1953.0,1954.0,1955.0,1956.0,1957.0,1958.0,1959.0,1960.0,1961.0,1962.0,1963.0,1964.0,1965.0,1966.0,1967.0,1968.0,1969.0,1970.0,1971.0,1972.0,1973.0,1974.0,1975.0,1976.0,1977.0,1978.0,1979.0,1980.0,1981.0,1982.0,1983.0,1984.0,1985.0,1986.0,1987.0,1988.0,1989.0,1990.0,1991.0,1992.0,1993.0,1994.0,1995.0,1996.0,1997.0,1998.0,1999.0],"y":[0.2303671875,0.2285691650390625,0.2275936279296875,0.2267004638671875,0.225838427734375,0.225002490234375,0.224190869140625,0.2234024658203125,0.2226363525390625,0.22189169921875,0.2211673828125,0.2204627685546875,0.2197769775390625,0.2191092041015625,0.2184587890625,0.217825048828125,0.21720712890625,0.2166046630859375,0.216016845703125,0.2154431640625,0.21488310546875,0.2143361083984375,0.21380166015625,0.213279248046875,0.212768603515625,0.21226904296875,0.211780419921875,0.21130205078125,0.2108337890625,0.2103751220703125,0.209925830078125,0.2094855224609375,0.20905400390625,0.208630810546875,0.208215673828125,0.207808447265625,0.2074087890625,0.2070164794921875,0.20663125,0.206252880859375,0.205881201171875,0.20551591796875,0.205156884765625,0.20480390625,0.204456884765625,0.2041154052734375,0.20377958984375,0.203449072265625,0.2031237548828125,0.202803515625,0.20248818359375,0.20217762451171875,0.20187166748046875,0.201570263671875,0.2012732666015625,0.2009804443359375,0.20069189453125,0.20040738525390625,0.2001267578125,0.19984996337890626,0.1995769775390625,0.19930758056640624,0.19904173583984375,0.19877938232421874,0.19852039794921875,0.19826466064453124,0.19801220703125,0.197762890625,0.1975166259765625,0.1972733154296875,0.19703291015625,0.19679541015625,0.1965606689453125,0.19632861328125,0.19609932861328125,0.195872607421875,0.1956483642578125,0.1954266845703125,0.1952073974609375,0.19499051513671875,0.1947759765625,0.1945636962890625,0.1943536376953125,0.19414578857421874,0.19394007568359375,0.193736474609375,0.193534912109375,0.1933353759765625,0.19313782958984374,0.192942236328125,0.1927484375,0.19255660400390626,0.19236651611328126,0.19217828369140624,0.191991796875,0.19180703125,0.19162393798828126,0.19144248046875,0.191262744140625,0.1910845458984375,0.1909078857421875,0.19073277587890625,0.1905591796875,0.1903871337890625,0.19021650390625,0.190047314453125,0.18987955322265626,0.189713134765625,0.18954814453125,0.1893844482421875,0.1892220458984375,0.18906103515625,0.188901171875,0.1887426513671875,0.18858525390625,0.1884292236328125,0.18827431640625,0.1881205810546875,0.18796802978515625,0.18781656494140625,0.1876662353515625,0.1875170654296875,0.18736890869140624,0.187221826171875,0.18707581787109376,0.18693087158203125,0.1867869384765625,0.18664403076171876,0.186502001953125,0.1863610595703125,0.1862210693359375,0.186081982421875,0.185943896484375,0.18580670166015625,0.1856703857421875,0.1855349853515625,0.18540047607421875,0.1852668212890625,0.185134033203125,0.18500213623046874,0.18487103271484376,0.18474075927734376,0.1846113037109375,0.184482666015625,0.18435478515625,0.18422772216796876,0.18410137939453125,0.18397586669921875,0.1838510498046875,0.18372703857421874,0.18360372314453124,0.18348111572265624,0.1833591796875,0.18323807373046874,0.1831176025390625,0.182997802734375,0.18287869873046875,0.18276029052734374,0.18264248046875,0.18252532958984374,0.18240889892578124,0.18229307861328126,0.1821779052734375,0.18206328125,0.1819493408203125,0.1818359375,0.18172322998046875,0.18161107177734376,0.1814995361328125,0.1813885498046875,0.181278173828125,0.1811682861328125,0.181059033203125,0.18095035400390624,0.1808421630859375,0.1807345947265625,0.180627490234375,0.1805209228515625,0.1804149658203125,0.18030943603515626,0.1802044189453125,0.18009996337890624,0.17999598388671875,0.17989251708984375,0.17978956298828125,0.1796870361328125,0.17958505859375,0.17948353271484374,0.1793824951171875,0.17928193359375,0.17918179931640624,0.1790821533203125,0.17898297119140624,0.1788841796875,0.17878590087890625,0.1786880615234375,0.178590673828125,0.1784936279296875,0.1783970703125,0.17830091552734376,0.17820518798828125,0.17810992431640624,0.1780150390625,0.177920556640625,0.17782646484375,0.177732763671875,0.177639501953125,0.177546630859375,0.17745418701171875,0.17736201171875,0.1772702880859375,0.1771789794921875,0.17708798828125,0.17699736328125,0.1769071533203125,0.1768173095703125,0.1767278076171875,0.17663865966796874,0.176549853515625,0.17646142578125,0.1763733642578125,0.176285595703125,0.176198193359375,0.17611112060546874,0.17602440185546875,0.17593802490234375,0.17585196533203126,0.1757662353515625,0.17568082275390626,0.1755957763671875,0.17551103515625,0.1754265869140625,0.175342431640625,0.1752586181640625,0.17517513427734374,0.1750919677734375,0.17500906982421874,0.174926513671875,0.1748442138671875,0.17476220703125,0.174680517578125,0.17459915771484374,0.174518017578125,0.1744372314453125,0.174356640625,0.174276416015625,0.174196435546875,0.17411673583984374,0.1740373291015625,0.17395816650390625,0.17387930908203125,0.173800732421875,0.1737223876953125,0.1736443603515625,0.17356656494140624,0.17348897705078126,0.1734116943359375,0.173334716796875,0.1732579345703125,0.1731814208984375,0.17310517578125,0.1730291748046875,0.1729534423828125,0.1728779052734375,0.17280264892578126,0.17272763671875,0.17265283203125,0.1725782958984375,0.1725039794921875,0.1724299560546875,0.172356103515625,0.17228248291015624,0.1722091796875,0.17213599853515624,0.1720630859375,0.1719904296875,0.17191796875,0.17184576416015626,0.17177371826171875,0.171701904296875,0.17163035888671874,0.171558984375,0.17148785400390626,0.1714169189453125,0.17134619140625,0.17127567138671876,0.17120537109375,0.1711353271484375,0.1710654052734375,0.1709957275390625,0.170926220703125,0.17085697021484375,0.1707879150390625,0.1707191162109375,0.170650390625,0.17058193359375,0.1705136962890625,0.17044559326171874,0.170377685546875,0.1703099853515625,0.17024246826171874,0.1701751708984375,0.17010804443359376,0.170041064453125,0.169974365234375,0.16990780029296876,0.16984140625,0.16977523193359376,0.1697091796875,0.16964334716796875,0.169577685546875,0.1695121826171875,0.169446923828125,0.16938175048828125,0.1693167724609375,0.16925205078125,0.16918740234375,0.169122998046875,0.16905869140625,0.1689946044921875,0.1689306640625,0.16886693115234375,0.1688033203125,0.16873994140625,0.1686766357421875,0.168613525390625,0.16855057373046875,0.1684878173828125,0.16842518310546875,0.168362744140625,0.168300439453125,0.16823826904296876,0.1681762939453125,0.16811448974609375,0.16805277099609375,0.16799127197265626,0.16792987060546874,0.1678686767578125,0.16780760498046876,0.16774666748046874,0.1676859130859375,0.167625341796875,0.1675648193359375,0.1675045166015625,0.16744432373046875,0.167384326171875,0.1673244140625,0.1672646728515625,0.1672051025390625,0.16714564208984375,0.16708629150390625,0.167027099609375,0.1669680908203125,0.16690919189453124,0.166850439453125,0.16679180908203126,0.166733349609375,0.1666749755859375,0.166616748046875,0.1665586669921875,0.16650072021484374,0.166442919921875,0.16638525390625,0.1663277099609375,0.1662702392578125,0.166212939453125,0.1661557861328125,0.1660987548828125,0.1660418701171875,0.165985107421875,0.16592841796875,0.1658719970703125,0.16581553955078124,0.16575927734375,0.16570308837890624,0.1656470703125,0.16559112548828125,0.165535400390625,0.1654797119140625,0.1654241943359375,0.16536878662109375,0.1653134521484375,0.16525830078125,0.16520322265625,0.16514833984375,0.16509345703125,0.16503875732421874,0.1649841796875,0.164929736328125,0.1648753173828125,0.16482109375,0.16476697998046874,0.16471292724609374,0.16465899658203126,0.164605224609375,0.16455152587890626,0.16449794921875,0.1644445068359375,0.16439112548828125,0.164337890625,0.164284765625,0.16423173828125,0.1641787841796875,0.16412596435546875,0.16407327880859374,0.1640207275390625,0.1639681884765625,0.1639158203125,0.1638635498046875,0.1638113525390625,0.16375927734375,0.16370728759765624,0.163655419921875,0.1636036376953125,0.163551953125,0.16350042724609376,0.1634489501953125,0.16339759521484376,0.16334632568359375,0.163295166015625,0.16324407958984374,0.1631931640625,0.1631422607421875,0.16309150390625,0.16304083251953125,0.162990234375,0.16293973388671876,0.16288939208984374,0.1628390869140625,0.16278887939453124,0.1627387939453125,0.16268876953125,0.16263887939453125,0.162589013671875,0.1625393310546875,0.1624896484375,0.1624401123046875,0.1623906982421875,0.16234134521484375,0.1622920654296875,0.1622428955078125,0.16219376220703124,0.162144775390625,0.1620958984375,0.1620470947265625,0.1619983154296875,0.1619496826171875,0.1619010986328125,0.1618526611328125,0.1618042724609375,0.161756005859375,0.161707763671875,0.16165963134765626,0.1616116455078125,0.161563623046875,0.1615157470703125,0.1614679931640625,0.16142030029296875,0.1613726318359375,0.1613251220703125,0.16127769775390624,0.161230322265625,0.1611830322265625,0.16113582763671874,0.16108873291015624,0.1610416748046875,0.16099466552734376,0.16094781494140625,0.16090101318359376,0.160854296875,0.1608076904296875,0.160761083984375,0.1607146240234375,0.16066822509765624,0.16062191162109374,0.160575634765625,0.16052945556640624,0.16048338623046876,0.160437353515625,0.16039140625,0.1603455810546875,0.1602997802734375,0.16025406494140626,0.1602084716796875,0.160162890625,0.1601173828125,0.16007197265625,0.16002666015625,0.1599813720703125,0.159936181640625,0.1598910888671875,0.1598460205078125,0.15980107421875,0.15975616455078126,0.1597113525390625,0.159666552734375,0.1596218994140625,0.1595773193359375,0.159532763671875,0.1594883056640625,0.159443896484375,0.15939957275390626,0.15935531005859374,0.1593111083984375,0.15926702880859375,0.1592229736328125,0.15917896728515624,0.1591350830078125,0.159091259765625,0.1590474853515625,0.159003759765625,0.15896015625,0.158916552734375,0.15887303466796876,0.1588296142578125,0.15878624267578126,0.158742919921875,0.15869971923828124,0.15865653076171876,0.1586134521484375,0.1585703857421875,0.15852745361328124,0.1584844970703125,0.15844169921875,0.158398876953125,0.15835621337890626,0.158313525390625,0.1582709716796875,0.1582283935546875,0.15818597412109375,0.15814359130859376,0.15810125732421876,0.1580589599609375,0.1580167724609375,0.1579746337890625,0.15793251953125,0.15789052734375,0.15784853515625,0.1578066650390625,0.15776480712890625,0.157723046875,0.1576813232421875,0.1576396484375,0.157598095703125,0.15755654296875,0.1575150634765625,0.15747366943359375,0.15743232421875,0.1573909912109375,0.1573497802734375,0.1573085693359375,0.15726744384765626,0.1572263916015625,0.15718541259765625,0.15714444580078124,0.157103564453125,0.15706275634765626,0.15702197265625,0.1569812744140625,0.156940625,0.15690001220703126,0.15685946044921875,0.156818994140625,0.15677855224609374,0.15673817138671875,0.1566978759765625,0.156657568359375,0.15661737060546874,0.15657728271484375,0.156537158203125,0.156497119140625,0.15645714111328124,0.15641717529296875,0.156377294921875,0.15633748779296874,0.1562977294921875,0.15625797119140625,0.156218310546875,0.156178759765625,0.1561391845703125,0.156099658203125,0.15606024169921875,0.156020849609375,0.15598150634765626,0.1559421875,0.155902978515625,0.15586380615234374,0.1558246337890625,0.155785595703125,0.155746533203125,0.155707568359375,0.15566868896484376,0.15562978515625,0.155590966796875,0.155552197265625,0.15551346435546876,0.1554747802734375,0.1554361572265625,0.15539761962890625,0.15535908203125,0.15532060546875,0.1552822021484375,0.1552438232421875,0.15520550537109376,0.1551672119140625,0.15512901611328125,0.15509080810546874,0.1550527099609375,0.1550146484375,0.1549765869140625,0.15493863525390625,0.15490068359375,0.15486282958984374,0.15482498779296874,0.1547871826171875,0.15474947509765624,0.15471177978515624,0.15467413330078125,0.15463653564453125,0.154598974609375,0.1545614990234375,0.15452403564453124,0.15448663330078125,0.154449267578125,0.1544119384765625,0.15437467041015626,0.1543374755859375,0.15430029296875,0.154263134765625,0.15422607421875,0.15418902587890626,0.1541520263671875,0.1541150634765625,0.15407821044921874,0.1540413330078125,0.1540045166015625,0.1539677490234375,0.1539310302734375,0.1538943603515625,0.15385771484375,0.15382113037109374,0.153784619140625,0.15374805908203126,0.1537116455078125,0.153675244140625,0.1536388427734375,0.1536025390625,0.1535662353515625,0.1535300048828125,0.1534937744140625,0.1534576416015625,0.1534215576171875,0.153385498046875,0.153349462890625,0.15331346435546875,0.1532775146484375,0.1532416748046875,0.1532057861328125,0.1531699951171875,0.1531341796875,0.153098486328125,0.15306279296875,0.15302713623046876,0.15299149169921875,0.15295595703125,0.152920458984375,0.15288494873046876,0.15284954833984374,0.1528141357421875,0.1527787841796875,0.15274345703125,0.15270821533203124,0.1526729248046875,0.152637744140625,0.15260263671875,0.15256748046875,0.15253243408203124,0.15249737548828124,0.15246240234375,0.1524274169921875,0.15239248046875,0.15235765380859376,0.152322802734375,0.15228802490234375,0.1522532470703125,0.1522185546875,0.1521838623046875,0.15214920654296876,0.15211461181640626,0.152080029296875,0.1520455322265625,0.1520110595703125,0.1519766357421875,0.1519422119140625,0.1519078369140625,0.151873486328125,0.15183919677734375,0.1518049072265625,0.151770703125,0.1517365234375,0.1517024169921875,0.15166827392578125,0.15163421630859375,0.15160018310546874,0.1515661865234375,0.1515322509765625,0.1514983642578125,0.1514644287109375,0.15143060302734376,0.1513968017578125,0.1513630126953125,0.15132928466796874,0.151295556640625,0.15126192626953125,0.15122830810546875,0.15119471435546875,0.1511611572265625,0.15112763671875,0.1510941650390625,0.1510607177734375,0.151027294921875,0.150993896484375,0.15096058349609376,0.1509272705078125,0.15089398193359374,0.1508607421875,0.1508275634765625,0.15079443359375,0.1507612548828125,0.1507281494140625,0.1506951171875,0.1506620849609375,0.15062908935546876,0.1505961669921875,0.150563232421875,0.15053031005859374,0.15049749755859376,0.1504646728515625,0.1504319091796875,0.15039913330078125,0.15036644287109374,0.15033377685546875,0.1503010986328125,0.1502684814453125,0.1502359130859375,0.15020335693359374,0.1501708251953125,0.15013834228515624,0.150105908203125,0.15007347412109376,0.150041162109375,0.1500087890625,0.1499764404296875,0.1499442138671875,0.14991192626953126,0.149879736328125,0.1498475341796875,0.1498154052734375,0.149783251953125,0.1497511962890625,0.14971912841796875,0.149687109375,0.149655126953125,0.14962314453125,0.1495912353515625,0.149559326171875,0.14952747802734376,0.149495703125,0.14946387939453126,0.14943211669921874,0.149400390625,0.14936866455078124,0.14933704833984374,0.1493053466796875,0.14927376708984375,0.14924217529296874,0.14921064453125,0.14917913818359374,0.14914765625,0.149116162109375,0.14908477783203125,0.1490533935546875,0.1490220458984375,0.148990673828125,0.1489594482421875,0.1489281005859375,0.14889691162109375,0.148865673828125,0.1488344970703125,0.1488033447265625,0.148772265625,0.1487411865234375,0.1487101318359375,0.14867906494140626,0.14864805908203124,0.1486171142578125,0.1485862060546875,0.14855528564453124,0.1485243896484375,0.14849356689453125,0.14846273193359374,0.14843194580078126,0.1484012451171875,0.1483704345703125,0.14833973388671876,0.14830908203125,0.14827845458984376,0.14824783935546876,0.14821727294921874,0.14818670654296875,0.14815616455078126,0.14812568359375,0.14809522705078124,0.14806474609375,0.14803436279296875,0.1480039794921875,0.1479736083984375,0.147943310546875,0.14791298828125,0.1478827392578125,0.1478525146484375,0.147822265625,0.14779207763671875,0.1477619140625,0.14773187255859374,0.14770172119140626,0.147671630859375,0.1476415771484375,0.14761160888671876,0.1475815673828125,0.14755164794921874,0.1475217041015625,0.147491796875,0.1474618896484375,0.1474320556640625,0.1474022216796875,0.1473724365234375,0.1473426513671875,0.1473129150390625,0.1472832275390625,0.1472535400390625,0.1472239013671875,0.147194189453125,0.1471646240234375,0.14713505859375,0.1471054931640625,0.1470759521484375,0.1470464599609375,0.1470170166015625,0.146987548828125,0.14695810546875,0.1469287109375,0.1468993408203125,0.14686998291015624,0.146840673828125,0.1468114013671875,0.146782177734375,0.146752880859375,0.1467237060546875,0.14669449462890624,0.1466653564453125,0.1466362060546875,0.14660711669921875,0.14657803955078125,0.1465489501953125,0.146519921875,0.14649093017578124,0.146461962890625,0.1464330322265625,0.1464040771484375,0.1463751708984375,0.1463462890625,0.146317431640625,0.1462886474609375,0.146259814453125,0.1462310546875,0.14620228271484376,0.146173583984375,0.14614486083984374,0.1461161865234375,0.146087548828125,0.146058935546875,0.1460303466796875,0.1460017333984375,0.145973193359375,0.14594464111328126,0.14591614990234375,0.14588765869140624,0.1458592041015625,0.1458308349609375,0.1458023681640625,0.14577403564453126,0.145745654296875,0.145717333984375,0.1456890380859375,0.1456607421875,0.145632470703125,0.14560423583984375,0.145576025390625,0.145547802734375,0.1455197021484375,0.145491552734375,0.14546343994140626,0.1454353515625,0.1454072509765625,0.1453792236328125,0.1453511962890625,0.145323193359375,0.14529520263671875,0.14526729736328126,0.14523934326171875,0.14521142578125,0.1451835693359375,0.145155712890625,0.145127880859375,0.14510006103515624,0.145072265625,0.14504449462890626,0.145016796875,0.1449890869140625,0.1449614013671875,0.14493369140625,0.1449060791015625,0.14487840576171876,0.14485084228515624,0.1448232421875,0.144795703125,0.1447681396484375,0.1447406494140625,0.14471317138671874,0.144685693359375,0.14465823974609374,0.144630859375,0.1446033935546875,0.1445760009765625,0.1445486572265625,0.14452137451171876,0.14449405517578126,0.144466748046875,0.14443948974609375,0.14441224365234376,0.144385009765625,0.1443578369140625,0.14433065185546876,0.144303515625,0.1442763671875,0.14424925537109376,0.144222119140625,0.14419510498046875,0.1441680419921875,0.144140966796875,0.14411402587890626,0.14408702392578124,0.1440600830078125,0.144033154296875,0.1440062255859375,0.143979345703125,0.1439524658203125,0.1439256103515625,0.143898779296875,0.14387197265625,0.14384517822265624,0.143818408203125,0.1437916748046875,0.1437649658203125,0.14373824462890625,0.14371156005859376,0.143684912109375,0.1436582763671875,0.1436316162109375,0.14360509033203125,0.1435784912109375,0.143551904296875,0.143525341796875,0.143498876953125,0.14347236328125,0.1434459228515625,0.1434194580078125,0.143393017578125,0.1433666015625,0.143340234375,0.1433138427734375,0.14328751220703126,0.143261181640625,0.14323486328125,0.14320859375,0.14318233642578124,0.143156103515625,0.143129833984375,0.1431036376953125,0.1430774658203125,0.1430512939453125,0.1430251220703125,0.1429990234375,0.14297291259765624,0.14294681396484374,0.142920751953125,0.14289471435546874,0.14286868896484375,0.14284267578125,0.14281669921875,0.14279072265625,0.1427647705078125,0.1427388427734375,0.1427129638671875,0.14268707275390624,0.14266116943359375,0.14263533935546874,0.14260953369140625,0.14258370361328124,0.1425579345703125,0.1425321533203125,0.14250640869140624,0.1424806640625,0.14245496826171875,0.14242923583984374,0.14240360107421876,0.1423779541015625,0.1423523193359375,0.1423266845703125,0.1423010986328125,0.142275537109375,0.1422499755859375,0.1422244384765625,0.14219891357421874,0.1421734375,0.14214794921875,0.14212242431640626,0.14209705810546874,0.14207161865234375,0.14204620361328124,0.1420208251953125,0.1419954345703125,0.1419700927734375,0.1419447509765625,0.1419194580078125,0.141894140625,0.14186890869140625,0.141843603515625,0.141818408203125,0.14179317626953125,0.1417679931640625,0.1417427978515625,0.141717626953125,0.14169248046875,0.1416673583984375,0.1416422607421875,0.141617138671875,0.1415920654296875,0.14156702880859376,0.1415419921875,0.14151697998046875,0.14149200439453125,0.1414669921875,0.1414420654296875,0.1414171142578125,0.1413921630859375,0.1413672607421875,0.1413423583984375,0.141317529296875,0.1412926513671875,0.141267822265625,0.14124296875,0.14121820068359375,0.141193408203125,0.14116864013671876,0.1411438720703125,0.141119140625,0.1410944580078125,0.14106976318359374,0.141045068359375,0.1410204345703125,0.140995751953125,0.140971142578125,0.14094654541015625,0.14092196044921876,0.1408973876953125,0.14087281494140624,0.1408483154296875,0.1408237548828125,0.140799267578125,0.1407748046875,0.14075032958984374,0.14072589111328124,0.14070146484375,0.14067703857421876,0.14065264892578125,0.1406282470703125,0.1406038818359375,0.140579541015625,0.140555224609375,0.1405309326171875,0.140506591796875,0.14048233642578126,0.1404580322265625,0.1404338134765625,0.140409619140625,0.140385400390625,0.140361181640625,0.14033699951171874,0.1403128662109375,0.14028868408203124,0.14026458740234374,0.14024046630859374,0.140216357421875,0.14019228515625,0.1401682373046875,0.140144189453125,0.140120166015625,0.14009617919921874,0.1400721435546875,0.1400481689453125,0.14002421875,0.14000028076171875,0.13997635498046876,0.13995244140625,0.1399285400390625,0.1399046875,0.13988079833984374,0.1398569580078125,0.1398330810546875,0.1398093017578125,0.13978553466796875,0.13976171875,0.13973795166015626,0.139714208984375,0.1396905029296875,0.139666748046875,0.13964306640625,0.1396193603515625,0.1395957275390625,0.13957203369140625,0.1395484130859375,0.13952479248046876,0.1395011962890625,0.13947763671875,0.13945404052734375,0.1394304931640625,0.1394069580078125,0.1393834228515625,0.13935989990234374,0.13933641357421875,0.1393129150390625,0.13928946533203124,0.139266015625,0.1392426025390625,0.1392192138671875,0.13919573974609376,0.139172412109375,0.1391490478515625,0.1391257080078125,0.13910230712890626,0.13907896728515626,0.13905570068359374,0.1390323974609375,0.13900916748046874,0.13898587646484376,0.1389626220703125,0.13893941650390626,0.13891619873046876,0.13889300537109375,0.13886978759765625,0.138846630859375,0.138823486328125,0.138800341796875,0.13877724609375,0.1387540771484375,0.138731005859375,0.1387079345703125,0.13868489990234376,0.1386618408203125,0.13863880615234375,0.1386157958984375,0.1385927734375,0.13856982421875,0.138546826171875,0.138523876953125,0.13850091552734375,0.13847799072265626,0.13845509033203124,0.13843216552734375,0.13840927734375,0.13838642578125,0.1383635498046875,0.1383407470703125,0.1383178955078125,0.1382950927734375,0.13827227783203125,0.13824954833984374,0.1382267578125,0.1382040283203125,0.13818128662109375,0.13815855712890626,0.1381358642578125,0.1381131591796875,0.138090478515625,0.138067822265625,0.138045166015625,0.1380225341796875,0.13799990234375,0.13797734375,0.1379547119140625,0.1379321533203125,0.1379095947265625,0.1378870361328125,0.1378645263671875,0.1378419921875,0.13781949462890625,0.1377969970703125,0.1377745361328125,0.1377520751953125,0.13772960205078125,0.1377071533203125,0.13768477783203126,0.1376623291015625,0.13763995361328124,0.1376175537109375,0.13759521484375,0.1375728759765625,0.1375505126953125,0.137528173828125,0.137505908203125,0.137483642578125,0.13746131591796876,0.13743905029296874,0.137416796875,0.137394580078125,0.1373723388671875,0.13735013427734374,0.1373279541015625,0.13730579833984374,0.13728360595703126,0.1372614501953125,0.137239306640625,0.13721717529296876,0.1371950439453125,0.13717296142578125,0.13715087890625,0.13712880859375,0.13710675048828125,0.13708470458984376,0.13706268310546876,0.13704066162109374,0.13701865234375,0.13699666748046874,0.1369746826171875,0.1369527099609375,0.1369307373046875,0.13690882568359375,0.13688690185546876,0.13686500244140626,0.13684310302734376,0.136821240234375,0.13679932861328126,0.13677747802734375,0.1367556396484375,0.136733837890625,0.13671201171875,0.136690234375,0.13666842041015625,0.13664664306640625,0.1366248779296875,0.1366031494140625,0.1365813720703125,0.1365596435546875,0.136537939453125,0.136516259765625,0.13649456787109376,0.136472900390625,0.1364512451171875,0.1364296142578125,0.1364079833984375,0.13638636474609375,0.13636474609375,0.1363431396484375,0.13632158203125,0.1362999755859375,0.136278466796875,0.13625692138671874,0.13623536376953124,0.1362138671875,0.1361923583984375,0.136170849609375,0.13614940185546875,0.13612791748046876,0.1361064453125,0.1360850341796875,0.1360635986328125,0.1360421875,0.1360208251953125,0.1359994140625,0.13597803955078125,0.135956689453125,0.1359353271484375,0.13591400146484375,0.135892626953125,0.1358713623046875,0.135850048828125,0.1358287841796875,0.1358074951171875,0.13578621826171874,0.13576500244140624,0.13574375,0.1357225341796875,0.1357012939453125,0.1356801025390625,0.1356589599609375,0.13563775634765626,0.1356166015625,0.135595458984375,0.13557431640625,0.13555322265625,0.135532080078125,0.1355109619140625,0.135489892578125,0.13546883544921876,0.13544775390625,0.1354266845703125,0.1354056640625,0.135384619140625,0.13536361083984375,0.1353426025390625,0.135321630859375,0.13530064697265626,0.1352797119140625,0.13525872802734376,0.13523779296875,0.1352168701171875,0.13519599609375,0.135175048828125,0.135154150390625,0.13513326416015625,0.13511241455078124,0.135091552734375,0.135070703125,0.13504990234375,0.135029052734375,0.135008251953125,0.1349874267578125,0.134966650390625,0.1349458740234375,0.1349251220703125,0.1349043701171875,0.13488363037109374,0.134862890625,0.1348421875,0.134821484375,0.1348008056640625,0.134780126953125,0.13475947265625,0.13473878173828124,0.1347181640625,0.1346975341796875,0.134676904296875,0.134656298828125,0.1346356689453125,0.1346151123046875,0.1345945556640625,0.13457398681640625,0.134553466796875,0.13453291015625,0.13451236572265626,0.134491796875,0.134471337890625,0.13445084228515625,0.1344303955078125,0.134409912109375,0.134389453125,0.1343690185546875,0.134348583984375,0.134328173828125,0.134307763671875,0.134287353515625,0.1342669677734375,0.13424654541015624,0.13422618408203124,0.13420584716796874,0.13418548583984374,0.13416517333984376,0.13414481201171874,0.13412454833984375,0.134104248046875,0.1340839599609375,0.1340636962890625,0.134043408203125,0.134023193359375,0.13400291748046875,0.1339826904296875,0.13396246337890624,0.13394227294921876,0.1339220703125,0.1339018798828125,0.1338817138671875,0.1338615234375,0.13384136962890625,0.133821240234375,0.1338010986328125,0.13378099365234375,0.13376085205078125,0.13374078369140624,0.133720703125,0.13370059814453125,0.13368055419921876,0.13366048583984375,0.1336404541015625,0.1336204345703125,0.13360040283203126,0.133580419921875,0.133560400390625,0.1335404052734375,0.1335204345703125,0.1335004638671875,0.133480517578125,0.1334605712890625,0.133440625,0.133420703125,0.13340078125,0.133380908203125,0.13336097412109374,0.1333411376953125,0.13332125244140625,0.1333013916015625,0.13328154296875,0.13326171875,0.1332418701171875,0.1332220703125,0.1332022705078125,0.1331824951171875,0.1331626953125,0.13314290771484374,0.1331231201171875,0.133103369140625,0.13308363037109375,0.13306395263671875,0.133044189453125,0.13302449951171874,0.13300478515625,0.132985107421875,0.1329654052734375,0.1329457763671875,0.13292608642578124,0.1329064697265625,0.1328867919921875,0.1328671875,0.13284759521484374,0.13282796630859375,0.1328084228515625,0.1327887939453125,0.13276922607421876,0.1327496826171875,0.13273011474609375,0.132710546875,0.132691015625,0.1326715087890625,0.132652001953125,0.13263251953125,0.132613037109375,0.13259356689453125,0.1325740966796875,0.13255458984375,0.1325351318359375,0.13251572265625,0.1324962646484375,0.13247686767578126,0.13245750732421874,0.1324380615234375,0.13241865234375,0.1323992919921875,0.13237994384765625,0.13236058349609375,0.1323412109375,0.13232188720703125,0.13230255126953125,0.13228323974609374,0.1322639404296875,0.13224462890625,0.132225341796875,0.1322060546875,0.13218681640625,0.132167529296875,0.1321483154296875,0.132129052734375,0.1321098388671875,0.132090625,0.1320714111328125,0.132052197265625,0.132033056640625,0.13201385498046875,0.1319946533203125,0.13197552490234374,0.13195634765625,0.13193720703125,0.13191806640625,0.1318989501953125,0.1318798828125,0.1318607666015625,0.13184168701171875,0.1318226318359375,0.13180352783203125,0.13178446044921874,0.1317654052734375,0.13174638671875,0.1317273193359375,0.1317083251953125,0.13168931884765625,0.1316702880859375,0.1316513427734375,0.1316323486328125,0.13161337890625,0.1315944091796875,0.131575439453125,0.13155648193359376,0.131537548828125,0.1315186767578125,0.1314997314453125,0.13148082275390624,0.13146195068359376,0.1314430419921875,0.13142415771484375,0.1314052978515625,0.13138642578125,0.1313676025390625,0.13134873046875,0.131329931640625,0.1313111328125,0.13129228515625,0.13127352294921876,0.1312547119140625,0.1312359375,0.1312171630859375,0.131198388671875,0.131179638671875,0.131160888671875,0.1311421630859375,0.1311234375,0.13110472412109375,0.13108602294921876,0.131067333984375,0.1310486328125,0.13102998046875,0.13101129150390625,0.130992626953125,0.13097398681640626,0.130955322265625,0.1309366943359375,0.13091807861328125,0.1308994873046875,0.13088084716796874,0.13086226806640625,0.1308436767578125,0.1308251220703125,0.13080653076171875,0.13078797607421874,0.1307694580078125,0.13075089111328125,0.130732373046875,0.1307138427734375,0.1306953369140625,0.1306768310546875,0.1306583251953125,0.1306398193359375,0.13062138671875,0.1306029296875,0.1305844970703125,0.1305659912109375,0.13054759521484374,0.13052913818359374,0.13051072998046875,0.130492333984375,0.130473876953125,0.13045550537109374,0.130437109375,0.1304187744140625,0.13040040283203125,0.1303820068359375,0.13036370849609374,0.1303453369140625,0.130327001953125,0.1303086669921875,0.13029036865234375,0.1302720703125,0.1302537841796875,0.130235498046875,0.1302172119140625,0.13019893798828125,0.13018067626953125,0.1301624267578125,0.13014420166015625,0.13012596435546875,0.13010771484375,0.1300895263671875,0.130071337890625,0.13005311279296874,0.13003489990234374,0.130016748046875,0.12999857177734375,0.129980419921875,0.129962255859375,0.12994407958984375,0.12992598876953124,0.1299078369140625,0.12988970947265624,0.12987164306640625,0.1298534912109375,0.1298354248046875,0.1298173583984375,0.1297992919921875,0.12978116455078126,0.1297631103515625,0.12974505615234375,0.12972705078125,0.129709033203125,0.1296909912109375,0.1296729736328125,0.1296549560546875,0.129636962890625,0.1296189697265625,0.1296010009765625,0.1295830078125,0.1295650634765625,0.12954710693359375,0.12952919921875,0.12951121826171874,0.12949329833984374,0.1294753662109375,0.129457470703125,0.12943956298828124,0.12942169189453126,0.12940374755859374,0.1293858642578125,0.1293680419921875,0.129350146484375,0.12933232421875,0.1293144775390625,0.129296630859375,0.1292787841796875,0.1292609619140625,0.1292431884765625,0.1292253662109375,0.129207568359375,0.1291897705078125,0.12917203369140626,0.129154248046875,0.129136474609375,0.1291187255859375,0.1291009765625,0.1290832275390625,0.12906553955078126,0.129047802734375,0.1290300537109375,0.1290123779296875,0.1289946533203125,0.128977001953125,0.12895931396484375,0.128941650390625,0.128923974609375,0.1289063232421875,0.12888868408203125,0.1288710205078125,0.12885341796875,0.12883577880859376,0.1288181640625,0.1288005859375,0.1287830078125,0.128765380859375,0.128747802734375,0.12873026123046874,0.12871265869140625,0.12869510498046874,0.128677587890625,0.12866004638671874,0.12864251708984376,0.128624951171875,0.12860745849609376,0.1285899658203125,0.12857247314453124,0.12855498046875,0.12853748779296875,0.12852000732421875,0.1285025146484375,0.1284850830078125,0.1284676513671875,0.1284501708984375,0.128432763671875,0.1284153564453125,0.12839788818359374,0.12838050537109374,0.12836309814453126,0.12834569091796874,0.1283282958984375,0.12831090087890626,0.12829354248046876,0.1282761962890625,0.12825885009765625,0.12824150390625,0.1282241455078125,0.1282068359375,0.128189453125,0.1281721923828125,0.12815487060546876,0.12813759765625,0.1281202880859375,0.12810302734375,0.1280857421875,0.12806842041015626,0.1280511962890625,0.12803389892578124,0.1280166748046875,0.12799945068359375,0.1279822021484375,0.127964990234375,0.1279477783203125,0.1279305419921875,0.1279133544921875,0.12789619140625,0.12787901611328126,0.1278618408203125,0.12784464111328125,0.1278274658203125,0.12781033935546876,0.1277931884765625,0.1277760498046875,0.127758935546875,0.127741796875,0.127724658203125,0.12770753173828125,0.127690478515625,0.127673388671875,0.127656298828125,0.1276392333984375,0.127622119140625,0.127605078125,0.12758804931640624,0.1275709716796875,0.12755396728515625,0.1275369140625,0.1275198974609375,0.127502880859375,0.12748587646484374,0.12746885986328124,0.1274518798828125,0.1274348876953125,0.127417919921875,0.1274009521484375,0.1273840087890625,0.12736702880859374,0.1273500732421875,0.127333154296875,0.1273161865234375,0.127299267578125,0.1272823486328125,0.12726544189453126,0.12724853515625,0.1272316650390625,0.12721474609375,0.127197900390625,0.12718101806640625,0.1271641357421875,0.127147265625,0.1271304443359375,0.1271135986328125,0.12709676513671875,0.1270799072265625,0.1270630859375,0.1270463134765625,0.1270294921875,0.1270126708984375,0.12699588623046876,0.1269791259765625,0.12696234130859374,0.1269455322265625,0.12692879638671875,0.12691202392578124,0.12689530029296875,0.12687857666015626,0.12686180419921875,0.126845068359375,0.12682835693359376,0.12681163330078124,0.126794921875,0.1267782470703125,0.1267615478515625,0.126744873046875,0.1267281982421875,0.1267115478515625,0.126694873046875,0.1266781982421875,0.1266615478515625,0.12664493408203126,0.126628271484375,0.1266116455078125,0.12659505615234376,0.1265784423828125,0.1265618408203125,0.1265452392578125,0.12652864990234375,0.126512060546875,0.1264954833984375,0.12647891845703124,0.126462353515625,0.12644583740234375,0.126429248046875,0.1264127197265625,0.12639619140625,0.126379638671875,0.1263631103515625,0.12634661865234376,0.1263301025390625,0.12631363525390624,0.1262971435546875,0.12628065185546875,0.1262641845703125,0.126247705078125,0.1262312255859375,0.12621474609375,0.1261983154296875,0.126181884765625,0.126165478515625,0.1261490234375,0.1261325927734375,0.12611619873046875,0.1260998291015625,0.12608338623046875,0.1260670166015625,0.126050634765625,0.12603424072265626,0.1260178466796875,0.12600147705078124,0.1259851318359375,0.12596875,0.12595245361328125,0.1259361083984375,0.12591976318359374,0.1259034423828125,0.12588714599609374,0.12587083740234375,0.1258544921875,0.125838232421875,0.125821923828125,0.1258056396484375,0.12578936767578125,0.1257730712890625,0.12575684814453125,0.125740576171875,0.1257243408203125,0.1257080810546875,0.1256918701171875,0.125675634765625,0.125659423828125,0.1256431884765625,0.125627001953125,0.125610791015625,0.12559456787109374,0.1255783935546875,0.125562255859375,0.125546044921875,0.1255299072265625,0.12551375732421874,0.1254975830078125,0.12548143310546875,0.1254653076171875,0.125449169921875,0.1254330322265625,0.12541689453125,0.1254008056640625,0.1253846923828125,0.12536859130859376,0.1253525146484375,0.12533641357421876,0.12532032470703125,0.1253042724609375,0.1252882080078125,0.1252721435546875,0.1252560791015625,0.1252400390625,0.125223974609375,0.12520792236328124,0.12519190673828126,0.1251759033203125,0.12515989990234375,0.1251439208984375,0.12512789306640626,0.12511190185546875,0.1250958984375,0.12507991943359376,0.12506392822265625,0.12504798583984375,0.1250320068359375,0.125016064453125,0.12500013427734374,0.12498416748046876,0.12496822509765625,0.12495228271484375,0.1249364013671875,0.124920458984375,0.1249045654296875,0.124888671875,0.1248727783203125,0.12485689697265626,0.12484097900390626,0.124825146484375,0.12480924072265626,0.1247933349609375,0.124777490234375,0.1247616943359375,0.12474583740234375,0.1247300048828125,0.12471417236328125,0.124698388671875,0.12468251953125,0.1246666748046875,0.12465089111328125,0.1246350830078125,0.1246193115234375,0.124603515625,0.12458773193359375,0.12457197265625,0.1245562255859375,0.1245404296875,0.124524658203125,0.124508935546875,0.12449320068359375,0.1244774658203125,0.12446171875,0.12444599609375,0.12443028564453125,0.1244145751953125,0.1243988525390625,0.124383203125,0.12436746826171875,0.1243517822265625,0.1243361083984375,0.1243204345703125,0.12430477294921875,0.124289111328125,0.1242734619140625,0.1242578125,0.1242421875,0.12422652587890624,0.1242109130859375,0.12419525146484375,0.12417965087890626,0.1241640625,0.1241484375,0.1241328857421875,0.12411727294921875,0.1241016845703125,0.124086083984375,0.1240705078125,0.1240549560546875,0.124039404296875,0.12402384033203125,0.12400831298828124,0.1239927490234375,0.12397720947265625,0.12396173095703125,0.12394617919921876,0.12393062744140625,0.12391513671875,0.12389964599609375,0.1238841064453125,0.12386861572265626,0.1238531494140625,0.1238376953125,0.123822216796875,0.12380673828125,0.12379124755859375,0.1237758056640625,0.1237603759765625,0.1237448974609375,0.12372947998046875,0.1237140380859375,0.12369862060546875,0.1236831787109375,0.1236677734375,0.1236523681640625,0.1236369873046875,0.12362156982421875,0.12360618896484375,0.12359080810546876,0.12357542724609374,0.12356005859375,0.12354468994140624,0.1235293212890625,0.1235139892578125,0.1234986083984375,0.12348330078125,0.1234679443359375,0.12345262451171875,0.1234373046875,0.123422021484375,0.123406689453125,0.123391357421875,0.12337606201171875,0.1233607666015625,0.12334552001953125,0.12333021240234375,0.123314892578125,0.12329964599609375,0.1232843994140625]};
+
+  var data = [data0];
+  var layout = {"title":"loss by time"};
+
+  Plotly.plot('plot-1937908255', data, layout);
+})();
+});
+      
+</script>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>The accuracy is 32.0%
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">&#182;</a></h2><p>We have learned the follows in this article:</p>
+<ul>
+<li>Prepare and process CIFAR10 data</li>
+<li>Write softmax classifier</li>
+<li>Use the prediction image of the neural network written by softmax classifier to match with the probability of each category.</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><a href="https://github.com/izhangzhihao/deeplearning-tutorial/blob/2.0.x/src/main/scala/com/github/izhangzhihao/SoftmaxLinearClassifier.scala">Source code</a></p>
+
+</div>
+</div>
+</div>
+ 
+
