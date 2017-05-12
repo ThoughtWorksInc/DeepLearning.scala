@@ -19,7 +19,7 @@ import com.thoughtworks.tryt.covariant.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
 import com.thoughtworks.raii.ownership.Borrowing
-import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.api.ndarray.{INDArray => Nd4jArray}
 import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
 import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
@@ -44,10 +44,10 @@ import scalaz.std.iterable._
 
 object INDArraySpec {
   implicit final class WeightData(weight: Do[INDArrayTape]) {
-    def data: INDArray = {
+    def data: Nd4jArray = {
       val task: Task[INDArrayTape] = Do.run(weight)
-      val bTape: INDArrayTape = task.unsafePerformSync
-      bTape.data.asInstanceOf[INDArray]
+      val bTape: Tape[Nd4jArray, Nd4jArray] = task.unsafePerformSync
+      bTape.data
     }
   }
 }
@@ -55,12 +55,12 @@ object INDArraySpec {
 final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
   import INDArraySpec._
 
-  def trainAndAssertLossAndWeight(myNetwork: INDArray => Do[INDArrayTape],
+  def trainAndAssertLossAndWeight(myNetwork: Nd4jArray => Do[INDArrayTape],
                                   weight: Do[INDArrayTape],
                                   trainTimes: Int = 2,
                                   expectedLoss: Int = 0,
                                   expectedWeightSum: Int = -16): scala.concurrent.Future[Assertion] = {
-    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
+    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -80,7 +80,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -97,135 +97,135 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     def currentLearningRate() = 1
   }
 
-  "INDArray + INDArray" in {
+  "Nd4jArray + Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight + input
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "INDArray + Double" in {
+  "Nd4jArray + Double" in {
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight + 1.0
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Double + INDArray" in {
+  "Double + Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       1.0 + weight
     }
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "INDArray - INDArray" in {
+  "Nd4jArray - Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight - (-input)
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "INDArray - Double" in {
+  "Nd4jArray - Double" in {
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight - (-1.0)
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Double - INDArray" in {
+  "Double - Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = (-Nd4j.ones(4, 4)).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       1.0 - weight
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 16)
   }
 
-  "INDArray * INDArray" in {
+  "Nd4jArray * Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight * input
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "INDArray * Double" in {
+  "Nd4jArray * Double" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight * 1.0
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Double * INDArray" in {
+  "Double * Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       1.0 * weight
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "INDArray / INDArray" in {
+  "Nd4jArray / Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight / input
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "INDArray / Double" in {
+  "Nd4jArray / Double" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 2).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight / 1.0
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Double / INDArray" in {
+  "Double / Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = Nd4j.ones(4, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       1.0 / weight
     }
 
-    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
+    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -245,7 +245,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -258,11 +258,11 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "max(INDArray,Double)" in {
+  "max(Nd4jArray,Double)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       max(weight, 0.0)
     }
 
@@ -270,26 +270,26 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   }
 
-  "min(INDArray,Double)" in {
+  "min(Nd4jArray,Double)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       min(weight, 100.0)
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, trainTimes = 10, expectedWeightSum = 0)
   }
 
-  "exp(INDArray)" in {
+  "exp(Nd4jArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       exp(weight)
     }
 
-    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
+    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -309,7 +309,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -322,15 +322,15 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "log(INDArray)" in {
+  "log(Nd4jArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       log(weight)
     }
 
-    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
+    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -350,7 +350,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -363,15 +363,15 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "abs(INDArray)" in {
+  "abs(Nd4jArray)" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       abs(weight)
     }
 
-    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
+    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -391,7 +391,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -404,7 +404,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray dot INDArray" in {
+  "Nd4jArray dot Nd4jArray" in {
 
     val weight: Do[INDArrayTape] = (Nd4j.ones(4, 4) * 10).toWeight
 
@@ -412,7 +412,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       dot(input, weight)
     }
 
-    def trainMyNetwork(inputData: Do[INDArrayTape]): Task[INDArray] = {
+    def trainMyNetwork(inputData: Do[INDArrayTape]): Task[Nd4jArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -432,7 +432,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -445,7 +445,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray im2col (kernel,stride,padding) --forward" in {
+  "Nd4jArray im2col (kernel,stride,padding) --forward" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 0.03
     }
@@ -456,7 +456,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       im2col(weight, kernel, stride, padding)
     }
 
-    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[INDArray] = {
+    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[Nd4jArray] = {
       train(myNetwork(kernel, stride, padding))
     }
     import scalaz.concurrent.Future._
@@ -464,7 +464,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    trainMyNetwork((3, 3), (1, 1), (1, 1)).unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    trainMyNetwork((3, 3), (1, 1), (1, 1)).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -477,7 +477,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray im2col (kernel,stride,padding) --train" in {
+  "Nd4jArray im2col (kernel,stride,padding) --train" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 0.01
     }
@@ -488,7 +488,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       im2col(weight, kernel, stride, padding)
     }
 
-    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[INDArray] = {
+    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[Nd4jArray] = {
       train(myNetwork(kernel, stride, padding))
     }
     import scalaz.concurrent.Future._
@@ -508,7 +508,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -520,7 +520,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray reshape shapes --forward" in {
+  "Nd4jArray reshape shapes --forward" in {
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -528,7 +528,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       reshape(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -537,7 +537,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    trainMyNetwork(2, 3, 3, 3).unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    trainMyNetwork(2, 3, 3, 3).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -550,7 +550,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray reshape shapes --train" in {
+  "Nd4jArray reshape shapes --train" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 0.01
     }
@@ -561,7 +561,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       reshape(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -582,7 +582,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -594,7 +594,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray permute dimensions --forward" in {
+  "Nd4jArray permute dimensions --forward" in {
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 9).toWeight
 
@@ -602,7 +602,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       permute(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -611,7 +611,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    trainMyNetwork(0, 2, 1).unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    trainMyNetwork(0, 2, 1).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -624,7 +624,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "INDArray permute dimensions --train" in {
+  "Nd4jArray permute dimensions --train" in {
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 0.01
     }
@@ -635,7 +635,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       permute(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -656,7 +656,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -668,7 +668,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "conv2d(INDArray, INDArray, INDArray, kernel, stride, padding)" in {
+  "conv2d(Nd4jArray, Nd4jArray, Nd4jArray, kernel, stride, padding)" in {
 
     implicit def optimizer: Optimizer = new LearningRate {
       def currentLearningRate() = 0.01
@@ -679,11 +679,11 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     val weight: Do[INDArrayTape] = Nd4j.ones(1, 1, 3, 3).toWeight
     val bias = Nd4j.zeros(1).toWeight
 
-    def convolution(input: Do[ INDArrayTape]): Do[INDArrayTape] = {
+    def convolution(input: Do[INDArrayTape]): Do[INDArrayTape] = {
       conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     }
 
-    def trainConvlountion(input: Do[ INDArrayTape]): Task[INDArray] = {
+    def trainConvlountion(input: Do[INDArrayTape]): Task[Nd4jArray] = {
       train(convolution(input))
     }
 
@@ -696,7 +696,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       72.00, 78.00, 54.00).toNDArray
       .reshape(1, 1, 4, 4)
 
-    trainConvlountion(input).unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    trainConvlountion(input).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -709,7 +709,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "sumT(INDArray)" in {
+  "sumT(Nd4jArray)" in {
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -750,7 +750,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "sum(INDArray,dimensions) --2 dimensions" in {
+  "sum(Nd4jArray,dimensions) --2 dimensions" in {
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(6, 9).toWeight
 
@@ -758,7 +758,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       sum(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(): Task[INDArray] = {
+    def trainMyNetwork(): Task[Nd4jArray] = {
       train(myNetwork(0))
     }
 
@@ -779,7 +779,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -792,7 +792,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   // Failed due to nd4j bugs in broadcasting. TODO: Try to upgrade nd4j to a new version.
-  "sum(INDArray,dimensions) --4 dimensions" ignore {
+  "sum(Nd4jArray,dimensions) --4 dimensions" ignore {
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -800,7 +800,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       sum(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(): Task[INDArray] = {
+    def trainMyNetwork(): Task[Nd4jArray] = {
       train(myNetwork(0, 1))
     }
 
@@ -821,7 +821,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -833,7 +833,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "mean(INDArray)" in {
+  "mean(Nd4jArray)" in {
 
     val weight: Do[INDArrayTape] = (1 to 54).toNDArray.reshape(2, 3, 3, 3).toWeight
 
@@ -874,15 +874,15 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "4D INDArray * 4D INDArray -- forward" in {
+  "4D Nd4jArray * 4D Nd4jArray -- forward" in {
 
     val weight = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight * input
     }
 
-    def trainMyNetwork(input: INDArray): Task[INDArray] = {
+    def trainMyNetwork(input: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(input))
     }
 
@@ -893,7 +893,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    trainMyNetwork(input).unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    trainMyNetwork(input).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -905,15 +905,15 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     p.future
   }
 
-  "4D INDArray * 4D INDArray -- train" in {
+  "4D Nd4jArray * 4D Nd4jArray -- train" in {
 
     val weight = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4).toWeight
 
-    def myNetwork(input: INDArray): Do[INDArrayTape] = {
+    def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight * input
     }
 
-    def trainMyNetwork(input: INDArray): Task[INDArray] = {
+    def trainMyNetwork(input: Nd4jArray): Task[Nd4jArray] = {
       train(myNetwork(input))
     }
 
@@ -936,11 +936,11 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
-          case \/-(loss: INDArray) =>
+          case \/-(loss: Nd4jArray) =>
             loss.meanNumber.doubleValue should be < 1.0
         }
       }
@@ -965,9 +965,9 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       "abs(??? : Do[INDArrayTape])" should compile
       "abs(??? : Do[_<: INDArrayTape])" should compile
       "abs(??? : Do[INDArrayTape])" should compile
-      "abs(??? : Do[Borrowing[Tape[INDArray, INDArray]]])" should compile
-      "abs(??? : Do[_<: Borrowing[Tape[INDArray, INDArray]]])" should compile
-      "abs(??? : Do[Borrowing[Tape[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[Borrowing[Tape[Nd4jArray, Nd4jArray]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape[Nd4jArray, Nd4jArray]]])" should compile
+      "abs(??? : Do[Borrowing[Tape[Nd4jArray, Nd4jArray]]])" should compile
     }
 
     promise.future
