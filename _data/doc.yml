@@ -20,3 +20,5 @@
       url: /demo/2.0.0-Preview/GettingStarted.html
     - text: SoftmaxLinearClassifier
       url: /demo/2.0.0-Preview/SoftmaxLinearClassifier.html
+    - text: MiniBatchGradientDescent
+      url: /demo/2.0.0-Preview/MiniBatchGradientDescent.html
