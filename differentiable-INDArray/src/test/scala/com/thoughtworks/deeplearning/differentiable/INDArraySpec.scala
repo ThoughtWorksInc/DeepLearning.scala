@@ -2,7 +2,6 @@ package com.thoughtworks.deeplearning.differentiable
 
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.{math, Tape, Lift}
-import com.thoughtworks.deeplearning.Tape.{Aux, Literal}
 import com.thoughtworks.deeplearning.differentiable.Any.{predict, train}
 import com.thoughtworks.deeplearning.differentiable.INDArray._
 import com.thoughtworks.deeplearning.differentiable.INDArray.Optimizer
@@ -958,17 +957,17 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       "abs(??? : Do[DoubleTape])" should compile
       "abs(??? : Do[_<: DoubleTape])" should compile
       "abs(??? : Do[DoubleTape])" should compile
-      "abs(??? : Do[Borrowing[Tape.Aux[Double, Double]]])" should compile
-      "abs(??? : Do[_<: Borrowing[Tape.Aux[Double, Double]]])" should compile
-      "abs(??? : Do[Borrowing[Tape.Aux[Double, Double]]])" should compile
+      "abs(??? : Do[Borrowing[Tape[Double, Double]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape[Double, Double]]])" should compile
+      "abs(??? : Do[Borrowing[Tape[Double, Double]]])" should compile
 
       "abs(Nd4j.ones(2, 3, 3, 3))" should compile
       "abs(??? : Do[INDArrayTape])" should compile
       "abs(??? : Do[_<: INDArrayTape])" should compile
       "abs(??? : Do[INDArrayTape])" should compile
-      "abs(??? : Do[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
-      "abs(??? : Do[_<: Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
-      "abs(??? : Do[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[Borrowing[Tape[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[_<: Borrowing[Tape[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[Borrowing[Tape[INDArray, INDArray]]])" should compile
     }
 
     promise.future

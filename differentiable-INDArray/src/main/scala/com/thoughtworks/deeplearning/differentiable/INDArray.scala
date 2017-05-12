@@ -5,7 +5,7 @@ import java.util.logging.{Level, Logger}
 import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.math.polyFunctions
-import com.thoughtworks.deeplearning.Tape.Aux
+import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable
 import com.thoughtworks.deeplearning.tapefactories.{MonoidOutput, SemigroupOutput, Unary}
 import com.thoughtworks.deeplearning.Lift.LowPriorityLift
@@ -175,18 +175,16 @@ object INDArray extends INDArrayCompanion {
                                                logger: Logger = Logger.getGlobal,
                                                fullName: sourcecode.FullName,
                                                className: Caller[_],
-                                               methodName: sourcecode.Name)
-      extends Tape {
+                                               methodName: sourcecode.Name) {
     private val optimizer: Optimizer = optimizerFactory.indarrayOptimizer(this)
-    override type Data = ND4JArray
-    override type Delta = ND4JArray
+    def doTape = Do.delay(garbageCollectable(Tape[ND4JArray, ND4JArray](data, backward)))
 
-    override def backward(outputDelta: Do[ Delta]): Future[Unit] = {
+    def backward(outputDelta: Do[ND4JArray]): Future[Unit] = {
       import com.thoughtworks.raii.covariant.ResourceT.resourceTMonad
       val Do(resourceFactoryTFuture) = outputDelta
-      val resourceFactoryT: ResourceT[Future, Try[Delta]] = ResourceT(resourceFactoryTFuture)
+      val resourceFactoryT: ResourceT[Future, Try[ND4JArray]] = ResourceT(resourceFactoryTFuture)
 
-      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[Delta] =>
+      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[ND4JArray] =>
         tryDelta.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
@@ -258,13 +256,12 @@ object INDArray extends INDArrayCompanion {
                    fullName: sourcecode.FullName,
                    className: Caller[_],
                    methodName: sourcecode.Name): Do[INDArrayTape] = {
-        val myWeight = garbageCollectable(Weight(value))
-        Do.now(myWeight)
+        Weight(value).doTape
       }
     }
 
     implicit object INDArrayTrainable extends Trainable[ND4JArray, ND4JArray] {
-      override def apply(data: ND4JArray): Do[ ND4JArray] = Do.now(Nd4j.ones(data.shape(): _*))
+      override def apply(data: ND4JArray): Do[ND4JArray] = Do.now(Nd4j.ones(data.shape(): _*))
     }
 
     private def jumpTask()(implicit executionContext: ExecutionContext): Task[Unit] = {
@@ -584,12 +581,12 @@ object INDArray extends INDArrayCompanion {
     }
 
     @inline
-    implicit def `exp(INDArray)`(implicit logger: Logger = Logger.getGlobal,
-                                 fullName: sourcecode.FullName,
-                                 className: Caller[_],
-                                 methodName: sourcecode.Name,
-                                 executionContext: ExecutionContext)
-      : polyFunctions.exp.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
+    implicit def `exp(INDArray)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name,
+        executionContext: ExecutionContext): polyFunctions.exp.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.exp.at { operand =>
         tapefactories.Unary.doTape(operand) { (data: ND4JArray) =>
           throwableMonadic[Task] {
@@ -608,12 +605,12 @@ object INDArray extends INDArrayCompanion {
     }
 
     @inline
-    implicit def `log(INDArray)`(implicit logger: Logger = Logger.getGlobal,
-                                 fullName: sourcecode.FullName,
-                                 className: Caller[_],
-                                 methodName: sourcecode.Name,
-                                 executionContext: ExecutionContext)
-      : polyFunctions.log.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
+    implicit def `log(INDArray)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name,
+        executionContext: ExecutionContext): polyFunctions.log.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.log.at { operand =>
         tapefactories.Unary.doTape(operand) { (data: ND4JArray) =>
           throwableMonadic[Task] {
@@ -632,12 +629,12 @@ object INDArray extends INDArrayCompanion {
     }
 
     @inline
-    implicit def `abs(INDArray)`(implicit logger: Logger = Logger.getGlobal,
-                                 fullName: sourcecode.FullName,
-                                 className: Caller[_],
-                                 methodName: sourcecode.Name,
-                                 executionContext: ExecutionContext)
-      : polyFunctions.abs.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
+    implicit def `abs(INDArray)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name,
+        executionContext: ExecutionContext): polyFunctions.abs.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.abs.at { operand =>
         tapefactories.Unary.doTape(operand) { (data: ND4JArray) =>
           throwableMonadic[Task] {
@@ -712,11 +709,11 @@ object INDArray extends INDArrayCompanion {
                                                          className: Caller[_],
                                                          methodName: sourcecode.Name,
                                                          executionContext: ExecutionContext): Do[INDArrayTape] = {
-      def monadicConv2d[InputTape <: Borrowing[Tape.Aux[ND4JArray, ND4JArray]],
-                        WeightTape <: Borrowing[Tape.Aux[ND4JArray, ND4JArray]],
-                        Bias <: Borrowing[Tape.Aux[ND4JArray, ND4JArray]]](input: Do[InputTape],
-                                                                           weight: Do[WeightTape],
-                                                                           bias: Do[Bias]) = monadic[Do] {
+      def monadicConv2d[InputTape <: Borrowing[Tape[ND4JArray, ND4JArray]],
+                        WeightTape <: Borrowing[Tape[ND4JArray, ND4JArray]],
+                        Bias <: Borrowing[Tape[ND4JArray, ND4JArray]]](input: Do[InputTape],
+                                                                       weight: Do[WeightTape],
+                                                                       bias: Do[Bias]) = monadic[Do] {
         val inputShape: Array[Int] = input.each.data.shape()
         val count = inputShape(0)
         val depth = inputShape(1)
@@ -748,9 +745,9 @@ object INDArray extends INDArrayCompanion {
       }
 
       monadicConv2d(
-        liftInput(input): Do[ Borrowing[Tape.Aux[ND4JArray, ND4JArray]]],
-        liftWeight(weight): Do[ Borrowing[Tape.Aux[ND4JArray, ND4JArray]]],
-        liftBias(bias): Do[ Borrowing[Tape.Aux[ND4JArray, ND4JArray]]]
+        liftInput(input): Do[Borrowing[Tape[ND4JArray, ND4JArray]]],
+        liftWeight(weight): Do[Borrowing[Tape[ND4JArray, ND4JArray]]],
+        liftBias(bias): Do[Borrowing[Tape[ND4JArray, ND4JArray]]]
       )
     }
 
@@ -964,5 +961,5 @@ object INDArray extends INDArrayCompanion {
 
 //workaround for https://github.com/scala/bug/issues/10306
 abstract class INDArrayCompanion {
-  private[deeplearning] type INDArrayTape = Borrowing[Tape.Aux[ND4JArray, ND4JArray]]
+  private[deeplearning] type INDArrayTape = Borrowing[Tape[ND4JArray, ND4JArray]]
 }
