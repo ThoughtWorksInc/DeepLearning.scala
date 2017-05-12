@@ -13,7 +13,7 @@ import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.ownership._
-import com.thoughtworks.raii.resourcet.ResourceT
+import com.thoughtworks.raii.covariant.ResourceT
 import shapeless.the
 
 import scala.util.{Failure, Success, Try}
@@ -67,22 +67,20 @@ object Float extends FloatCompanion {
                                                 logger: Logger = Logger.getGlobal,
                                                 fullName: sourcecode.FullName,
                                                 className: Caller[_],
-                                                methodName: sourcecode.Name)
-      extends Tape {
+                                                methodName: sourcecode.Name) {
+
+    def doTape = Do.delay(garbageCollectable(Tape(data, backward)))
     private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
 
-    override type Data = ScalaFloat
-    override type Delta = ScalaFloat
-
-    override def backward(deltaFuture: Do[_ <: Delta]): Future[Unit] = {
-      import com.thoughtworks.raii.resourcet.ResourceT.resourceTMonad
+    def backward(deltaFuture: Do[ScalaFloat]): Future[Unit] = {
+      import com.thoughtworks.raii.covariant.ResourceT.resourceTMonad
 
       val Do(resourceTFuture) = deltaFuture
 
-      val resourceT: ResourceT[Future, Try[Delta]] = ResourceT(resourceTFuture)
+      val resourceT: ResourceT[Future, Try[ScalaFloat]] = ResourceT(resourceTFuture)
 
-      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceT.map { tryDelta: Try[Delta] =>
-        tryDelta.map { delta =>
+      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceT.map { tryScalaFloat: Try[ScalaFloat] =>
+        tryScalaFloat.map { delta =>
           synchronized {
             if (logger.isLoggable(Level.FINER)) {
               logger.log(WeightIsUpdating(data, delta))
@@ -134,9 +132,8 @@ object Float extends FloatCompanion {
                    logger: Logger = Logger.getGlobal,
                    fullName: sourcecode.FullName,
                    className: Caller[_],
-                   methodName: sourcecode.Name): Do[Borrowing[Tape.Aux[ScalaFloat, ScalaFloat]]] = {
-        val myWeight = garbageCollectable(Weight(value))
-        Do.now(myWeight)
+                   methodName: sourcecode.Name): Do[Borrowing[Tape[ScalaFloat, ScalaFloat]]] = {
+        Weight(value).doTape
       }
     }
 
@@ -145,11 +142,11 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `Float+Float`(implicit logger: Logger = Logger.getGlobal,
-                               fullName: sourcecode.FullName,
-                               className: Caller[_],
-                               methodName: sourcecode.Name)
-      : polyFunctions.+.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `Float+Float`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): polyFunctions.+.Case.Aux[Do[FloatTape], Do[FloatTape], Do[FloatTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
@@ -166,11 +163,11 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `Float-Float`(implicit logger: Logger = Logger.getGlobal,
-                               fullName: sourcecode.FullName,
-                               className: Caller[_],
-                               methodName: sourcecode.Name)
-      : polyFunctions.-.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `Float-Float`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): polyFunctions.-.Case.Aux[Do[FloatTape], Do[FloatTape], Do[FloatTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
@@ -187,11 +184,11 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `Float*Float`(implicit logger: Logger = Logger.getGlobal,
-                               fullName: sourcecode.FullName,
-                               className: Caller[_],
-                               methodName: sourcecode.Name)
-      : polyFunctions.*.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `Float*Float`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): polyFunctions.*.Case.Aux[Do[FloatTape], Do[FloatTape], Do[FloatTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
@@ -208,11 +205,11 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `Float/Float`(implicit logger: Logger = Logger.getGlobal,
-                               fullName: sourcecode.FullName,
-                               className: Caller[_],
-                               methodName: sourcecode.Name)
-      : polyFunctions./.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `Float/Float`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): polyFunctions./.Case.Aux[Do[FloatTape], Do[FloatTape], Do[FloatTape]] = {
       polyFunctions./.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
@@ -229,11 +226,11 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `min(Float,Float)`(implicit logger: Logger = Logger.getGlobal,
-                                    fullName: sourcecode.FullName,
-                                    className: Caller[_],
-                                    methodName: sourcecode.Name)
-      : math.polyFunctions.min.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `min(Float,Float)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): math.polyFunctions.min.Case.Aux[Do[FloatTape], Do[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.min.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
@@ -251,11 +248,11 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `max(Float,Float)`(implicit logger: Logger = Logger.getGlobal,
-                                    fullName: sourcecode.FullName,
-                                    className: Caller[_],
-                                    methodName: sourcecode.Name)
-      : math.polyFunctions.max.Case.Aux[Do.Covariant[FloatTape], Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `max(Float,Float)`(
+        implicit logger: Logger = Logger.getGlobal,
+        fullName: sourcecode.FullName,
+        className: Caller[_],
+        methodName: sourcecode.Name): math.polyFunctions.max.Case.Aux[Do[FloatTape], Do[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.max.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
@@ -277,7 +274,7 @@ object Float extends FloatCompanion {
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         className: Caller[_],
-        methodName: sourcecode.Name): math.polyFunctions.log.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+        methodName: sourcecode.Name): math.polyFunctions.log.Case.Aux[Do[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.log.at { operand =>
         tapefactories.Unary.doTape(operand) { data =>
           Task.delay {
@@ -292,11 +289,10 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `exp(Float)`(
-        implicit logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        methodName: sourcecode.Name,
-        className: Caller[_]): math.polyFunctions.exp.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `exp(Float)`(implicit logger: Logger = Logger.getGlobal,
+                              fullName: sourcecode.FullName,
+                              methodName: sourcecode.Name,
+                              className: Caller[_]): math.polyFunctions.exp.Case.Aux[Do[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.exp.at { operand =>
         tapefactories.Unary.doTape(operand) { data =>
           Task.delay {
@@ -311,11 +307,10 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    implicit def `abs(Float)`(
-        implicit logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        methodName: sourcecode.Name,
-        className: Caller[_]): math.polyFunctions.abs.Case.Aux[Do.Covariant[FloatTape], Do[FloatTape]] = {
+    implicit def `abs(Float)`(implicit logger: Logger = Logger.getGlobal,
+                              fullName: sourcecode.FullName,
+                              methodName: sourcecode.Name,
+                              className: Caller[_]): math.polyFunctions.abs.Case.Aux[Do[FloatTape], Do[FloatTape]] = {
       math.polyFunctions.abs.at { operand =>
         tapefactories.Unary.doTape(operand) { data =>
           Task.delay {
@@ -353,7 +348,7 @@ object Float extends FloatCompanion {
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
         className: Caller[_]) {
-      private val operand: Do.Covariant[FloatTape] = lift(from)
+      private val operand: Do[FloatTape] = lift(from)
       @inline
       def unary_- : Do[FloatTape] = {
         tapefactories.Unary.doTape(operand) { data =>
@@ -373,5 +368,5 @@ object Float extends FloatCompanion {
 
 //workaround for https://github.com/scala/bug/issues/10306
 abstract class FloatCompanion {
-  private[deeplearning] type FloatTape = Borrowing[Tape.Aux[ScalaFloat, ScalaFloat]]
+  private[deeplearning] type FloatTape = Borrowing[Tape[ScalaFloat, ScalaFloat]]
 }
