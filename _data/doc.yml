@@ -18,3 +18,5 @@
   subitems:
     - text: GettingStarted
       url: /demo/2.0.0-Preview/GettingStarted.html
+    - text: SoftmaxLinearClassifier
+      url: /demo/2.0.0-Preview/SoftmaxLinearClassifier.html
