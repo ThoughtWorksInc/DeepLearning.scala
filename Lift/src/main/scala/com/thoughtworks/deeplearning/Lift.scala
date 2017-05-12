@@ -10,7 +10,7 @@ import shapeless._
 trait Lift[From] extends DepFn1[From] {
   type Data
   type Delta
-  override final type Out = Do.Covariant[Borrowing[Tape.Aux[Data, Delta]]]
+  override final type Out = Do[Borrowing[Tape.Aux[Data, Delta]]]
 }
 
 private[deeplearning] trait LowPriorityLiftFunctions { this: Lift.type =>
@@ -39,7 +39,7 @@ object Lift extends LowPriorityLiftFunctions {
     }
     implicit def liftCase1[P <: Poly, From, Data0, Delta0, Out0](
         implicit lift: Lift.Aux[From, Data0, Delta0],
-        case1: shapeless.PolyDefns.Case1.Aux[P, Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]], Out0])
+        case1: shapeless.PolyDefns.Case1.Aux[P, Do[Borrowing[Tape.Aux[Data0, Delta0]]], Out0])
       : LiftCase1.Aux[P, From, Out0] = {
       new LiftCase1[P, From] {
         override type Out = Out0
@@ -58,8 +58,8 @@ object Lift extends LowPriorityLiftFunctions {
         implicit lift0: Lift.Aux[Operand0, Data0, Delta0],
         lift1: Lift.Aux[Operand1, Data1, Delta1],
         case2: shapeless.PolyDefns.Case2.Aux[P,
-                                             Do.Covariant[Borrowing[Tape.Aux[Data0, Delta0]]],
-                                             Do.Covariant[Borrowing[Tape.Aux[Data1, Delta1]]],
+                                             Do[Borrowing[Tape.Aux[Data0, Delta0]]],
+                                             Do[Borrowing[Tape.Aux[Data1, Delta1]]],
                                              Out0]): LiftCase2.Aux[P, Operand0, Operand1, Out0] = {
       new LiftCase2[P, Operand0, Operand1] {
         override type Out = Out0
@@ -84,7 +84,7 @@ object Lift extends LowPriorityLiftFunctions {
 
   @inline
   implicit def fromSubtype[Data0, Delta0, From](
-      implicit constraint: From <:< Do[_ <: Borrowing[Tape.Aux[Data0, Delta0]]])
+      implicit constraint: From <:< Do[ Borrowing[Tape.Aux[Data0, Delta0]]])
     : LowPriorityLift.Aux[From, Data0, Delta0] = {
     new LowPriorityLift[From] {
       override type Data = Data0

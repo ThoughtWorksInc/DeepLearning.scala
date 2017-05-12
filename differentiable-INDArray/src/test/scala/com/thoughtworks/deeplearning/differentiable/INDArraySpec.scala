@@ -14,9 +14,9 @@ import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.deeplearning.differentiable.Double.DoubleTape
 import com.thoughtworks.deeplearning.differentiable.Double.implicits._
 import com.thoughtworks.deeplearning.differentiable.Double._
-import com.thoughtworks.raii.resourcet
-import com.thoughtworks.raii.resourcet.{Releasable, ResourceT}
-import com.thoughtworks.tryt.{TryT, TryTExtractor}
+import com.thoughtworks.raii.covariant
+import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
+import com.thoughtworks.tryt.covariant.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
 import com.thoughtworks.raii.ownership.Borrowing
@@ -680,11 +680,11 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     val weight: Do[INDArrayTape] = Nd4j.ones(1, 1, 3, 3).toWeight
     val bias = Nd4j.zeros(1).toWeight
 
-    def convolution(input: Do[_ <: INDArrayTape]): Do[INDArrayTape] = {
+    def convolution(input: Do[ INDArrayTape]): Do[INDArrayTape] = {
       conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     }
 
-    def trainConvlountion(input: Do[_ <: INDArrayTape]): Task[INDArray] = {
+    def trainConvlountion(input: Do[ INDArrayTape]): Task[INDArray] = {
       train(convolution(input))
     }
 
@@ -957,18 +957,18 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       "abs(1.0)" should compile
       "abs(??? : Do[DoubleTape])" should compile
       "abs(??? : Do[_<: DoubleTape])" should compile
-      "abs(??? : Do.Covariant[DoubleTape])" should compile
+      "abs(??? : Do[DoubleTape])" should compile
       "abs(??? : Do[Borrowing[Tape.Aux[Double, Double]]])" should compile
       "abs(??? : Do[_<: Borrowing[Tape.Aux[Double, Double]]])" should compile
-      "abs(??? : Do.Covariant[Borrowing[Tape.Aux[Double, Double]]])" should compile
+      "abs(??? : Do[Borrowing[Tape.Aux[Double, Double]]])" should compile
 
       "abs(Nd4j.ones(2, 3, 3, 3))" should compile
       "abs(??? : Do[INDArrayTape])" should compile
       "abs(??? : Do[_<: INDArrayTape])" should compile
-      "abs(??? : Do.Covariant[INDArrayTape])" should compile
+      "abs(??? : Do[INDArrayTape])" should compile
       "abs(??? : Do[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
       "abs(??? : Do[_<: Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
-      "abs(??? : Do.Covariant[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
+      "abs(??? : Do[Borrowing[Tape.Aux[INDArray, INDArray]]])" should compile
     }
 
     promise.future

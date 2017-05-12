@@ -13,7 +13,7 @@ import com.thoughtworks.deeplearning.differentiable.Double.DoubleTape
 import com.thoughtworks.deeplearning._
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
-import com.thoughtworks.raii.resourcet.{Releasable, ResourceT}
+import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
 import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
@@ -181,8 +181,8 @@ object INDArray extends INDArrayCompanion {
     override type Data = ND4JArray
     override type Delta = ND4JArray
 
-    override def backward(outputDelta: Do[_ <: Delta]): Future[Unit] = {
-      import com.thoughtworks.raii.resourcet.ResourceT.resourceTMonad
+    override def backward(outputDelta: Do[ Delta]): Future[Unit] = {
+      import com.thoughtworks.raii.covariant.ResourceT.resourceTMonad
       val Do(resourceFactoryTFuture) = outputDelta
       val resourceFactoryT: ResourceT[Future, Try[Delta]] = ResourceT(resourceFactoryTFuture)
 
@@ -264,7 +264,7 @@ object INDArray extends INDArrayCompanion {
     }
 
     implicit object INDArrayTrainable extends Trainable[ND4JArray, ND4JArray] {
-      override def apply(data: ND4JArray): Do[_ <: ND4JArray] = Do.now(Nd4j.ones(data.shape(): _*))
+      override def apply(data: ND4JArray): Do[ ND4JArray] = Do.now(Nd4j.ones(data.shape(): _*))
     }
 
     private def jumpTask()(implicit executionContext: ExecutionContext): Task[Unit] = {
@@ -283,7 +283,7 @@ object INDArray extends INDArrayCompanion {
                                      className: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
-      : polyFunctions.+.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.+.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ND4JArray) =>
           throwableMonadic[Task] {
@@ -315,7 +315,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions.+.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      : polyFunctions.+.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ScalaDouble) =>
           throwableMonadic[Task] {
@@ -341,7 +341,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions.+.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.+.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.+.at { (operand0, operand1) =>
         operand1 + operand0
       }
@@ -353,7 +353,7 @@ object INDArray extends INDArrayCompanion {
                                      className: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
-      : polyFunctions.-.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.-.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ND4JArray) =>
           throwableMonadic[Task] {
@@ -385,7 +385,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions.-.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      : polyFunctions.-.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ScalaDouble) =>
           throwableMonadic[Task] {
@@ -411,7 +411,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions.-.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.-.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.-.at { (operand0, operand1) =>
         -operand1 + operand0
       }
@@ -423,7 +423,7 @@ object INDArray extends INDArrayCompanion {
                                      className: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
-      : polyFunctions.*.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.*.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ND4JArray) =>
           throwableMonadic[Task] {
@@ -455,7 +455,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions.*.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      : polyFunctions.*.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ScalaDouble) =>
           throwableMonadic[Task] {
@@ -483,7 +483,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions.*.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.*.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.*.at { (operand0, operand1) =>
         operand1 * operand0
       }
@@ -495,7 +495,7 @@ object INDArray extends INDArrayCompanion {
                                      className: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
-      : polyFunctions./.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions./.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions./.at { (operand0, operand1) =>
         operand0 * reciprocal(operand1)
       }
@@ -507,7 +507,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions./.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      : polyFunctions./.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions./.at { (operand0, operand1) =>
         operand0 * Double.implicits.reciprocal(operand1)
       }
@@ -519,7 +519,7 @@ object INDArray extends INDArrayCompanion {
                                    className: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
-      : polyFunctions./.Case.Aux[Do.Covariant[DoubleTape], Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions./.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions./.at { (operand0, operand1) =>
         operand0 * reciprocal(operand1)
       }
@@ -531,7 +531,7 @@ object INDArray extends INDArrayCompanion {
                                         className: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext)
-      : polyFunctions.max.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      : polyFunctions.max.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.max.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ScalaDouble) =>
           throwableMonadic[Task] {
@@ -560,7 +560,7 @@ object INDArray extends INDArrayCompanion {
                                         className: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext)
-      : polyFunctions.min.Case.Aux[Do.Covariant[INDArrayTape], Do.Covariant[DoubleTape], Do[INDArrayTape]] = {
+      : polyFunctions.min.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
       polyFunctions.min.at { (operand0, operand1) =>
         tapefactories.Binary.doTape(operand0, operand1) { (data0: ND4JArray, data1: ScalaDouble) =>
           throwableMonadic[Task] {
@@ -589,7 +589,7 @@ object INDArray extends INDArrayCompanion {
                                  className: Caller[_],
                                  methodName: sourcecode.Name,
                                  executionContext: ExecutionContext)
-      : polyFunctions.exp.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.exp.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.exp.at { operand =>
         tapefactories.Unary.doTape(operand) { (data: ND4JArray) =>
           throwableMonadic[Task] {
@@ -613,7 +613,7 @@ object INDArray extends INDArrayCompanion {
                                  className: Caller[_],
                                  methodName: sourcecode.Name,
                                  executionContext: ExecutionContext)
-      : polyFunctions.log.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.log.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.log.at { operand =>
         tapefactories.Unary.doTape(operand) { (data: ND4JArray) =>
           throwableMonadic[Task] {
@@ -637,7 +637,7 @@ object INDArray extends INDArrayCompanion {
                                  className: Caller[_],
                                  methodName: sourcecode.Name,
                                  executionContext: ExecutionContext)
-      : polyFunctions.abs.Case.Aux[Do.Covariant[INDArrayTape], Do[INDArrayTape]] = {
+      : polyFunctions.abs.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.abs.at { operand =>
         tapefactories.Unary.doTape(operand) { (data: ND4JArray) =>
           throwableMonadic[Task] {
@@ -748,9 +748,9 @@ object INDArray extends INDArrayCompanion {
       }
 
       monadicConv2d(
-        liftInput(input): Do[_ <: Borrowing[Tape.Aux[ND4JArray, ND4JArray]]],
-        liftWeight(weight): Do[_ <: Borrowing[Tape.Aux[ND4JArray, ND4JArray]]],
-        liftBias(bias): Do[_ <: Borrowing[Tape.Aux[ND4JArray, ND4JArray]]]
+        liftInput(input): Do[ Borrowing[Tape.Aux[ND4JArray, ND4JArray]]],
+        liftWeight(weight): Do[ Borrowing[Tape.Aux[ND4JArray, ND4JArray]]],
+        liftBias(bias): Do[ Borrowing[Tape.Aux[ND4JArray, ND4JArray]]]
       )
     }
 

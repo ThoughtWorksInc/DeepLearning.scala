@@ -14,7 +14,7 @@ trait Tape {
   type Delta
 
   def data: Data
-  def backward(outputDelta: Do[_ <: Delta]): Future[Unit]
+  def backward(outputDelta: Do[ Delta]): Future[Unit]
 }
 
 object Tape {
@@ -28,7 +28,7 @@ object Tape {
     override type Data = Data0
     override type Delta = Any
 
-    override def backward(outputDelta: Do[_ <: Delta]): Future[Unit] = Future.now(())
+    override def backward(outputDelta: Do[ Delta]): Future[Unit] = Future.now(())
   }
 
 }
