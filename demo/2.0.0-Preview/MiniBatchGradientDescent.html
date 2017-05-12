@@ -1,0 +1,619 @@
+---
+layout: demo
+title: MiniBatchGradientDescent
+download_path: demo_download/./2.0.0-Preview
+filename: MiniBatchGradientDescent.ipynb
+---
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Background">Background<a class="anchor-link" href="#Background">&#182;</a></h2><p>During large-scale date training, the order of magnitude of data can reach millions. If a parameter is acquired via the computation of the whole training set, the update speed will be too slow. To solve this problem, a common used method is <a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent">Mini-Batch Gradient Descent</a> which computes mini-batche data in the training set, resulting faster training of parameters in a neural network.</p>
+<p>In this article, we will first define a softmax classifier, then use the training set of <a href="https://www.cs.toronto.edu/~kriz/cifar.html">CIFAR10</a> to train this neural network, and finally use the test set to verify the accuracy of the neural network. The difference is that we will use Mini-Batch Gradient Descent, thus the accuracy of the neural network can reach 40%.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Import-dependencies-&amp;-build-your-own-neural-network.">Import dependencies &amp; build your own neural network.<a class="anchor-link" href="#Import-dependencies-&amp;-build-your-own-neural-network.">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Like the <a href="http://deeplearning.thoughtworks.school/demo/2.0.0-Preview/SoftmaxLinearClassifier.html">previous course</a>, we need to introduce each class of DeepLearning.scala.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$plugin.$ivy.</span><span class="n">`org.scalamacros:paradise_2.11.11:2.1.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::jupyter-differentiable:2.0.0-M1`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j:nd4j-native-platform:0.7.2`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.rauschig:jarchivelib:0.5.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.plotly-scala::plotly-jupyter-scala:0.3.2`</span>
+<span class="k">import</span> <span class="nn">$url.</span><span class="o">{</span><span class="n">`https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/ReadCIFAR10ToNDArray.sc`</span> <span class="k">=&gt;</span> <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">$url.</span><span class="o">{</span><span class="n">`https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/Utils.sc`</span> <span class="k">=&gt;</span> <span class="nc">Utils</span><span class="o">}</span>
+
+
+<span class="k">import</span> <span class="nn">java.io.</span><span class="o">{</span><span class="nc">FileInputStream</span><span class="o">,</span> <span class="nc">InputStream</span><span class="o">}</span>
+
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.math._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Any._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.</span><span class="o">{</span>
+  <span class="nc">Optimizer</span> <span class="k">=&gt;</span> <span class="nc">INDArrayOptimizer</span>
+<span class="o">}</span>
+<span class="k">import</span> <span class="nn">INDArrayOptimizer.LearningRate</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.each.Monadic._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.raii.asynchronous.Do</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Double._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable.Double.implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.Tape</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.jupyter.differentiable</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.factory.Nd4j</span>
+<span class="k">import</span> <span class="nn">org.nd4s.Implicits._</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+<span class="k">import</span> <span class="nn">scalaz.concurrent.Task</span>
+<span class="k">import</span> <span class="nn">scalaz.</span><span class="o">{-\/,</span> <span class="o">\/,</span> <span class="o">\/-}</span>
+<span class="k">import</span> <span class="nn">scalaz.std.vector._</span>
+<span class="k">import</span> <span class="nn">shapeless._</span>
+<span class="k">import</span> <span class="nn">plotly._</span>
+<span class="k">import</span> <span class="nn">plotly.element._</span>
+<span class="k">import</span> <span class="nn">plotly.layout._</span>
+<span class="k">import</span> <span class="nn">plotly.JupyterScala._</span>
+
+<span class="k">import</span> <span class="nn">scala.collection.immutable.IndexedSeq</span>
+
+<span class="n">pprintConfig</span><span class="o">()</span> <span class="k">=</span> <span class="n">pprintConfig</span><span class="o">().</span><span class="n">copy</span><span class="o">(</span><span class="n">height</span> <span class="k">=</span> <span class="mi">2</span><span class="o">)</span>
+
+<span class="k">implicit</span> <span class="k">def</span> <span class="n">optimizer</span><span class="k">:</span> <span class="kt">INDArrayOptimizer</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LearningRate</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="n">currentLearningRate</span><span class="o">()</span> <span class="k">=</span> <span class="mf">0.00001</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="n">softmax</span><span class="o">(</span><span class="n">scores</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">expScores</span> <span class="k">=</span> <span class="n">exp</span><span class="o">(</span><span class="n">scores</span><span class="o">)</span>
+  <span class="n">expScores</span> <span class="o">/</span> <span class="n">sum</span><span class="o">(</span><span class="n">expScores</span><span class="o">,</span> <span class="mi">1</span><span class="o">)</span>
+<span class="o">}</span>
+
+<span class="c1">//10 label of CIFAR10 images(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)</span>
+<span class="k">val</span> <span class="nc">NumberOfClasses</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="k">val</span> <span class="nc">NumberOfPixels</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">3072</span>
+
+<span class="k">val</span> <span class="n">weight</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span>
+  <span class="o">(</span><span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="nc">NumberOfPixels</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span> <span class="o">*</span> <span class="mf">0.001</span><span class="o">).</span><span class="n">toWeight</span>
+
+<span class="k">def</span> <span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.INDArray</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">softmax</span><span class="o">(</span><span class="n">dot</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">weight</span><span class="o">))</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="n">lossFunction</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">,</span>
+                 <span class="n">expectOutput</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">differentiable.Double</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">probabilities</span> <span class="k">=</span> <span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="o">)</span>
+  <span class="o">-</span><span class="n">mean</span><span class="o">(</span><span class="n">log</span><span class="o">(</span><span class="n">probabilities</span><span class="o">)</span> <span class="o">*</span> <span class="n">expectOutput</span><span class="o">)</span>
+<span class="o">}</span>
+             
+<span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+<span class="k">def</span> <span class="n">polyLoss</span><span class="o">(</span><span class="n">lossSeq</span><span class="k">:</span> <span class="kt">IndexedSeq</span><span class="o">[</span><span class="kt">Double</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">plotly</span><span class="o">.</span><span class="nc">JupyterScala</span><span class="o">.</span><span class="n">init</span><span class="o">()</span>
+
+  <span class="k">val</span> <span class="n">plot</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+    <span class="nc">Scatter</span><span class="o">(</span><span class="n">lossSeq</span><span class="o">.</span><span class="n">indices</span><span class="o">,</span> <span class="n">lossSeq</span><span class="o">)</span>
+  <span class="o">)</span>
+
+  <span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="o">(</span>
+    <span class="n">title</span> <span class="k">=</span> <span class="s">&quot;loss by time&quot;</span>
+  <span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Compiling https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/ReadCIFAR10ToNDArray.sc
+Compiling https://raw.githubusercontent.com/ThoughtWorksInc/DeepLearning.scala-website/master/ipynbs/Utils.sc
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>SLF4J: Failed to load class &#34;org.slf4j.impl.StaticLoggerBinder&#34;.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+
+      <script type="text/javascript">
+        require.config({
+  paths: {
+    d3: 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min',
+    plotly: 'https://cdn.plot.ly/plotly-1.12.0.min'
+  },
+
+  shim: {
+    plotly: {
+      deps: ['d3', 'jquery'],
+      exports: 'plotly'
+    }
+  }
+});
+        
+
+        require(['plotly'], function(Plotly) {
+          window.Plotly = Plotly;
+        });
+      </script>
+    
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[1]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$plugin.$                                            
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                                               
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                    
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                               
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$ivy.$                                             
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$url.$                                                                                                                                             
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">$url.$                                                                                                               
+
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">java.io.{FileInputStream, InputStream}
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.math._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Any._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.{
+  Optimizer =&gt; INDArrayOptimizer
+}
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">INDArrayOptimizer.LearningRate
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.INDArray.implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.each.Monadic._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.raii.asynchronous.Do
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Double._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable.Double.implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.Tape
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">com.thoughtworks.deeplearning.jupyter.differentiable
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4j.linalg.api.ndarray.INDArray
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4j.linalg.factory.Nd4j
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">org.nd4s.Implicits._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scala.concurrent.ExecutionContext.Implicits.global
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.concurrent.Task
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.{-\/, \/, \/-}
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scalaz.std.vector._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">shapeless._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.element._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.layout._
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">plotly.JupyterScala._
+
+</span>
+<span class="ansi-green-fg">import </span><span class="ansi-cyan-fg">scala.collection.immutable.IndexedSeq
+
+</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">optimizer</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">softmax</span>
+<span class="ansi-cyan-fg">NumberOfClasses</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">10</span>
+<span class="ansi-cyan-fg">NumberOfPixels</span>: <span class="ansi-green-fg">Int</span> = <span class="ansi-green-fg">3072</span>
+<span class="ansi-cyan-fg">weight</span>: <span class="ansi-green-fg">com</span>.<span class="ansi-green-fg">thoughtworks</span>.<span class="ansi-green-fg">deeplearning</span>.<span class="ansi-green-fg">jupyter</span>.<span class="ansi-green-fg">differentiable</span>.<span class="ansi-green-fg">package</span>.<span class="ansi-green-fg">INDArray</span> = Suspend(&lt;function0&gt;)
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">myNeuralNetwork</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">lossFunction</span>
+defined <span class="ansi-green-fg">function</span> <span class="ansi-cyan-fg">polyLoss</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Disrupt-the-order-of-a-sequence-once-for-each-epoch,-and-generate-the-random-arrays.">Disrupt the order of a sequence once for each <a href="http://stackoverflow.com/questions/4752626/epoch-vs-iteration-when-training-neural-networks">epoch</a>, and generate the random arrays.<a class="anchor-link" href="#Disrupt-the-order-of-a-sequence-once-for-each-epoch,-and-generate-the-random-arrays.">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="nd">@monadic</span><span class="o">[</span><span class="kt">Task</span><span class="o">]</span>
+<span class="k">val</span> <span class="n">trainTask</span><span class="k">:</span> <span class="kt">Task</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+
+  <span class="k">val</span> <span class="n">random</span> <span class="k">=</span> <span class="k">new</span> <span class="n">scala</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="nc">Random</span>
+
+  <span class="k">val</span> <span class="nc">MiniBatchSize</span> <span class="k">=</span> <span class="mi">256</span>
+
+  <span class="k">val</span> <span class="n">lossSeq</span> <span class="k">=</span>
+    <span class="o">(</span>
+      <span class="k">for</span> <span class="o">(</span><span class="n">iteration</span> <span class="k">&lt;-</span> <span class="o">(</span><span class="mi">0</span> <span class="n">to</span> <span class="mi">50</span><span class="o">).</span><span class="n">toVector</span><span class="o">)</span> <span class="k">yield</span> <span class="o">{</span>
+        <span class="k">val</span> <span class="n">randomIndex</span> <span class="k">=</span> <span class="n">random</span>
+          <span class="o">.</span><span class="n">shuffle</span><span class="o">[</span><span class="kt">Int</span>, <span class="kt">IndexedSeq</span><span class="o">](</span><span class="mi">0</span> <span class="n">until</span> <span class="mi">10000</span><span class="o">)</span> <span class="c1">//https://issues.scala-lang.org/browse/SI-6948</span>
+          <span class="o">.</span><span class="n">toArray</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">times</span> <span class="k">&lt;-</span> <span class="o">(</span><span class="mi">0</span> <span class="n">until</span> <span class="mi">10000</span> <span class="o">/</span> <span class="nc">MiniBatchSize</span><span class="o">).</span><span class="n">toVector</span><span class="o">)</span> <span class="k">yield</span> <span class="o">{</span>
+          <span class="k">val</span> <span class="n">randomIndexArray</span> <span class="k">=</span>
+            <span class="n">randomIndex</span><span class="o">.</span><span class="n">slice</span><span class="o">(</span><span class="n">times</span> <span class="o">*</span> <span class="nc">MiniBatchSize</span><span class="o">,</span>
+                              <span class="o">(</span><span class="n">times</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span> <span class="o">*</span> <span class="nc">MiniBatchSize</span><span class="o">)</span>
+          <span class="k">val</span> <span class="n">trainNDArray</span> <span class="o">::</span> <span class="n">expectLabel</span> <span class="o">::</span> <span class="n">shapeless</span><span class="o">.</span><span class="nc">HNil</span> <span class="k">=</span>
+            <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">getSGDTrainNDArray</span><span class="o">(</span><span class="n">randomIndexArray</span><span class="o">)</span>
+          <span class="k">val</span> <span class="n">input</span> <span class="k">=</span>
+            <span class="n">trainNDArray</span><span class="o">.</span><span class="n">reshape</span><span class="o">(</span><span class="nc">MiniBatchSize</span><span class="o">,</span> <span class="mi">3072</span><span class="o">)</span>
+
+          <span class="k">val</span> <span class="n">expectLabelVectorized</span> <span class="k">=</span>
+            <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">expectLabel</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
+          <span class="k">val</span> <span class="n">loss</span> <span class="k">=</span> <span class="n">train</span><span class="o">(</span><span class="n">lossFunction</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">expectLabelVectorized</span><span class="o">)).</span><span class="n">each</span>
+          <span class="k">if</span><span class="o">(</span><span class="n">times</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">&amp;</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">4</span><span class="o">){</span>
+            <span class="n">println</span><span class="o">(</span><span class="s">&quot;at epoch &quot;</span> <span class="o">+</span> <span class="o">(</span><span class="n">iteration</span> <span class="o">/</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot; loss is :&quot;</span> <span class="o">+</span> <span class="n">loss</span><span class="o">)</span>
+          <span class="o">}</span>
+          <span class="n">loss</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">).</span><span class="n">flatten</span>
+
+  <span class="n">polyLoss</span><span class="o">(</span><span class="n">lossSeq</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[2]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">trainTask</span>: <span class="ansi-green-fg">Task</span>[<span class="ansi-green-fg">Unit</span>] = scalaz.concurrent.Task@303faf80</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Prepare-and-process-the-test-set">Prepare and process the test set<a class="anchor-link" href="#Prepare-and-process-the-test-set">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Like <a href="http://deeplearning.thoughtworks.school/demo/2.0.0-Preview/SoftmaxLinearClassifier.html">the previous article</a>, we read the images and corresponding label information for test data from CIFAR10 database and process them. However, here we only read the test set, and the training set is randomly read during training.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">testNDArray</span> <span class="k">=</span>
+   <span class="nc">ReadCIFAR10ToNDArray</span><span class="o">.</span><span class="n">readFromResource</span><span class="o">(</span><span class="s">&quot;/cifar-10-batches-bin/test_batch.bin&quot;</span><span class="o">,</span> <span class="mi">100</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">testData</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">testExpectResult</span> <span class="k">=</span> <span class="n">testNDArray</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">head</span>
+
+<span class="k">val</span> <span class="n">vectorizedTestExpectResult</span> <span class="k">=</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">makeVectorized</span><span class="o">(</span><span class="n">testExpectResult</span><span class="o">,</span> <span class="nc">NumberOfClasses</span><span class="o">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[3]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">testNDArray</span>: <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">INDArray</span> <span class="ansi-green-fg">::</span> <span class="ansi-green-fg">HNil</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testData</span>: <span class="ansi-green-fg">INDArray</span> = [[0.62, 0.62, 0.64, 0.65, 0.62, 0.61, 0.63, 0.62, 0.62, 0.62, 0.63, 0.62, 0.63, 0.65, 0.66, 0.66, 0.65, 0.63, 0.62, 0.62, 0.61, 0.58, 0.59, 0.58, 0.58, 0.56, 0.<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">testExpectResult</span>: <span class="ansi-green-fg">INDArray</span> = [3.00, 8.00, 8.00, 0.00, 6.00, 6.00, 1.00, 6.00, 3.00, 1.00, 0.00, 9.00, 5.00, 7.00, 9.00, 8.00, 5.00, 7.00, 8.00, 6.00, 7.00, 0.00, 4.00, 9.00, 5.00, 2.00, 4.0<span class="ansi-yellow-fg">...</span>
+<span class="ansi-cyan-fg">vectorizedTestExpectResult</span>: <span class="ansi-green-fg">INDArray</span> = [[0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+ [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
+<span class="ansi-yellow-fg">...</span></pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Train-&amp;-Predict-your-Neural-Network">Train &amp; Predict your Neural Network<a class="anchor-link" href="#Train-&amp;-Predict-your-Neural-Network">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">predictResult</span> <span class="k">=</span> <span class="n">throwableMonadic</span><span class="o">[</span><span class="kt">Task</span><span class="o">]</span> <span class="o">{</span>
+  <span class="n">trainTask</span><span class="o">.</span><span class="n">each</span>
+  <span class="n">predict</span><span class="o">(</span><span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">testData</span><span class="o">)).</span><span class="n">each</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt output_prompt">Out[4]:</div>
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre><span class="ansi-cyan-fg">predictResult</span>: <span class="ansi-green-fg">Task</span>[<span class="ansi-green-fg">Tape</span>.<span class="ansi-green-fg">&lt;refinement&gt;</span>.this.type.<span class="ansi-green-fg">Data</span>] = scalaz.concurrent.Task@82fdecb</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Verify-the-accuracy">Verify the accuracy<a class="anchor-link" href="#Verify-the-accuracy">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Just like the last article, we use the test data to verify the prediction result of the neural network and compute the accuracy. This time, the accuracy may increase to about 41%.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">predictResult</span><span class="o">.</span><span class="n">unsafePerformSyncAttempt</span> <span class="k">match</span> <span class="o">{</span>
+  <span class="k">case</span> <span class="o">-\/(</span><span class="n">e</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="n">e</span>
+  <span class="o">}</span>
+  <span class="k">case</span> <span class="o">\/-(</span><span class="n">result</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="n">println</span><span class="o">(</span><span class="s">&quot;The accuracy is &quot;</span> <span class="o">+</span> <span class="nc">Utils</span><span class="o">.</span><span class="n">getAccuracy</span><span class="o">(</span><span class="n">result</span><span class="o">,</span><span class="n">testExpectResult</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;%&quot;</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>at epoch 1 loss is :0.21018505096435547
+at epoch 2 loss is :0.20378122329711915
+at epoch 3 loss is :0.20167250633239747
+at epoch 4 loss is :0.195149564743042
+at epoch 5 loss is :0.18790899515151976
+at epoch 6 loss is :0.19353251457214354
+at epoch 7 loss is :0.18559244871139527
+at epoch 8 loss is :0.1836882472038269
+at epoch 9 loss is :0.19029120206832886
+at epoch 10 loss is :0.18707239627838135
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+
+      <script type="text/javascript">
+        require.config({
+  paths: {
+    d3: 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min',
+    plotly: 'https://cdn.plot.ly/plotly-1.12.0.min'
+  },
+
+  shim: {
+    plotly: {
+      deps: ['d3', 'jquery'],
+      exports: 'plotly'
+    }
+  }
+});
+        
+
+        require(['plotly'], function(Plotly) {
+          window.Plotly = Plotly;
+        });
+      </script>
+    
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+<div class="output_html rendered_html output_subarea ">
+<div class="chart" id="plot-1598120437"></div>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+
+
+
+<div id="342e3dee-94ea-459f-a93c-1cfe415860ca"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#342e3dee-94ea-459f-a93c-1cfe415860ca');
+requirejs(["plotly"], function(Plotly) {
+  (function () {
+  var data0 = {"type":"scatter","x":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0,96.0,97.0,98.0,99.0,100.0,101.0,102.0,103.0,104.0,105.0,106.0,107.0,108.0,109.0,110.0,111.0,112.0,113.0,114.0,115.0,116.0,117.0,118.0,119.0,120.0,121.0,122.0,123.0,124.0,125.0,126.0,127.0,128.0,129.0,130.0,131.0,132.0,133.0,134.0,135.0,136.0,137.0,138.0,139.0,140.0,141.0,142.0,143.0,144.0,145.0,146.0,147.0,148.0,149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0,203.0,204.0,205.0,206.0,207.0,208.0,209.0,210.0,211.0,212.0,213.0,214.0,215.0,216.0,217.0,218.0,219.0,220.0,221.0,222.0,223.0,224.0,225.0,226.0,227.0,228.0,229.0,230.0,231.0,232.0,233.0,234.0,235.0,236.0,237.0,238.0,239.0,240.0,241.0,242.0,243.0,244.0,245.0,246.0,247.0,248.0,249.0,250.0,251.0,252.0,253.0,254.0,255.0,256.0,257.0,258.0,259.0,260.0,261.0,262.0,263.0,264.0,265.0,266.0,267.0,268.0,269.0,270.0,271.0,272.0,273.0,274.0,275.0,276.0,277.0,278.0,279.0,280.0,281.0,282.0,283.0,284.0,285.0,286.0,287.0,288.0,289.0,290.0,291.0,292.0,293.0,294.0,295.0,296.0,297.0,298.0,299.0,300.0,301.0,302.0,303.0,304.0,305.0,306.0,307.0,308.0,309.0,310.0,311.0,312.0,313.0,314.0,315.0,316.0,317.0,318.0,319.0,320.0,321.0,322.0,323.0,324.0,325.0,326.0,327.0,328.0,329.0,330.0,331.0,332.0,333.0,334.0,335.0,336.0,337.0,338.0,339.0,340.0,341.0,342.0,343.0,344.0,345.0,346.0,347.0,348.0,349.0,350.0,351.0,352.0,353.0,354.0,355.0,356.0,357.0,358.0,359.0,360.0,361.0,362.0,363.0,364.0,365.0,366.0,367.0,368.0,369.0,370.0,371.0,372.0,373.0,374.0,375.0,376.0,377.0,378.0,379.0,380.0,381.0,382.0,383.0,384.0,385.0,386.0,387.0,388.0,389.0,390.0,391.0,392.0,393.0,394.0,395.0,396.0,397.0,398.0,399.0,400.0,401.0,402.0,403.0,404.0,405.0,406.0,407.0,408.0,409.0,410.0,411.0,412.0,413.0,414.0,415.0,416.0,417.0,418.0,419.0,420.0,421.0,422.0,423.0,424.0,425.0,426.0,427.0,428.0,429.0,430.0,431.0,432.0,433.0,434.0,435.0,436.0,437.0,438.0,439.0,440.0,441.0,442.0,443.0,444.0,445.0,446.0,447.0,448.0,449.0,450.0,451.0,452.0,453.0,454.0,455.0,456.0,457.0,458.0,459.0,460.0,461.0,462.0,463.0,464.0,465.0,466.0,467.0,468.0,469.0,470.0,471.0,472.0,473.0,474.0,475.0,476.0,477.0,478.0,479.0,480.0,481.0,482.0,483.0,484.0,485.0,486.0,487.0,488.0,489.0,490.0,491.0,492.0,493.0,494.0,495.0,496.0,497.0,498.0,499.0,500.0,501.0,502.0,503.0,504.0,505.0,506.0,507.0,508.0,509.0,510.0,511.0,512.0,513.0,514.0,515.0,516.0,517.0,518.0,519.0,520.0,521.0,522.0,523.0,524.0,525.0,526.0,527.0,528.0,529.0,530.0,531.0,532.0,533.0,534.0,535.0,536.0,537.0,538.0,539.0,540.0,541.0,542.0,543.0,544.0,545.0,546.0,547.0,548.0,549.0,550.0,551.0,552.0,553.0,554.0,555.0,556.0,557.0,558.0,559.0,560.0,561.0,562.0,563.0,564.0,565.0,566.0,567.0,568.0,569.0,570.0,571.0,572.0,573.0,574.0,575.0,576.0,577.0,578.0,579.0,580.0,581.0,582.0,583.0,584.0,585.0,586.0,587.0,588.0,589.0,590.0,591.0,592.0,593.0,594.0,595.0,596.0,597.0,598.0,599.0,600.0,601.0,602.0,603.0,604.0,605.0,606.0,607.0,608.0,609.0,610.0,611.0,612.0,613.0,614.0,615.0,616.0,617.0,618.0,619.0,620.0,621.0,622.0,623.0,624.0,625.0,626.0,627.0,628.0,629.0,630.0,631.0,632.0,633.0,634.0,635.0,636.0,637.0,638.0,639.0,640.0,641.0,642.0,643.0,644.0,645.0,646.0,647.0,648.0,649.0,650.0,651.0,652.0,653.0,654.0,655.0,656.0,657.0,658.0,659.0,660.0,661.0,662.0,663.0,664.0,665.0,666.0,667.0,668.0,669.0,670.0,671.0,672.0,673.0,674.0,675.0,676.0,677.0,678.0,679.0,680.0,681.0,682.0,683.0,684.0,685.0,686.0,687.0,688.0,689.0,690.0,691.0,692.0,693.0,694.0,695.0,696.0,697.0,698.0,699.0,700.0,701.0,702.0,703.0,704.0,705.0,706.0,707.0,708.0,709.0,710.0,711.0,712.0,713.0,714.0,715.0,716.0,717.0,718.0,719.0,720.0,721.0,722.0,723.0,724.0,725.0,726.0,727.0,728.0,729.0,730.0,731.0,732.0,733.0,734.0,735.0,736.0,737.0,738.0,739.0,740.0,741.0,742.0,743.0,744.0,745.0,746.0,747.0,748.0,749.0,750.0,751.0,752.0,753.0,754.0,755.0,756.0,757.0,758.0,759.0,760.0,761.0,762.0,763.0,764.0,765.0,766.0,767.0,768.0,769.0,770.0,771.0,772.0,773.0,774.0,775.0,776.0,777.0,778.0,779.0,780.0,781.0,782.0,783.0,784.0,785.0,786.0,787.0,788.0,789.0,790.0,791.0,792.0,793.0,794.0,795.0,796.0,797.0,798.0,799.0,800.0,801.0,802.0,803.0,804.0,805.0,806.0,807.0,808.0,809.0,810.0,811.0,812.0,813.0,814.0,815.0,816.0,817.0,818.0,819.0,820.0,821.0,822.0,823.0,824.0,825.0,826.0,827.0,828.0,829.0,830.0,831.0,832.0,833.0,834.0,835.0,836.0,837.0,838.0,839.0,840.0,841.0,842.0,843.0,844.0,845.0,846.0,847.0,848.0,849.0,850.0,851.0,852.0,853.0,854.0,855.0,856.0,857.0,858.0,859.0,860.0,861.0,862.0,863.0,864.0,865.0,866.0,867.0,868.0,869.0,870.0,871.0,872.0,873.0,874.0,875.0,876.0,877.0,878.0,879.0,880.0,881.0,882.0,883.0,884.0,885.0,886.0,887.0,888.0,889.0,890.0,891.0,892.0,893.0,894.0,895.0,896.0,897.0,898.0,899.0,900.0,901.0,902.0,903.0,904.0,905.0,906.0,907.0,908.0,909.0,910.0,911.0,912.0,913.0,914.0,915.0,916.0,917.0,918.0,919.0,920.0,921.0,922.0,923.0,924.0,925.0,926.0,927.0,928.0,929.0,930.0,931.0,932.0,933.0,934.0,935.0,936.0,937.0,938.0,939.0,940.0,941.0,942.0,943.0,944.0,945.0,946.0,947.0,948.0,949.0,950.0,951.0,952.0,953.0,954.0,955.0,956.0,957.0,958.0,959.0,960.0,961.0,962.0,963.0,964.0,965.0,966.0,967.0,968.0,969.0,970.0,971.0,972.0,973.0,974.0,975.0,976.0,977.0,978.0,979.0,980.0,981.0,982.0,983.0,984.0,985.0,986.0,987.0,988.0,989.0,990.0,991.0,992.0,993.0,994.0,995.0,996.0,997.0,998.0,999.0,1000.0,1001.0,1002.0,1003.0,1004.0,1005.0,1006.0,1007.0,1008.0,1009.0,1010.0,1011.0,1012.0,1013.0,1014.0,1015.0,1016.0,1017.0,1018.0,1019.0,1020.0,1021.0,1022.0,1023.0,1024.0,1025.0,1026.0,1027.0,1028.0,1029.0,1030.0,1031.0,1032.0,1033.0,1034.0,1035.0,1036.0,1037.0,1038.0,1039.0,1040.0,1041.0,1042.0,1043.0,1044.0,1045.0,1046.0,1047.0,1048.0,1049.0,1050.0,1051.0,1052.0,1053.0,1054.0,1055.0,1056.0,1057.0,1058.0,1059.0,1060.0,1061.0,1062.0,1063.0,1064.0,1065.0,1066.0,1067.0,1068.0,1069.0,1070.0,1071.0,1072.0,1073.0,1074.0,1075.0,1076.0,1077.0,1078.0,1079.0,1080.0,1081.0,1082.0,1083.0,1084.0,1085.0,1086.0,1087.0,1088.0,1089.0,1090.0,1091.0,1092.0,1093.0,1094.0,1095.0,1096.0,1097.0,1098.0,1099.0,1100.0,1101.0,1102.0,1103.0,1104.0,1105.0,1106.0,1107.0,1108.0,1109.0,1110.0,1111.0,1112.0,1113.0,1114.0,1115.0,1116.0,1117.0,1118.0,1119.0,1120.0,1121.0,1122.0,1123.0,1124.0,1125.0,1126.0,1127.0,1128.0,1129.0,1130.0,1131.0,1132.0,1133.0,1134.0,1135.0,1136.0,1137.0,1138.0,1139.0,1140.0,1141.0,1142.0,1143.0,1144.0,1145.0,1146.0,1147.0,1148.0,1149.0,1150.0,1151.0,1152.0,1153.0,1154.0,1155.0,1156.0,1157.0,1158.0,1159.0,1160.0,1161.0,1162.0,1163.0,1164.0,1165.0,1166.0,1167.0,1168.0,1169.0,1170.0,1171.0,1172.0,1173.0,1174.0,1175.0,1176.0,1177.0,1178.0,1179.0,1180.0,1181.0,1182.0,1183.0,1184.0,1185.0,1186.0,1187.0,1188.0,1189.0,1190.0,1191.0,1192.0,1193.0,1194.0,1195.0,1196.0,1197.0,1198.0,1199.0,1200.0,1201.0,1202.0,1203.0,1204.0,1205.0,1206.0,1207.0,1208.0,1209.0,1210.0,1211.0,1212.0,1213.0,1214.0,1215.0,1216.0,1217.0,1218.0,1219.0,1220.0,1221.0,1222.0,1223.0,1224.0,1225.0,1226.0,1227.0,1228.0,1229.0,1230.0,1231.0,1232.0,1233.0,1234.0,1235.0,1236.0,1237.0,1238.0,1239.0,1240.0,1241.0,1242.0,1243.0,1244.0,1245.0,1246.0,1247.0,1248.0,1249.0,1250.0,1251.0,1252.0,1253.0,1254.0,1255.0,1256.0,1257.0,1258.0,1259.0,1260.0,1261.0,1262.0,1263.0,1264.0,1265.0,1266.0,1267.0,1268.0,1269.0,1270.0,1271.0,1272.0,1273.0,1274.0,1275.0,1276.0,1277.0,1278.0,1279.0,1280.0,1281.0,1282.0,1283.0,1284.0,1285.0,1286.0,1287.0,1288.0,1289.0,1290.0,1291.0,1292.0,1293.0,1294.0,1295.0,1296.0,1297.0,1298.0,1299.0,1300.0,1301.0,1302.0,1303.0,1304.0,1305.0,1306.0,1307.0,1308.0,1309.0,1310.0,1311.0,1312.0,1313.0,1314.0,1315.0,1316.0,1317.0,1318.0,1319.0,1320.0,1321.0,1322.0,1323.0,1324.0,1325.0,1326.0,1327.0,1328.0,1329.0,1330.0,1331.0,1332.0,1333.0,1334.0,1335.0,1336.0,1337.0,1338.0,1339.0,1340.0,1341.0,1342.0,1343.0,1344.0,1345.0,1346.0,1347.0,1348.0,1349.0,1350.0,1351.0,1352.0,1353.0,1354.0,1355.0,1356.0,1357.0,1358.0,1359.0,1360.0,1361.0,1362.0,1363.0,1364.0,1365.0,1366.0,1367.0,1368.0,1369.0,1370.0,1371.0,1372.0,1373.0,1374.0,1375.0,1376.0,1377.0,1378.0,1379.0,1380.0,1381.0,1382.0,1383.0,1384.0,1385.0,1386.0,1387.0,1388.0,1389.0,1390.0,1391.0,1392.0,1393.0,1394.0,1395.0,1396.0,1397.0,1398.0,1399.0,1400.0,1401.0,1402.0,1403.0,1404.0,1405.0,1406.0,1407.0,1408.0,1409.0,1410.0,1411.0,1412.0,1413.0,1414.0,1415.0,1416.0,1417.0,1418.0,1419.0,1420.0,1421.0,1422.0,1423.0,1424.0,1425.0,1426.0,1427.0,1428.0,1429.0,1430.0,1431.0,1432.0,1433.0,1434.0,1435.0,1436.0,1437.0,1438.0,1439.0,1440.0,1441.0,1442.0,1443.0,1444.0,1445.0,1446.0,1447.0,1448.0,1449.0,1450.0,1451.0,1452.0,1453.0,1454.0,1455.0,1456.0,1457.0,1458.0,1459.0,1460.0,1461.0,1462.0,1463.0,1464.0,1465.0,1466.0,1467.0,1468.0,1469.0,1470.0,1471.0,1472.0,1473.0,1474.0,1475.0,1476.0,1477.0,1478.0,1479.0,1480.0,1481.0,1482.0,1483.0,1484.0,1485.0,1486.0,1487.0,1488.0,1489.0,1490.0,1491.0,1492.0,1493.0,1494.0,1495.0,1496.0,1497.0,1498.0,1499.0,1500.0,1501.0,1502.0,1503.0,1504.0,1505.0,1506.0,1507.0,1508.0,1509.0,1510.0,1511.0,1512.0,1513.0,1514.0,1515.0,1516.0,1517.0,1518.0,1519.0,1520.0,1521.0,1522.0,1523.0,1524.0,1525.0,1526.0,1527.0,1528.0,1529.0,1530.0,1531.0,1532.0,1533.0,1534.0,1535.0,1536.0,1537.0,1538.0,1539.0,1540.0,1541.0,1542.0,1543.0,1544.0,1545.0,1546.0,1547.0,1548.0,1549.0,1550.0,1551.0,1552.0,1553.0,1554.0,1555.0,1556.0,1557.0,1558.0,1559.0,1560.0,1561.0,1562.0,1563.0,1564.0,1565.0,1566.0,1567.0,1568.0,1569.0,1570.0,1571.0,1572.0,1573.0,1574.0,1575.0,1576.0,1577.0,1578.0,1579.0,1580.0,1581.0,1582.0,1583.0,1584.0,1585.0,1586.0,1587.0,1588.0,1589.0,1590.0,1591.0,1592.0,1593.0,1594.0,1595.0,1596.0,1597.0,1598.0,1599.0,1600.0,1601.0,1602.0,1603.0,1604.0,1605.0,1606.0,1607.0,1608.0,1609.0,1610.0,1611.0,1612.0,1613.0,1614.0,1615.0,1616.0,1617.0,1618.0,1619.0,1620.0,1621.0,1622.0,1623.0,1624.0,1625.0,1626.0,1627.0,1628.0,1629.0,1630.0,1631.0,1632.0,1633.0,1634.0,1635.0,1636.0,1637.0,1638.0,1639.0,1640.0,1641.0,1642.0,1643.0,1644.0,1645.0,1646.0,1647.0,1648.0,1649.0,1650.0,1651.0,1652.0,1653.0,1654.0,1655.0,1656.0,1657.0,1658.0,1659.0,1660.0,1661.0,1662.0,1663.0,1664.0,1665.0,1666.0,1667.0,1668.0,1669.0,1670.0,1671.0,1672.0,1673.0,1674.0,1675.0,1676.0,1677.0,1678.0,1679.0,1680.0,1681.0,1682.0,1683.0,1684.0,1685.0,1686.0,1687.0,1688.0,1689.0,1690.0,1691.0,1692.0,1693.0,1694.0,1695.0,1696.0,1697.0,1698.0,1699.0,1700.0,1701.0,1702.0,1703.0,1704.0,1705.0,1706.0,1707.0,1708.0,1709.0,1710.0,1711.0,1712.0,1713.0,1714.0,1715.0,1716.0,1717.0,1718.0,1719.0,1720.0,1721.0,1722.0,1723.0,1724.0,1725.0,1726.0,1727.0,1728.0,1729.0,1730.0,1731.0,1732.0,1733.0,1734.0,1735.0,1736.0,1737.0,1738.0,1739.0,1740.0,1741.0,1742.0,1743.0,1744.0,1745.0,1746.0,1747.0,1748.0,1749.0,1750.0,1751.0,1752.0,1753.0,1754.0,1755.0,1756.0,1757.0,1758.0,1759.0,1760.0,1761.0,1762.0,1763.0,1764.0,1765.0,1766.0,1767.0,1768.0,1769.0,1770.0,1771.0,1772.0,1773.0,1774.0,1775.0,1776.0,1777.0,1778.0,1779.0,1780.0,1781.0,1782.0,1783.0,1784.0,1785.0,1786.0,1787.0,1788.0,1789.0,1790.0,1791.0,1792.0,1793.0,1794.0,1795.0,1796.0,1797.0,1798.0,1799.0,1800.0,1801.0,1802.0,1803.0,1804.0,1805.0,1806.0,1807.0,1808.0,1809.0,1810.0,1811.0,1812.0,1813.0,1814.0,1815.0,1816.0,1817.0,1818.0,1819.0,1820.0,1821.0,1822.0,1823.0,1824.0,1825.0,1826.0,1827.0,1828.0,1829.0,1830.0,1831.0,1832.0,1833.0,1834.0,1835.0,1836.0,1837.0,1838.0,1839.0,1840.0,1841.0,1842.0,1843.0,1844.0,1845.0,1846.0,1847.0,1848.0,1849.0,1850.0,1851.0,1852.0,1853.0,1854.0,1855.0,1856.0,1857.0,1858.0,1859.0,1860.0,1861.0,1862.0,1863.0,1864.0,1865.0,1866.0,1867.0,1868.0,1869.0,1870.0,1871.0,1872.0,1873.0,1874.0,1875.0,1876.0,1877.0,1878.0,1879.0,1880.0,1881.0,1882.0,1883.0,1884.0,1885.0,1886.0,1887.0,1888.0,1889.0,1890.0,1891.0,1892.0,1893.0,1894.0,1895.0,1896.0,1897.0,1898.0,1899.0,1900.0,1901.0,1902.0,1903.0,1904.0,1905.0,1906.0,1907.0,1908.0,1909.0,1910.0,1911.0,1912.0,1913.0,1914.0,1915.0,1916.0,1917.0,1918.0,1919.0,1920.0,1921.0,1922.0,1923.0,1924.0,1925.0,1926.0,1927.0,1928.0,1929.0,1930.0,1931.0,1932.0,1933.0,1934.0,1935.0,1936.0,1937.0,1938.0,1939.0,1940.0,1941.0,1942.0,1943.0,1944.0,1945.0,1946.0,1947.0,1948.0,1949.0,1950.0,1951.0,1952.0,1953.0,1954.0,1955.0,1956.0,1957.0,1958.0,1959.0,1960.0,1961.0,1962.0,1963.0,1964.0,1965.0,1966.0,1967.0,1968.0,1969.0,1970.0,1971.0,1972.0,1973.0,1974.0,1975.0,1976.0,1977.0,1978.0,1979.0,1980.0,1981.0,1982.0,1983.0,1984.0,1985.0,1986.0,1987.0,1988.0],"y":[0.2301145076751709,0.22978506088256836,0.22986421585083008,0.22973933219909667,0.22905213832855226,0.22933154106140136,0.2295841693878174,0.22821145057678222,0.22732210159301758,0.2287534713745117,0.22674875259399413,0.2265011787414551,0.22851295471191407,0.22808046340942384,0.22540531158447266,0.22716717720031737,0.22793173789978027,0.22670135498046876,0.22696568965911865,0.2265528678894043,0.2263730525970459,0.2275087833404541,0.2244659423828125,0.22478189468383789,0.22392644882202148,0.2250887632369995,0.225885272026062,0.22494304180145264,0.2239861011505127,0.22510316371917724,0.2272646427154541,0.2227604866027832,0.22375082969665527,0.22537522315979003,0.22401211261749268,0.22504358291625975,0.22432396411895753,0.2220597267150879,0.2230813980102539,0.22354416847229003,0.22335238456726075,0.22227029800415038,0.22192606925964356,0.2219381093978882,0.22276067733764648,0.22160131931304933,0.22149395942687988,0.2221980571746826,0.22052280902862548,0.22206501960754393,0.22246105670928956,0.22268519401550294,0.2216276168823242,0.22222623825073243,0.21948208808898925,0.22091131210327147,0.22078375816345214,0.21959452629089354,0.219321870803833,0.22032928466796875,0.2190253257751465,0.21931471824645996,0.22158498764038087,0.2197345018386841,0.21966047286987306,0.2194437026977539,0.219452428817749,0.21869235038757323,0.21854748725891113,0.219834041595459,0.2170358657836914,0.21875805854797364,0.2182551622390747,0.21694254875183105,0.2175727367401123,0.21836042404174805,0.22075152397155762,0.21897034645080565,0.21665291786193847,0.21709494590759276,0.21998987197875977,0.21906259059906005,0.2178635835647583,0.21680595874786376,0.21911952495574952,0.21522078514099122,0.21640279293060302,0.21910605430603028,0.21634860038757325,0.2178426742553711,0.2170050859451294,0.21675729751586914,0.21574771404266357,0.21492223739624022,0.21844258308410644,0.21606316566467285,0.21552228927612305,0.2149080753326416,0.21695950031280517,0.21672358512878417,0.21239962577819824,0.21694579124450683,0.21535396575927734,0.21766748428344726,0.2148231029510498,0.21516096591949463,0.21361024379730226,0.21464734077453612,0.21413445472717285,0.2141200065612793,0.21535677909851075,0.2136538028717041,0.21646292209625245,0.21556036472320556,0.21637377738952637,0.21381025314331054,0.21243367195129395,0.21126837730407716,0.21589207649230957,0.21575574874877929,0.21370129585266112,0.21433517932891846,0.21428840160369872,0.2133455753326416,0.2120189905166626,0.21146073341369628,0.21223978996276854,0.2105623960494995,0.21530656814575194,0.21018753051757813,0.21156692504882812,0.21258678436279296,0.21285979747772216,0.21228649616241455,0.21440861225128174,0.21348273754119873,0.212945294380188,0.2106379508972168,0.21436030864715577,0.21031064987182618,0.2118558406829834,0.21385254859924316,0.21419918537139893,0.21370432376861573,0.21286752223968505,0.2110790491104126,0.20991241931915283,0.2117934226989746,0.21178388595581055,0.21136348247528075,0.215339994430542,0.20964350700378417,0.2090019702911377,0.21014766693115233,0.21194334030151368,0.21011462211608886,0.2114657163619995,0.2096904993057251,0.21424512863159179,0.21018505096435547,0.21378979682922364,0.2109436273574829,0.20970597267150878,0.21049978733062744,0.20781397819519043,0.20794618129730225,0.2113570213317871,0.20653898715972902,0.2142850160598755,0.21044654846191407,0.20780110359191895,0.21161484718322754,0.2083209991455078,0.21169958114624024,0.2093909740447998,0.21084170341491698,0.2112186908721924,0.20631084442138672,0.210430908203125,0.20815916061401368,0.20801708698272706,0.21036291122436523,0.2125535488128662,0.2128981351852417,0.21249184608459473,0.21158149242401122,0.20679771900177002,0.20999345779418946,0.20640835762023926,0.2112740993499756,0.20815749168395997,0.20931830406188964,0.20877642631530763,0.20978219509124757,0.2101952314376831,0.20898842811584473,0.2067164421081543,0.21038298606872557,0.20886702537536622,0.2089700698852539,0.2096412181854248,0.20911288261413574,0.2098008632659912,0.20468552112579347,0.20935537815093994,0.2075117826461792,0.20523297786712646,0.210711669921875,0.20755929946899415,0.20841374397277831,0.20569286346435547,0.21061267852783203,0.2071920394897461,0.207747220993042,0.20741095542907714,0.20711312294006348,0.20627982616424562,0.20680780410766603,0.20674800872802734,0.20443189144134521,0.20762934684753417,0.2088850975036621,0.20703139305114746,0.2084958076477051,0.2020425796508789,0.2052168369293213,0.20804910659790038,0.2022094249725342,0.20651159286499024,0.20700454711914062,0.20529818534851074,0.20733482837677003,0.20419034957885743,0.20390925407409669,0.20277364253997804,0.20178666114807128,0.20546555519104004,0.20768117904663086,0.2042069911956787,0.20758342742919922,0.20711731910705566,0.21085262298583984,0.20511534214019775,0.20282039642333985,0.20730376243591309,0.2026975393295288,0.20543270111083983,0.20586075782775878,0.20695290565490723,0.2035452604293823,0.19884109497070312,0.20742311477661132,0.2027554988861084,0.20725646018981933,0.20773539543151856,0.20307569503784179,0.20818543434143066,0.20896778106689454,0.20375380516052247,0.20344009399414062,0.210212779045105,0.20807232856750488,0.20847806930541993,0.20684995651245117,0.20377130508422853,0.20081300735473634,0.20853772163391113,0.2050661563873291,0.2075120449066162,0.20746665000915526,0.20790977478027345,0.21039969921112062,0.20219507217407226,0.20458903312683105,0.20608944892883302,0.20591480731964112,0.20010931491851808,0.20950775146484374,0.20220518112182617,0.20536904335021972,0.20303864479064943,0.207171630859375,0.20123982429504395,0.20213561058044432,0.20575430393218994,0.20962507724761964,0.19953360557556152,0.2031315326690674,0.20317525863647462,0.20550839900970458,0.209694242477417,0.2067337989807129,0.1983039379119873,0.2031235694885254,0.2054046869277954,0.20512328147888184,0.20309014320373536,0.20042567253112792,0.20164082050323487,0.20798039436340332,0.1988997459411621,0.20562009811401366,0.20261237621307374,0.1993403196334839,0.20325586795806885,0.20876681804656982,0.20703399181365967,0.20383055210113527,0.20519618988037108,0.20127363204956056,0.20281476974487306,0.20523395538330078,0.20171992778778075,0.20167179107666017,0.2050163745880127,0.20589675903320312,0.20857758522033693,0.20199828147888182,0.20798027515411377,0.2039275884628296,0.20811562538146972,0.20010018348693848,0.20200467109680176,0.2012641429901123,0.20319876670837403,0.20215940475463867,0.20511927604675292,0.20518088340759277,0.20486865043640137,0.2073110580444336,0.205907940864563,0.20307459831237792,0.20388374328613282,0.2062535285949707,0.20072658061981202,0.19735898971557617,0.20467524528503417,0.1981604814529419,0.19929178953170776,0.20817909240722657,0.2045146942138672,0.20179219245910646,0.19933679103851318,0.20740394592285155,0.20109844207763672,0.2043609142303467,0.20258698463439942,0.2046421527862549,0.19967155456542968,0.20397675037384033,0.20277757644653321,0.20343434810638428,0.20226011276245118,0.20348801612854003,0.20378122329711915,0.2033179759979248,0.19939297437667847,0.20076065063476561,0.20520734786987305,0.2039487838745117,0.20478954315185546,0.19217785596847534,0.19865283966064454,0.20029158592224122,0.20326356887817382,0.20112135410308837,0.20291414260864257,0.20167112350463867,0.20295934677124022,0.2017429828643799,0.20212013721466066,0.2042710304260254,0.19995384216308593,0.1984584927558899,0.19947733879089355,0.20266847610473632,0.20640163421630858,0.1942054271697998,0.19865758419036866,0.20391368865966797,0.19900341033935548,0.20038037300109862,0.20095620155334473,0.20539655685424804,0.20279250144958497,0.2040635824203491,0.19934709072113038,0.20017600059509277,0.20629549026489258,0.20378642082214354,0.20539004802703859,0.1965810775756836,0.2027433395385742,0.2009526252746582,0.20147526264190674,0.19887276887893676,0.2065889835357666,0.20418360233306884,0.20450830459594727,0.20045843124389648,0.20497500896453857,0.20196547508239746,0.2094747543334961,0.1967848300933838,0.195700740814209,0.1990506887435913,0.2042412281036377,0.19498668909072875,0.20295658111572265,0.19710102081298828,0.20166435241699218,0.20160365104675293,0.19959146976470948,0.19994668960571288,0.2015289545059204,0.20126662254333497,0.20189034938812256,0.20283870697021483,0.20037055015563965,0.20032832622528077,0.20157251358032227,0.20467565059661866,0.20103802680969238,0.20021500587463378,0.20186049938201905,0.19636170864105223,0.2023383617401123,0.19621700048446655,0.20072596073150634,0.2019341468811035,0.20160021781921386,0.19690030813217163,0.19714735746383666,0.1984694004058838,0.19682344198226928,0.19990530014038085,0.19990524053573608,0.20051016807556152,0.19730836153030396,0.20232462882995605,0.19836210012435912,0.20358023643493653,0.20030558109283447,0.19734537601470947,0.19833366870880126,0.19762654304504396,0.19570403099060057,0.1992795467376709,0.2012880802154541,0.20131864547729492,0.19667961597442626,0.1991395354270935,0.1991575241088867,0.19806294441223143,0.1976354241371155,0.19466137886047363,0.1993914246559143,0.19766066074371338,0.19531854391098022,0.20036134719848633,0.1955491781234741,0.2011399745941162,0.19988194704055787,0.19900739192962646,0.20131957530975342,0.19622600078582764,0.20274176597595214,0.1963353395462036,0.1984571933746338,0.19735584259033204,0.20022211074829102,0.19482204914093018,0.1975682258605957,0.2039820671081543,0.20253303050994872,0.19853384494781495,0.1990879774093628,0.19839718341827392,0.19477083683013915,0.19957194328308106,0.20039739608764648,0.19410932064056396,0.20184874534606934,0.20046334266662597,0.20228118896484376,0.19885430335998536,0.19930529594421387,0.19431262016296386,0.20166015625,0.20018539428710938,0.197577965259552,0.2041600227355957,0.19860063791275023,0.20056328773498536,0.19692864418029785,0.20040035247802734,0.20275514125823973,0.198077929019928,0.20124101638793945,0.1970820188522339,0.201269268989563,0.19977078437805176,0.19708647727966308,0.19892011880874633,0.20333781242370605,0.1968019962310791,0.19773129224777222,0.1992269992828369,0.19296157360076904,0.19767853021621704,0.19506994485855103,0.19485235214233398,0.1962689757347107,0.19511964321136474,0.20120997428894044,0.2055424213409424,0.1992029905319214,0.19777317047119142,0.1966153383255005,0.19826979637145997,0.1958207368850708,0.20032179355621338,0.20179147720336915,0.19791531562805176,0.2035762071609497,0.20291388034820557,0.19732693433761597,0.20039329528808594,0.20105273723602296,0.20402960777282714,0.19721384048461915,0.20003824234008788,0.19489660263061523,0.19542163610458374,0.19899070262908936,0.19734045267105102,0.19943811893463134,0.20469813346862792,0.19932018518447875,0.19760531187057495,0.1997166872024536,0.19578092098236083,0.19215129613876342,0.19446767568588258,0.19615476131439208,0.198455810546875,0.19336165189743043,0.19875198602676392,0.1929948925971985,0.20167250633239747,0.19910458326339722,0.198586106300354,0.20553669929504395,0.1928419589996338,0.19381279945373536,0.19927583932876586,0.19466627836227418,0.19464385509490967,0.19433664083480834,0.1993875741958618,0.19460479021072388,0.19920527935028076,0.19369300603866577,0.1912841796875,0.20295381546020508,0.19563446044921876,0.19584823846817018,0.19055293798446654,0.20224609375,0.18902602195739746,0.19611878395080568,0.19628194570541382,0.19572672843933106,0.19470658302307128,0.19203388690948486,0.20259289741516112,0.19423439502716064,0.19442808628082275,0.1988072872161865,0.19327981472015382,0.1897582769393921,0.20105905532836915,0.19527842998504638,0.19510700702667236,0.2004544258117676,0.19559603929519653,0.20003752708435057,0.1940122961997986,0.1929705858230591,0.19689615964889526,0.20192842483520507,0.19706287384033203,0.19658411741256715,0.19833810329437257,0.19708805084228515,0.2035764217376709,0.19131630659103394,0.19963412284851073,0.19645335674285888,0.20102214813232422,0.2001673936843872,0.20111985206604005,0.19105244874954225,0.19368243217468262,0.19568585157394408,0.20026788711547852,0.19529178142547607,0.19322561025619506,0.19554296731948853,0.1949760913848877,0.19512842893600463,0.1950334429740906,0.18971426486968995,0.1945589303970337,0.19968289136886597,0.1943796157836914,0.1975218176841736,0.19682066440582274,0.20232706069946288,0.19676055908203124,0.1957971692085266,0.19528093338012695,0.19603785276412963,0.20199484825134278,0.19637925624847413,0.19894269704818726,0.19366106986999512,0.1949596643447876,0.19628549814224244,0.1969602584838867,0.197586989402771,0.19720226526260376,0.19294644594192506,0.19485102891921996,0.1921655058860779,0.2019653797149658,0.1971865177154541,0.19816207885742188,0.198458468914032,0.20000858306884767,0.1932742714881897,0.19540932178497314,0.19742090702056886,0.1943263292312622,0.19868000745773315,0.19452524185180664,0.18937621116638184,0.19755661487579346,0.19489517211914062,0.19934327602386476,0.19803770780563354,0.19450709819793702,0.19277584552764893,0.19389499425888063,0.1935293197631836,0.19949145317077638,0.1961425542831421,0.1968684196472168,0.19296163320541382,0.1963658094406128,0.18889927864074707,0.1906810760498047,0.196503746509552,0.19520895481109618,0.19863139390945433,0.19345632791519166,0.19203786849975585,0.19666649103164674,0.1953882932662964,0.19906355142593385,0.19722267389297485,0.19790759086608886,0.19502584934234618,0.19115092754364013,0.2011103391647339,0.18937069177627563,0.18890185356140138,0.19183726310729982,0.196024489402771,0.19168579578399658,0.1931484818458557,0.19478111267089843,0.1887273907661438,0.20198311805725097,0.1937164306640625,0.18974192142486573,0.19671342372894288,0.1958196997642517,0.1965640664100647,0.19610676765441895,0.19706788063049316,0.18957425355911256,0.1943000316619873,0.1944420337677002,0.1975105047225952,0.19677890539169313,0.19459781646728516,0.18316347599029542,0.1893051028251648,0.19743285179138184,0.19314366579055786,0.19254908561706544,0.19029239416122437,0.1943461537361145,0.19685131311416626,0.199171245098114,0.19473639726638795,0.19421504735946654,0.19907571077346803,0.2036421775817871,0.18823492527008057,0.20009658336639405,0.191215181350708,0.19156533479690552,0.1926145076751709,0.19473581314086913,0.1943816661834717,0.19281885623931885,0.19008808135986327,0.20009710788726806,0.19384003877639772,0.20056819915771484,0.19316906929016114,0.1915581703186035,0.19604313373565674,0.19841313362121582,0.19279305934906005,0.19518022537231444,0.19685059785842896,0.19487770795822143,0.19604263305664063,0.1968280553817749,0.18982341289520263,0.19242782592773439,0.20111072063446045,0.19245223999023436,0.19102286100387572,0.1949734568595886,0.19338510036468506,0.19612590074539185,0.19487055540084838,0.1964734435081482,0.1926449179649353,0.19631361961364746,0.195149564743042,0.19124174118041992,0.19295530319213866,0.1963220477104187,0.19432415962219238,0.19067230224609374,0.1928752541542053,0.18890845775604248,0.19591050148010253,0.1871543049812317,0.19985804557800294,0.20156371593475342,0.19440507888793945,0.19966368675231932,0.19203028678894044,0.1889486312866211,0.19056566953659057,0.19154313802719117,0.1890394687652588,0.19059305191040038,0.1989307165145874,0.19520785808563232,0.1943758249282837,0.1949475049972534,0.1971943736076355,0.1950232982635498,0.19460010528564453,0.19769649505615233,0.189589786529541,0.19356100559234618,0.19462684392929078,0.19606623649597169,0.1977698802947998,0.194472074508667,0.1940253496170044,0.19862675666809082,0.1912759304046631,0.19529755115509034,0.19030485153198243,0.1981715440750122,0.19840283393859864,0.19258332252502441,0.19273722171783447,0.18825796842575074,0.1990302562713623,0.18649324178695678,0.19453761577606202,0.19342968463897706,0.19163758754730226,0.18840583562850952,0.1857153058052063,0.19917519092559816,0.2012784957885742,0.19671558141708373,0.1850324511528015,0.19033470153808593,0.20125668048858641,0.19180353879928588,0.1916675329208374,0.19489099979400634,0.19542760848999025,0.1890113353729248,0.18590083122253417,0.18863089084625245,0.19005963802337647,0.18916711807250977,0.19194471836090088,0.19516236782073976,0.19110809564590453,0.192568576335907,0.18635501861572265,0.19169044494628906,0.19038898944854737,0.1934130907058716,0.19315284490585327,0.19572687149047852,0.20173637866973876,0.1962516188621521,0.19209219217300416,0.1870874881744385,0.19274944067001343,0.19297028779983522,0.19420852661132812,0.19074686765670776,0.18630841970443726,0.19780553579330445,0.19293423891067504,0.204583740234375,0.19416896104812623,0.1943003296852112,0.1903287172317505,0.193423855304718,0.19321528673171998,0.1900823712348938,0.18527574539184571,0.20258042812347413,0.19947512149810792,0.19026448726654052,0.195920991897583,0.1862879991531372,0.20032310485839844,0.1883833885192871,0.19212658405303956,0.19303568601608276,0.1936418294906616,0.1920462131500244,0.18859641551971434,0.1916529655456543,0.18781507015228271,0.2016613245010376,0.1906930088996887,0.1924566864967346,0.195026433467865,0.18886857032775878,0.19098278284072875,0.18812159299850464,0.19925870895385742,0.19149037599563598,0.18998481035232545,0.19464523792266847,0.19533567428588866,0.20011503696441652,0.18920098543167113,0.1932568907737732,0.20060882568359376,0.19663219451904296,0.19672306776046752,0.1911681890487671,0.19441113471984864,0.18916621208190917,0.18841919898986817,0.18523919582366943,0.19535672664642334,0.19566948413848878,0.1986548662185669,0.19232525825500488,0.1900930166244507,0.19496548175811768,0.1892829418182373,0.19548684358596802,0.19213701486587526,0.19262431859970092,0.18611328601837157,0.19015090465545653,0.20012104511260986,0.1921831488609314,0.18842747211456298,0.1918851613998413,0.195200514793396,0.18709299564361573,0.19078726768493653,0.19524365663528442,0.19413695335388184,0.19422249794006347,0.19317110776901245,0.18709733486175537,0.1945614218711853,0.18915348052978515,0.19663732051849364,0.19667757749557496,0.19231886863708497,0.1953532576560974,0.18722474575042725,0.1985095739364624,0.19401150941848755,0.19292852878570557,0.18821918964385986,0.19399207830429077,0.1871154189109802,0.18930456638336182,0.19123082160949706,0.20217108726501465,0.19241690635681152,0.19757165908813476,0.19878771305084228,0.19323654174804689,0.18490450382232665,0.1915437698364258,0.1926140308380127,0.1919499635696411,0.19130163192749022,0.19081583023071289,0.1838472604751587,0.19003444910049438,0.1957254409790039,0.19785544872283936,0.19578298330307006,0.19178342819213867,0.19122225046157837,0.18927936553955077,0.19116315841674805,0.19138829708099364,0.1913115859031677,0.18572092056274414,0.1885441780090332,0.18790899515151976,0.19452646970748902,0.1877557158470154,0.19046080112457275,0.19438579082489013,0.19081385135650636,0.1907355546951294,0.1928211569786072,0.19041522741317748,0.19605064392089844,0.19439128637313843,0.19248061180114745,0.1982308506965637,0.1905180811882019,0.19238172769546508,0.18793971538543702,0.19243595600128174,0.19218553304672242,0.18891798257827758,0.19000651836395263,0.19052371978759766,0.1935980200767517,0.19835245609283447,0.19187709093093872,0.18958076238632202,0.1908968687057495,0.18756320476531982,0.18529233932495118,0.18824658393859864,0.18838499784469603,0.19499855041503905,0.18949652910232545,0.1927788496017456,0.2012333869934082,0.1875370502471924,0.19887869358062743,0.19233393669128418,0.1889965772628784,0.19624409675598145,0.18782150745391846,0.18707603216171265,0.18510736227035524,0.19190306663513185,0.19122776985168458,0.18633159399032592,0.19266444444656372,0.19898674488067628,0.19457358121871948,0.18794625997543335,0.2022625207901001,0.1917481780052185,0.18803874254226685,0.19223955869674683,0.18953051567077636,0.19266700744628906,0.1919378876686096,0.19889482259750366,0.1941400170326233,0.18773688077926637,0.18722426891326904,0.18906348943710327,0.19242758750915528,0.19041310548782348,0.1848517417907715,0.18402754068374633,0.19603490829467773,0.1896478533744812,0.18949408531188966,0.1918877124786377,0.18832507133483886,0.19221911430358887,0.18818538188934325,0.1945422887802124,0.18851479291915893,0.1898430824279785,0.19397499561309814,0.18817567825317383,0.1861945867538452,0.19471683502197265,0.19215282201766967,0.19278420209884645,0.18987185955047609,0.19393491744995117,0.19288434982299804,0.19676238298416138,0.178908109664917,0.18968794345855713,0.19201676845550536,0.18939801454544067,0.18557629585266114,0.19137272834777833,0.20017218589782715,0.19602147340774537,0.1896368980407715,0.19639625549316406,0.1924201250076294,0.191603684425354,0.19103143215179444,0.20479292869567872,0.18924860954284667,0.18502181768417358,0.19128613471984862,0.1955411434173584,0.18616589307785034,0.19672942161560059,0.18600586652755738,0.19677183628082276,0.1901602864265442,0.189026403427124,0.180647075176239,0.19280954599380493,0.1887853980064392,0.1952943205833435,0.19429641962051392,0.18802814483642577,0.19321500062942504,0.1838536024093628,0.1857659101486206,0.18980458974838257,0.1917314648628235,0.1826238751411438,0.19040999412536622,0.19199323654174805,0.1855013370513916,0.18997790813446044,0.18847695589065552,0.1887794852256775,0.1931062698364258,0.18188118934631348,0.19288628101348876,0.18775123357772827,0.18806297779083253,0.19083807468414307,0.19324244260787965,0.19614224433898925,0.19489338397979736,0.1847344756126404,0.18739013671875,0.18750816583633423,0.1879945993423462,0.18902100324630738,0.19840131998062133,0.1960318922996521,0.1972353458404541,0.18878042697906494,0.19889533519744873,0.19353110790252687,0.19056605100631713,0.18604016304016113,0.19184914827346802,0.1895807981491089,0.19092881679534912,0.1883751392364502,0.1881115436553955,0.19131696224212646,0.1901021957397461,0.201824951171875,0.18824303150177002,0.19165245294570923,0.18936803340911865,0.19019696712493897,0.19605941772460939,0.18953582048416137,0.19049429893493652,0.19262913465499878,0.1987601637840271,0.1953730583190918,0.18567111492156982,0.1904411196708679,0.1989609718322754,0.1950976014137268,0.19118936061859132,0.1955471396446228,0.1881636381149292,0.18375041484832763,0.19095102548599244,0.1925942063331604,0.19148776531219483,0.1937260150909424,0.19043956995010375,0.1864037275314331,0.1899815559387207,0.1868310809135437,0.18694469928741456,0.18683170080184935,0.19019181728363038,0.18919309377670288,0.19197702407836914,0.19230983257293702,0.19155409336090087,0.18382977247238158,0.19200931787490844,0.18978238105773926,0.18945224285125734,0.19048926830291749,0.19353251457214354,0.19694137573242188,0.18759028911590575,0.18961598873138427,0.18629283905029298,0.19414337873458862,0.1987302303314209,0.19051783084869384,0.18820873498916627,0.19231133460998534,0.18219901323318483,0.19413594007492066,0.19248682260513306,0.18712067604064941,0.18437811136245727,0.1906745672225952,0.19233262538909912,0.19580291509628295,0.18837993144989013,0.19539268016815187,0.18775253295898436,0.1932922124862671,0.18704094886779785,0.18741751909255983,0.18431260585784912,0.18771307468414306,0.18506743907928466,0.1882864236831665,0.19141745567321777,0.1876922369003296,0.1887900114059448,0.19511338472366332,0.19701156616210938,0.1922311544418335,0.18992465734481812,0.18793121576309205,0.18402265310287474,0.19337671995162964,0.19257776737213134,0.1881690502166748,0.19108226299285888,0.19159953594207763,0.18527668714523315,0.1830193042755127,0.1885986328125,0.19685935974121094,0.19089627265930176,0.18758795261383057,0.18592920303344726,0.19107563495635987,0.18726470470428466,0.19259430170059205,0.1908295512199402,0.19120346307754515,0.19365931749343873,0.1947272539138794,0.1769589066505432,0.18555407524108886,0.20065808296203613,0.18836339712142944,0.18687658309936522,0.18954455852508545,0.1945979118347168,0.18741060495376588,0.19116969108581544,0.1912593126296997,0.18893760442733765,0.18883105516433715,0.187095046043396,0.18927783966064454,0.19726933240890504,0.18984180688858032,0.1998820424079895,0.1965648889541626,0.18885359764099122,0.18967546224594117,0.18928685188293456,0.19568400382995604,0.19285683631896972,0.19372241497039794,0.18536978960037231,0.185712730884552,0.1923312544822693,0.19576718807220458,0.18535104990005494,0.1888183355331421,0.19176595211029052,0.19005060195922852,0.19555515050888062,0.1907360553741455,0.18617417812347412,0.19027819633483886,0.18948764801025392,0.18639514446258545,0.19219623804092406,0.18604116439819335,0.188227379322052,0.18552708625793457,0.17911405563354493,0.1856154203414917,0.18343539237976075,0.19386050701141358,0.17888776063919068,0.1885018229484558,0.18527910709381104,0.18797725439071655,0.18536540269851684,0.1947443127632141,0.18715639114379884,0.18420424461364746,0.19295743703842164,0.19270124435424804,0.18808846473693847,0.1889720916748047,0.19675214290618898,0.19522162675857543,0.1913645625114441,0.18463053703308105,0.19269230365753173,0.18990532159805298,0.18638806343078612,0.19431740045547485,0.1853084683418274,0.19316465854644777,0.18638999462127687,0.1860716462135315,0.18308863639831544,0.18850876092910768,0.19065468311309813,0.19214526414871216,0.1807314157485962,0.1834711790084839,0.18569371700286866,0.18272546529769898,0.1906487226486206,0.19378821849822997,0.19211275577545167,0.19508315324783326,0.18899660110473632,0.19494802951812745,0.18355417251586914,0.19395055770874023,0.18663448095321655,0.19644522666931152,0.18601102828979493,0.19247697591781615,0.19278275966644287,0.18476852178573608,0.19543790817260742,0.19381158351898192,0.19536601305007933,0.19222357273101806,0.19534640312194823,0.18933444023132323,0.18959300518035888,0.19834094047546386,0.18856613636016845,0.19101791381835936,0.18636705875396728,0.18881545066833497,0.19250020980834961,0.18755470514297484,0.19378957748413086,0.19393144845962523,0.19208807945251466,0.181111478805542,0.18537418842315673,0.18864192962646484,0.18677291870117188,0.1883707284927368,0.19314552545547486,0.19047175645828246,0.18520948886871338,0.19451628923416137,0.1904912233352661,0.1865971326828003,0.18372008800506592,0.18834269046783447,0.178699791431427,0.18200587034225463,0.1835663676261902,0.18949321508407593,0.18849420547485352,0.1880374550819397,0.18399977684020996,0.19383633136749268,0.19067702293395997,0.1905740261077881,0.18625153303146363,0.18374083042144776,0.19105684757232666,0.1906527280807495,0.19150397777557374,0.18658844232559205,0.18946845531463624,0.18559244871139527,0.196364164352417,0.18567271232604982,0.19397581815719606,0.18732255697250366,0.1850222110748291,0.1904653549194336,0.18778210878372192,0.19319000244140624,0.18800971508026124,0.17865618467330932,0.1812824010848999,0.1954978108406067,0.18584595918655394,0.19551191329956055,0.18680504560470582,0.18619947433471679,0.18204963207244873,0.18385454416275024,0.19662457704544067,0.1857421875,0.18185136318206788,0.18673962354660034,0.181899094581604,0.18243497610092163,0.1889893651008606,0.19019339084625245,0.18480274677276612,0.18888461589813232,0.18284823894500732,0.1832256317138672,0.192505145072937,0.18823440074920655,0.18271656036376954,0.18523833751678467,0.18611282110214233,0.18557291030883788,0.1854426383972168,0.1873016119003296,0.19031028747558593,0.1909489393234253,0.1870930552482605,0.1932088851928711,0.1874784469604492,0.18866174221038817,0.18555836677551268,0.1908969759941101,0.18321671485900878,0.19081863164901733,0.19952290058135985,0.19089767932891846,0.18726112842559814,0.18976482152938842,0.1866222858428955,0.1808624029159546,0.19646091461181642,0.18505796194076538,0.1905890464782715,0.19090815782546997,0.19227607250213624,0.18993942737579345,0.18568027019500732,0.19543747901916503,0.1838525652885437,0.1841754913330078,0.19449232816696166,0.19962998628616332,0.19536876678466797,0.19153909683227538,0.18483684062957764,0.18489177227020265,0.19453659057617187,0.19051237106323243,0.1914663076400757,0.18263980150222778,0.1886175751686096,0.19655057191848754,0.19350147247314453,0.1935370683670044,0.1910691261291504,0.18864660263061522,0.189062237739563,0.18815093040466307,0.19374802112579345,0.18183515071868897,0.18460524082183838,0.18349127769470214,0.17649306058883668,0.18974218368530274,0.18140175342559814,0.19612245559692382,0.19101500511169434,0.18720386028289795,0.18516446352005006,0.1880734920501709,0.1939056396484375,0.1907413959503174,0.18777533769607543,0.19170414209365844,0.19185214042663573,0.19091401100158692,0.18334465026855468,0.1914042830467224,0.19232451915740967,0.18531537055969238,0.18310825824737548,0.18938156366348266,0.18472537994384766,0.18169885873794556,0.18865469694137574,0.1795554280281067,0.183145010471344,0.18212225437164306,0.1877575159072876,0.19029684066772462,0.1838681221008301,0.18309218883514405,0.17792055606842042,0.18933391571044922,0.18771055936813355,0.18879468441009523,0.18557591438293458,0.17835814952850343,0.1923866629600525,0.18726457357406617,0.1869501829147339,0.19067862033843994,0.18461813926696777,0.18700652122497557,0.18488891124725343,0.18692768812179567,0.18755691051483153,0.18938859701156616,0.19395046234130858,0.1839022159576416,0.18145588636398316,0.19068949222564696,0.18787921667099,0.19122099876403809,0.19010536670684813,0.18734464645385743,0.1929200291633606,0.19558848142623902,0.18320637941360474,0.19048721790313722,0.19411001205444336,0.19070720672607422,0.18754830360412597,0.18805547952651977,0.18996988534927367,0.1865576148033142,0.18774884939193726,0.18832886219024658,0.1935399055480957,0.19367532730102538,0.18397189378738404,0.1949700117111206,0.18399229049682617,0.18238223791122438,0.1827606439590454,0.19585001468658447,0.1868744373321533,0.1944960117340088,0.19296528100967408,0.19233864545822144,0.18940974473953248,0.1863974690437317,0.18780665397644042,0.18782849311828614,0.1934067964553833,0.19459400177001954,0.18341751098632814,0.18555998802185059,0.18759210109710694,0.1824556350708008,0.19228429794311525,0.1878718137741089,0.19373784065246583,0.1829632043838501,0.18606412410736084,0.18985990285873414,0.18044497966766357,0.18607938289642334,0.19293608665466308,0.18077069520950317,0.19366414546966554,0.18966830968856813,0.17868249416351317,0.1925865650177002,0.18790895938873292,0.18005378246307374,0.1863633155822754,0.18610622882843017,0.18295372724533082,0.1787161111831665,0.1836882472038269,0.18608639240264893,0.18193111419677735,0.18977187871932982,0.1845465898513794,0.1920842170715332,0.18928781747817994,0.19600186347961426,0.19188551902770995,0.18750283718109131,0.1940099000930786,0.18747539520263673,0.18332442045211791,0.18323904275894165,0.1903362274169922,0.2030956506729126,0.18758407831192017,0.19543206691741943,0.19029892683029176,0.1879883050918579,0.18391180038452148,0.1894350528717041,0.1878521203994751,0.19313234090805054,0.19087799787521362,0.18375852108001708,0.190519118309021,0.1883649468421936,0.1952958345413208,0.1866317868232727,0.18193764686584474,0.17866785526275636,0.17807190418243407,0.18538920879364013,0.18444857597351075,0.1847401738166809,0.1921783447265625,0.19717111587524414,0.18993037939071655,0.18667370080947876,0.18494696617126466,0.18827085494995116,0.18015356063842775,0.192765212059021,0.18577386140823365,0.19119815826416015,0.1828486680984497,0.17296817302703857,0.19013057947158812,0.1905652642250061,0.18793612718582153,0.18862249851226806,0.18517825603485108,0.18282976150512695,0.19557957649230956,0.19738321304321288,0.1961951494216919,0.1886679172515869,0.18851464986801147,0.18420648574829102,0.17605822086334227,0.19130363464355468,0.18064916133880615,0.19106218814849854,0.17707735300064087,0.19332958459854127,0.1971014618873596,0.19020299911499022,0.1807400703430176,0.18983529806137084,0.19509439468383788,0.18196645975112916,0.18338500261306762,0.18539034128189086,0.18886842727661132,0.18444420099258424,0.18321545124053956,0.19388947486877442,0.1914004683494568,0.18786983489990233,0.18595253229141234,0.19004552364349364,0.18631229400634766,0.17998424768447877,0.17733936309814452,0.18740328550338745,0.18712708950042725,0.1977835178375244,0.1904343843460083,0.19800089597702025,0.17794790267944335,0.18599294424057006,0.1801799178123474,0.19222657680511473,0.18472076654434205,0.19019559621810914,0.19311680793762206,0.1863684892654419,0.18649667501449585,0.18695656061172486,0.18461461067199708,0.18906123638153077,0.19228380918502808,0.1971258282661438,0.1908477783203125,0.19397753477096558,0.18997519016265868,0.19058600664138795,0.18835935592651368,0.1863253355026245,0.18938390016555787,0.19113500118255616,0.1861961841583252,0.18700989484786987,0.18993133306503296,0.1919173240661621,0.19004685878753663,0.1825886368751526,0.18638236522674562,0.1853038787841797,0.1898144245147705,0.1909648895263672,0.18694943189620972,0.18591223955154418,0.18660831451416016,0.17481555938720703,0.19697787761688232,0.18109385967254638,0.19201357364654542,0.1865772485733032,0.18605222702026367,0.18399007320404054,0.19709240198135375,0.18923851251602172,0.18608940839767457,0.19232219457626343,0.18844313621520997,0.19314608573913575,0.18397449254989623,0.18651168346405028,0.18388311862945556,0.18154308795928956,0.1881507396697998,0.1837495446205139,0.19512593746185303,0.18547513484954833,0.18793747425079346,0.1829290509223938,0.18039929866790771,0.19152419567108153,0.19850865602493287,0.1879704475402832,0.1926379084587097,0.18690370321273803,0.1861720561981201,0.1781069278717041,0.19058998823165893,0.18449584245681763,0.18358950614929198,0.18993773460388183,0.18690062761306764,0.19085230827331542,0.1897117853164673,0.18572163581848145,0.189432692527771,0.18562428951263427,0.1829061985015869,0.19100912809371948,0.18344600200653077,0.18804776668548584,0.18733898401260377,0.1839217185974121,0.17735421657562256,0.1917351722717285,0.18922936916351318,0.18226323127746583,0.18339128494262696,0.18508373498916625,0.18907420635223388,0.18916367292404174,0.19295639991760255,0.18825771808624267,0.18215879201889038,0.18900573253631592,0.18656448125839234,0.17957717180252075,0.18645672798156737,0.1839268684387207,0.18677477836608886,0.19005334377288818,0.1879563331604004,0.1899280309677124,0.1865181565284729,0.18966559171676636,0.1930075168609619,0.19029120206832886,0.19229521751403808,0.18547353744506836,0.17905569076538086,0.18481619358062745,0.17981834411621095,0.1927338123321533,0.18469899892807007,0.18825193643569946,0.18163883686065674,0.18471140861511232,0.18644250631332399,0.18574268817901612,0.1854548454284668,0.18950252532958983,0.18182944059371947,0.19015953540802003,0.1827772855758667,0.19426865577697755,0.19188011884689332,0.19072268009185792,0.19043785333633423,0.18071528673171997,0.18999674320220947,0.1852744460105896,0.1858952283859253,0.17843637466430665,0.18902522325515747,0.18999483585357665,0.18281079530715943,0.18715795278549194,0.19062706232070922,0.1850264072418213,0.18941817283630372,0.18479357957839965,0.1764312744140625,0.18771923780441285,0.18274813890457153,0.18946759700775145,0.18238770961761475,0.18837895393371581,0.18437308073043823,0.18343286514282225,0.18737691640853882,0.18684239387512208,0.1849975109100342,0.18635047674179078,0.18788063526153564,0.17995479106903076,0.18487269878387452,0.18631963729858397,0.1843317151069641,0.18435752391815186,0.18793768882751466,0.18824931383132934,0.1837397336959839,0.18359806537628173,0.18350471258163453,0.18821762800216674,0.18021994829177856,0.17941057682037354,0.1936386227607727,0.18855822086334229,0.19475630521774293,0.189496910572052,0.18677572011947632,0.19050992727279664,0.185574471950531,0.18888936042785645,0.18018152713775634,0.17891327142715455,0.1940891981124878,0.1870226740837097,0.18576110601425172,0.18586199283599852,0.19000529050827025,0.18245697021484375,0.1890259265899658,0.1776193857192993,0.18518437147140504,0.19547127485275267,0.188695228099823,0.1837533473968506,0.181360125541687,0.19041068553924562,0.19538815021514894,0.1790896773338318,0.1795012831687927,0.18697818517684936,0.1895897626876831,0.1751996397972107,0.18744378089904784,0.18938970565795898,0.1877801537513733,0.18821548223495482,0.19378080368041992,0.18382229804992675,0.1883797287940979,0.18535006046295166,0.1855418086051941,0.1910431981086731,0.1816473960876465,0.18259543180465698,0.18129125833511353,0.18169982433319093,0.17976325750350952,0.19418494701385497,0.18231265544891356,0.19562880992889403,0.19237838983535765,0.19235306978225708,0.18464581966400145,0.1781904935836792,0.1884618282318115,0.19077863693237304,0.18295037746429443,0.191446053981781,0.19621806144714354,0.18527774810791015,0.17773302793502807,0.18803441524505615,0.19014716148376465,0.1894139289855957,0.1865604281425476,0.18530536890029908,0.18896352052688598,0.18578729629516602,0.18667879104614257,0.1740269660949707,0.1838960289955139,0.18527849912643432,0.18975648880004883,0.1836845636367798,0.18206773996353148,0.19234391450881957,0.18181993961334228,0.19071919918060304,0.18082085847854615,0.18496429920196533,0.19077658653259277,0.18730815649032592,0.18455549478530883,0.18499150276184081,0.18219423294067383,0.18523058891296387,0.18266016244888306,0.17464543581008912,0.18216631412506104,0.17678663730621338,0.18359432220458985,0.19197289943695067,0.18949997425079346,0.18594868183135987,0.1781848192214966,0.19564266204833985,0.18208276033401488,0.18386487960815429,0.1743002414703369,0.1903363585472107,0.1812705159187317,0.18556277751922606,0.19076085090637207,0.1842838168144226,0.18861937522888184,0.1834384799003601,0.18138954639434815,0.19317953586578368,0.18455013036727905,0.18047940731048584,0.18863170146942138,0.18842943906784057,0.1840972661972046,0.1852205753326416,0.18113671541213988,0.18267312049865722,0.18629850149154664,0.18920683860778809,0.1859192132949829,0.18509953022003173,0.17569712400436402,0.18824173212051393,0.1858060836791992,0.17898590564727784,0.1853482723236084,0.18193559646606444,0.17824387550354004,0.19000345468521118,0.19319648742675782,0.17419922351837158,0.1798567771911621,0.18751440048217774,0.18330057859420776,0.19161505699157716,0.18766661882400512,0.18715345859527588,0.18707239627838135,0.18483335971832277,0.19552699327468873,0.1965222477912903,0.17500457763671876,0.18405238389968873,0.1834547996520996,0.189958393573761,0.18690479993820192,0.18479526042938232,0.1877903699874878,0.18224942684173584,0.17539845705032348,0.18557398319244384,0.18083980083465576,0.1929733633995056,0.18773058652877808,0.1861179232597351,0.18408294916152954,0.19739084243774413,0.1874001979827881,0.1870408296585083,0.1886391043663025,0.17651432752609253,0.18544838428497315,0.185538387298584,0.1869317412376404,0.18229250907897948,0.18624646663665773,0.1802063226699829,0.18634443283081054,0.187502121925354,0.18259730339050292,0.1857213020324707,0.1898981213569641,0.18308364152908324,0.19083755016326903,0.18300492763519288,0.1866975784301758,0.19563398361206055,0.18829691410064697,0.1853971004486084,0.1849311113357544,0.1827654004096985,0.19621548652648926,0.19246165752410888,0.18533982038497926,0.18625953197479247,0.19284731149673462,0.18319499492645264,0.18642618656158447,0.18659029006958008,0.1860049843788147,0.1825801134109497,0.18562781810760498,0.18706921339035035,0.18056144714355468,0.18125057220458984,0.18912861347198487,0.18419493436813356,0.19735772609710694,0.18210959434509277,0.18190407752990723,0.18267666101455687,0.18569772243499755,0.18578994274139404,0.18712011575698853,0.18215152025222778,0.1818573594093323,0.1923783540725708,0.1837470293045044,0.17991648912429808,0.19898555278778077,0.19081456661224366,0.185641610622406]};
+
+  var data = [data0];
+  var layout = {"title":"loss by time"};
+
+  Plotly.plot('plot-1598120437', data, layout);
+})();
+});
+      
+</script>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>The accuracy is 39.0%
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">&#182;</a></h2><p>We have learned the follows in this article:</p>
+<ul>
+<li>Mini-Batch Gradient Descent</li>
+<li>epoch</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><a href="https://github.com/izhangzhihao/deeplearning-tutorial/blob/2.0.x/src/main/scala/com/github/izhangzhihao/MiniBatchGradientDescent.scala">Source code</a></p>
+
+</div>
+</div>
+</div>
+ 
+
