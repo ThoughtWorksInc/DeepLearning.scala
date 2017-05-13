@@ -2,7 +2,6 @@ package com.thoughtworks.deeplearning.jupyter
 
 import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.ownership.Borrowing
 
 //workaround for jupyter-scala bug https://github.com/alexarchambault/jupyter-scala/issues/156
 package object differentiable {
