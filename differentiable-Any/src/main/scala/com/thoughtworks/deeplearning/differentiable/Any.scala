@@ -13,12 +13,12 @@ import scalaz.syntax.all._
 
 object Any extends AnyCompanion {
 
-  def predict[OutputData, OutputDelta](forward: Do[ Tape[OutputData, OutputDelta]]): Task[OutputData] = {
+  def predict[OutputData, OutputDelta](forward: Do[Tape[OutputData, OutputDelta]]): Task[OutputData] = {
     val Do(doOutputData) = forward.map(_.data)
     new Task(ResourceT.run(ResourceT(doOutputData).map(toDisjunction)))
   }
 
-  def train[OutputData, OutputDelta](forward: Do[ Tape[OutputData, OutputDelta]])(
+  def train[OutputData, OutputDelta](forward: Do[Tape[OutputData, OutputDelta]])(
       implicit trainable: Trainable[OutputData, OutputDelta]): Task[OutputData] = {
 
     val doOutputData: Do[OutputData] = forward.flatMap[OutputData] { outputTape =>
@@ -35,6 +35,6 @@ object Any extends AnyCompanion {
 //workaround for https://github.com/scala/bug/issues/10306
 private[deeplearning] abstract class AnyCompanion {
   trait Trainable[-Data, +Delta] {
-    def apply(data: Data): Do[ Delta]
+    def apply(data: Data): Do[Delta]
   }
 }

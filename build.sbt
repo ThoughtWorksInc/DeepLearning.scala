@@ -16,26 +16,28 @@ val FloatRegex = """(?i:float)""".r
 
 lazy val `differentiable-Double` = project
   .dependsOn(`differentiable-Any`, tapefactories, math)
-  .settings(sourceGenerators in Compile += Def.task {
-    for {
-      floatFile <- (unmanagedSources in Compile in `differentiable-Float`).value
-      floatDirectory <- (unmanagedSourceDirectories in Compile in `differentiable-Float`).value
-      relativeFile <- floatFile.relativeTo(floatDirectory)
-    } yield {
-      val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
+  .settings(
+    sourceGenerators in Compile += Def.task {
+      for {
+        floatFile <- (unmanagedSources in Compile in `differentiable-Float`).value
+        floatDirectory <- (unmanagedSourceDirectories in Compile in `differentiable-Float`).value
+        relativeFile <- floatFile.relativeTo(floatDirectory)
+      } yield {
+        val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
 
-      val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
-        m.matched match {
-          case "Float" => "Double"
-          case "float" => "double"
-        }
-      })
+        val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
+          m.matched match {
+            case "Float" => "Double"
+            case "float" => "double"
+          }
+        })
 
-      val outputFile = (sourceManaged in Compile).value / relativeFile.getPath
-      IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
-      outputFile
-    }
-  }.taskValue)
+        val outputFile = (sourceManaged in Compile).value / relativeFile.getPath
+        IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
+        outputFile
+      }
+    }.taskValue
+  )
 
 lazy val Lift = project.dependsOn(Tape)
 
