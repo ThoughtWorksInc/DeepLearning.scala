@@ -364,6 +364,6 @@ object Float extends FloatCompanion {
 }
 
 //workaround for https://github.com/scala/bug/issues/10306
-abstract class FloatCompanion {
+private[differentiable] abstract class FloatCompanion { this: Float.type =>
   private[deeplearning] type FloatTape = Tape[ScalaFloat, ScalaFloat]
 }
