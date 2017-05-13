@@ -60,13 +60,21 @@ object Float extends FloatCompanion {
 
   }
 
+  implicit object LiftFloatWeight extends Lift[Weight] {
+    override type Data = ScalaFloat
+    override type Delta = ScalaFloat
+    override def apply(weight: Weight): Do[Tape[Data, Delta]] = {
+      import weight._
+      Do.delay(Tape(data, backward))
+    }
+  }
+
   final case class Weight(var data: ScalaFloat)(implicit optimizerFactory: OptimizerFactory,
                                                 logger: Logger = Logger.getGlobal,
                                                 fullName: sourcecode.FullName,
                                                 className: Caller[_],
                                                 methodName: sourcecode.Name) {
 
-    def doTape = Do.delay(Tape(data, backward))
     private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
 
     def backward(deltaFuture: Do[ScalaFloat]): Future[Unit] = {
@@ -123,16 +131,6 @@ object Float extends FloatCompanion {
     implicit def liftFloat[A](
         implicit typeClass: LowPriorityLift.Aux[A, ScalaFloat, ScalaFloat]): Lift.Aux[A, ScalaFloat, ScalaFloat] =
       typeClass
-
-    implicit final class FloatToWeightOps(value: ScalaFloat) {
-      def toWeight(implicit optimizerFactory: OptimizerFactory,
-                   logger: Logger = Logger.getGlobal,
-                   fullName: sourcecode.FullName,
-                   className: Caller[_],
-                   methodName: sourcecode.Name): Do[Tape[ScalaFloat, ScalaFloat]] = {
-        Weight(value).doTape
-      }
-    }
 
     implicit object FloatTrainable extends Trainable[ScalaFloat, ScalaFloat] {
       override def apply(data: ScalaFloat): Do[ScalaFloat] = Do.now(1)

@@ -62,14 +62,6 @@ object FloatSpec {
       }
     }
   }
-
-  implicit final class WeightData(weight: Do[Tape[Float, Float]]) {
-    def data: Float = {
-      val task: Task[Tape[Float, Float]] = Do.run(weight)
-      val bTape: Tape[Float, Float] = task.unsafePerformSync
-      bTape.data.toString.toFloat
-    }
-  }
 }
 
 final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
@@ -84,9 +76,9 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
-    def myNetwork(input: Do[ Tape[Float, Float]]): Do[Tape[Float, Float]] = {
+    def myNetwork(input: Do[Tape[Float, Float]]): Do[Tape[Float, Float]] = {
       6.7f + input + weight + 5.5f
     }
 
@@ -135,7 +127,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       6.7f + input + weight + 5.5f
@@ -172,7 +164,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       1.0f + input + weight + 4.0f
@@ -217,7 +209,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
@@ -263,7 +255,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - ((input - weight + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / 2.0f)
@@ -308,7 +300,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
@@ -354,7 +346,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
@@ -400,7 +392,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
@@ -442,7 +434,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       5.0f - min(5.0f, weight)
@@ -485,7 +477,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - max(0.0f, weight)
@@ -528,7 +520,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 0.5f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     val log5 = scala.math.log(5).toFloat
 
@@ -574,7 +566,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 0.1f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     val exp3 = scala.math.exp(3).toFloat
 
@@ -619,7 +611,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 1.0f.toWeight
+    val weight = differentiable.Float.Weight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       5.0f - abs(weight)
@@ -661,7 +653,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
       def currentLearningRate() = 1.0f
     }
 
-    val weight: Do[Tape[Float, Float]] = 5.0f.toWeight
+    val weight = Weight(5.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       abs(-weight)
