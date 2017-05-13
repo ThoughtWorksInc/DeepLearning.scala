@@ -2,7 +2,6 @@ package com.thoughtworks.deeplearning
 
 import com.thoughtworks.deeplearning.Lift.{LiftCase1, LiftCase2}
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.ownership.Borrowing
 import shapeless.{DepFn1, DepFn2, Poly, Poly1, Poly2}
 
 /**

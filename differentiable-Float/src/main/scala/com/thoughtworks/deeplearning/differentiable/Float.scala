@@ -10,9 +10,6 @@ import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable
 import com.thoughtworks.deeplearning.Lift.LowPriorityLift
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous._
-import com.thoughtworks.raii.ownership._
-import com.thoughtworks.raii.ownership._
 import com.thoughtworks.raii.covariant.ResourceT
 import shapeless.the
 
@@ -69,7 +66,7 @@ object Float extends FloatCompanion {
                                                 className: Caller[_],
                                                 methodName: sourcecode.Name) {
 
-    def doTape = Do.delay(garbageCollectable(Tape(data, backward)))
+    def doTape = Do.delay(Tape(data, backward))
     private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
 
     def backward(deltaFuture: Do[ScalaFloat]): Future[Unit] = {
@@ -132,7 +129,7 @@ object Float extends FloatCompanion {
                    logger: Logger = Logger.getGlobal,
                    fullName: sourcecode.FullName,
                    className: Caller[_],
-                   methodName: sourcecode.Name): Do[Borrowing[Tape[ScalaFloat, ScalaFloat]]] = {
+                   methodName: sourcecode.Name): Do[Tape[ScalaFloat, ScalaFloat]] = {
         Weight(value).doTape
       }
     }
@@ -368,5 +365,5 @@ object Float extends FloatCompanion {
 
 //workaround for https://github.com/scala/bug/issues/10306
 abstract class FloatCompanion {
-  private[deeplearning] type FloatTape = Borrowing[Tape[ScalaFloat, ScalaFloat]]
+  private[deeplearning] type FloatTape = Tape[ScalaFloat, ScalaFloat]
 }
