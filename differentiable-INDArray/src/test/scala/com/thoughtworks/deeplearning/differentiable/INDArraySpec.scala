@@ -18,7 +18,6 @@ import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
-import com.thoughtworks.raii.ownership.Borrowing
 import org.nd4j.linalg.api.ndarray.{INDArray => Nd4jArray}
 import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
 import org.nd4j.linalg.convolution.Convolution
@@ -957,17 +956,17 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       "abs(??? : Do[DoubleTape])" should compile
       "abs(??? : Do[_<: DoubleTape])" should compile
       "abs(??? : Do[DoubleTape])" should compile
-      "abs(??? : Do[Borrowing[Tape[Double, Double]]])" should compile
-      "abs(??? : Do[_<: Borrowing[Tape[Double, Double]]])" should compile
-      "abs(??? : Do[Borrowing[Tape[Double, Double]]])" should compile
+      "abs(??? : Do[Tape[Double, Double]])" should compile
+      "abs(??? : Do[_<: Tape[Double, Double]])" should compile
+      "abs(??? : Do[Tape[Double, Double]])" should compile
 
       "abs(Nd4j.ones(2, 3, 3, 3))" should compile
       "abs(??? : Do[INDArrayTape])" should compile
       "abs(??? : Do[_<: INDArrayTape])" should compile
       "abs(??? : Do[INDArrayTape])" should compile
-      "abs(??? : Do[Borrowing[Tape[Nd4jArray, Nd4jArray]]])" should compile
-      "abs(??? : Do[_<: Borrowing[Tape[Nd4jArray, Nd4jArray]]])" should compile
-      "abs(??? : Do[Borrowing[Tape[Nd4jArray, Nd4jArray]]])" should compile
+      "abs(??? : Do[Tape[Nd4jArray, Nd4jArray]])" should compile
+      "abs(??? : Do[_<: Tape[Nd4jArray, Nd4jArray]])" should compile
+      "abs(??? : Do[Tape[Nd4jArray, Nd4jArray]])" should compile
     }
 
     promise.future

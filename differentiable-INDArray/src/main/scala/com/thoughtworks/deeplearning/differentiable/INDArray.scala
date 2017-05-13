@@ -25,7 +25,6 @@ import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous
-import com.thoughtworks.raii.ownership.{Borrowing, garbageCollectable}
 import shapeless.the
 import com.thoughtworks.deeplearning.math._
 
@@ -177,7 +176,7 @@ object INDArray extends INDArrayCompanion {
                                                className: Caller[_],
                                                methodName: sourcecode.Name) {
     private val optimizer: Optimizer = optimizerFactory.indarrayOptimizer(this)
-    def doTape = Do.delay(garbageCollectable(Tape[ND4JArray, ND4JArray](data, backward)))
+    def doTape = Do.delay(Tape[ND4JArray, ND4JArray](data, backward))
 
     def backward(outputDelta: Do[ND4JArray]): Future[Unit] = {
       import com.thoughtworks.raii.covariant.ResourceT.resourceTMonad
@@ -709,9 +708,9 @@ object INDArray extends INDArrayCompanion {
                                                          className: Caller[_],
                                                          methodName: sourcecode.Name,
                                                          executionContext: ExecutionContext): Do[INDArrayTape] = {
-      def monadicConv2d[InputTape <: Borrowing[Tape[ND4JArray, ND4JArray]],
-                        WeightTape <: Borrowing[Tape[ND4JArray, ND4JArray]],
-                        Bias <: Borrowing[Tape[ND4JArray, ND4JArray]]](input: Do[InputTape],
+      def monadicConv2d[InputTape <: Tape[ND4JArray, ND4JArray],
+                        WeightTape <: Tape[ND4JArray, ND4JArray],
+                        Bias <: Tape[ND4JArray, ND4JArray]](input: Do[InputTape],
                                                                        weight: Do[WeightTape],
                                                                        bias: Do[Bias]) = monadic[Do] {
         val inputShape: Array[Int] = input.each.data.shape()
@@ -745,9 +744,9 @@ object INDArray extends INDArrayCompanion {
       }
 
       monadicConv2d(
-        liftInput(input): Do[Borrowing[Tape[ND4JArray, ND4JArray]]],
-        liftWeight(weight): Do[Borrowing[Tape[ND4JArray, ND4JArray]]],
-        liftBias(bias): Do[Borrowing[Tape[ND4JArray, ND4JArray]]]
+        liftInput(input): Do[Tape[ND4JArray, ND4JArray]],
+        liftWeight(weight): Do[Tape[ND4JArray, ND4JArray]],
+        liftBias(bias): Do[Tape[ND4JArray, ND4JArray]]
       )
     }
 
@@ -961,5 +960,5 @@ object INDArray extends INDArrayCompanion {
 
 //workaround for https://github.com/scala/bug/issues/10306
 abstract class INDArrayCompanion {
-  private[deeplearning] type INDArrayTape = Borrowing[Tape[ND4JArray, ND4JArray]]
+  private[deeplearning] type INDArrayTape = Tape[ND4JArray, ND4JArray]
 }

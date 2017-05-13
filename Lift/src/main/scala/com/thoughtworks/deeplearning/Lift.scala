@@ -1,15 +1,12 @@
 package com.thoughtworks.deeplearning
 
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.ownership._
-import com.thoughtworks.raii.ownership._
-import shapeless.PolyDefns.{Case1, Case2}
 import shapeless._
 
 trait Lift[From] extends DepFn1[From] {
   type Data
   type Delta
-  override final type Out = Do[Borrowing[Tape[Data, Delta]]]
+  override final type Out = Do[Tape[Data, Delta]]
 }
 
 private[deeplearning] trait LowPriorityLiftFunctions { this: Lift.type =>
@@ -22,7 +19,7 @@ private[deeplearning] trait LowPriorityLiftFunctions { this: Lift.type =>
 
       @inline
       override def apply(a: Data): Out = {
-        val myLiteral = garbageCollectable(Tape.literal(a))
+        val myLiteral = Tape.literal(a)
         Do.now(myLiteral)
       }
     }
@@ -38,7 +35,7 @@ object Lift extends LowPriorityLiftFunctions {
     }
     implicit def liftCase1[P <: Poly, From, Data0, Delta0, Out0](
         implicit lift: Lift.Aux[From, Data0, Delta0],
-        case1: shapeless.PolyDefns.Case1.Aux[P, Do[Borrowing[Tape[Data0, Delta0]]], Out0])
+        case1: shapeless.PolyDefns.Case1.Aux[P, Do[Tape[Data0, Delta0]], Out0])
       : LiftCase1.Aux[P, From, Out0] = {
       new LiftCase1[P, From] {
         override type Out = Out0
@@ -57,8 +54,8 @@ object Lift extends LowPriorityLiftFunctions {
         implicit lift0: Lift.Aux[Operand0, Data0, Delta0],
         lift1: Lift.Aux[Operand1, Data1, Delta1],
         case2: shapeless.PolyDefns.Case2.Aux[P,
-                                             Do[Borrowing[Tape[Data0, Delta0]]],
-                                             Do[Borrowing[Tape[Data1, Delta1]]],
+                                             Do[Tape[Data0, Delta0]],
+                                             Do[Tape[Data1, Delta1]],
                                              Out0]): LiftCase2.Aux[P, Operand0, Operand1, Out0] = {
       new LiftCase2[P, Operand0, Operand1] {
         override type Out = Out0
@@ -83,7 +80,7 @@ object Lift extends LowPriorityLiftFunctions {
 
   @inline
   implicit def fromSubtype[Data0, Delta0, From](
-      implicit constraint: From <:< Do[ Borrowing[Tape[Data0, Delta0]]])
+      implicit constraint: From <:< Do[ Tape[Data0, Delta0]])
     : LowPriorityLift.Aux[From, Data0, Delta0] = {
     new LowPriorityLift[From] {
       override type Data = Data0
