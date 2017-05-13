@@ -6,15 +6,11 @@ import java.util.logging.Level
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.{predict, train}
 import com.thoughtworks.deeplearning.tapefactories.Binary.MultipleException
-import com.thoughtworks.deeplearning.differentiable.Float.Optimizer._
-import com.thoughtworks.deeplearning.differentiable.Float._
 import com.thoughtworks.deeplearning.differentiable.Float.implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
-import com.thoughtworks.raii.covariant
-import com.thoughtworks.raii.covariant.{ResourceT, Releasable}
-import com.thoughtworks.tryt.covariant.{TryT, TryTExtractor}
+import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
+import com.thoughtworks.tryt.covariant.TryT
 import org.scalactic.ErrorMessage
 import org.scalatest._
 import org.slf4j.bridge.SLF4JBridgeHandler
@@ -29,6 +25,7 @@ import scalaz.{-\/, EitherT, MonadError, \/, \/-}
 import scalaz.syntax.all._
 import scalaz.std.`try`.toDisjunction
 import scalaz.std.iterable._
+import com.thoughtworks.Override
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -72,11 +69,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Plus" in {
 
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Do[Tape[Float, Float]]): Do[Tape[Float, Float]] = {
       6.7f + input + weight + 5.5f
@@ -122,12 +118,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Plus with Train" in {
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
-
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       6.7f + input + weight + 5.5f
@@ -160,11 +154,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Plus with Predict" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       1.0f + input + weight + 4.0f
@@ -205,11 +198,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Predict -- use for" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
@@ -251,11 +243,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Predict -- one exception" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - ((input - weight + throwableFloatTapeTask(Boom("4.0f"))) * 2.0f / 2.0f)
@@ -296,11 +287,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Predict -- two exception" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
@@ -342,11 +332,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "Predict -- three exception" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - ((input - throwableFloatTapeTask(Boom("weight"))
@@ -388,11 +377,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "will not stackOverFlow" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
@@ -430,11 +418,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "min" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       5.0f - min(5.0f, weight)
@@ -473,11 +460,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "max" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       10.0f - max(0.0f, weight)
@@ -516,11 +502,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "log" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 0.5f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 0.5f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     val log5 = scala.math.log(5).toFloat
 
@@ -562,11 +547,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "exp" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 0.1f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 0.1f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     val exp3 = scala.math.exp(3).toFloat
 
@@ -607,11 +591,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "abs" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = differentiable.Float.Weight(1.0f)
+    val weight = hyperparameters.floatWeight(1.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       5.0f - abs(weight)
@@ -649,11 +632,10 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   }
 
   "unary_-" in {
-    implicit def optimizer: Optimizer = new LearningRate {
-      def currentLearningRate() = 1.0f
-    }
+    val hyperparameters = Override
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
 
-    val weight = Weight(5.0f)
+    val weight = hyperparameters.floatWeight(5.0f)
 
     def myNetwork(input: Float): Do[Tape[Float, Float]] = {
       abs(-weight)

@@ -1,10 +1,10 @@
 package com.thoughtworks.deeplearning
 package differentiable
 
-import scala.{Float => ScalaFloat}
-
 import java.util.logging.{Level, Logger}
 
+import com.thoughtworks.Constructor
+import com.thoughtworks.Override.inject
 import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable
@@ -25,115 +25,118 @@ import scalaz.syntax.all._
   */
 object Float extends FloatCompanion {
 
-  trait Optimizer {
-    def currentDelta(oldValue: ScalaFloat, delta: ScalaFloat): ScalaFloat = delta
+  trait Hyperparameter {
 
-    final def updateFloat(oldValue: ScalaFloat, delta: ScalaFloat): ScalaFloat = {
-      oldValue - currentDelta(oldValue, delta)
-    }
-  }
+    trait Weight {
 
-  object Optimizer {
+      var data: scala.Float
 
-    trait LearningRate extends Optimizer {
+      final def backward(deltaFuture: Do[scala.Float])(implicit logger: Logger = Logger.getGlobal,
+                                                       fullName: sourcecode.FullName,
+                                                       className: Caller[_],
+                                                       methodName: sourcecode.Name): Future[Unit] = {
+        Do.run(Do.releaseMap(deltaFuture) { delta =>
+            data -= optimizerConstructor.newInstance(this, delta).delta
+          })
+          .get
+          .map {
+            case \/-(()) => ()
+            case -\/(e) => logger.log(UncaughtExceptionDuringBackward(e))
 
-      protected def currentLearningRate(): ScalaFloat
-
-      override def currentDelta(oldValue: ScalaFloat, delta: ScalaFloat): ScalaFloat = delta * currentLearningRate()
-    }
-
-    trait L1Regularization extends Optimizer {
-      protected def l1Regularization: ScalaFloat
-
-      override def currentDelta(oldValue: ScalaFloat, delta: ScalaFloat): ScalaFloat = {
-        super.currentDelta(oldValue, delta + scala.math.signum(oldValue) * l1Regularization)
-      }
-    }
-
-    trait L2Regularization extends Optimizer {
-      protected def l2Regularization: ScalaFloat
-
-      override def currentDelta(oldValue: ScalaFloat, delta: ScalaFloat): ScalaFloat = {
-        super.currentDelta(oldValue, delta + oldValue * l2Regularization)
-      }
-    }
-
-  }
-
-  implicit object LiftFloatWeight extends Lift[Weight] {
-    override type Data = ScalaFloat
-    override type Delta = ScalaFloat
-    override def apply(weight: Weight): Do[Tape[Data, Delta]] = {
-      import weight._
-      Do.delay(Tape(data, backward))
-    }
-  }
-
-  final case class Weight(var data: ScalaFloat)(implicit optimizerFactory: OptimizerFactory,
-                                                logger: Logger = Logger.getGlobal,
-                                                fullName: sourcecode.FullName,
-                                                className: Caller[_],
-                                                methodName: sourcecode.Name) {
-
-    private val optimizer: Optimizer = optimizerFactory.floatOptimizer(this)
-
-    def backward(deltaFuture: Do[ScalaFloat]): Future[Unit] = {
-      import com.thoughtworks.raii.covariant.ResourceT.resourceTMonad
-
-      val Do(resourceTFuture) = deltaFuture
-
-      val resourceT: ResourceT[Future, Try[ScalaFloat]] = ResourceT(resourceTFuture)
-
-      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceT.map { tryScalaFloat: Try[ScalaFloat] =>
-        tryScalaFloat.map { delta =>
-          synchronized {
-            if (logger.isLoggable(Level.FINER)) {
-              logger.log(WeightIsUpdating(data, delta))
-            }
-            data = optimizer.updateFloat(data, delta)
           }
-        }
       }
 
-      ResourceT.run(tryTRAIIFuture).flatMap {
-        case Failure(e) =>
-          logger.log(UncaughtExceptionDuringBackward(e))
-          Future.now(())
-        case Success(()) =>
-          Future.now(())
+    }
+
+    type FloatWeight <: Weight
+
+    type FloatOptimizer <: Optimizer
+
+    abstract class Optimizer(val weight: FloatWeight, delta0: scala.Float) {
+      def delta: scala.Float = delta0
+    }
+
+    @inject
+    def optimizerConstructor: Constructor[(Weight, scala.Float) => FloatOptimizer]
+
+  }
+
+  object Hyperparameter {
+
+    trait FloatInitialization extends Hyperparameter {
+
+      abstract class Weight(override var data: scala.Float) extends super.Weight
+      @inject
+      def fromFloatConstructor: Constructor[scala.Float => Weight with FloatWeight]
+
+      final def floatWeight(data: scala.Float): Weight with FloatWeight =
+        fromFloatConstructor.newInstance(data)
+
+    }
+
+    trait FixedLearningRate extends LearningRate {
+      def fixedLearningRate: scala.Float
+      trait Optimizer extends super.Optimizer {
+        final def learningRate: scala.Float = fixedLearningRate
       }
+      override type FloatOptimizer <: Optimizer
     }
-  }
 
-  object OptimizerFactory {
-    implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def floatOptimizer(weight: Weight): Optimizer = optimizer
+    trait LearningRate extends Hyperparameter {
+      trait Optimizer extends super.Optimizer {
+        def learningRate: scala.Float
+        override def delta: scala.Float = super.delta * learningRate
+      }
+      override type FloatOptimizer <: Optimizer
     }
-  }
 
-  trait OptimizerFactory {
-    def floatOptimizer(weight: Weight): Optimizer
+    trait L1Regularization extends Hyperparameter {
+      def l1Regularization: scala.Float
+      trait Optimizer extends super.Optimizer {
+        override def delta: Float = super.delta + scala.math.signum(weight.data) * l1Regularization
+      }
+      override type FloatOptimizer <: Optimizer
+    }
+    trait L2Regularization extends Hyperparameter {
+      def l2Regularization: scala.Float
+      trait Optimizer extends super.Optimizer {
+        override def delta: Float = super.delta + weight.data * l2Regularization
+      }
+      override type FloatOptimizer <: Optimizer
+    }
+
   }
 
   object implicits {
     import com.thoughtworks.deeplearning.tapefactories.Binary.monoidBinaryTapeTaskFactory
     import com.thoughtworks.deeplearning.tapefactories.Unary.monoidUnaryTapeTaskFactory
 
-    private[deeplearning] implicit object FloatMonoid extends Monoid[ScalaFloat] {
-      override def zero: ScalaFloat = 0
+    implicit def liftFloatWeight[W <: Hyperparameter#Weight](implicit logger: Logger = Logger.getGlobal,
+                                                             fullName: sourcecode.FullName,
+                                                             className: Caller[_],
+                                                             methodName: sourcecode.Name) = new Lift[W] {
+      override type Data = scala.Float
+      override type Delta = scala.Float
+      override def apply(weight: W): Do[Tape[Data, Delta]] = {
+        import weight._
+        Do.delay(Tape(data, backward))
+      }
+    }
+    private[deeplearning] implicit object FloatMonoid extends Monoid[scala.Float] {
+      override def zero: scala.Float = 0
 
-      override def append(f1: ScalaFloat, f2: => ScalaFloat): ScalaFloat = f1 + f2
+      override def append(f1: scala.Float, f2: => scala.Float): scala.Float = f1 + f2
     }
 
     def infer(self: AnyRef): self.type = self
 
     @inline
     implicit def liftFloat[A](
-        implicit typeClass: LowPriorityLift.Aux[A, ScalaFloat, ScalaFloat]): Lift.Aux[A, ScalaFloat, ScalaFloat] =
+        implicit typeClass: LowPriorityLift.Aux[A, scala.Float, scala.Float]): Lift.Aux[A, scala.Float, scala.Float] =
       typeClass
 
-    implicit object FloatTrainable extends Trainable[ScalaFloat, ScalaFloat] {
-      override def apply(data: ScalaFloat): Do[ScalaFloat] = Do.now(1)
+    implicit object FloatTrainable extends Trainable[scala.Float, scala.Float] {
+      override def apply(data: scala.Float): Do[scala.Float] = Do.now(1)
     }
 
     @inline
@@ -146,7 +149,7 @@ object Float extends FloatCompanion {
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 + data1
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               val delta0Future = Do.now(outputDelta)
               val delta1Future = Do.now(outputDelta)
               (delta0Future, delta1Future)
@@ -167,7 +170,7 @@ object Float extends FloatCompanion {
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 - data1
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               val delta0Future = Do.now(outputDelta)
               val delta1Future = Do.delay(-outputDelta)
               (delta0Future, delta1Future)
@@ -188,7 +191,7 @@ object Float extends FloatCompanion {
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 * data1
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               val delta0Future = Do.delay(outputDelta * data1)
               val delta1Future = Do.delay(outputDelta * data0)
               (delta0Future, delta1Future)
@@ -209,7 +212,7 @@ object Float extends FloatCompanion {
         tapefactories.Binary.doTape(operand0, operand1) { (data0, data1) =>
           Task.delay {
             val outputData = data0 / data1
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               val delta0Future = Do.delay(outputDelta / data1)
               val delta1Future = Do.delay(-data0 * outputDelta / (data1 * data1))
               (delta0Future, delta1Future)
@@ -231,8 +234,8 @@ object Float extends FloatCompanion {
           Task.delay {
             val leftLessThenRight = data0 < data1
             val outputData = if (leftLessThenRight) data0 else data1
-            val computeBackward = { outputDelta: ScalaFloat =>
-              val zero = Do.now(the[Numeric[ScalaFloat]].zero)
+            val computeBackward = { outputDelta: scala.Float =>
+              val zero = Do.now(the[Numeric[scala.Float]].zero)
               val delta = Do.now(outputDelta)
               if (leftLessThenRight) (delta, zero) else (zero, delta)
             }
@@ -253,8 +256,8 @@ object Float extends FloatCompanion {
           Task.delay {
             val leftLessThenRight = data0 < data1
             val outputData = if (leftLessThenRight) data1 else data0
-            val computeBackward = { outputDelta: ScalaFloat =>
-              val zero = Do.now(the[Numeric[ScalaFloat]].zero)
+            val computeBackward = { outputDelta: scala.Float =>
+              val zero = Do.now(the[Numeric[scala.Float]].zero)
               val delta = Do.now(outputDelta)
               if (leftLessThenRight) (zero, delta) else (delta, zero)
             }
@@ -274,7 +277,7 @@ object Float extends FloatCompanion {
         tapefactories.Unary.doTape(operand) { data =>
           Task.delay {
             val outputData = scala.math.log(data).toFloat
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               Do.delay(outputDelta / data)
             }
             (outputData, computeBackward)
@@ -292,7 +295,7 @@ object Float extends FloatCompanion {
         tapefactories.Unary.doTape(operand) { data =>
           Task.delay {
             val outputData = scala.math.exp(data).toFloat
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               Do.delay(outputDelta * outputData)
             }
             (outputData, computeBackward)
@@ -311,7 +314,7 @@ object Float extends FloatCompanion {
           Task.delay {
             val isDataPositive = data >= 0
             val outputData = if (isDataPositive) data else -data
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               if (isDataPositive) Do.now(outputDelta) else Do.delay(-outputDelta)
             }
             (outputData, computeBackward)
@@ -321,15 +324,15 @@ object Float extends FloatCompanion {
     }
 
     @inline
-    def reciprocal[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, ScalaFloat, ScalaFloat],
+    def reciprocal[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, scala.Float, scala.Float],
                                               logger: Logger = Logger.getGlobal,
                                               fullName: sourcecode.FullName,
                                               methodName: sourcecode.Name,
                                               className: Caller[_]): Do[FloatTape] = {
-      tapefactories.Unary.doTape(liftOperand(operand)) { data: ScalaFloat =>
+      tapefactories.Unary.doTape(liftOperand(operand)) { data: scala.Float =>
         Task.delay {
           val outputData = 1 / data
-          val computeBackward = { outputDelta: ScalaFloat =>
+          val computeBackward = { outputDelta: scala.Float =>
             Do.delay(-outputDelta / (data * data))
           }
           (outputData, computeBackward)
@@ -338,7 +341,7 @@ object Float extends FloatCompanion {
     }
 
     implicit final class DifferentiableFloatOps[From](from: From)(
-        implicit lift: Lift.Aux[From, ScalaFloat, ScalaFloat],
+        implicit lift: Lift.Aux[From, scala.Float, scala.Float],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
@@ -349,7 +352,7 @@ object Float extends FloatCompanion {
         tapefactories.Unary.doTape(operand) { data =>
           Task.delay {
             val outputData = -data
-            val computeBackward = { outputDelta: ScalaFloat =>
+            val computeBackward = { outputDelta: scala.Float =>
               Do.delay(-outputDelta)
             }
             (outputData, computeBackward)
@@ -363,5 +366,5 @@ object Float extends FloatCompanion {
 
 //workaround for https://github.com/scala/bug/issues/10306
 private[differentiable] abstract class FloatCompanion { this: Float.type =>
-  private[deeplearning] type FloatTape = Tape[ScalaFloat, ScalaFloat]
+  private[deeplearning] type FloatTape = Tape[scala.Float, scala.Float]
 }

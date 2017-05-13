@@ -15,3 +15,7 @@ libraryDependencies += "ch.qos.logback" % "logback-core" % "1.2.2" % Test
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+
+libraryDependencies += "com.thoughtworks.constructor" %% "constructor" % "4.1.0"
+
+libraryDependencies += "com.thoughtworks.constructor" %% "override" % "4.1.0"
