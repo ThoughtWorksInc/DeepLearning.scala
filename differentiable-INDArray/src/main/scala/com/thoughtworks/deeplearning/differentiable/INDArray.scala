@@ -711,8 +711,8 @@ object INDArray extends INDArrayCompanion {
       def monadicConv2d[InputTape <: Tape[ND4JArray, ND4JArray],
                         WeightTape <: Tape[ND4JArray, ND4JArray],
                         Bias <: Tape[ND4JArray, ND4JArray]](input: Do[InputTape],
-                                                                       weight: Do[WeightTape],
-                                                                       bias: Do[Bias]) = monadic[Do] {
+                                                            weight: Do[WeightTape],
+                                                            bias: Do[Bias]) = monadic[Do] {
         val inputShape: Array[Int] = input.each.data.shape()
         val count = inputShape(0)
         val depth = inputShape(1)
@@ -959,6 +959,6 @@ object INDArray extends INDArrayCompanion {
 }
 
 //workaround for https://github.com/scala/bug/issues/10306
-abstract class INDArrayCompanion {
+private[differentiable] abstract class INDArrayCompanion {
   private[deeplearning] type INDArrayTape = Tape[ND4JArray, ND4JArray]
 }
