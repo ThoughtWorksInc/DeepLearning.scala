@@ -2,16 +2,8 @@
 
 [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/ThoughtWorksInc/DeepLearning.scala.svg?branch=2.0.x)](https://travis-ci.org/ThoughtWorksInc/DeepLearning.scala)
+[![Latest version](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiable/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiable)
 [![Scaladoc](https://javadoc.io/badge/com.thoughtworks.deeplearning/unidoc_2.11.svg?label=scaladoc)](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html)
-
-[![DifferentiableAny](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableany/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableany)
-[![DifferentiableNothing](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablenothing/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablenothing)
-[![DifferentiableSeq](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableseq/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableseq)
-[![DifferentiableDouble](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiabledouble/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiabledouble)
-[![DifferentiableFloat](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablefloat/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablefloat)
-[![DifferentiableHList](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablehlist/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablehlist)
-[![DifferentiableCoproduct](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablecoproduct/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiablecoproduct)
-[![DifferentiableINDArray](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableindarray/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiableindarray)
 
 **DeepLearning.scala** is a DSL for creating complex neural networks.
 
