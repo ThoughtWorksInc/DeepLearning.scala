@@ -93,14 +93,14 @@ object Float extends FloatCompanion {
     trait L1Regularization extends Hyperparameter {
       def l1Regularization: scala.Float
       trait Optimizer extends super.Optimizer {
-        override def delta: Float = super.delta + scala.math.signum(weight.data) * l1Regularization
+        override def delta: scala.Float = super.delta + scala.math.signum(weight.data) * l1Regularization
       }
       override type FloatOptimizer <: Optimizer
     }
     trait L2Regularization extends Hyperparameter {
       def l2Regularization: scala.Float
       trait Optimizer extends super.Optimizer {
-        override def delta: Float = super.delta + weight.data * l2Regularization
+        override def delta: scala.Float = super.delta + weight.data * l2Regularization
       }
       override type FloatOptimizer <: Optimizer
     }
