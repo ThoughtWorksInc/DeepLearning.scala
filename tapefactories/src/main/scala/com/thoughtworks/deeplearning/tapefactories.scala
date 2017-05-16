@@ -3,6 +3,7 @@ package com.thoughtworks.deeplearning
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.deeplearning.logs.{DeltaAccumulatorIsUpdating, UncaughtExceptionDuringBackward}
+import com.thoughtworks.feature.Caller
 import com.thoughtworks.raii._
 
 import scalaz.{-\/, @@, Applicative, Monoid, Semigroup, \/, \/-}

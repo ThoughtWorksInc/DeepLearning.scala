@@ -1,10 +1,8 @@
 parallelExecution in Global := false
 
-lazy val Tape = project.dependsOn(logs)
+lazy val Tape = project
 
-lazy val tapefactories = project.dependsOn(Tape, Caller)
-
-lazy val Caller = project
+lazy val tapefactories = project.dependsOn(Tape, logs)
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
@@ -45,7 +43,7 @@ lazy val math = project.dependsOn(Lift)
 
 lazy val `differentiable-Any` = project.dependsOn(Tape)
 
-lazy val logs = project.dependsOn(Caller)
+lazy val logs = project
 
 lazy val `differentiable` =
   project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)

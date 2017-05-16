@@ -27,6 +27,7 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous
 import shapeless.the
 import com.thoughtworks.deeplearning.math._
+import com.thoughtworks.feature.Caller
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}

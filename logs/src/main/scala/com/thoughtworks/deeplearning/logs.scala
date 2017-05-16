@@ -4,6 +4,7 @@ import java.util.logging.{Level, LogRecord}
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
+import com.thoughtworks.feature.Caller
 
 object logs {
 

@@ -9,6 +9,7 @@ import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, Weig
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable
 import com.thoughtworks.deeplearning.Lift.LowPriorityLift
+import com.thoughtworks.feature.Caller
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.covariant.ResourceT
 import shapeless.the
