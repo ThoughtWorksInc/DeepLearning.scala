@@ -31,6 +31,7 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
+    - $HOME/Library/Caches/Homebrew
 
 script:
   - sbt +test +unidoc
