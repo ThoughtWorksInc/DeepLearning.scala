@@ -33,7 +33,6 @@ object tapefactories {
       extends (Do[OutputDelta] => Future[Unit])
       with Releasable[Future, Try[Tape[OutputData, OutputDelta]]] {
 
-    // TODO: MonoidOutput should be scoped by `Do.scoped`, not own itself.
     final override def value: Try[Tape[OutputData, OutputDelta]] = Success(Tape(data, this))
 
     @volatile
@@ -77,7 +76,6 @@ object tapefactories {
       extends (Do[OutputDelta] => Future[Unit])
       with Releasable[Future, Try[Tape[OutputData, OutputDelta]]] {
 
-    // TODO: SemigroupOutput should be managed by `Do.managed`, not own itself.
     override def value: Try[Tape[OutputData, OutputDelta]] = Success(Tape(data, this))
 
     @volatile
