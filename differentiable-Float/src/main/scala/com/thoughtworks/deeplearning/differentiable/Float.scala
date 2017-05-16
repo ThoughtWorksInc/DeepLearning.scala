@@ -3,8 +3,8 @@ package differentiable
 
 import java.util.logging.{Level, Logger}
 
-import com.thoughtworks.Constructor
-import com.thoughtworks.Override.inject
+import com.thoughtworks.feature.Constructor
+import com.thoughtworks.feature.Override.inject
 import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable

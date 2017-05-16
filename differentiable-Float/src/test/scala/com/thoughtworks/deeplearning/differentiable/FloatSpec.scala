@@ -25,7 +25,7 @@ import scalaz.{-\/, EitherT, MonadError, \/, \/-}
 import scalaz.syntax.all._
 import scalaz.std.`try`.toDisjunction
 import scalaz.std.iterable._
-import com.thoughtworks.Override
+import com.thoughtworks.feature.Override
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
