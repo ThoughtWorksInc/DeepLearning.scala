@@ -27,7 +27,8 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous
 import shapeless.the
 import com.thoughtworks.deeplearning.math._
-import com.thoughtworks.feature.Caller
+import com.thoughtworks.feature.{Caller, Constructor}
+import com.thoughtworks.feature.Override.inject
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -39,179 +40,196 @@ import org.nd4j.linalg.api.ndarray.{INDArray => ND4JArray}
 
 object INDArray extends INDArrayCompanion {
 
-  trait Optimizer {
-
-    protected def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = delta
-
-    final def updateINDArray(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-      oldValue - currentDelta(oldValue, delta)
-    }
-  }
-
-  object Optimizer {
-
-    trait LearningRate extends Optimizer {
-
-      protected def currentLearningRate(): ScalaDouble
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = delta * currentLearningRate()
-    }
-
-    trait L1Regularization extends Optimizer {
-      protected def l1Regularization: ScalaDouble
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-        super.currentDelta(oldValue, delta + sign(oldValue) * l1Regularization)
-      }
-    }
-
-    trait L2Regularization extends Optimizer {
-      protected def l2Regularization: ScalaDouble
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-        super.currentDelta(oldValue, delta + oldValue * l2Regularization)
-      }
-    }
-
-    trait Momentum extends Optimizer {
-      protected def mu(): ScalaDouble = 0.9
-
-      private var v: Option[ND4JArray] = None
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-        val vValue: ND4JArray = v.getOrElse(Nd4j.zeros(delta.shape: _*))
-        v = Some(
-          super.currentDelta(oldValue, delta) + vValue * mu()
-        )
-        v.get
-      }
-    }
-
-    trait NesterovMomentum extends Optimizer {
-      protected def mu(): ScalaDouble = 0.9
-
-      private var v: Option[ND4JArray] = None
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-        val vValue: ND4JArray = v.getOrElse(Nd4j.zeros(delta.shape: _*))
-        val vPre = vValue
-        v = Some(
-          super.currentDelta(oldValue, delta) + vValue * mu()
-        )
-
-        vPre * (-mu()) + v.get * (1 + mu())
-      }
-    }
-
-    trait Adagrad extends Optimizer {
-
-      protected def eps(): ScalaDouble = 1e-4
-
-      private var cache: Option[ND4JArray] = None
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-        val cacheValue = cache.getOrElse(Nd4j.zeros(delta.shape: _*))
-        cache = Some(cacheValue + delta * delta)
-        super.currentDelta(oldValue, delta) / (sqrt(cache.get) + eps)
-      }
-    }
-
-    trait RMSprop extends Optimizer {
-
-      protected def decayRate(): ScalaDouble = 0.99
-
-      protected def eps(): ScalaDouble = 1e-4
-
-      private var cache: Option[ND4JArray] = None
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-        val cacheValue = cache.getOrElse(Nd4j.zeros(delta.shape: _*))
-        cache = Some(cacheValue * decayRate + delta * delta * (1 - decayRate))
-        super.currentDelta(oldValue, delta) / (sqrt(cache.get) + eps)
-      }
-    }
-
-    trait Adam extends Optimizer {
-
-      protected def beta1 = 0.9
-
-      protected def beta2 = 0.999
-
-      protected def eps(): ScalaDouble = 1e-8
-
-      private var m: Option[ND4JArray] = None
-
-      private var v: Option[ND4JArray] = None
-
-      private var times: Int = 0
-
-      override def currentDelta(oldValue: ND4JArray, delta: ND4JArray): ND4JArray = {
-
-        val mValue = m.getOrElse(Nd4j.zeros(delta.shape: _*))
-
-        m = Some(
-          mValue * beta1 + delta * (1 - beta1)
-        )
-
-        val vValue = v.getOrElse(Nd4j.zeros(delta.shape: _*))
-
-        v = Some(
-          vValue * beta2 + delta * delta * (1 - beta2)
-        )
-
-        times += 1
-
-        val coef1 = 1 - scala.math.pow(beta1, times)
-
-        val coef2 = scala.math.sqrt(1 - scala.math.pow(beta2, times))
-
-        super.currentDelta(oldValue, m.get * (coef2 / coef1)) / (sqrt(v.get) + eps)
-      }
-    }
-
-  }
-
-  final case class Weight(var data: ND4JArray)(implicit optimizerFactory: OptimizerFactory,
-                                               logger: Logger = Logger.getGlobal,
-                                               fullName: sourcecode.FullName,
-                                               className: Caller[_],
-                                               methodName: sourcecode.Name) {
-    private val optimizer: Optimizer = optimizerFactory.indarrayOptimizer(this)
-    def doTape = Do.delay(Tape[ND4JArray, ND4JArray](data, backward))
-
-    def backward(outputDelta: Do[ND4JArray]): Future[Unit] = {
-      import com.thoughtworks.raii.covariant.ResourceT.resourceTMonad
-      val Do(resourceFactoryTFuture) = outputDelta
-      val resourceFactoryT: ResourceT[Future, Try[ND4JArray]] = ResourceT(resourceFactoryTFuture)
-
-      val tryTRAIIFuture: ResourceT[Future, Try[Unit]] = resourceFactoryT.map { tryDelta: Try[ND4JArray] =>
-        tryDelta.map { delta =>
-          synchronized {
-            if (logger.isLoggable(Level.FINER)) {
-              logger.log(WeightIsUpdating(data, delta))
-            }
-            data = optimizer.updateINDArray(data, delta)
-          }
+  private def jumpTask()(implicit executionContext: ExecutionContext): Task[Unit] = {
+    Task.async { handler: ((Throwable \/ Unit) => Unit) =>
+      executionContext.execute {
+        new Runnable {
+          override def run(): Unit = handler(\/-(()))
         }
       }
-      ResourceT.run(tryTRAIIFuture).flatMap {
-        case Failure(e) =>
-          logger.log(UncaughtExceptionDuringBackward(e))
-          Future.now(())
-        case Success(()) =>
-          Future.now(())
+    }
+  }
+
+  trait Hyperparameter extends Serializable {
+
+    trait Weight extends Serializable {
+
+      var data: ND4JArray
+
+      final def backward(deltaFuture: Do[ND4JArray])(implicit logger: Logger = Logger.getGlobal,
+                                                     fullName: sourcecode.FullName,
+                                                     className: Caller[_],
+                                                     methodName: sourcecode.Name,
+                                                     executionContext: ExecutionContext): Future[Unit] = {
+        Do.run(Do.releaseFlatMap(deltaFuture) { delta =>
+            Do.jump().map { unit: Unit =>
+              data -= optimizerConstructor.newInstance(this, delta).delta
+              ()
+            }
+          })
+          .get
+          .map {
+            case \/-(()) => ()
+            case -\/(e) => logger.log(UncaughtExceptionDuringBackward(e))
+          }
       }
+
     }
+
+    type INDArrayWeight <: Weight
+
+    type INDArrayOptimizer <: Optimizer
+
+    abstract class Optimizer(val weight: INDArrayWeight, delta0: ND4JArray) {
+      def delta: ND4JArray = delta0
+    }
+
+    @inject
+    def optimizerConstructor: Constructor[(Weight, ND4JArray) => INDArrayOptimizer]
+
   }
 
-  object OptimizerFactory {
-    implicit def shared(implicit optimizer: Optimizer): OptimizerFactory = new OptimizerFactory {
-      override def indarrayOptimizer(weight: Weight): Optimizer = optimizer
-    }
-  }
+  object Hyperparameter {
 
-  trait OptimizerFactory {
-    def indarrayOptimizer(weight: Weight): Optimizer
+    trait INDArrayInitialization extends Hyperparameter {
+
+      abstract class Weight(override var data: ND4JArray) extends super.Weight
+      @inject
+      def fromINDArrayConstructor: Constructor[ND4JArray => Weight with INDArrayWeight]
+
+      final def indArrayWeight(data: ND4JArray): Weight with INDArrayWeight =
+        fromINDArrayConstructor.newInstance(data)
+
+    }
+
+    trait FixedLearningRate extends LearningRate {
+      def fixedLearningRate: scala.Double
+      trait Optimizer extends super.Optimizer {
+        final def learningRate: scala.Double = fixedLearningRate
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+
+    trait LearningRate extends Hyperparameter {
+      trait Optimizer extends super.Optimizer {
+        def learningRate: scala.Double
+        override def delta: ND4JArray = super.delta * learningRate
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+
+    trait L1Regularization extends Hyperparameter {
+      def l1Regularization: ND4JArray
+      trait Optimizer extends super.Optimizer {
+        override def delta: ND4JArray = super.delta + sign(weight.data) * l1Regularization
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+    trait L2Regularization extends Hyperparameter {
+      def l2Regularization: ND4JArray
+      trait Optimizer extends super.Optimizer {
+        override def delta: ND4JArray = super.delta + weight.data * l2Regularization
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+
+    trait Momentum extends Hyperparameter {
+      trait Weight extends super.Weight {
+        def mu: ScalaDouble = 0.9
+        var v: ND4JArray = Nd4j.zeros(data.shape: _*)
+      }
+
+      override type INDArrayWeight <: Weight
+
+      trait Optimizer extends super.Optimizer {
+
+        private lazy val delta0: ND4JArray = {
+          import weight._
+          v = super.delta + v * mu
+          v
+        }
+        override def delta: ND4JArray = delta0
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+
+    trait NesterovMomentum extends Momentum {
+      trait Optimizer extends super.Optimizer {
+        abstract override lazy val delta: ND4JArray = {
+          import weight._
+          val vPrev = v
+          vPrev * (-mu) + super.delta * (1 + mu)
+        }
+      }
+      override type INDArrayOptimizer <: super.Optimizer with Optimizer
+    }
+
+    /**
+      * @note This [[Adagrad]] hyperparameter is usually used before global [[LearningRate]]. e.g. `Adagrad with FixedLearningRate`, not `FixedLearningRate with Adagrad`
+      */
+    trait Adagrad extends Hyperparameter {
+      trait Weight extends super.Weight {
+        var cache: ND4JArray = Nd4j.zeros(data.shape: _*)
+      }
+
+      override type INDArrayWeight <: Weight
+
+      trait Optimizer extends super.Optimizer {
+        def eps: ScalaDouble = 1e-4
+
+        override lazy val delta: ND4JArray = {
+          import weight._
+          cache = cache + super.delta * super.delta
+          super.delta / (sqrt(cache) + eps)
+        }
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+
+    /**
+      * @note This [[RMSprop]] hyperparameter is usually used before global [[LearningRate]]. e.g. `RMSprop with FixedLearningRate`, not `FixedLearningRate with RMSprop`
+      */
+    trait RMSprop extends Hyperparameter {
+      trait Weight extends super.Weight {
+        var cache: ND4JArray = Nd4j.zeros(data.shape: _*)
+      }
+
+      override type INDArrayWeight <: Weight
+
+      trait Optimizer extends super.Optimizer {
+        def eps: ScalaDouble = 1e-4
+        def decayRate: ScalaDouble = 0.99
+        override lazy val delta: ND4JArray = {
+          import weight._
+          cache = cache * decayRate + super.delta * super.delta * (1.0 - decayRate)
+          super.delta / (sqrt(cache) + eps)
+        }
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
+
+    trait Adam extends Hyperparameter {
+
+      trait Weight extends super.Weight {
+        var m: ND4JArray = Nd4j.zeros(data.shape: _*)
+        var v: ND4JArray = Nd4j.zeros(data.shape: _*)
+      }
+
+      override type INDArrayWeight <: Weight
+
+      trait Optimizer extends super.Optimizer {
+        def beta1: ScalaDouble = 0.9
+        def beta2: ScalaDouble = 0.999
+        def eps: ScalaDouble = 1e-8
+        override lazy val delta: ND4JArray = {
+          import weight._
+          m = m * beta1 + super.delta * (1.0 - beta1)
+          v = v * beta2 + (super.delta * super.delta) * (1.0 - beta2)
+          m / (sqrt(v) + eps)
+        }
+      }
+      override type INDArrayOptimizer <: Optimizer
+    }
   }
 
   // TODO: Add a test for this method and auto-broadcasting on n-dimension arrays for n > 2
@@ -240,6 +258,19 @@ object INDArray extends INDArrayCompanion {
     import com.thoughtworks.deeplearning.differentiable.Double.DoubleTape
     import com.thoughtworks.deeplearning.tapefactories.Binary.semigroupBinaryTapeTaskFactory
     import com.thoughtworks.deeplearning.tapefactories.Unary.semigroupUnaryTapeTaskFactory
+    
+    implicit def liftINDArrayWeight[W <: Hyperparameter#Weight](implicit logger: Logger = Logger.getGlobal,
+                                                                fullName: sourcecode.FullName,
+                                                                caller: Caller[_],
+                                                                methodName: sourcecode.Name,
+                                                                executionContext: ExecutionContext) = new Lift[W] {
+      override type Data = ND4JArray
+      override type Delta = ND4JArray
+      override def apply(weight: W): Do[Tape[Data, Delta]] = {
+        import weight._
+        Do.delay(Tape(data, backward))
+      }
+    }
 
     private implicit object INDArraySemigroup extends Semigroup[ND4JArray] {
       override def append(f1: ND4JArray, f2: => ND4JArray): ND4JArray = f1 + f2
@@ -250,34 +281,14 @@ object INDArray extends INDArrayCompanion {
         implicit typeClass: LowPriorityLift.Aux[A, ND4JArray, ND4JArray]): Lift.Aux[A, ND4JArray, ND4JArray] =
       typeClass
 
-    implicit final class INDArrayToWeightOps(value: ND4JArray) {
-      def toWeight(implicit optimizerFactory: OptimizerFactory,
-                   logger: Logger = Logger.getGlobal,
-                   fullName: sourcecode.FullName,
-                   className: Caller[_],
-                   methodName: sourcecode.Name): Do[INDArrayTape] = {
-        Weight(value).doTape
-      }
-    }
-
     implicit object INDArrayTrainable extends Trainable[ND4JArray, ND4JArray] {
       override def apply(data: ND4JArray): Do[ND4JArray] = Do.now(Nd4j.ones(data.shape(): _*))
-    }
-
-    private def jumpTask()(implicit executionContext: ExecutionContext): Task[Unit] = {
-      Task.async { handler: ((Throwable \/ Unit) => Unit) =>
-        executionContext.execute {
-          new Runnable {
-            override def run(): Unit = handler(\/-(()))
-          }
-        }
-      }
     }
 
     @inline
     implicit def `INDArray+INDArray`(implicit logger: Logger = Logger.getGlobal,
                                      fullName: sourcecode.FullName,
-                                     className: Caller[_],
+                                     caller: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
       : polyFunctions.+.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -309,7 +320,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray+Double`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions.+.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
@@ -335,7 +346,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `Double+INDArray`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions.+.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -347,7 +358,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray-INDArray`(implicit logger: Logger = Logger.getGlobal,
                                      fullName: sourcecode.FullName,
-                                     className: Caller[_],
+                                     caller: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
       : polyFunctions.-.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -379,7 +390,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray-Double`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions.-.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
@@ -405,7 +416,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `Double-INDArray`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions.-.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -417,7 +428,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray*INDArray`(implicit logger: Logger = Logger.getGlobal,
                                      fullName: sourcecode.FullName,
-                                     className: Caller[_],
+                                     caller: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
       : polyFunctions.*.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -449,7 +460,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray*Double`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions.*.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
@@ -477,7 +488,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `Double*INDArray`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions.*.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -489,7 +500,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray/INDArray`(implicit logger: Logger = Logger.getGlobal,
                                      fullName: sourcecode.FullName,
-                                     className: Caller[_],
+                                     caller: Caller[_],
                                      methodName: sourcecode.Name,
                                      executionContext: ExecutionContext)
       : polyFunctions./.Case.Aux[Do[INDArrayTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -501,7 +512,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `INDArray/Double`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions./.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
@@ -513,7 +524,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `Double/INDArray`(implicit logger: Logger = Logger.getGlobal,
                                    fullName: sourcecode.FullName,
-                                   className: Caller[_],
+                                   caller: Caller[_],
                                    methodName: sourcecode.Name,
                                    executionContext: ExecutionContext)
       : polyFunctions./.Case.Aux[Do[DoubleTape], Do[INDArrayTape], Do[INDArrayTape]] = {
@@ -525,7 +536,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `max(INDArray,Double)`(implicit logger: Logger = Logger.getGlobal,
                                         fullName: sourcecode.FullName,
-                                        className: Caller[_],
+                                        caller: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext)
       : polyFunctions.max.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
@@ -554,7 +565,7 @@ object INDArray extends INDArrayCompanion {
     @inline
     implicit def `min(INDArray,Double)`(implicit logger: Logger = Logger.getGlobal,
                                         fullName: sourcecode.FullName,
-                                        className: Caller[_],
+                                        caller: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext)
       : polyFunctions.min.Case.Aux[Do[INDArrayTape], Do[DoubleTape], Do[INDArrayTape]] = {
@@ -584,7 +595,7 @@ object INDArray extends INDArrayCompanion {
     implicit def `exp(INDArray)`(
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
-        className: Caller[_],
+        caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions.exp.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.exp.at { operand =>
@@ -608,7 +619,7 @@ object INDArray extends INDArrayCompanion {
     implicit def `log(INDArray)`(
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
-        className: Caller[_],
+        caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions.log.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.log.at { operand =>
@@ -632,7 +643,7 @@ object INDArray extends INDArrayCompanion {
     implicit def `abs(INDArray)`(
         implicit logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
-        className: Caller[_],
+        caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions.abs.Case.Aux[Do[INDArrayTape], Do[INDArrayTape]] = {
       polyFunctions.abs.at { operand =>
@@ -656,7 +667,7 @@ object INDArray extends INDArrayCompanion {
     def negative[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
                                             logger: Logger = Logger.getGlobal,
                                             fullName: sourcecode.FullName,
-                                            className: Caller[_],
+                                            caller: Caller[_],
                                             methodName: sourcecode.Name,
                                             executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data =>
@@ -678,7 +689,7 @@ object INDArray extends INDArrayCompanion {
     def reciprocal[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
                                               logger: Logger = Logger.getGlobal,
                                               fullName: sourcecode.FullName,
-                                              className: Caller[_],
+                                              caller: Caller[_],
                                               methodName: sourcecode.Name,
                                               executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data: ND4JArray =>
@@ -706,7 +717,7 @@ object INDArray extends INDArrayCompanion {
                                                          liftBias: Lift.Aux[Bias, ND4JArray, ND4JArray],
                                                          logger: Logger = Logger.getGlobal,
                                                          fullName: sourcecode.FullName,
-                                                         className: Caller[_],
+                                                         caller: Caller[_],
                                                          methodName: sourcecode.Name,
                                                          executionContext: ExecutionContext): Do[INDArrayTape] = {
       def monadicConv2d[InputTape <: Tape[ND4JArray, ND4JArray],
@@ -756,7 +767,7 @@ object INDArray extends INDArrayCompanion {
                                                    liftRight: Lift.Aux[Right, ND4JArray, ND4JArray],
                                                    logger: Logger = Logger.getGlobal,
                                                    fullName: sourcecode.FullName,
-                                                   className: Caller[_],
+                                                   caller: Caller[_],
                                                    methodName: sourcecode.Name,
                                                    executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Binary.doTape(liftLeft(left), liftRight(right)) { (data0: ND4JArray, data1: ND4JArray) =>
@@ -794,7 +805,7 @@ object INDArray extends INDArrayCompanion {
         implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
-        className: Caller[_],
+        caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data: ND4JArray =>
@@ -820,7 +831,7 @@ object INDArray extends INDArrayCompanion {
         implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
-        className: Caller[_],
+        caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { (data: ND4JArray) =>
@@ -844,7 +855,7 @@ object INDArray extends INDArrayCompanion {
         implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
-        className: Caller[_],
+        caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { (data: ND4JArray) =>
@@ -871,7 +882,7 @@ object INDArray extends INDArrayCompanion {
     def sumT[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
                                         logger: Logger = Logger.getGlobal,
                                         fullName: sourcecode.FullName,
-                                        className: Caller[_],
+                                        caller: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext): Do[DoubleTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data: ND4JArray =>
@@ -893,7 +904,7 @@ object INDArray extends INDArrayCompanion {
     def sum[Operand](operand: Operand, dimensions: Int*)(implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
                                                          logger: Logger = Logger.getGlobal,
                                                          fullName: sourcecode.FullName,
-                                                         className: Caller[_],
+                                                         caller: Caller[_],
                                                          methodName: sourcecode.Name,
                                                          executionContext: ExecutionContext): Do[INDArrayTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data: ND4JArray =>
@@ -915,7 +926,7 @@ object INDArray extends INDArrayCompanion {
     def mean[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, ND4JArray, ND4JArray],
                                         logger: Logger = Logger.getGlobal,
                                         fullName: sourcecode.FullName,
-                                        className: Caller[_],
+                                        caller: Caller[_],
                                         methodName: sourcecode.Name,
                                         executionContext: ExecutionContext): Do[DoubleTape] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data: ND4JArray =>
@@ -938,7 +949,7 @@ object INDArray extends INDArrayCompanion {
         logger: Logger = Logger.getGlobal,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
-        className: Caller[_],
+        caller: Caller[_],
         executionContext: ExecutionContext) {
       @inline
       def unary_- : Do[INDArrayTape] = {
