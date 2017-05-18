@@ -16,6 +16,6 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 
-libraryDependencies += "com.thoughtworks.feature" %% "constructor" % "1.0.0"
+libraryDependencies += "com.thoughtworks.feature" %% "constructor" % "2.0.0-M0"
 
-libraryDependencies += "com.thoughtworks.feature" %% "override" % "1.0.0"
+libraryDependencies += "com.thoughtworks.feature" %% "override" % "2.0.0-M0"

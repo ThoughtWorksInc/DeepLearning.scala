@@ -99,11 +99,10 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 //  implicit def optimizer: Optimizer = new LearningRate {
 //    def currentLearningRate() = 1
 //  }
-
   "Nd4jArray + Nd4jArray" in {
 
+    // TODO: Weight should be some kind of Aux type, not singleton type
     val weight = hyperparameters.indArrayWeight(Nd4j.ones(4, 4))
-
     def myNetwork(input: Nd4jArray): Do[INDArrayTape] = {
       weight + input
     }
@@ -421,13 +420,13 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
     @monadic[Task]
     val task: Task[Unit] = {
       for (_ <- 1 to 10) {
-        train(myNetwork(liftINDArrayWeight.apply(hyperparameters.indArrayWeight(Nd4j.ones(4, 4))))).each
+        train(myNetwork(Do.now(Tape.literal(Nd4j.ones(4, 4))))).each
       }
     }
 
     val result = throwableMonadic[Task] {
       task.each
-      predict(myNetwork(liftINDArrayWeight.apply(hyperparameters.indArrayWeight(Nd4j.ones(4, 4))))).each
+      predict(myNetwork(Do.now(Tape.literal(Nd4j.ones(4, 4))))).each
     }
 
     val p = Promise[Assertion]
@@ -696,7 +695,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
       72.00, 78.00, 54.00).toNDArray
       .reshape(1, 1, 4, 4)
 
-    trainConvlountion(liftINDArrayWeight.apply(input)).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    trainConvlountion(input.forward).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e

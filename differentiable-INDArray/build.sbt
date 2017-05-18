@@ -1,10 +1,10 @@
-addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "2.0.0" % Test)
-
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
+
+libraryDependencies += "com.thoughtworks.feature" %% "demixin" % "2.0.0-M0"
 
 fork in Test := true
 
