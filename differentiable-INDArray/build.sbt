@@ -4,7 +4,7 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
-libraryDependencies += "com.thoughtworks.feature" %% "demixin" % "2.0.0-M0"
+libraryDependencies += "com.thoughtworks.feature" %% "demixin" % "2.0.0-RC0"
 
 fork in Test := true
 
