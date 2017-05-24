@@ -1,6 +1,8 @@
 package com.thoughtworks.deeplearning
 package differentiable
 
+import java.util.logging.Logger
+
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.{predict, train}
 import com.thoughtworks.deeplearning.differentiable.INDArray.Hyperparameter
@@ -28,8 +30,10 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.ops.transforms.Transforms.{sign, sqrt}
 import org.nd4j.linalg.util.ArrayUtil
 import org.nd4s.Implicits._
-import shapeless.Lazy
+import shapeless.{::, HList, Lazy}
 import shapeless.PolyDefns.Case
+import shapeless.ops.hlist.Selector
+import shapeless.record.Record
 
 import scalaz.concurrent.Future.futureInstance
 import scala.concurrent.{ExecutionContext, Promise}
@@ -49,13 +53,15 @@ object INDArraySpec {
       bTape.data
     }
   }
+
+  implicit val logger: Logger = Logger.getGlobal
 }
 
 final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
   import INDArraySpec._
 
   val hyperparameters = Override.newInstance[
-    differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
+    differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.Optimization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
     fixedLearningRate = 1.0)
 
   def trainAndAssertLossAndWeight(myNetwork: Nd4jArray => Do[INDArrayTape],
@@ -446,7 +452,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Nd4jArray im2col (kernel,stride,padding) --forward" in {
     val hyperparameters = Override.newInstance[
-      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
+      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.Optimization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
       fixedLearningRate = 0.03)
 
     val weight = hyperparameters.indArrayWeight((-(1 to 54).toNDArray).reshape(2, 3, 3, 3))
@@ -478,7 +484,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Nd4jArray im2col (kernel,stride,padding) --train" in {
     val hyperparameters = Override.newInstance[
-      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
+      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.Optimization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
       fixedLearningRate = 0.01)
 
     val weight = hyperparameters.indArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
@@ -551,7 +557,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Nd4jArray reshape shapes --train" in {
     val hyperparameters = Override.newInstance[
-      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
+      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.Optimization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
       fixedLearningRate = 0.01)
 
     val weight = hyperparameters.indArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
@@ -625,7 +631,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Nd4jArray permute dimensions --train" in {
     val hyperparameters = Override.newInstance[
-      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
+      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.Optimization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
       fixedLearningRate = 0.01)
 
     val weight = hyperparameters.indArrayWeight((1 to 54).toNDArray.reshape(2, 3, 9))
@@ -670,7 +676,7 @@ final class INDArraySpec extends AsyncFreeSpec with Matchers with Inside {
   "conv2d(Nd4jArray, Nd4jArray, Nd4jArray, kernel, stride, padding)" in {
 
     val hyperparameters = Override.newInstance[
-      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
+      differentiable.INDArray.Hyperparameter.INDArrayInitialization with differentiable.INDArray.Hyperparameter.Optimization with differentiable.INDArray.Hyperparameter.FixedLearningRate](
       fixedLearningRate = 0.01)
 
     val input = hyperparameters.indArrayWeight((1 to 16).toNDArray.reshape(1, 1, 4, 4))
