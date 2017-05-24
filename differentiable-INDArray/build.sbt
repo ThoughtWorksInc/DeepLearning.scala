@@ -34,4 +34,4 @@ libraryDependencies ++= {
       "org.nd4j" % "nd4j-api" % "0.7.2",
       "org.nd4j" % "nd4j-native-platform" % "0.7.2" % Test)
   }
-}
+}scalacOptions += "-Ypartial-unification"
