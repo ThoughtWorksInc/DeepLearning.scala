@@ -70,7 +70,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
   "Plus" in {
 
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -119,7 +120,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Plus with Train" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -155,7 +157,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Plus with Predict" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -199,7 +202,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Predict -- use for" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -244,7 +248,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Predict -- one exception" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -288,7 +293,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Predict -- two exception" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -333,7 +339,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "Predict -- three exception" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -378,7 +385,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "will not stackOverFlow" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -419,7 +427,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "min" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -445,7 +454,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+    result.unsafePerformAsync { either: Throwable \/ Float =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -461,7 +470,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "max" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -487,7 +497,7 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
+    result.unsafePerformAsync { either: Throwable \/ Float =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -503,7 +513,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "log" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 0.5f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 0.5f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -548,7 +559,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "exp" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 0.1f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 0.1f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -592,7 +604,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "abs" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(1.0f)
 
@@ -633,7 +646,8 @@ final class FloatSpec extends AsyncFreeSpec with Matchers with Inside {
 
   "unary_-" in {
     val hyperparameters = Override
-      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](fixedLearningRate = 1.0f)
+      .newInstance[differentiable.Float.Hyperparameter.FixedLearningRate with differentiable.Float.Hyperparameter.FloatInitialization](
+        fixedLearningRate = 1.0f)
 
     val weight = hyperparameters.floatWeight(5.0f)
 
