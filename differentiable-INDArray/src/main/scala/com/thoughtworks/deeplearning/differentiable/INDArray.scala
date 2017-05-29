@@ -29,7 +29,7 @@ import com.thoughtworks.raii.asynchronous
 import shapeless.{HList, Lazy, Poly0, Witness, the}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.feature.{Caller, Constructor, Demixin}
-import com.thoughtworks.feature.Override.inject
+import com.thoughtworks.feature.New.inject
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -81,7 +81,7 @@ object INDArray extends INDArrayCompanion {
     type INDArrayOptimizerDependencies
     @(inject @getter)
     val demixinDependencies: Demixin[INDArrayOptimizerDependencies]
-    type DemixinDependencies <: demixinDependencies.Out
+    type DemixinDependencies = demixinDependencies.Out
 
   }
 
@@ -90,10 +90,6 @@ object INDArray extends INDArrayCompanion {
     trait Logged extends Hyperparameter {
 
       trait Optimizer extends super.Optimizer {
-
-        val weight: INDArrayWeight
-
-        def delta: ND4JArray
 
         implicit def logger: Logger = loggerSelector(dependencies)
         implicit def fullName: sourcecode.FullName = fullNameSelector(dependencies)
@@ -174,7 +170,6 @@ object INDArray extends INDArrayCompanion {
 
         def delta: ND4JArray = delta0
 
-//        def optimize(): Future[Unit]
       }
 
       type INDArrayOptimizer <: Optimizer

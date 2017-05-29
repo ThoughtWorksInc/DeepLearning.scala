@@ -4,7 +4,7 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
-libraryDependencies += "com.thoughtworks.feature" %% "demixin" % "2.0.0-RC2"
+libraryDependencies += "com.thoughtworks.feature" %% "demixin" % "2.0.0-RC3"
 
 addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M8").cross(CrossVersion.patch))
 libraryDependencies += "com.thoughtworks.example" %% "example" % "1.0.0"
