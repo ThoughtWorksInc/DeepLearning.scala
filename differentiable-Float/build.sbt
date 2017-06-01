@@ -20,6 +20,8 @@ libraryDependencies += "com.thoughtworks.feature" %% "constructor" % "2.0.0-RC4"
 
 libraryDependencies += "com.thoughtworks.feature" %% "new" % "2.0.0-RC4"
 
+import Ordering.Implicits._
+
 publishArtifact := {
   if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
     false
