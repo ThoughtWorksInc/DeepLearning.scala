@@ -8,10 +8,10 @@ import com.thoughtworks.deeplearning.math.polyFunctions
 import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable
 import com.thoughtworks.deeplearning.tapefactories.{MonoidOutput, SemigroupOutput, Unary}
-import com.thoughtworks.deeplearning.Lift.LowPriorityLift
+import com.thoughtworks.deeplearning.Lift.{Forwardable, LowPriorityLift}
 import com.thoughtworks.deeplearning.differentiable.Double.DoubleTape
 import com.thoughtworks.deeplearning._
-import com.thoughtworks.deeplearning.differentiable.INDArray.Hyperparameter.Liftable
+import com.thoughtworks.deeplearning.differentiable.INDArray.hyperparameters.BaseWeight
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
@@ -28,7 +28,8 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous
 import shapeless.{HList, Lazy, Poly0, Witness, the}
 import com.thoughtworks.deeplearning.math._
-import com.thoughtworks.feature.{Caller, Constructor, Demixin}
+import com.thoughtworks.feature._
+import com.thoughtworks.feature.byname.ByName
 import com.thoughtworks.feature.New.inject
 
 import scala.concurrent.ExecutionContext
@@ -56,85 +57,58 @@ object INDArray extends INDArrayCompanion {
     }
   }
 
-  /** The base trait of configurations for [[differentiable.INDArray]] */
-  trait Hyperparameter extends Serializable {
+  object hyperparameters {
 
-    trait Weight {
-
-      def data: ND4JArray
-
+    trait BaseWeight {
+      var data: ND4JArray
+      type R
+      type O
+      def forward[Out](implicit implicitApplyRest: ImplicitApply.Aux[R, Out],
+                       constraint: Out <:< O): Do[INDArray.INDArrayTape]
     }
+    object BaseWeight {
 
-    type INDArrayWeight <: Weight
-
-    trait Optimizer {
-
-      def dependencies: DemixinDependencies
-
-      val weight: INDArrayWeight
-
-      def delta: ND4JArray
-    }
-
-    type INDArrayOptimizer <: Optimizer
-
-    type INDArrayOptimizerDependencies
-    @(inject @getter)
-    val demixinDependencies: Demixin[INDArrayOptimizerDependencies]
-    type DemixinDependencies = demixinDependencies.Out
-
-  }
-
-  object Hyperparameter {
-
-    trait Logged extends Hyperparameter {
-
-      trait Optimizer extends super.Optimizer {
-
-        implicit def logger: Logger = loggerSelector(dependencies)
-        implicit def fullName: sourcecode.FullName = fullNameSelector(dependencies)
-        implicit def name: sourcecode.Name = nameSelector(dependencies)
-        implicit def caller: Caller[_] = callerSelector(dependencies)
+      type Aux[R0, O0] = BaseWeight {
+        type R = R0
+        type O = O0
       }
 
-      type INDArrayOptimizer <: Optimizer
-
-      type INDArrayOptimizerDependencies <: Logger with sourcecode.FullName with sourcecode.Name with Caller[_]
-
-      @inject
-      protected def loggerSelector: Selector[DemixinDependencies, Logger]
-
-      @inject
-      protected def fullNameSelector: Selector[DemixinDependencies, sourcecode.FullName]
-
-      @inject
-      protected def nameSelector: Selector[DemixinDependencies, sourcecode.Name]
-
-      @inject
-      protected def callerSelector: Selector[DemixinDependencies, Caller[_]]
     }
+    trait INDArrayWeightFactory {
 
-    trait Optimization extends Logged {
-      @inject
-      protected def executionContextSelector: Selector[DemixinDependencies, ExecutionContext]
-      type INDArrayOptimizerDependencies <: Logger with sourcecode.FullName with sourcecode.Name with Caller[_] with ExecutionContext
-      trait Weight extends Serializable with super.Weight with Hyperparameter.Liftable[DemixinDependencies] {
+      trait Weight extends BaseWeight { this: INDArrayWeight =>
+        override type R = partialApplyOriginalDelta.Rest
+        override type O = INDArrayOptimizer
+        implicit val logger: Logger
+        implicit val fullName: sourcecode.FullName
+        implicit val name: sourcecode.Name
+        implicit val caller: Caller[_]
+        implicit val executionContext: ExecutionContext
 
         var data: ND4JArray
 
-        override def forward(implicit lazyDependencies: Lazy.Values[DemixinDependencies]): Do[INDArray.INDArrayTape] = {
-          Do.now(Tape(data, backward))
+        private def optimizer[Out](delta: ND4JArray)(
+            implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, Out],
+            constraint: Out <:< INDArrayOptimizer
+        ): INDArrayOptimizer = {
+          constraint(
+            implicitApplyRest(
+              partialApplyOriginalDelta(partialApplyWeight(optimizerFactory.constructor, weightParameter(this)),
+                                        originalDeltaParameter(delta))))
         }
 
-        private[thoughtworks] def optimizer(delta: ND4JArray)(
-            implicit lazyDependencies: Lazy.Values[DemixinDependencies]) = {
-          optimizerConstructor.newInstance(this, delta, lazyDependencies.values)
+        override final def forward[Out](
+            implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, Out],
+            constraint: Out <:< INDArrayOptimizer): Do[INDArray.INDArrayTape] = {
+          Do.now(Tape(data, backward[Out]))
         }
 
-        final def backward(deltaFuture: Do[ND4JArray])(
-            implicit lazyDependencies: Lazy.Values[DemixinDependencies]): Future[Unit] = {
+        private final def backward[Out](deltaFuture: Do[ND4JArray])(
+            implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, Out],
+            constraint: Out <:< INDArrayOptimizer): Future[Unit] = {
+
           Do.run(Do.releaseFlatMap(deltaFuture) { delta =>
-              Do.jump()(executionContextSelector(lazyDependencies.values)).map { unit: Unit =>
+              Do.jump().map { unit: Unit =>
                 data -= optimizer(delta).delta
                 ()
               }
@@ -143,67 +117,173 @@ object INDArray extends INDArrayCompanion {
             .map {
               case \/-(()) => ()
               case -\/(e) =>
-                val logRecord =
-                  UncaughtExceptionDuringBackward(e)(fullNameSelector(lazyDependencies.values),
-                                                     nameSelector(lazyDependencies.values),
-                                                     callerSelector(lazyDependencies.values))
-                loggerSelector(lazyDependencies.values).log(logRecord)
+                val logRecord = UncaughtExceptionDuringBackward(e)
+                logger.log(logRecord)
             }
+
         }
 
       }
 
       type INDArrayWeight <: Weight
+      trait Optimizer {
 
-      trait Optimizer extends super.Optimizer {
+        val weight: INDArrayWeight
 
-        implicit def executionContext: ExecutionContext = {
-          executionContextSelector(dependencies)
-        }
-
+        val originalDelta: ND4JArray
+        def delta: ND4JArray = originalDelta
       }
-
-      abstract class OptimizerClass(val weight: INDArrayWeight,
-                                    delta0: ND4JArray,
-                                    val dependencies: DemixinDependencies)
-          extends super.Optimizer {
-
-        def delta: ND4JArray = delta0
-
-      }
-
       type INDArrayOptimizer <: Optimizer
 
-      @inject
-      def optimizerConstructor
-        : Constructor[(Weight, ND4JArray, DemixinDependencies) => OptimizerClass with INDArrayOptimizer]
+      @(inject @getter)
+      val optimizerFactory: New[INDArrayOptimizer]
+
+      @(inject @getter)
+      val partialApplyWeight: PartialApply[optimizerFactory.Constructor, Witness.`"weight"`.T]
+
+      @(inject @getter)
+      val weightParameter: INDArrayWeight <:< partialApplyWeight.Parameter
+
+      @(inject @getter)
+      val partialApplyOriginalDelta: PartialApply[partialApplyWeight.Rest, Witness.`"originalDelta"`.T]
+
+      @(inject @getter)
+      val originalDeltaParameter: ND4JArray <:< partialApplyOriginalDelta.Parameter
+
+      @(inject @getter)
+      val weightFactory: New[INDArrayWeight]
+
+      @(inject @getter)
+      val partialApplyData: PartialApply[weightFactory.Constructor, Witness.`"data"`.T]
+
+      @(inject @getter)
+      val dataParameter: ND4JArray <:< partialApplyData.Parameter
+
+      def indArrayWeight[Out, R, O](data: ND4JArray)(
+          implicit implicitApplyRest: ImplicitApply.Aux[partialApplyData.Rest, Out]
+      ): Out = {
+        implicitApplyRest(partialApplyData(weightFactory.constructor, dataParameter(data)))
+      }
 
     }
 
-    trait Liftable[Dependencies <: HList] {
-      def forward(implicit lazyDependencies: Lazy.Values[Dependencies]): Do[INDArrayTape]
-    }
-
-    trait INDArrayInitialization extends Hyperparameter {
-
-      abstract class Weight(var data: ND4JArray) extends super.Weight
-      @inject
-      def fromINDArrayConstructor: Constructor[ND4JArray => Weight with INDArrayWeight]
-
-      final def indArrayWeight(data: ND4JArray): Weight with INDArrayWeight =
-        fromINDArrayConstructor.newInstance(data)
-
-    }
+//    trait Logged extends Hyperparameter {
+//
+//      trait Optimizer extends super.Optimizer {
+//
+//        implicit def logger: Logger = loggerSelector(dependencies)
+//        implicit def fullName: sourcecode.FullName = fullNameSelector(dependencies)
+//        implicit def name: sourcecode.Name = nameSelector(dependencies)
+//        implicit def caller: Caller[_] = callerSelector(dependencies)
+//      }
+//
+//      type INDArrayOptimizer <: Optimizer
+//
+//      type INDArrayOptimizerDependencies <: Logger with sourcecode.FullName with sourcecode.Name with Caller[_]
+//
+//      @inject
+//      protected def loggerSelector: Selector[DemixinDependencies, Logger]
+//
+//      @inject
+//      protected def fullNameSelector: Selector[DemixinDependencies, sourcecode.FullName]
+//
+//      @inject
+//      protected def nameSelector: Selector[DemixinDependencies, sourcecode.Name]
+//
+//      @inject
+//      protected def callerSelector: Selector[DemixinDependencies, Caller[_]]
+//    }
+//
+//    trait Optimization extends Logged {
+//      @inject
+//      protected def executionContextSelector: Selector[DemixinDependencies, ExecutionContext]
+//      type INDArrayOptimizerDependencies <: Logger with sourcecode.FullName with sourcecode.Name with Caller[_] with ExecutionContext
+//      trait Weight extends Serializable with super.Weight with Hyperparameter.Liftable[DemixinDependencies] {
+//
+//        var data: ND4JArray
+//
+//        override def forward(implicit lazyDependencies: Lazy.Values[DemixinDependencies]): Do[INDArray.INDArrayTape] = {
+//          Do.now(Tape(data, backward))
+//        }
+//
+//        private[thoughtworks] def optimizer(delta: ND4JArray)(
+//            implicit lazyDependencies: Lazy.Values[DemixinDependencies]) = {
+//          optimizerConstructor.newInstance(this, delta, lazyDependencies.values)
+//        }
+//
+//        final def backward(deltaFuture: Do[ND4JArray])(
+//            implicit lazyDependencies: Lazy.Values[DemixinDependencies]): Future[Unit] = {
+//          Do.run(Do.releaseFlatMap(deltaFuture) { delta =>
+//              Do.jump()(executionContextSelector(lazyDependencies.values)).map { unit: Unit =>
+//                data -= optimizer(delta).delta
+//                ()
+//              }
+//            })
+//            .get
+//            .map {
+//              case \/-(()) => ()
+//              case -\/(e) =>
+//                val logRecord =
+//                  UncaughtExceptionDuringBackward(e)(fullNameSelector(lazyDependencies.values),
+//                                                     nameSelector(lazyDependencies.values),
+//                                                     callerSelector(lazyDependencies.values))
+//                loggerSelector(lazyDependencies.values).log(logRecord)
+//            }
+//        }
+//
+//      }
+//
+//      type INDArrayWeight <: Weight
+//
+//      trait Optimizer extends super.Optimizer {
+//
+//        implicit def executionContext: ExecutionContext = {
+//          executionContextSelector(dependencies)
+//        }
+//
+//      }
+//
+//      abstract class OptimizerClass(val weight: INDArrayWeight,
+//                                    delta0: ND4JArray,
+//                                    val dependencies: DemixinDependencies)
+//          extends super.Optimizer {
+//
+//        def delta: ND4JArray = delta0
+//
+//      }
+//
+//      type INDArrayOptimizer <: Optimizer
+//
+//      @inject
+//      def optimizerConstructor
+//        : Constructor[(Weight, ND4JArray, DemixinDependencies) => OptimizerClass with INDArrayOptimizer]
+//
+//    }
+//
+//    trait Liftable[Dependencies <: HList] {
+//      def forward(implicit lazyDependencies: Lazy.Values[Dependencies]): Do[INDArrayTape]
+//    }
+//
+//    trait INDArrayInitialization extends Hyperparameter {
+//
+//      abstract class Weight(var data: ND4JArray) extends super.Weight
+//      @inject
+//      def fromINDArrayConstructor: Constructor[ND4JArray => Weight with INDArrayWeight]
+//
+//      final def indArrayWeight(data: ND4JArray): Weight with INDArrayWeight =
+//        fromINDArrayConstructor.newInstance(data)
+//
+//    }
 
     trait FixedLearningRate extends LearningRate {
-      def fixedLearningRate: scala.Double
+      val fixedLearningRate: scala.Double
       trait Optimizer extends super.Optimizer {
         final def learningRate: scala.Double = fixedLearningRate
       }
       override type INDArrayOptimizer <: Optimizer
     }
 
-    trait LearningRate extends Hyperparameter {
+    trait LearningRate extends INDArrayWeightFactory {
       trait Optimizer extends super.Optimizer {
         def learningRate: scala.Double
         abstract override def delta: ND4JArray = super.delta * learningRate
@@ -211,14 +291,14 @@ object INDArray extends INDArrayCompanion {
       override type INDArrayOptimizer <: Optimizer
     }
 
-    trait L1Regularization extends Hyperparameter {
+    trait L1Regularization extends INDArrayWeightFactory {
       def l1Regularization: ND4JArray
       trait Optimizer extends super.Optimizer {
         abstract override def delta: ND4JArray = super.delta + sign(weight.data) * l1Regularization
       }
       override type INDArrayOptimizer <: Optimizer
     }
-    trait L2Regularization extends Hyperparameter {
+    trait L2Regularization extends INDArrayWeightFactory {
       def l2Regularization: ND4JArray
       trait Optimizer extends super.Optimizer {
         abstract override def delta: ND4JArray = super.delta + weight.data * l2Regularization
@@ -226,8 +306,8 @@ object INDArray extends INDArrayCompanion {
       override type INDArrayOptimizer <: Optimizer
     }
 
-    trait Momentum extends Hyperparameter {
-      trait Weight extends super.Weight {
+    trait Momentum extends INDArrayWeightFactory {
+      trait Weight extends super.Weight { this: INDArrayWeight =>
         def mu: ScalaDouble = 0.9
         var v: ND4JArray = Nd4j.zeros(data.shape: _*)
       }
@@ -260,8 +340,8 @@ object INDArray extends INDArrayCompanion {
     /**
       * @note This [[Adagrad]] hyperparameter is usually used before global [[LearningRate]]. e.g. `Adagrad with FixedLearningRate`, not `FixedLearningRate with Adagrad`
       */
-    trait Adagrad extends Hyperparameter {
-      trait Weight extends super.Weight {
+    trait Adagrad extends INDArrayWeightFactory {
+      trait Weight extends super.Weight { this: INDArrayWeight =>
         var cache: ND4JArray = Nd4j.zeros(data.shape: _*)
       }
 
@@ -282,8 +362,8 @@ object INDArray extends INDArrayCompanion {
     /**
       * @note This [[RMSprop]] hyperparameter is usually used before global [[LearningRate]]. e.g. `RMSprop with FixedLearningRate`, not `FixedLearningRate with RMSprop`
       */
-    trait RMSprop extends Hyperparameter {
-      trait Weight extends super.Weight {
+    trait RMSprop extends INDArrayWeightFactory {
+      trait Weight extends super.Weight { this: INDArrayWeight =>
         var cache: ND4JArray = Nd4j.zeros(data.shape: _*)
       }
 
@@ -301,9 +381,9 @@ object INDArray extends INDArrayCompanion {
       override type INDArrayOptimizer <: Optimizer
     }
 
-    trait Adam extends Hyperparameter {
+    trait Adam extends INDArrayWeightFactory {
 
-      trait Weight extends super.Weight {
+      trait Weight extends super.Weight { this: INDArrayWeight =>
         var m: ND4JArray = Nd4j.zeros(data.shape: _*)
         var v: ND4JArray = Nd4j.zeros(data.shape: _*)
       }
@@ -352,18 +432,15 @@ object INDArray extends INDArrayCompanion {
     import com.thoughtworks.deeplearning.tapefactories.Binary.semigroupBinaryTapeTaskFactory
     import com.thoughtworks.deeplearning.tapefactories.Unary.semigroupUnaryTapeTaskFactory
 
-    implicit def liftINDArrayWeight[L, Dependencies <: HList](
-        implicit isLiftable: L <:< Liftable[Dependencies],
-        logger: Logger = Logger.getGlobal,
-        fullName: sourcecode.FullName,
-        caller: Caller[_],
-        methodName: sourcecode.Name,
-        executionContext: ExecutionContext,
-        lazyDependencies: Lazy.Values[Dependencies]): Lift.Aux[L, ND4JArray, ND4JArray] = new Lift[L] {
+    implicit def liftWeight[From, Out0, R0, O0](implicit constraint: From <:< BaseWeight.Aux[R0, O0],
+                                                implicitApplyRest: ImplicitApply.Aux[R0, Out0],
+                                                constraint2: Out0 <:< O0) = new Lift[From] {
+      override def apply(from: From): Do[Tape[Data, Delta]] = {
+        constraint(from).forward[Out0](implicitApplyRest, constraint2)
+      }
+
       override type Data = ND4JArray
       override type Delta = ND4JArray
-
-      override def apply(t: L): Do[Tape[ND4JArray, ND4JArray]] = t.forward
     }
 
     private implicit object INDArraySemigroup extends Semigroup[ND4JArray] {

@@ -1,30 +1,18 @@
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
-
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
-libraryDependencies += "com.thoughtworks.feature" %% "demixin" % "2.0.0-RC3"
+libraryDependencies += "com.thoughtworks.feature" %% "the" % "2.0.0-RC4"
+
+libraryDependencies += "com.thoughtworks.feature" %% "partialapply" % "2.0.0-RC4"
+
+libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.0.0-RC4"
+
+libraryDependencies += "com.thoughtworks.feature" %% "byname" % "2.0.0-RC4"
+
+enablePlugins(Example)
+
+name in generateExample := "DifferentiableINDArraySpec"
 
 addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M8").cross(CrossVersion.patch))
-libraryDependencies += "com.thoughtworks.example" %% "example" % "1.0.0"
-sourceGenerators in Test += Def.task {
-  val className = s"${name.value}Spec"
-  val outputFile = (sourceManaged in Test).value / "ScaladocSpec.scala"
-  val fileNames = (unmanagedSources in Compile).value
-    .map { file =>
-      import scala.reflect.runtime.universe._
-      Literal(Constant(file.toString))
-    }
-    .mkString(",")
-  val fileContent = raw"""
-    package com.thoughtworks.deeplearning.differentiable;
-    @_root_.com.thoughtworks.example($fileNames) class ScaladocSpec extends org.scalatest.AsyncFreeSpec
-  """
-  IO.write(outputFile, fileContent, scala.io.Codec.UTF8.charSet)
-  Seq(outputFile)
-}.taskValue
-incOptions in Test := (incOptions in Test).value.withRecompileOnMacroDef(true)
 
 fork in Test := true
 
