@@ -19,3 +19,19 @@ addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 libraryDependencies += "com.thoughtworks.feature" %% "constructor" % "2.0.0-RC4"
 
 libraryDependencies += "com.thoughtworks.feature" %% "new" % "2.0.0-RC4"
+
+publishArtifact := {
+  if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
+    false
+  } else {
+    true
+  }
+}
+
+skip in compile := {
+  if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
+    true
+  } else {
+    false
+  }
+}
