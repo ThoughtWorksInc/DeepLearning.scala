@@ -8,7 +8,7 @@ import com.thoughtworks.deeplearning.math.polyFunctions
 import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable
 import com.thoughtworks.deeplearning.tapefactories.{MonoidOutput, SemigroupOutput, Unary}
-import com.thoughtworks.deeplearning.Lift.{Forwardable, LowPriorityLift}
+import com.thoughtworks.deeplearning.Lift.LowPriorityLift
 import com.thoughtworks.deeplearning.differentiable.Double.DoubleTape
 import com.thoughtworks.deeplearning._
 import com.thoughtworks.deeplearning.differentiable.INDArray.hyperparameters.BaseWeight
