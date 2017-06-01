@@ -4,7 +4,7 @@ package differentiable
 import java.util.logging.{Level, Logger}
 
 import com.thoughtworks.feature.Constructor
-import com.thoughtworks.feature.New.inject
+import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.deeplearning.logs.{UncaughtExceptionDuringBackward, WeightIsUpdating}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any.Trainable

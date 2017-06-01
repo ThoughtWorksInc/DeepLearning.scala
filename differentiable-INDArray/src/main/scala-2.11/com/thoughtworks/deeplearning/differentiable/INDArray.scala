@@ -30,7 +30,7 @@ import shapeless.{HList, Lazy, Poly0, Witness, the}
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.feature._
 import com.thoughtworks.feature.byname.ByName
-import com.thoughtworks.feature.New.inject
+import com.thoughtworks.feature.Factory.inject
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -93,7 +93,7 @@ object INDArray extends INDArrayCompanion {
         ): INDArrayOptimizer = {
           constraint(
             implicitApplyRest(
-              partialApplyOriginalDelta(partialApplyWeight(optimizerFactory.constructor, weightParameter(this)),
+              partialApplyOriginalDelta(partialApplyWeight(optimizerFactory.newInstance, weightParameter(this)),
                                         originalDeltaParameter(delta))))
         }
 
@@ -136,7 +136,7 @@ object INDArray extends INDArrayCompanion {
       type INDArrayOptimizer <: Optimizer
 
       @(inject @getter)
-      val optimizerFactory: New[INDArrayOptimizer]
+      val optimizerFactory: Factory[INDArrayOptimizer]
 
       @(inject @getter)
       val partialApplyWeight: PartialApply[optimizerFactory.Constructor, Witness.`"weight"`.T]
@@ -151,7 +151,7 @@ object INDArray extends INDArrayCompanion {
       val originalDeltaParameter: ND4JArray <:< partialApplyOriginalDelta.Parameter
 
       @(inject @getter)
-      val weightFactory: New[INDArrayWeight]
+      val weightFactory: Factory[INDArrayWeight]
 
       @(inject @getter)
       val partialApplyData: PartialApply[weightFactory.Constructor, Witness.`"data"`.T]
@@ -162,7 +162,7 @@ object INDArray extends INDArrayCompanion {
       def indArrayWeight[Out, R, O](data: ND4JArray)(
           implicit implicitApplyRest: ImplicitApply.Aux[partialApplyData.Rest, Out]
       ): Out = {
-        implicitApplyRest(partialApplyData(weightFactory.constructor, dataParameter(data)))
+        implicitApplyRest(partialApplyData(weightFactory.newInstance, dataParameter(data)))
       }
 
     }

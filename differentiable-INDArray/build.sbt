@@ -1,12 +1,12 @@
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
 
-libraryDependencies += "com.thoughtworks.feature" %% "the" % "2.0.0-RC4"
+libraryDependencies += "com.thoughtworks.feature" %% "the" % "2.0.0-RC5"
 
-libraryDependencies += "com.thoughtworks.feature" %% "partialapply" % "2.0.0-RC4"
+libraryDependencies += "com.thoughtworks.feature" %% "partialapply" % "2.0.0-RC5"
 
-libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.0.0-RC4"
+libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.0.0-RC5"
 
-libraryDependencies += "com.thoughtworks.feature" %% "byname" % "2.0.0-RC4"
+libraryDependencies += "com.thoughtworks.feature" %% "byname" % "2.0.0-RC5"
 
 enablePlugins(Example)
 
