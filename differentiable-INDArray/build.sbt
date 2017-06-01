@@ -18,22 +18,6 @@ fork in Test := true
 
 import Ordering.Implicits._
 
-publishArtifact := {
-  if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
-    false
-  } else {
-    true
-  }
-}
-
-skip in compile := {
-  if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
-    true
-  } else {
-    false
-  }
-}
-
 libraryDependencies ++= {
   if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
     Nil
