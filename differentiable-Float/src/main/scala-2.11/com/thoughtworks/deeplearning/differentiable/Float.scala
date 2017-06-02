@@ -109,8 +109,8 @@ object Float extends FloatCompanion {
   }
 
   object implicits {
-    import com.thoughtworks.deeplearning.tapefactories.Binary.monoidBinaryTapeTaskFactory
-    import com.thoughtworks.deeplearning.tapefactories.Unary.monoidUnaryTapeTaskFactory
+    import com.thoughtworks.deeplearning.tapefactories.Binary.monoidBinary
+    import com.thoughtworks.deeplearning.tapefactories.Unary.monoidUnary
 
     implicit def liftFloatWeight[W <: Hyperparameter#Weight](implicit logger: Logger = Logger.getGlobal,
                                                              fullName: sourcecode.FullName,

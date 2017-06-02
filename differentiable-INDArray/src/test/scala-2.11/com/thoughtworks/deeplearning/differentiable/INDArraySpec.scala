@@ -14,7 +14,6 @@ import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.deeplearning.differentiable.Double.DoubleTape
 import com.thoughtworks.deeplearning.differentiable.Double.implicits._
-import com.thoughtworks.deeplearning.differentiable.Double._
 import com.thoughtworks.raii.covariant
 import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.{TryT, TryTExtractor}
