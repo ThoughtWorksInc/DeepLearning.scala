@@ -131,12 +131,12 @@ object tapefactories {
     def doTape[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Do[Tape[Data0, Delta0]],
                                                                       operand1: Do[Tape[Data1, Delta1]])(
         computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[Delta0], Do[Delta1]))])(
-        implicit binaryTapeTaskFactory: Binary[OutputData, OutputDelta],
+        implicit binary: Binary[OutputData, OutputDelta],
         logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
         className: Caller[_]): Do[Tape[OutputData, OutputDelta]] = {
-      binaryTapeTaskFactory(operand0, operand1)(computeForward)
+      binary(operand0, operand1)(computeForward)
     }
 
     /** An exception that contains multiple Throwables. */
@@ -223,7 +223,7 @@ object tapefactories {
     }
 
     @inline
-    implicit def monoidBinaryTapeTaskFactory[OutputData, OutputDelta: Monoid](
+    implicit def monoidBinary[OutputData, OutputDelta: Monoid](
         implicit logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
@@ -294,7 +294,7 @@ object tapefactories {
     }
 
     @inline
-    implicit def semigroupBinaryTapeTaskFactory[OutputData, OutputDelta: Semigroup](
+    implicit def semigroupBinary[OutputData, OutputDelta: Semigroup](
         implicit logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
@@ -308,12 +308,12 @@ object tapefactories {
     @inline
     def doTape[Data, Delta, OutputData, OutputDelta](operand: Do[Tape[Data, Delta]])(
         computeForward: (Data) => Task[(OutputData, OutputDelta => Do[Delta])])(
-        implicit unaryTapeTaskFactory: Unary[OutputData, OutputDelta],
+        implicit unary: Unary[OutputData, OutputDelta],
         logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
         className: Caller[_]): Do[Tape[OutputData, OutputDelta]] = {
-      unaryTapeTaskFactory(operand)(computeForward)
+      unary(operand)(computeForward)
     }
 
     final class MonoidUnary[OutputData, OutputDelta: Monoid](implicit logger: Logger,
@@ -356,7 +356,7 @@ object tapefactories {
     }
 
     @inline
-    implicit def monoidUnaryTapeTaskFactory[OutputData, OutputDelta: Monoid](
+    implicit def monoidUnary[OutputData, OutputDelta: Monoid](
         implicit logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
@@ -408,7 +408,7 @@ object tapefactories {
     }
 
     @inline
-    implicit def semigroupUnaryTapeTaskFactory[OutputData, OutputDelta: Semigroup](
+    implicit def semigroupUnary[OutputData, OutputDelta: Semigroup](
         implicit logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
