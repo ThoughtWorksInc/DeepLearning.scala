@@ -48,9 +48,6 @@ lazy val logs = project
 lazy val `differentiable` =
   project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
 
-lazy val `jupyter-differentiable` =
-  project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
-
 publishArtifact := false
 
 lazy val unidoc = project
