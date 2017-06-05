@@ -6,19 +6,19 @@ lazy val tapefactories = project.dependsOn(Tape, logs)
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val `differentiable-Float` = project.dependsOn(`differentiable-Any`, tapefactories, math)
+lazy val FloatHyperparameter = project.dependsOn(Hyperparameter, tapefactories, math, Loss)
 
-lazy val `differentiable-INDArray` = project.dependsOn(`differentiable-Double`)
+lazy val INDArrayHyperparameter = project.dependsOn(DoubleHyperparameter)
 
 val FloatRegex = """(?i:float)""".r
 
-lazy val `differentiable-Double` = project
-  .dependsOn(`differentiable-Any`, tapefactories, math)
+lazy val DoubleHyperparameter = project
+  .dependsOn(Hyperparameter, tapefactories, math, Loss)
   .settings(
     sourceGenerators in Compile += Def.task {
       for {
-        floatFile <- (unmanagedSources in Compile in `differentiable-Float`).value
-        floatDirectory <- (unmanagedSourceDirectories in Compile in `differentiable-Float`).value
+        floatFile <- (unmanagedSources in Compile in FloatHyperparameter).value
+        floatDirectory <- (unmanagedSourceDirectories in Compile in FloatHyperparameter).value
         relativeFile <- floatFile.relativeTo(floatDirectory)
       } yield {
         val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
@@ -41,12 +41,10 @@ lazy val Lift = project.dependsOn(Tape)
 
 lazy val math = project.dependsOn(Lift)
 
-lazy val `differentiable-Any` = project.dependsOn(Tape)
+lazy val Loss = project.dependsOn(Tape)
+lazy val Hyperparameter = project.dependsOn(Tape)
 
 lazy val logs = project
-
-lazy val `differentiable` =
-  project.dependsOn(`differentiable-Any`, `differentiable-Float`, `differentiable-Double`, `differentiable-INDArray`)
 
 publishArtifact := false
 
@@ -56,7 +54,7 @@ lazy val unidoc = project
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       import Ordering.Implicits._
       if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
-        inAggregates(LocalRootProject) -- inProjects(`differentiable-INDArray`)
+        inAggregates(LocalRootProject) -- inProjects(INDArrayHyperparameter)
       } else {
         inAggregates(LocalRootProject)
       }

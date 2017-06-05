@@ -3,6 +3,9 @@ package com.thoughtworks.deeplearning
 import com.thoughtworks.raii.asynchronous.Do
 import shapeless._
 
+import scalaz.concurrent.Future
+
+// TODO: rename to NeuralNetwork
 trait Lift[From] extends DepFn1[From] {
   type Data
   type Delta
@@ -17,10 +20,10 @@ private[deeplearning] trait LowPriorityLiftFunctions { this: Lift.type =>
       override type Data = From
       override type Delta = Delta0
 
+      // TODO: Rename to forward
       @inline
       override def apply(a: Data): Out = {
-        val myLiteral = Tape.literal(a)
-        Do.now(myLiteral)
+        Do.now(Tape(a, Function.const(Future.now(()))))
       }
     }
   }
@@ -35,8 +38,7 @@ object Lift extends LowPriorityLiftFunctions {
     }
     implicit def liftCase1[P <: Poly, From, Data0, Delta0, Out0](
         implicit lift: Lift.Aux[From, Data0, Delta0],
-        case1: shapeless.PolyDefns.Case1.Aux[P, Do[Tape[Data0, Delta0]], Out0])
-      : LiftCase1.Aux[P, From, Out0] = {
+        case1: shapeless.PolyDefns.Case1.Aux[P, Do[Tape[Data0, Delta0]], Out0]): LiftCase1.Aux[P, From, Out0] = {
       new LiftCase1[P, From] {
         override type Out = Out0
 
@@ -53,10 +55,8 @@ object Lift extends LowPriorityLiftFunctions {
     implicit def liftCase2[P <: Poly, Operand0, Operand1, Data0, Delta0, Data1, Delta1, Out0](
         implicit lift0: Lift.Aux[Operand0, Data0, Delta0],
         lift1: Lift.Aux[Operand1, Data1, Delta1],
-        case2: shapeless.PolyDefns.Case2.Aux[P,
-                                             Do[Tape[Data0, Delta0]],
-                                             Do[Tape[Data1, Delta1]],
-                                             Out0]): LiftCase2.Aux[P, Operand0, Operand1, Out0] = {
+        case2: shapeless.PolyDefns.Case2.Aux[P, Do[Tape[Data0, Delta0]], Do[Tape[Data1, Delta1]], Out0])
+      : LiftCase2.Aux[P, Operand0, Operand1, Out0] = {
       new LiftCase2[P, Operand0, Operand1] {
         override type Out = Out0
 
@@ -66,6 +66,7 @@ object Lift extends LowPriorityLiftFunctions {
   }
 
   trait LowPriorityLift[From] extends Lift[From]
+
   object LowPriorityLift {
     type Aux[From, Data0, Delta0] = LowPriorityLift[From] {
       type Data = Data0
@@ -80,8 +81,7 @@ object Lift extends LowPriorityLiftFunctions {
 
   @inline
   implicit def fromSubtype[Data0, Delta0, From](
-      implicit constraint: From <:< Do[ Tape[Data0, Delta0]])
-    : LowPriorityLift.Aux[From, Data0, Delta0] = {
+      implicit constraint: From <:< Do[Tape[Data0, Delta0]]): LowPriorityLift.Aux[From, Data0, Delta0] = {
     new LowPriorityLift[From] {
       override type Data = Data0
       override type Delta = Delta0

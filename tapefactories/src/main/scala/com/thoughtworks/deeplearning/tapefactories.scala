@@ -21,11 +21,34 @@ import scalaz.syntax.all._
 import scalaz.std.option._
 import scala.util.control.NonFatal
 
+// TODO: Rename to hyperparameters.Layers
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 object tapefactories {
 
+  /** An exception that contains multiple Throwables. */
+  final case class MultipleException(throwableSet: Set[Throwable])
+      extends Exception("Multiple exceptions found")
+      with NoStackTrace {
+    override def toString: String = throwableSet.toString()
+  }
+
+  private implicit def throwableSemigroup = new Semigroup[Throwable] {
+    override def append(f1: Throwable, f2: => Throwable): Throwable =
+      f1 match {
+        case MultipleException(exceptionSet1) =>
+          f2 match {
+            case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
+            case _: Throwable => MultipleException(exceptionSet1 + f2)
+          }
+        case _: Throwable =>
+          f2 match {
+            case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
+            case _: Throwable => MultipleException(Set(f1, f2))
+          }
+      }
+  }
   private abstract class MonoidOutput[OutputData, OutputDelta: Monoid](data: OutputData)(implicit logger: Logger,
                                                                                          fullName: sourcecode.FullName,
                                                                                          methodName: sourcecode.Name,
@@ -121,115 +144,10 @@ object tapefactories {
   trait Unary[OutputData, OutputDelta] {
 
     def apply[Data, Delta](operand: Do[Tape[Data, Delta]])(
-        computeForward: (Data) => Task[(OutputData, OutputDelta => Do[Delta])])
-      : Do[Tape[OutputData, OutputDelta]]
+        computeForward: (Data) => Task[(OutputData, OutputDelta => Do[Delta])]): Do[Tape[OutputData, OutputDelta]]
   }
 
-  object Binary {
-
-    @inline
-    def doTape[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Do[Tape[Data0, Delta0]],
-                                                                      operand1: Do[Tape[Data1, Delta1]])(
-        computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[Delta0], Do[Delta1]))])(
-        implicit binary: Binary[OutputData, OutputDelta],
-        logger: Logger,
-        fullName: sourcecode.FullName,
-        methodName: sourcecode.Name,
-        className: Caller[_]): Do[Tape[OutputData, OutputDelta]] = {
-      binary(operand0, operand1)(computeForward)
-    }
-
-    /** An exception that contains multiple Throwables. */
-    final case class MultipleException(throwableSet: Set[Throwable])
-        extends Exception("Multiple exceptions found")
-        with NoStackTrace {
-      override def toString: String = throwableSet.toString()
-    }
-
-    implicit def throwableSemigroup = new Semigroup[Throwable] {
-      override def append(f1: Throwable, f2: => Throwable): Throwable =
-        f1 match {
-          case MultipleException(exceptionSet1) =>
-            f2 match {
-              case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
-              case _: Throwable => MultipleException(exceptionSet1 + f2)
-            }
-          case _: Throwable =>
-            f2 match {
-              case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
-              case _: Throwable => MultipleException(Set(f1, f2))
-            }
-        }
-    }
-
-    final class MonoidBinary[OutputData, OutputDelta: Monoid](implicit logger: Logger,
-                                                              fullName: sourcecode.FullName,
-                                                              methodName: sourcecode.Name,
-                                                              className: Caller[_])
-        extends Binary[OutputData, OutputDelta] {
-      @inline
-      override def apply[Data0, Delta0, Data1, Delta1](operand0: Do[Tape[Data0, Delta0]],
-                                                       operand1: Do[Tape[Data1, Delta1]])(
-          computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[Delta0], Do[Delta1]))])
-        : Do[Tape[OutputData, OutputDelta]] = {
-
-        import com.thoughtworks.raii.covariant.ResourceT.resourceTParallelApplicative
-        import com.thoughtworks.raii.asynchronous.Do.doParallelApplicative
-
-        val parallelTuple =
-          Applicative[Lambda[x => Do[x] @@ Parallel]]
-            .tuple2(Parallel(operand0), Parallel(operand1))
-
-        val tuple = Parallel.unwrap(parallelTuple)
-
-        import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-        tuple.flatMap { pair =>
-          val (upstream0: Tape[Data0, Delta0], upstream1: Tape[Data1, Delta1]) = pair
-          val resource: ResourceT[Future, Try[Tape[OutputData, OutputDelta]]] = {
-            val futureResourceT: Future[Releasable[Future, Try[Tape[OutputData, OutputDelta]]]] =
-              computeForward((upstream0: Tape[Data0, Delta0]).data, (upstream1: Tape[Data1, Delta1]).data).get.map {
-                case left @ -\/(e) =>
-                  new Releasable[Future, Try[Tape[OutputData, OutputDelta]]] {
-                    override def release(): Future[Unit] = Future.now(())
-                    override def value: Try[Tape[OutputData, OutputDelta]] = Failure(e)
-                  }
-                case right @ \/-((forwardData, computeBackward)) =>
-                  new MonoidOutput[OutputData, OutputDelta](forwardData) {
-                    override def release(): Future[Unit] = {
-                      val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
-                      Parallel.unwrap {
-                        Future.futureParallelApplicativeInstance.apply2(
-                          Parallel(upstream0.backward(upstream0DeltaFuture)),
-                          Parallel(upstream1.backward(upstream1DeltaFuture))
-                        ) { (_: Unit, _: Unit) =>
-                          ()
-                        }
-                      }
-                    }
-                  }
-              }
-            ResourceT(futureResourceT)
-          }
-
-          val sharedResourceFactoryT: ResourceT[Future, Try[Tape[OutputData, OutputDelta]]] =
-            resource.shared
-
-          val ResourceT(future) = sharedResourceFactoryT
-
-          Do(future)
-        }
-      }
-    }
-
-    @inline
-    implicit def monoidBinary[OutputData, OutputDelta: Monoid](
-        implicit logger: Logger,
-        fullName: sourcecode.FullName,
-        methodName: sourcecode.Name,
-        className: Caller[_]): Binary[OutputData, OutputDelta] = {
-      new MonoidBinary[OutputData, OutputDelta]
-    }
+  private[tapefactories] sealed trait LowPriorityBinary0 { this: Binary.type =>
 
     final class SemigroupBinary[OutputData, OutputDelta: Semigroup](implicit logger: Logger,
                                                                     fullName: sourcecode.FullName,
@@ -303,34 +221,48 @@ object tapefactories {
     }
   }
 
-  object Unary {
+  object Binary extends LowPriorityBinary0 {
 
+    // TODO: rename to layer
     @inline
-    def doTape[Data, Delta, OutputData, OutputDelta](operand: Do[Tape[Data, Delta]])(
-        computeForward: (Data) => Task[(OutputData, OutputDelta => Do[Delta])])(
-        implicit unary: Unary[OutputData, OutputDelta],
+    def doTape[Data0, Delta0, Data1, Delta1, OutputData, OutputDelta](operand0: Do[Tape[Data0, Delta0]],
+                                                                      operand1: Do[Tape[Data1, Delta1]])(
+        computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[Delta0], Do[Delta1]))])(
+        implicit binary: Binary[OutputData, OutputDelta],
         logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
         className: Caller[_]): Do[Tape[OutputData, OutputDelta]] = {
-      unary(operand)(computeForward)
+      binary(operand0, operand1)(computeForward)
     }
 
-    final class MonoidUnary[OutputData, OutputDelta: Monoid](implicit logger: Logger,
-                                                             fullName: sourcecode.FullName,
-                                                             methodName: sourcecode.Name,
-                                                             className: Caller[_])
-        extends Unary[OutputData, OutputDelta] {
+    final class MonoidBinary[OutputData, OutputDelta: Monoid](implicit logger: Logger,
+                                                              fullName: sourcecode.FullName,
+                                                              methodName: sourcecode.Name,
+                                                              className: Caller[_])
+        extends Binary[OutputData, OutputDelta] {
       @inline
-      override def apply[Data, Delta](operand: Do[Tape[Data, Delta]])(
-          computeForward: Data => Task[(OutputData, OutputDelta => Do[Delta])])
+      override def apply[Data0, Delta0, Data1, Delta1](operand0: Do[Tape[Data0, Delta0]],
+                                                       operand1: Do[Tape[Data1, Delta1]])(
+          computeForward: (Data0, Data1) => Task[(OutputData, OutputDelta => (Do[Delta0], Do[Delta1]))])
         : Do[Tape[OutputData, OutputDelta]] = {
-        import com.thoughtworks.raii.covariant.ResourceT._
+
+        import com.thoughtworks.raii.covariant.ResourceT.resourceTParallelApplicative
+        import com.thoughtworks.raii.asynchronous.Do.doParallelApplicative
+
+        val parallelTuple =
+          Applicative[Lambda[x => Do[x] @@ Parallel]]
+            .tuple2(Parallel(operand0), Parallel(operand1))
+
+        val tuple = Parallel.unwrap(parallelTuple)
+
         import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-        operand.flatMap { (upstream: Tape[Data, Delta]) =>
+
+        tuple.flatMap { pair =>
+          val (upstream0: Tape[Data0, Delta0], upstream1: Tape[Data1, Delta1]) = pair
           val resource: ResourceT[Future, Try[Tape[OutputData, OutputDelta]]] = {
             val futureResourceT: Future[Releasable[Future, Try[Tape[OutputData, OutputDelta]]]] =
-              computeForward(upstream.data).get.map {
+              computeForward((upstream0: Tape[Data0, Delta0]).data, (upstream1: Tape[Data1, Delta1]).data).get.map {
                 case left @ -\/(e) =>
                   new Releasable[Future, Try[Tape[OutputData, OutputDelta]]] {
                     override def release(): Future[Unit] = Future.now(())
@@ -339,12 +271,21 @@ object tapefactories {
                 case right @ \/-((forwardData, computeBackward)) =>
                   new MonoidOutput[OutputData, OutputDelta](forwardData) {
                     override def release(): Future[Unit] = {
-                      upstream.backward(computeBackward(deltaAccumulator))
+                      val (upstream0DeltaFuture, upstream1DeltaFuture) = computeBackward(deltaAccumulator)
+                      Parallel.unwrap {
+                        Future.futureParallelApplicativeInstance.apply2(
+                          Parallel(upstream0.backward(upstream0DeltaFuture)),
+                          Parallel(upstream1.backward(upstream1DeltaFuture))
+                        ) { (_: Unit, _: Unit) =>
+                          ()
+                        }
+                      }
                     }
                   }
               }
             ResourceT(futureResourceT)
           }
+
           val sharedResourceFactoryT: ResourceT[Future, Try[Tape[OutputData, OutputDelta]]] =
             resource.shared
 
@@ -356,13 +297,17 @@ object tapefactories {
     }
 
     @inline
-    implicit def monoidUnary[OutputData, OutputDelta: Monoid](
+    implicit def monoidBinary[OutputData, OutputDelta: Monoid](
         implicit logger: Logger,
         fullName: sourcecode.FullName,
         methodName: sourcecode.Name,
-        className: Caller[_]): Unary[OutputData, OutputDelta] = {
-      new MonoidUnary[OutputData, OutputDelta]
+        className: Caller[_]): Binary[OutputData, OutputDelta] = {
+      new MonoidBinary[OutputData, OutputDelta]
     }
+
+  }
+
+  private[tapefactories] sealed trait LowPriorityUnary0 { this: Unary.type =>
 
     final class SemigroupUnary[OutputData, OutputDelta: Semigroup](implicit logger: Logger,
                                                                    fullName: sourcecode.FullName,
@@ -371,8 +316,7 @@ object tapefactories {
         extends Unary[OutputData, OutputDelta] {
       @inline
       override def apply[Data, Delta](operand: Do[Tape[Data, Delta]])(
-          computeForward: Data => Task[(OutputData, OutputDelta => Do[Delta])])
-        : Do[Tape[OutputData, OutputDelta]] = {
+          computeForward: Data => Task[(OutputData, OutputDelta => Do[Delta])]): Do[Tape[OutputData, OutputDelta]] = {
         import com.thoughtworks.raii.covariant.ResourceT.resourceTMonadError
         import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
         operand.flatMap { (upstream: Tape[Data, Delta]) =>
@@ -415,6 +359,67 @@ object tapefactories {
         className: Caller[_]): Unary[OutputData, OutputDelta] = {
       new SemigroupUnary[OutputData, OutputDelta]
     }
+  }
+
+  object Unary extends LowPriorityUnary0 {
+
+    @inline
+    def doTape[Data, Delta, OutputData, OutputDelta](operand: Do[Tape[Data, Delta]])(
+        computeForward: (Data) => Task[(OutputData, OutputDelta => Do[Delta])])(
+        implicit unary: Unary[OutputData, OutputDelta],
+        logger: Logger,
+        fullName: sourcecode.FullName,
+        methodName: sourcecode.Name,
+        className: Caller[_]): Do[Tape[OutputData, OutputDelta]] = {
+      unary(operand)(computeForward)
+    }
+
+    final class MonoidUnary[OutputData, OutputDelta: Monoid](implicit logger: Logger,
+                                                             fullName: sourcecode.FullName,
+                                                             methodName: sourcecode.Name,
+                                                             className: Caller[_])
+        extends Unary[OutputData, OutputDelta] {
+      @inline
+      override def apply[Data, Delta](operand: Do[Tape[Data, Delta]])(
+          computeForward: Data => Task[(OutputData, OutputDelta => Do[Delta])]): Do[Tape[OutputData, OutputDelta]] = {
+        import com.thoughtworks.raii.covariant.ResourceT._
+        import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+        operand.flatMap { (upstream: Tape[Data, Delta]) =>
+          val resource: ResourceT[Future, Try[Tape[OutputData, OutputDelta]]] = {
+            val futureResourceT: Future[Releasable[Future, Try[Tape[OutputData, OutputDelta]]]] =
+              computeForward(upstream.data).get.map {
+                case left @ -\/(e) =>
+                  new Releasable[Future, Try[Tape[OutputData, OutputDelta]]] {
+                    override def release(): Future[Unit] = Future.now(())
+                    override def value: Try[Tape[OutputData, OutputDelta]] = Failure(e)
+                  }
+                case right @ \/-((forwardData, computeBackward)) =>
+                  new MonoidOutput[OutputData, OutputDelta](forwardData) {
+                    override def release(): Future[Unit] = {
+                      upstream.backward(computeBackward(deltaAccumulator))
+                    }
+                  }
+              }
+            ResourceT(futureResourceT)
+          }
+          val sharedResourceFactoryT: ResourceT[Future, Try[Tape[OutputData, OutputDelta]]] =
+            resource.shared
+
+          val ResourceT(future) = sharedResourceFactoryT
+
+          Do(future)
+        }
+      }
+    }
+
+    @inline
+    implicit def monoidUnary[OutputData, OutputDelta: Monoid](implicit logger: Logger,
+                                                              fullName: sourcecode.FullName,
+                                                              methodName: sourcecode.Name,
+                                                              className: Caller[_]): Unary[OutputData, OutputDelta] = {
+      new MonoidUnary[OutputData, OutputDelta]
+    }
+
   }
 
 }
