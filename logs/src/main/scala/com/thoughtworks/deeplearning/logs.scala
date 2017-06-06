@@ -11,11 +11,11 @@ object logs {
   private[logs] abstract class LazyLogRecord(level: Level, customMessage: String = null)(
       implicit fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
-      className: Caller[_])
+      caller: Caller[_])
       extends LogRecord(level, customMessage) {
 
     setLoggerName(fullName.value)
-    setSourceClassName(className.value.getClass.getName)
+    setSourceClassName(caller.value.getClass.getName)
     setSourceMethodName(methodName.value)
 
     protected def makeDefaultMessage: Fastring
@@ -30,7 +30,7 @@ object logs {
   }
 
   final case class UncaughtExceptionDuringBackward(
-      thrown: Throwable)(implicit fullName: sourcecode.FullName, methodName: sourcecode.Name, className: Caller[_])
+      thrown: Throwable)(implicit fullName: sourcecode.FullName, methodName: sourcecode.Name, caller: Caller[_])
       extends LazyLogRecord(Level.SEVERE) {
     setThrown(thrown)
     override protected def makeDefaultMessage = fast"An exception raised during backward"
