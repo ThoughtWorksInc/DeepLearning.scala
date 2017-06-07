@@ -23,6 +23,6 @@ trait Hyperparameter {
     isImplicits(implicitApplyImplicitsConstructor(implicitsFactory.newInstance))
   }
 
-  implicit def logger: Logger
+  implicit protected def logger: Logger
 
 }
