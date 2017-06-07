@@ -14,7 +14,7 @@ import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.{TryT, TryTExtractor}
 import org.scalactic.ErrorMessage
 import org.scalatest._
-import org.nd4j.linalg.api.ndarray.{INDArray => Nd4jArray}
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.api.ops.impl.transforms.{IsMax, Sqrt}
 import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
@@ -47,10 +47,10 @@ object INDArrayHyperparameterSpec {
     new Task(ResourceT.run(ResourceT(doOutputData).map(toDisjunction)))
   }
 
-  implicit final class WeightData(weight: Do[Tape[Nd4jArray, Nd4jArray]]) {
-    def data: Nd4jArray = {
-      val task: Task[Tape[Nd4jArray, Nd4jArray]] = Do.run(weight)
-      val bTape: Tape[Nd4jArray, Nd4jArray] = task.unsafePerformSync
+  implicit final class WeightData(weight: Do[Tape[INDArray, INDArray]]) {
+    def data: INDArray = {
+      val task: Task[Tape[INDArray, INDArray]] = Do.run(weight)
+      val bTape: Tape[INDArray, INDArray] = task.unsafePerformSync
       bTape.data
     }
   }
@@ -66,22 +66,22 @@ object INDArrayHyperparameterSpec {
   trait LearningRate extends INDArrayHyperparameter {
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
       def learningRate: scala.Double
-      abstract override def delta: Nd4jArray = super.delta * learningRate
+      abstract override def delta: INDArray = super.delta * learningRate
     }
     override type INDArrayOptimizer <: INDArrayOptimizerApi
   }
 
   trait L1Regularization extends INDArrayHyperparameter {
-    def l1Regularization: Nd4jArray
+    def l1Regularization: INDArray
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
-      abstract override def delta: Nd4jArray = super.delta + sign(weight.data) * l1Regularization
+      abstract override def delta: INDArray = super.delta + sign(weight.data) * l1Regularization
     }
     override type INDArrayOptimizer <: INDArrayOptimizerApi
   }
   trait L2Regularization extends INDArrayHyperparameter {
-    def l2Regularization: Nd4jArray
+    def l2Regularization: INDArray
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
-      abstract override def delta: Nd4jArray = super.delta + weight.data * l2Regularization
+      abstract override def delta: INDArray = super.delta + weight.data * l2Regularization
     }
     override type INDArrayOptimizer <: INDArrayOptimizerApi
   }
@@ -89,26 +89,26 @@ object INDArrayHyperparameterSpec {
   trait Momentum extends INDArrayHyperparameter {
     trait INDArrayWeightApi extends super.INDArrayWeightApi { this: INDArrayWeight =>
       def mu: scala.Double = 0.9
-      var v: Nd4jArray = Nd4j.zeros(data.shape: _*)
+      var v: INDArray = Nd4j.zeros(data.shape: _*)
     }
 
     override type INDArrayWeight <: INDArrayWeightApi
 
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
 
-      private lazy val delta0: Nd4jArray = {
+      private lazy val delta0: INDArray = {
         import weight._
         v = super.delta + v * mu
         v
       }
-      abstract override def delta: Nd4jArray = delta0
+      abstract override def delta: INDArray = delta0
     }
     override type INDArrayOptimizer <: INDArrayOptimizerApi
   }
 
   trait NesterovMomentum extends Momentum {
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
-      abstract override lazy val delta: Nd4jArray = {
+      abstract override lazy val delta: INDArray = {
         import weight._
         val vPrev = v
         vPrev * (-mu) + super.delta * (1 + mu)
@@ -122,7 +122,7 @@ object INDArrayHyperparameterSpec {
     */
   trait Adagrad extends INDArrayHyperparameter {
     trait INDArrayWeightApi extends super.INDArrayWeightApi { this: INDArrayWeight =>
-      var cache: Nd4jArray = Nd4j.zeros(data.shape: _*)
+      var cache: INDArray = Nd4j.zeros(data.shape: _*)
     }
 
     override type INDArrayWeight <: INDArrayWeightApi
@@ -130,7 +130,7 @@ object INDArrayHyperparameterSpec {
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
       def eps: scala.Double = 1e-4
 
-      abstract override lazy val delta: Nd4jArray = {
+      abstract override lazy val delta: INDArray = {
         import weight._
         cache = cache + super.delta * super.delta
         super.delta / (sqrt(cache) + eps)
@@ -144,7 +144,7 @@ object INDArrayHyperparameterSpec {
     */
   trait RMSprop extends INDArrayHyperparameter {
     trait INDArrayWeightApi extends super.INDArrayWeightApi { this: INDArrayWeight =>
-      var cache: Nd4jArray = Nd4j.zeros(data.shape: _*)
+      var cache: INDArray = Nd4j.zeros(data.shape: _*)
     }
 
     override type INDArrayWeight <: INDArrayWeightApi
@@ -152,7 +152,7 @@ object INDArrayHyperparameterSpec {
     trait INDArrayOptimizerApi extends super.INDArrayOptimizerApi {
       def eps: scala.Double = 1e-4
       def decayRate: scala.Double = 0.99
-      abstract override lazy val delta: Nd4jArray = {
+      abstract override lazy val delta: INDArray = {
         import weight._
         cache = cache * decayRate + super.delta * super.delta * (1.0 - decayRate)
         super.delta / (sqrt(cache) + eps)
@@ -164,8 +164,8 @@ object INDArrayHyperparameterSpec {
   trait Adam extends INDArrayHyperparameter {
 
     trait INDArrayWeightApi extends super.INDArrayWeightApi { this: INDArrayWeight =>
-      var m: Nd4jArray = Nd4j.zeros(data.shape: _*)
-      var v: Nd4jArray = Nd4j.zeros(data.shape: _*)
+      var m: INDArray = Nd4j.zeros(data.shape: _*)
+      var v: INDArray = Nd4j.zeros(data.shape: _*)
     }
 
     override type INDArrayWeight <: INDArrayWeightApi
@@ -174,7 +174,7 @@ object INDArrayHyperparameterSpec {
       def beta1: scala.Double = 0.9
       def beta2: scala.Double = 0.999
       def eps: scala.Double = 1e-8
-      abstract override lazy val delta: Nd4jArray = {
+      abstract override lazy val delta: INDArray = {
         import weight._
         m = m * beta1 + super.delta * (1.0 - beta1)
         v = v * beta2 + (super.delta * super.delta) * (1.0 - beta2)
@@ -191,12 +191,12 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
   val hyperparameters = Factory[FixedLearningRate].newInstance(logger = Logger.getGlobal, fixedLearningRate = 1.0)
   import hyperparameters.implicits._
-  def trainAndAssertLossAndWeight(myNetwork: Nd4jArray => Do[Tape[Nd4jArray, Nd4jArray]],
+  def trainAndAssertLossAndWeight(myNetwork: INDArray => Do[Tape[INDArray, INDArray]],
                                   weight: hyperparameters.INDArrayWeightApi,
                                   trainTimes: Int = 2,
                                   expectedLoss: Int = 0,
                                   expectedWeightSum: Int = -16): scala.concurrent.Future[Assertion] = {
-    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -216,7 +216,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -232,138 +232,138 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 //  implicit def optimizer: INDArrayOptimizerApi = new LearningRate {
 //    def currentLearningRate() = 1
 //  }
-  "Nd4jArray + Nd4jArray" in {
+  "INDArray + INDArray" in {
 
     // TODO: INDArrayWeightApi should be some kind of Aux type, not singleton type
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(4, 4))
-    def l[From](from: From)(implicit lift: Lift.Aux[From, Nd4jArray, Nd4jArray]) = lift(from)
+    def l[From](from: From)(implicit lift: Lift.Aux[From, INDArray, INDArray]) = lift(from)
     l(weight)(hyperparameters.implicits.liftINDArrayWeight)
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight + input
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Nd4jArray + Double" in {
+  "INDArray + Double" in {
 
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(4, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight + 1.0
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Double + Nd4jArray" in {
+  "Double + INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(4, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       1.0 + weight
     }
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Nd4jArray - Nd4jArray" in {
+  "INDArray - INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(4, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight - (-input)
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Nd4jArray - Double" in {
+  "INDArray - Double" in {
 
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(4, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight - (-1.0)
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight)
   }
 
-  "Double - Nd4jArray" in {
+  "Double - INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight((-Nd4j.ones(4, 4)))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       1.0 - weight
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 16)
   }
 
-  "Nd4jArray * Nd4jArray" in {
+  "INDArray * INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 2))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight * input
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Nd4jArray * Double" in {
+  "INDArray * Double" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 2))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight * 1.0
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Double * Nd4jArray" in {
+  "Double * INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 2))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       1.0 * weight
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Nd4jArray / Nd4jArray" in {
+  "INDArray / INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 2))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight / input
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Nd4jArray / Double" in {
+  "INDArray / Double" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 2))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight / 1.0
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, expectedWeightSum = 0)
   }
 
-  "Double / Nd4jArray" in {
+  "Double / INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(4, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       1.0 / weight
     }
 
-    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -383,7 +383,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -396,10 +396,10 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "max(Nd4jArray,Double)" in {
+  "max(INDArray,Double)" in {
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 10))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       max(weight, 0.0)
     }
 
@@ -407,26 +407,26 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
   }
 
-  "min(Nd4jArray,Double)" in {
+  "min(INDArray,Double)" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 10))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       min(weight, 100.0)
     }
 
     trainAndAssertLossAndWeight(myNetwork, weight, trainTimes = 10, expectedWeightSum = 0)
   }
 
-  "exp(Nd4jArray)" in {
+  "exp(INDArray)" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 10))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       exp(weight)
     }
 
-    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -446,7 +446,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -459,15 +459,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "log(Nd4jArray)" in {
+  "log(INDArray)" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 10))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       log(weight)
     }
 
-    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -487,7 +487,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -500,15 +500,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "abs(Nd4jArray)" in {
+  "abs(INDArray)" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 10))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       abs(weight)
     }
 
-    def trainMyNetwork(inputData: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(inputData: INDArray): Task[INDArray] = {
       train(myNetwork(inputData))
     }
     import scalaz.concurrent.Future._
@@ -528,7 +528,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -541,11 +541,11 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray dot Nd4jArray" in {
+  "INDArray dot INDArray" in {
 
     val weight = hyperparameters.INDArrayWeight((Nd4j.ones(4, 4) * 10))
 
-    def myNetwork(input: Do[Tape[Nd4jArray, Nd4jArray]]): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: Do[Tape[INDArray, INDArray]]): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.dot(input, weight)
     }
 
@@ -566,7 +566,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -579,18 +579,18 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray im2col (kernel,stride,padding) --forward" in {
+  "INDArray im2col (kernel,stride,padding) --forward" in {
     val hyperparameters =
       Factory[FixedLearningRate]
         .newInstance(logger = Logger.getGlobal, fixedLearningRate = 0.03)
     import hyperparameters.implicits._
     val weight = hyperparameters.INDArrayWeight((-(1 to 54).toNDArray).reshape(2, 3, 3, 3))
 
-    def myNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.im2col(weight, kernel, stride, padding)
     }
 
-    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[Nd4jArray] = {
+    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[INDArray] = {
       train(myNetwork(kernel, stride, padding))
     }
     import scalaz.concurrent.Future._
@@ -598,7 +598,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    trainMyNetwork((3, 3), (1, 1), (1, 1)).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    trainMyNetwork((3, 3), (1, 1), (1, 1)).unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -611,18 +611,18 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray im2col (kernel,stride,padding) --train" in {
+  "INDArray im2col (kernel,stride,padding) --train" in {
     val hyperparameters =
       Factory[FixedLearningRate]
         .newInstance(logger = Logger.getGlobal, fixedLearningRate = 0.01)
     import hyperparameters.implicits._
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
 
-    def myNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.im2col(weight, kernel, stride, padding)
     }
 
-    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[Nd4jArray] = {
+    def trainMyNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): Task[INDArray] = {
       train(myNetwork(kernel, stride, padding))
     }
     import scalaz.concurrent.Future._
@@ -642,7 +642,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -654,15 +654,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray reshape shapes --forward" in {
+  "INDArray reshape shapes --forward" in {
 
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
 
-    def myNetwork(dimensions: Int*): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(dimensions: Int*): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.reshape(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -671,7 +671,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    trainMyNetwork(2, 3, 3, 3).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    trainMyNetwork(2, 3, 3, 3).unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -684,18 +684,18 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray reshape shapes --train" in {
+  "INDArray reshape shapes --train" in {
     val hyperparameters =
       Factory[FixedLearningRate]
         .newInstance(logger = Logger.getGlobal, fixedLearningRate = 0.01)
     import hyperparameters.implicits._
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
 
-    def myNetwork(dimensions: Int*): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(dimensions: Int*): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.reshape(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -716,7 +716,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -728,15 +728,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray permute dimensions --forward" in {
+  "INDArray permute dimensions --forward" in {
 
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 9))
 
-    def myNetwork(dimensions: Int*): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(dimensions: Int*): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.permute(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -745,7 +745,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    trainMyNetwork(0, 2, 1).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    trainMyNetwork(0, 2, 1).unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -758,18 +758,18 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "Nd4jArray permute dimensions --train" in {
+  "INDArray permute dimensions --train" in {
     val hyperparameters =
       Factory[FixedLearningRate]
         .newInstance(logger = Logger.getGlobal, fixedLearningRate = 0.01)
     import hyperparameters.implicits._
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 9))
 
-    def myNetwork(dimensions: Int*): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(dimensions: Int*): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.permute(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(dimensions: Int*): Task[Nd4jArray] = {
+    def trainMyNetwork(dimensions: Int*): Task[INDArray] = {
       train(myNetwork(dimensions: _*))
     }
 
@@ -790,7 +790,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -802,23 +802,19 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "conv2d(Nd4jArray, Nd4jArray, Nd4jArray, kernel, stride, padding)" in {
+  "conv2d(INDArray, INDArray, INDArray, kernel, stride, padding)" in {
 
     val hyperparameters =
       Factory[FixedLearningRate]
         .newInstance(logger = Logger.getGlobal, fixedLearningRate = 0.01)
     import hyperparameters.implicits._
-    val input = hyperparameters.INDArrayWeight((1 to 16).toNDArray.reshape(1, 1, 4, 4))
+    val input = (1 to 16).toNDArray.reshape(1, 1, 4, 4)
 
     val weight = hyperparameters.INDArrayWeight(Nd4j.ones(1, 1, 3, 3))
     val bias = hyperparameters.INDArrayWeight(Nd4j.zeros(1))
 
-    def convolution(input: Do[Tape[Nd4jArray, Nd4jArray]]): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def convolution(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
-    }
-
-    def trainConvlountion(input: Do[Tape[Nd4jArray, Nd4jArray]]): Task[Nd4jArray] = {
-      train(convolution(input))
     }
 
     import scalaz.concurrent.Future._
@@ -830,7 +826,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
       72.00, 78.00, 54.00).toNDArray
       .reshape(1, 1, 4, 4)
 
-    trainConvlountion(input.forward).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    train(convolution(input)).unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -843,7 +839,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "sumT(Nd4jArray)" in {
+  "sumT(INDArray)" in {
 
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
 
@@ -884,15 +880,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "sum(Nd4jArray,dimensions) --2 dimensions" in {
+  "sum(INDArray,dimensions) --2 dimensions" in {
 
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(6, 9))
 
-    def myNetwork(dimensions: Int*): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(dimensions: Int*): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.sum(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(): Task[Nd4jArray] = {
+    def trainMyNetwork(): Task[INDArray] = {
       train(myNetwork(0))
     }
 
@@ -913,7 +909,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -926,15 +922,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
   }
 
   // Failed due to nd4j bugs in broadcasting. TODO: Try to upgrade nd4j to a new version.
-  "sum(Nd4jArray,dimensions) --4 dimensions" ignore {
+  "sum(INDArray,dimensions) --4 dimensions" ignore {
 
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
 
-    def myNetwork(dimensions: Int*): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(dimensions: Int*): Do[Tape[INDArray, INDArray]] = {
       hyperparameters.sum(weight, dimensions: _*)
     }
 
-    def trainMyNetwork(): Task[Nd4jArray] = {
+    def trainMyNetwork(): Task[INDArray] = {
       train(myNetwork(0, 1))
     }
 
@@ -955,7 +951,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -967,7 +963,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "mean(Nd4jArray)" in {
+  "mean(INDArray)" in {
 
     val weight = hyperparameters.INDArrayWeight((1 to 54).toNDArray.reshape(2, 3, 3, 3))
 
@@ -1008,15 +1004,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "4D Nd4jArray * 4D Nd4jArray -- forward" in {
+  "4D INDArray * 4D INDArray -- forward" in {
 
     val weight = hyperparameters.INDArrayWeight((0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight * input
     }
 
-    def trainMyNetwork(input: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(input: INDArray): Task[INDArray] = {
       train(myNetwork(input))
     }
 
@@ -1027,7 +1023,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    trainMyNetwork(input).unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    trainMyNetwork(input).unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
@@ -1039,15 +1035,15 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
     p.future
   }
 
-  "4D Nd4jArray * 4D Nd4jArray -- train" in {
+  "4D INDArray * 4D INDArray -- train" in {
 
     val weight = hyperparameters.INDArrayWeight((0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4))
 
-    def myNetwork(input: Nd4jArray): Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def myNetwork(input: INDArray): Do[Tape[INDArray, INDArray]] = {
       weight * input
     }
 
-    def trainMyNetwork(input: Nd4jArray): Task[Nd4jArray] = {
+    def trainMyNetwork(input: INDArray): Task[INDArray] = {
       train(myNetwork(input))
     }
 
@@ -1070,11 +1066,11 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
 
     val p = Promise[Assertion]
 
-    result.unsafePerformAsync { either: \/[Throwable, Nd4jArray] =>
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e
-          case \/-(loss: Nd4jArray) =>
+          case \/-(loss: INDArray) =>
             loss.meanNumber.doubleValue should be < 1.0
         }
       }
@@ -1096,12 +1092,12 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
       "abs(??? : Do[Tape[Double, Double]])" should compile
 
       "abs(Nd4j.ones(2, 3, 3, 3))" should compile
-      "abs(??? : Do[Tape[Nd4jArray,Nd4jArray]])" should compile
-      "abs(??? : Do[_<: Tape[Nd4jArray,Nd4jArray]])" should compile
-      "abs(??? : Do[Tape[Nd4jArray,Nd4jArray]])" should compile
-      "abs(??? : Do[Tape[Nd4jArray, Nd4jArray]])" should compile
-      "abs(??? : Do[_<: Tape[Nd4jArray, Nd4jArray]])" should compile
-      "abs(??? : Do[Tape[Nd4jArray, Nd4jArray]])" should compile
+      "abs(??? : Do[Tape[INDArray,INDArray]])" should compile
+      "abs(??? : Do[_<: Tape[INDArray,INDArray]])" should compile
+      "abs(??? : Do[Tape[INDArray,INDArray]])" should compile
+      "abs(??? : Do[Tape[INDArray, INDArray]])" should compile
+      "abs(??? : Do[_<: Tape[INDArray, INDArray]])" should compile
+      "abs(??? : Do[Tape[INDArray, INDArray]])" should compile
     }
 
     promise.future

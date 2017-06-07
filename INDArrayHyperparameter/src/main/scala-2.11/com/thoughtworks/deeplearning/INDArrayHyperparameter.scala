@@ -33,7 +33,7 @@ import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, Monoid, Semigroup, \/, \/-}
 import scalaz.concurrent.{Future, Task}
 import scalaz.syntax.all._
-import org.nd4j.linalg.api.ndarray.{INDArray => Nd4jArray}
+import org.nd4j.linalg.api.ndarray.INDArray
 import shapeless.PolyDefns.Case0
 import shapeless.ops.hlist.Selector
 import sourcecode.{FullName, Name}
@@ -48,8 +48,8 @@ import scalaz.concurrent.Task
   */
 trait INDArrayHyperparameter extends DoubleHyperparameter {
 
-  protected implicit object INDArraySemigroup extends Semigroup[Nd4jArray] {
-    override def append(f1: Nd4jArray, f2: => Nd4jArray): Nd4jArray = f1 + f2
+  protected implicit object INDArraySemigroup extends Semigroup[INDArray] {
+    override def append(f1: INDArray, f2: => INDArray): INDArray = f1 + f2
   }
 
   private def jumpTask()(implicit executionContext: ExecutionContext): Task[Unit] = {
@@ -63,7 +63,7 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
   }
 
   // TODO: Add a test for this method and auto-broadcasting on n-dimension arrays for n > 2
-  private def sumAs(outputDeltaValue: Nd4jArray, shape: Array[Int]) = {
+  private def sumAs(outputDeltaValue: INDArray, shape: Array[Int]) = {
     val singleElementDimension = (shape: Seq[Int]).view.zip(outputDeltaValue.shape).zipWithIndex.collect {
       case ((1, originSize), dimension) if originSize > 1 => dimension
     }
@@ -85,15 +85,15 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
   @inline
   protected def reciprocal[Operand](operand: Operand)(
-      implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+      implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
       fullName: sourcecode.FullName,
       caller: Caller[_],
       methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    tapefactories.Unary.doTape(liftOperand(operand)) { data: Nd4jArray =>
+      executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    tapefactories.Unary.doTape(liftOperand(operand)) { data: INDArray =>
       throwableMonadic[Task] {
         val outputData = data rdiv 1.0
-        val computeBackward = { outputDelta: Nd4jArray =>
+        val computeBackward = { outputDelta: INDArray =>
           throwableMonadic[Do] {
             Do.jump().each
             -outputDelta / (data * data)
@@ -106,17 +106,17 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
   @inline
   def reshape[Operand](operand: Operand, newShape: Int*)(
-      implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+      implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
       fullName: sourcecode.FullName,
       caller: Caller[_],
       methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    tapefactories.Unary.doTape(liftOperand(operand)) { (data: Nd4jArray) =>
+      executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    tapefactories.Unary.doTape(liftOperand(operand)) { (data: INDArray) =>
       throwableMonadic[Task] {
         jumpTask().each
         val dataShape = data.shape()
         val outputData = data.reshape(newShape: _*)
-        val computeBackward = { outputDelta: Nd4jArray =>
+        val computeBackward = { outputDelta: INDArray =>
           throwableMonadic[Do] {
             Do.jump().each
             outputDelta.reshape(dataShape: _*)
@@ -129,17 +129,17 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
   @inline
   def permute[Operand](operand: Operand, dimensions: Int*)(
-      implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+      implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
       fullName: sourcecode.FullName,
       caller: Caller[_],
       methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    tapefactories.Unary.doTape(liftOperand(operand)) { (data: Nd4jArray) =>
+      executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    tapefactories.Unary.doTape(liftOperand(operand)) { (data: INDArray) =>
       throwableMonadic[Task] {
         jumpTask().each
         val dataShape = data.shape()
         val outputData = data.permute(dimensions: _*)
-        val computeBackward = { outputDelta: Nd4jArray =>
+        val computeBackward = { outputDelta: INDArray =>
           throwableMonadic[Do] {
             Do.jump().each
             val indexedSeq: IndexedSeq[Int] = dataShape.indices
@@ -155,13 +155,13 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
   }
 
   @inline
-  def sumT[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+  def sumT[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
                                       fullName: sourcecode.FullName,
                                       caller: Caller[_],
                                       methodName: sourcecode.Name,
                                       executionContext: ExecutionContext): Do[Tape[scala.Double, scala.Double]] = {
-    tapefactories.Unary.doTape[Nd4jArray, Nd4jArray, scala.Double, scala.Double](liftOperand(operand)) {
-      data: Nd4jArray =>
+    tapefactories.Unary.doTape[INDArray, INDArray, scala.Double, scala.Double](liftOperand(operand)) {
+      data: INDArray =>
         throwableMonadic[Task] {
           jumpTask().each
           val outputData = data.sumT
@@ -178,16 +178,16 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
   @inline
   def sum[Operand](operand: Operand, dimensions: Int*)(
-      implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+      implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
       fullName: sourcecode.FullName,
       caller: Caller[_],
       methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    tapefactories.Unary.doTape(liftOperand(operand)) { data: Nd4jArray =>
+      executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    tapefactories.Unary.doTape(liftOperand(operand)) { data: INDArray =>
       throwableMonadic[Task] {
         jumpTask().each
         val outputData = data.sum(dimensions: _*)
-        val computeBackward = { outputDelta: Nd4jArray =>
+        val computeBackward = { outputDelta: INDArray =>
           throwableMonadic[Do] {
             Do.jump().each
             outputDelta.broadcast(data.shape(): _*)
@@ -199,17 +199,17 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
   }
 
   implicit final class DifferentiableINDArrayOps[Operand](operand: Operand)(
-      implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+      implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
       fullName: sourcecode.FullName,
       methodName: sourcecode.Name,
       caller: Caller[_],
       executionContext: ExecutionContext) {
     @inline
-    def unary_- : Do[Tape[Nd4jArray, Nd4jArray]] = {
+    def unary_- : Do[Tape[INDArray, INDArray]] = {
       tapefactories.Unary.doTape(liftOperand(operand)) { data =>
         Task.delay {
           val outputData = -data
-          val computeBackward = { outputDelta: Nd4jArray =>
+          val computeBackward = { outputDelta: INDArray =>
             throwableMonadic[Do] {
               Do.jump().each
               -outputDelta
@@ -228,16 +228,16 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
                                   kernel: (Int, Int),
                                   stride: (Int, Int),
                                   padding: (Int, Int))(
-      implicit liftInput: Lift.Aux[Input, Nd4jArray, Nd4jArray],
-      liftWeight: Lift.Aux[Weight, Nd4jArray, Nd4jArray],
-      liftBias: Lift.Aux[Bias, Nd4jArray, Nd4jArray],
+      implicit liftInput: Lift.Aux[Input, INDArray, INDArray],
+      liftWeight: Lift.Aux[Weight, INDArray, INDArray],
+      liftBias: Lift.Aux[Bias, INDArray, INDArray],
       fullName: sourcecode.FullName,
       caller: Caller[_],
       methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    def monadicConv2d(input: Do[Tape[Nd4jArray, Nd4jArray]],
-                      weight: Do[Tape[Nd4jArray, Nd4jArray]],
-                      bias: Do[Tape[Nd4jArray, Nd4jArray]]) = monadic[Do] {
+      executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    def monadicConv2d(input: Do[Tape[INDArray, INDArray]],
+                      weight: Do[Tape[INDArray, INDArray]],
+                      bias: Do[Tape[INDArray, INDArray]]) = monadic[Do] {
       val inputShape: Array[Int] = input.each.data.shape()
       val count = inputShape(0)
       val depth = inputShape(1)
@@ -248,7 +248,7 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
       val kernelNumber = weightShape(0)
       val col = im2col(input, kernel, stride, padding)
-      val permutedCol: Do[Tape[Nd4jArray, Nd4jArray]] = permute(col, 0, 4, 5, 1, 2, 3)
+      val permutedCol: Do[Tape[INDArray, INDArray]] = permute(col, 0, 4, 5, 1, 2, 3)
       val depthKernelKernel = depth * kernel._1 * kernel._2
       val countXAisYAis = count * yAxis * xAxis
 
@@ -258,10 +258,10 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
       val permutedWeight = permute(reshapedWeight, 1, 0)
 
-      val dotResult: Do[Tape[Nd4jArray, Nd4jArray]] = dot(operandCol2d, permutedWeight)
+      val dotResult: Do[Tape[INDArray, INDArray]] = dot(operandCol2d, permutedWeight)
 
-      val plusResult: Do[Tape[Nd4jArray, Nd4jArray]] =
-        implicits.`INDArray+INDArray`.apply(dotResult, bias: Do[Tape[Nd4jArray, Nd4jArray]])
+      val plusResult: Do[Tape[INDArray, INDArray]] =
+        implicits.`INDArray+INDArray`.apply(dotResult, bias: Do[Tape[INDArray, INDArray]])
 
       val reshapeResult = reshape(plusResult, count, yAxis, xAxis, kernelNumber)
 
@@ -273,20 +273,19 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
   }
 
   @inline
-  def dot[Left, Right](left: Left, right: Right)(
-      implicit liftLeft: Lift.Aux[Left, Nd4jArray, Nd4jArray],
-      liftRight: Lift.Aux[Right, Nd4jArray, Nd4jArray],
-      fullName: sourcecode.FullName,
-      caller: Caller[_],
-      methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    tapefactories.Binary.doTape(liftLeft(left), liftRight(right)) { (data0: Nd4jArray, data1: Nd4jArray) =>
+  def dot[Left, Right](left: Left, right: Right)(implicit liftLeft: Lift.Aux[Left, INDArray, INDArray],
+                                                 liftRight: Lift.Aux[Right, INDArray, INDArray],
+                                                 fullName: sourcecode.FullName,
+                                                 caller: Caller[_],
+                                                 methodName: sourcecode.Name,
+                                                 executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    tapefactories.Binary.doTape(liftLeft(left), liftRight(right)) { (data0: INDArray, data1: INDArray) =>
       throwableMonadic[Task] {
         jumpTask().each
 
         val outputData = data0 dot data1
 
-        val computeBackward = { outputDelta: Nd4jArray =>
+        val computeBackward = { outputDelta: INDArray =>
           val delta0Future =
             throwableMonadic[Do] {
               Do.jump().each
@@ -312,19 +311,19 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
 
   @inline
   def im2col[Operand](operand: Operand, kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int))(
-      implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+      implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
       fullName: sourcecode.FullName,
       caller: Caller[_],
       methodName: sourcecode.Name,
-      executionContext: ExecutionContext): Do[Tape[Nd4jArray, Nd4jArray]] = {
-    tapefactories.Unary.doTape(liftOperand(operand)) { data: Nd4jArray =>
+      executionContext: ExecutionContext): Do[Tape[INDArray, INDArray]] = {
+    tapefactories.Unary.doTape(liftOperand(operand)) { data: INDArray =>
       throwableMonadic[Task] {
         jumpTask().each
         val dataShape = data.shape()
         val strideArray = toArray(stride)
         val paddingArray = toArray(padding)
         val outputData = Convolution.im2col(data, toArray(kernel), strideArray, paddingArray)
-        val computeBackward = { outputDelta: Nd4jArray =>
+        val computeBackward = { outputDelta: INDArray =>
           throwableMonadic[Do] {
             Do.jump().each
             Convolution.col2im(outputDelta, strideArray, paddingArray, dataShape(2), dataShape(3))
@@ -336,12 +335,12 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
   }
 
   @inline
-  def mean[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, Nd4jArray, Nd4jArray],
+  def mean[Operand](operand: Operand)(implicit liftOperand: Lift.Aux[Operand, INDArray, INDArray],
                                       fullName: sourcecode.FullName,
                                       caller: Caller[_],
                                       methodName: sourcecode.Name,
                                       executionContext: ExecutionContext): Do[Tape[scala.Double, scala.Double]] = {
-    tapefactories.Unary.doTape(liftOperand(operand)) { data: Nd4jArray =>
+    tapefactories.Unary.doTape(liftOperand(operand)) { data: INDArray =>
       throwableMonadic[Task] {
         jumpTask().each
         val outputData = data.sumT / ArrayUtil.prod(data.shape(): _*)
@@ -361,26 +360,21 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
     implicit val caller: Caller[_]
     implicit val executionContext: ExecutionContext
 
-    var data: Nd4jArray
+    var data: INDArray
 
-    private def optimizer[SubtypeOfOptimizer](delta: Nd4jArray)(
-        implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
+    private def optimizer[SubtypeOfOptimizer](delta: INDArray)(
+        implicit implicitApplyRest: ImplicitApply.Aux[indArrayPartialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
         constraint: SubtypeOfOptimizer <:< INDArrayOptimizer
     ): INDArrayOptimizer = {
       constraint(
         implicitApplyRest(
-          partialApplyOriginalDelta(partialApplyWeight(optimizerFactory.newInstance, weightParameter(this)),
-                                    originalDeltaParameter(delta))))
+          indArrayPartialApplyOriginalDelta(indArraypartialApplyWeight(indArrayOptimizerFactory.newInstance,
+                                                                       indArrayWeightParameter(this)),
+                                            indArrayOriginalDeltaParameter(delta))))
     }
 
-    final def forward[SubtypeOfOptimizer](
-        implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
-        constraint: SubtypeOfOptimizer <:< INDArrayOptimizer): Do[Tape[Nd4jArray, Nd4jArray]] = {
-      Do.now(Tape(data, backward[SubtypeOfOptimizer]))
-    }
-
-    private[INDArrayHyperparameter] final def backward[SubtypeOfOptimizer](deltaFuture: Do[Nd4jArray])(
-        implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
+    private[INDArrayHyperparameter] final def backward[SubtypeOfOptimizer](deltaFuture: Do[INDArray])(
+        implicit implicitApplyRest: ImplicitApply.Aux[indArrayPartialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
         constraint: SubtypeOfOptimizer <:< INDArrayOptimizer): Future[Unit] = {
 
       Do.run(Do.releaseFlatMap(deltaFuture) { delta =>
@@ -404,71 +398,73 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
   type INDArrayWeight <: INDArrayWeightApi
 
   object INDArrayWeight {
-    def apply[SubtypeOfWeight, OptimizerFunction, Optimizer](data: Nd4jArray)(
-        implicit implicitApplyRest: ImplicitApply.Aux[partialApplyData.Rest, SubtypeOfWeight],
+    def apply[SubtypeOfWeight, OptimizerFunction, Optimizer](data: INDArray)(
+        implicit implicitApplyRest: ImplicitApply.Aux[indArrayPartialApplyData.Rest, SubtypeOfWeight],
         asINDArrayWeight: SubtypeOfWeight <:< INDArrayWeight
     ): INDArrayWeight = {
-      asINDArrayWeight(implicitApplyRest(partialApplyData(weightFactory.newInstance, dataParameter(data))))
+      asINDArrayWeight(
+        implicitApplyRest(indArrayPartialApplyData(indArrayWeightFactory.newInstance, indArrayDataParameter(data))))
     }
   }
   trait INDArrayOptimizerApi {
 
     val weight: INDArrayWeight
 
-    val originalDelta: Nd4jArray
-    def delta: Nd4jArray = originalDelta
+    val originalDelta: INDArray
+    def delta: INDArray = originalDelta
   }
   type INDArrayOptimizer <: INDArrayOptimizerApi
 
   @(inject @getter)
-  val optimizerFactory: Factory[INDArrayOptimizer]
+  protected val indArrayOptimizerFactory: Factory[INDArrayOptimizer]
 
   @(inject @getter)
-  val partialApplyWeight: PartialApply[optimizerFactory.Constructor, Witness.`"weight"`.T]
+  protected val indArraypartialApplyWeight: PartialApply[indArrayOptimizerFactory.Constructor, Witness.`"weight"`.T]
+
+  @inject
+  protected def indArrayWeightParameter: INDArrayWeight <:< indArraypartialApplyWeight.Parameter
 
   @(inject @getter)
-  val weightParameter: INDArrayWeight <:< partialApplyWeight.Parameter
+  protected val indArrayPartialApplyOriginalDelta: PartialApply[indArraypartialApplyWeight.Rest,
+                                                                Witness.`"originalDelta"`.T]
+
+  @inject
+  protected def indArrayOriginalDeltaParameter: INDArray <:< indArrayPartialApplyOriginalDelta.Parameter
 
   @(inject @getter)
-  val partialApplyOriginalDelta: PartialApply[partialApplyWeight.Rest, Witness.`"originalDelta"`.T]
+  protected val indArrayWeightFactory: Factory[INDArrayWeight]
 
   @(inject @getter)
-  val originalDeltaParameter: Nd4jArray <:< partialApplyOriginalDelta.Parameter
+  protected val indArrayPartialApplyData: PartialApply[indArrayWeightFactory.Constructor, Witness.`"data"`.T]
 
-  @(inject @getter)
-  val weightFactory: Factory[INDArrayWeight]
-
-  @(inject @getter)
-  val partialApplyData: PartialApply[weightFactory.Constructor, Witness.`"data"`.T]
-
-  @(inject @getter)
-  val dataParameter: Nd4jArray <:< partialApplyData.Parameter
+  @inject
+  protected def indArrayDataParameter: INDArray <:< indArrayPartialApplyData.Parameter
 
   trait ImplicitsApi extends super.ImplicitsApi {
 
     @inline
     implicit def liftINDArray[A](
-        implicit typeClass: LowPriorityLift.Aux[A, Nd4jArray, Nd4jArray]): Lift.Aux[A, Nd4jArray, Nd4jArray] =
+        implicit typeClass: LowPriorityLift.Aux[A, INDArray, INDArray]): Lift.Aux[A, INDArray, INDArray] =
       typeClass
 
     @inline
     implicit def liftINDArrayWeight[SubtypeOfOptimizer](
-                                                      implicit implicitApplyRest: ImplicitApply.Aux[partialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
-                                                      constraint: SubtypeOfOptimizer <:< INDArrayOptimizer): Lift.Aux[INDArrayWeight, Nd4jArray, Nd4jArray] = {
+        implicit implicitApplyRest: ImplicitApply.Aux[indArrayPartialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
+        constraint: SubtypeOfOptimizer <:< INDArrayOptimizer): Lift.Aux[INDArrayWeight, INDArray, INDArray] = {
       new Lift[INDArrayWeight] {
-        override type Data = Nd4jArray
-        override type Delta = Nd4jArray
+        override type Data = INDArray
+        override type Delta = INDArray
 
         @inline
-        override def apply(weight: INDArrayWeight): Do[Tape[Nd4jArray, Nd4jArray]] = {
+        override def apply(weight: INDArrayWeight): Do[Tape[INDArray, INDArray]] = {
           import weight._
           Do.now(Tape(data, backward[SubtypeOfOptimizer]))
         }
       }
     }
 
-    implicit object INDArrayLoss extends Loss[Nd4jArray, Nd4jArray] {
-      override def deltaLoss(data: Nd4jArray): Do[Nd4jArray] = Do.now(Nd4j.ones(data.shape(): _*))
+    implicit object INDArrayLoss extends Loss[INDArray, INDArray] {
+      override def deltaLoss(data: INDArray): Do[INDArray] = Do.now(Nd4j.ones(data.shape(): _*))
     }
 
     @inline
@@ -476,18 +472,18 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.+.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+        executionContext: ExecutionContext): polyFunctions.+.Case.Aux[Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.+.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: Nd4jArray) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
               val newShape = autoBroadcastShape(data0.shape(), data1.shape())
               data0.broadcast(newShape: _*) + data1.broadcast(newShape: _*)
             }
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = throwableMonadic[Do] {
                 Do.jump().each
                 sumAs(outputDelta, data0.shape())
@@ -509,15 +505,15 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.+.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
+        executionContext: ExecutionContext): polyFunctions.+.Case.Aux[Do[Tape[INDArray, INDArray]],
                                                                       Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.+.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: scala.Double) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: scala.Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 + data1
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = Do.now(outputDelta)
               val delta1Future = throwableMonadic[Do] {
                 Do.jump().each
@@ -537,8 +533,8 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions.+.Case.Aux[Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.+.at { (operand0, operand1) =>
         import math.PolyOps
         operand1.+(operand0)(Lift.LiftCase2.liftCase2(Lift.fromSubtype, Lift.fromSubtype, `INDArray+Double`))
@@ -550,18 +546,18 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.-.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+        executionContext: ExecutionContext): polyFunctions.-.Case.Aux[Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.-.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: Nd4jArray) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
               val newShape = autoBroadcastShape(data0.shape(), data1.shape())
               data0.broadcast(newShape: _*) - data1.broadcast(newShape: _*)
             }
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = throwableMonadic[Do] {
                 Do.jump().each
                 sumAs(outputDelta, data0.shape())
@@ -583,15 +579,15 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.-.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
+        executionContext: ExecutionContext): polyFunctions.-.Case.Aux[Do[Tape[INDArray, INDArray]],
                                                                       Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.-.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: scala.Double) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: scala.Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 - data1
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = Do.now(outputDelta)
               val delta1Future = throwableMonadic[Do] {
                 Do.jump().each
@@ -611,8 +607,8 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions.-.Case.Aux[Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.-.at { (operand0, operand1) =>
         import shapeless.syntax.singleton._
         `INDArray+Double`.apply(new DifferentiableINDArrayOps(operand1).unary_-, operand0)
@@ -624,18 +620,18 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.*.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+        executionContext: ExecutionContext): polyFunctions.*.Case.Aux[Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.*.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: Nd4jArray) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = {
               val newShape = autoBroadcastShape(data0.shape(), data1.shape())
               data0.broadcast(newShape: _*) * data1.broadcast(newShape: _*)
             }
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = throwableMonadic[Do] {
                 Do.jump().each
                 sumAs(data1.broadcast(outputDelta.shape(): _*) * outputDelta, data0.shape())
@@ -657,15 +653,15 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.*.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
+        executionContext: ExecutionContext): polyFunctions.*.Case.Aux[Do[Tape[INDArray, INDArray]],
                                                                       Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.*.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: scala.Double) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: scala.Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = data0 * data1
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = throwableMonadic[Do] {
                 Do.jump().each
                 outputDelta * data1
@@ -687,8 +683,8 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions.*.Case.Aux[Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.*.at { (operand0, operand1) =>
         `INDArray*Double`.apply(operand1, operand0)
 
@@ -700,9 +696,9 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions./.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+        executionContext: ExecutionContext): polyFunctions./.Case.Aux[Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions./.at { (operand0, operand1) =>
         operand0 * reciprocal(operand1)
       }
@@ -713,9 +709,9 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions./.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
+        executionContext: ExecutionContext): polyFunctions./.Case.Aux[Do[Tape[INDArray, INDArray]],
                                                                       Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions./.at { (operand0, operand1) =>
         `INDArray*Double`.apply(operand0, doubleReciprocal(operand1))
       }
@@ -727,8 +723,8 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         caller: Caller[_],
         methodName: sourcecode.Name,
         executionContext: ExecutionContext): polyFunctions./.Case.Aux[Do[Tape[scala.Double, scala.Double]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]],
-                                                                      Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                      Do[Tape[INDArray, INDArray]],
+                                                                      Do[Tape[INDArray, INDArray]]] = {
       polyFunctions./.at { (operand0, operand1) =>
         operand0 * reciprocal(operand1)
       }
@@ -739,15 +735,15 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.max.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
+        executionContext: ExecutionContext): polyFunctions.max.Case.Aux[Do[Tape[INDArray, INDArray]],
                                                                         Do[Tape[scala.Double, scala.Double]],
-                                                                        Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                        Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.max.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: scala.Double) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: scala.Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.max(data0, data1)
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = throwableMonadic[Do] {
                 Do.jump().each
                 (data0 gt data1) * outputDelta
@@ -769,15 +765,15 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
         implicit fullName: sourcecode.FullName,
         caller: Caller[_],
         methodName: sourcecode.Name,
-        executionContext: ExecutionContext): polyFunctions.min.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]],
+        executionContext: ExecutionContext): polyFunctions.min.Case.Aux[Do[Tape[INDArray, INDArray]],
                                                                         Do[Tape[scala.Double, scala.Double]],
-                                                                        Do[Tape[Nd4jArray, Nd4jArray]]] = {
+                                                                        Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.min.at { (operand0, operand1) =>
-        tapefactories.Binary.doTape(operand0, operand1) { (data0: Nd4jArray, data1: scala.Double) =>
+        tapefactories.Binary.doTape(operand0, operand1) { (data0: INDArray, data1: scala.Double) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.min(data0, data1)
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               val delta0Future = throwableMonadic[Do] {
                 Do.jump().each
                 (data0 lt data1) * outputDelta
@@ -799,13 +795,13 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
                                  caller: Caller[_],
                                  methodName: sourcecode.Name,
                                  executionContext: ExecutionContext)
-      : polyFunctions.exp.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]], Do[Tape[Nd4jArray, Nd4jArray]]] = {
+      : polyFunctions.exp.Case.Aux[Do[Tape[INDArray, INDArray]], Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.exp.at { operand =>
-        tapefactories.Unary.doTape(operand) { (data: Nd4jArray) =>
+        tapefactories.Unary.doTape(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.exp(data)
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               throwableMonadic[Do] {
                 Do.jump().each
                 outputData * outputDelta
@@ -822,13 +818,13 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
                                  caller: Caller[_],
                                  methodName: sourcecode.Name,
                                  executionContext: ExecutionContext)
-      : polyFunctions.log.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]], Do[Tape[Nd4jArray, Nd4jArray]]] = {
+      : polyFunctions.log.Case.Aux[Do[Tape[INDArray, INDArray]], Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.log.at { operand =>
-        tapefactories.Unary.doTape(operand) { (data: Nd4jArray) =>
+        tapefactories.Unary.doTape(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.log(data)
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               throwableMonadic[Do] {
                 Do.jump().each
                 outputDelta / data
@@ -845,13 +841,13 @@ trait INDArrayHyperparameter extends DoubleHyperparameter {
                                  caller: Caller[_],
                                  methodName: sourcecode.Name,
                                  executionContext: ExecutionContext)
-      : polyFunctions.abs.Case.Aux[Do[Tape[Nd4jArray, Nd4jArray]], Do[Tape[Nd4jArray, Nd4jArray]]] = {
+      : polyFunctions.abs.Case.Aux[Do[Tape[INDArray, INDArray]], Do[Tape[INDArray, INDArray]]] = {
       polyFunctions.abs.at { operand =>
-        tapefactories.Unary.doTape(operand) { (data: Nd4jArray) =>
+        tapefactories.Unary.doTape(operand) { (data: INDArray) =>
           throwableMonadic[Task] {
             jumpTask().each
             val outputData = Transforms.abs(data)
-            val computeBackward = { outputDelta: Nd4jArray =>
+            val computeBackward = { outputDelta: INDArray =>
               throwableMonadic[Do] {
                 Do.jump().each
                 outputDelta * Transforms.sign(data)
