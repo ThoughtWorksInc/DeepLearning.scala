@@ -16,10 +16,11 @@ trait Hyperparameter {
   @(inject @getter)
   protected val implicitApplyImplicitsConstructor: ImplicitApply[implicitsFactory.Constructor]
 
-  @(inject @getter)
-  protected val isImplicits: implicitApplyImplicitsConstructor.Out <:< Implicits
+  @inject
+  protected def isImplicits: implicitApplyImplicitsConstructor.Out <:< Implicits
 
-  @transient lazy val implicits: Implicits = {
+  @transient
+  lazy val implicits: Implicits = {
     isImplicits(implicitApplyImplicitsConstructor(implicitsFactory.newInstance))
   }
 

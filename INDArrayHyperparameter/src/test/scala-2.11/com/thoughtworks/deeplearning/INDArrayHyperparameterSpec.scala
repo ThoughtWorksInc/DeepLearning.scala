@@ -192,7 +192,7 @@ final class INDArrayHyperparameterSpec extends AsyncFreeSpec with Matchers with 
   val hyperparameters = Factory[FixedLearningRate].newInstance(logger = Logger.getGlobal, fixedLearningRate = 1.0)
   import hyperparameters.implicits._
   def trainAndAssertLossAndWeight(myNetwork: INDArray => Do[Tape[INDArray, INDArray]],
-                                  weight: hyperparameters.INDArrayWeightApi,
+                                  weight: hyperparameters.INDArrayWeight,
                                   trainTimes: Int = 2,
                                   expectedLoss: Int = 0,
                                   expectedWeightSum: Int = -16): scala.concurrent.Future[Assertion] = {
