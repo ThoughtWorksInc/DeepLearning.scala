@@ -1,68 +1,147 @@
 parallelExecution in Global := false
 
-lazy val Tape = project
-
-lazy val tapefactories = project.dependsOn(Tape, logs)
-
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val FloatHyperparameter = project.dependsOn(Hyperparameter, tapefactories, math, Loss)
+lazy val DeepLearning = project
 
-lazy val INDArrayHyperparameter = project.dependsOn(DoubleHyperparameter)
+lazy val `plugins-ImplicitsSingleton` = project
 
-val FloatRegex = """(?i:float)""".r
+lazy val `plugins-Layers` = project.dependsOn(DeepLearning)
 
-lazy val DoubleHyperparameter = project
-  .dependsOn(Hyperparameter, tapefactories, math, Loss)
-  .settings(
-    sourceGenerators in Compile += Def.task {
-      for {
-        floatFile <- (unmanagedSources in Compile in FloatHyperparameter).value
-        floatDirectory <- (unmanagedSourceDirectories in Compile in FloatHyperparameter).value
-        relativeFile <- floatFile.relativeTo(floatDirectory)
-      } yield {
-        val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
+lazy val `plugins-Weights` = project.dependsOn(DeepLearning)
 
-        val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
-          m.matched match {
-            case "Float" => "Double"
-            case "float" => "double"
-          }
-        })
+lazy val `plugins-Logging` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
 
-        val outputFile = (sourceManaged in Compile).value / relativeFile.getPath
-        IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
-        outputFile
-      }
-    }.taskValue
+lazy val `plugins-Operators` = project
+
+lazy val `plugins-FloatTraining` = project.dependsOn(`plugins-Training`)
+
+lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
+
+lazy val `plugins-FloatWeights` = project.dependsOn(`plugins-Weights`)
+
+lazy val `plugins-RawFloatLayers` =
+  project.dependsOn(
+    `plugins-Layers`,
+    `plugins-Operators`,
+    `plugins-FloatLiterals` % Test,
+    `plugins-FloatTraining` % Test,
+    `plugins-ImplicitsSingleton` % Test
   )
 
-lazy val Lift = project.dependsOn(Tape)
+lazy val `plugins-FloatLayers` =
+  project.dependsOn(
+    `plugins-RawFloatLayers`,
+    `plugins-FloatTraining` % Test,
+    `plugins-FloatLiterals` % Test,
+    `plugins-FloatWeights` % Test,
+    `plugins-ImplicitsSingleton` % Test
+  )
 
-lazy val math = project.dependsOn(Lift)
+lazy val `plugins-Training` = project.dependsOn(DeepLearning)
 
-lazy val Loss = project.dependsOn(Tape)
-lazy val Hyperparameter = project.dependsOn(Tape)
+lazy val `plugins-INDArrayTraining` = project.dependsOn(`plugins-Training`)
 
-lazy val logs = project
+lazy val `plugins-INDArrayLiterals` = project.dependsOn(DeepLearning)
 
+lazy val `plugins-INDArrayWeights` = project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Weights`)
+
+lazy val `plugins-RawINDArrayLayers` =
+  project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Layers`,`plugins-DoubleLiterals`, `plugins-RawDoubleLayers`)
+
+lazy val `plugins-INDArrayLayers` =
+  project.dependsOn(
+    `plugins-RawINDArrayLayers`,
+    `plugins-DoubleLayers`,
+    `plugins-DoubleLiterals` % Test,
+    `plugins-DoubleTraining` % Test,
+    `plugins-INDArrayTraining` % Test,
+    `plugins-INDArrayLiterals` % Test,
+    `plugins-INDArrayWeights` % Test,
+    `plugins-Logging` % Test,
+    `plugins-ImplicitsSingleton` % Test
+  )
+
+lazy val FloatRegex = """(?i:float)""".r
+
+def copyAndReplace(floatProject: Project) = Def.task {
+  for {
+    floatFile <- (unmanagedSources in Compile in floatProject).value
+    floatDirectory <- (unmanagedSourceDirectories in Compile in floatProject).value
+    relativeFile <- floatFile.relativeTo(floatDirectory)
+  } yield {
+    val floatSource = IO.read(floatFile, scala.io.Codec.UTF8.charSet)
+    val doubleSource = FloatRegex.replaceAllIn(floatSource, { m =>
+      m.matched match {
+        case "Float" => "Double"
+        case "float" => "double"
+      }
+    })
+    val outputFile = (sourceManaged in Compile).value / relativeFile.getPath
+    IO.write(outputFile, doubleSource, scala.io.Codec.UTF8.charSet)
+    outputFile
+  }
+}
+
+lazy val `plugins-DoubleWeights` =
+  project
+    .dependsOn(`plugins-Weights`)
+    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatWeights`).taskValue)
+
+lazy val `plugins-DoubleTraining` =
+  project
+    .dependsOn(`plugins-Training`)
+    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatTraining`).taskValue)
+
+lazy val `plugins-DoubleLiterals` =
+  project
+    .dependsOn(`DeepLearning`)
+    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatLiterals`).taskValue)
+
+lazy val `plugins-RawDoubleLayers` =
+  project
+    .dependsOn(`plugins-Layers`, `plugins-Operators`)
+    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-RawFloatLayers`).taskValue)
+
+lazy val `plugins-DoubleLayers` =
+  project
+    .dependsOn(`plugins-RawDoubleLayers`, `plugins-Operators`)
+    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatLayers`).taskValue)
+
+lazy val `plugins-Builtins` =
+  project.dependsOn(
+    `plugins-ImplicitsSingleton`,
+    `plugins-Layers`,
+    `plugins-Weights`,
+    `plugins-Logging`,
+    `plugins-Operators`,
+    `plugins-FloatTraining`,
+    `plugins-FloatLiterals`,
+    `plugins-FloatWeights`,
+    `plugins-RawFloatLayers`,
+    `plugins-FloatLayers`,
+    `plugins-DoubleTraining`,
+    `plugins-DoubleLiterals`,
+    `plugins-DoubleWeights`,
+    `plugins-RawDoubleLayers`,
+    `plugins-DoubleLayers`,
+    `plugins-INDArrayTraining`,
+    `plugins-INDArrayLiterals`,
+    `plugins-INDArrayWeights`,
+    `plugins-RawINDArrayLayers`,
+    `plugins-INDArrayLayers`
+  )
 publishArtifact := false
 
-lazy val unidoc = project
-  .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
-  .settings(
-    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
-      import Ordering.Implicits._
-      if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
-        inAggregates(LocalRootProject) -- inProjects(INDArrayHyperparameter)
-      } else {
-        inAggregates(LocalRootProject)
-      }
-    },
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-    scalacOptions += "-Xexperimental"
-  )
+lazy val unidoc =
+  project
+    .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
+    .settings(
+      UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject),
+      addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+      scalacOptions += "-Xexperimental"
+    )
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
