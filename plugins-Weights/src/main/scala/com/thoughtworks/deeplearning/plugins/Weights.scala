@@ -54,7 +54,7 @@ trait Weights {
   type Optimizer <: OptimizerApi
 
   trait ImplicitsApi {
-    implicit def floatWeightDeepLearning[SubtypeOfWeight,
+    implicit def weightDeepLearning[SubtypeOfWeight,
                                          Optimizer0 <: Optimizer,
                                          Data0,
                                          Delta0,
