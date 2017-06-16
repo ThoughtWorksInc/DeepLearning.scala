@@ -5,7 +5,7 @@ import shapeless.{Poly1, Poly2}
 /** A namespace of definitions of polymorphic operators.
   *
   * Those functions are implemented in [[RawFloatLayers]], [[RawDoubleLayers]] and [[RawINDArrayLayers]].
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait Operators {
 

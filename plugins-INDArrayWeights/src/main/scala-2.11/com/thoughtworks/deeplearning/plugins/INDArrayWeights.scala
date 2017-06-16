@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scalaz.syntax.all._
 
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait INDArrayWeights extends Weights with ImplicitsSingleton {
 

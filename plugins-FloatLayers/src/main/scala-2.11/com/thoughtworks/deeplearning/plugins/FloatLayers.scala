@@ -23,7 +23,7 @@ import scalaz.syntax.all._
   *          network.predict
   *          }}}
   *
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait FloatLayers extends RawFloatLayers {
 

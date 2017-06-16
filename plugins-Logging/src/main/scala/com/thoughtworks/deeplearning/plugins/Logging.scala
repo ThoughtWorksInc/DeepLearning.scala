@@ -59,7 +59,7 @@ object Logging {
 }
 
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait Logging extends Layers with Weights {
   import Logging._

@@ -62,7 +62,7 @@ object FloatLayersSpec {
 }
 
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 final class FloatLayersSpec extends AsyncFreeSpec with Matchers with Inside {
   // TODO: Add tests for exception handling

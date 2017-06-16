@@ -47,7 +47,7 @@ object RawINDArrayLayers {
 }
 // TODO: operation on INDArray with Double
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait RawINDArrayLayers extends RawDoubleLayers with DoubleLiterals with ImplicitsSingleton {
   import RawINDArrayLayers._

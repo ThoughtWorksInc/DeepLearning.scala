@@ -12,7 +12,7 @@ import scalaz.{-\/, \/-}
 import scalaz.concurrent.Future
 
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait FloatWeights extends Weights {
 

@@ -34,7 +34,7 @@ private object INDArrayTraining {
 
 /** A DeepLearning.scala plugin that enables [[DeepLearning.Ops.train train]] method for neural networks whose loss is a [[org.nd4j.linalg.api.ndarray.INDArray]].
   *
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait INDArrayTraining extends Training {
 

@@ -214,7 +214,7 @@ object INDArrayLayersSpec {
 }
 
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 class INDArrayLayersSpec extends AsyncFreeSpec with Matchers with Inside {
 

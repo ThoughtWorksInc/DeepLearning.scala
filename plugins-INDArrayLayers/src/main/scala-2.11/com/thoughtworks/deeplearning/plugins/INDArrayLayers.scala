@@ -20,7 +20,7 @@ private object INDArrayLayers {
 }
 
 /**
-  * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
+  * @author 杨博 (Yang Bo)
   */
 trait INDArrayLayers extends RawINDArrayLayers {
   import INDArrayLayers._
