@@ -29,9 +29,10 @@ trait RawFloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
 
-    implicit final class FloatLayerOps[Operand0, Out <: FloatLayer](operand0: Operand0)(
+    implicit final class FloatLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning: DeepLearning.Aux[Operand0, Float, Float]) {
-      def unary_-(implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]): Out = {
+      def unary_-[Out <: FloatLayer](
+          implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]): Out = {
         FloatLayer(
           operand0.forward.map { tape0 =>
             val data = -tape0.data
@@ -144,8 +145,9 @@ trait RawFloatLayers extends Layers {
       }
     }
 
-    implicit def `log(Float)`[Operand0, Out <: FloatLayer](implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
-                                        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
+    implicit def `log(Float)`[Operand0, Out <: FloatLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
+        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.log.at[Operand0] { operand0 =>
         val forward = operand0.forward.map { tape0 =>
           val data = math.log(tape0.data).toFloat
@@ -158,8 +160,9 @@ trait RawFloatLayers extends Layers {
       }
     }
 
-    implicit def `exp(Float)`[Operand0, Out <: FloatLayer](implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
-                                        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
+    implicit def `exp(Float)`[Operand0, Out <: FloatLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
+        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.exp.at[Operand0] { operand0 =>
         val forward = operand0.forward.map { tape0 =>
           val data = math.exp(tape0.data).toFloat
@@ -175,8 +178,9 @@ trait RawFloatLayers extends Layers {
       }
     }
 
-    implicit def `abs(Float)`[Operand0, Out <: FloatLayer](implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
-                                        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
+    implicit def `abs(Float)`[Operand0, Out <: FloatLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
+        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.abs.at[Operand0] { operand0 =>
         val forward = operand0.forward.map { tape0 =>
           if (tape0.data < 0) {
