@@ -781,10 +781,9 @@ class INDArrayLayersSpec extends AsyncFreeSpec with Matchers with Inside {
         CNNs with Logging with ImplicitsSingleton with INDArrayTraining with INDArrayLiterals with DoubleLiterals with DoubleLayers with Operators with INDArrayLayers with FixedLearningRate]
         .newInstance(fixedLearningRate = 0.01)
     import hyperparameters.implicits._
-    val input = (1 to 16).toNDArray.reshape(1, 1, 4, 4)
 
-    val weight = hyperparameters.INDArrayWeight(Nd4j.ones(1, 1, 3, 3))
-    val bias = hyperparameters.INDArrayWeight(Nd4j.zeros(1))
+    val weight: hyperparameters.INDArrayWeight = hyperparameters.INDArrayWeight(Nd4j.ones(1, 1, 3, 3))
+    val bias: hyperparameters.INDArrayWeight = hyperparameters.INDArrayWeight(Nd4j.zeros(1))
 
     def convolution(input: INDArray): hyperparameters.INDArrayLayer = {
       hyperparameters.conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
@@ -799,7 +798,9 @@ class INDArrayLayersSpec extends AsyncFreeSpec with Matchers with Inside {
       72.00, 78.00, 54.00).toNDArray
       .reshape(1, 1, 4, 4)
 
-    convolution(input).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+    val input: INDArray = (1 to 16).toNDArray.reshape(1, 1, 4, 4)
+    val task: Task[INDArray] = convolution(input).train
+    task.unsafePerformAsync { either: \/[Throwable, INDArray] =>
       p.success {
         inside(either) {
           case -\/(e) => throw e

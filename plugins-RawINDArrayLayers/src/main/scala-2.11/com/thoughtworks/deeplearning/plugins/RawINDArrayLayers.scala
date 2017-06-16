@@ -137,7 +137,9 @@ trait RawINDArrayLayers extends RawDoubleLayers with DoubleLiterals with Implici
         mean
       }
 
-      /** @usecase def sum(dimensions: Int*): INDArrayLayer = ??? */
+      /**
+        * @usecase def sum(dimensions: Int*): INDArrayLayer = ???
+        */
       def sum[Out <: INDArrayLayer](dimensions: Int*)(
           implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
         INDArrayLayer.unary(operand0) { data0: INDArray =>
@@ -150,7 +152,9 @@ trait RawINDArrayLayers extends RawDoubleLayers with DoubleLiterals with Implici
         }
       }
 
-      /** @usecase def sum: DoubleLayer = ??? */
+      /**
+        * @usecase def sum: DoubleLayer = ???
+        */
       def sum[Out <: DoubleLayer](
           implicit layerImplicits: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
         DoubleLayer.unary(operand0) { data0: INDArray =>
