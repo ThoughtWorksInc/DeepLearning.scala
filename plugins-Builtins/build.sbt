@@ -6,6 +6,9 @@ exampleSuperTypes ~= { oldExampleSuperTypes =>
 }
 
 exampleSuperTypes += "_root_.com.thoughtworks.deeplearning.scalatest.ScalazTaskToScalaFuture"
+
+libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
+
 libraryDependencies ++= {
   import Ordering.Implicits._
   if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {

@@ -6,8 +6,7 @@ package com.thoughtworks.deeplearning.plugins
   *
   *          {{{
   *          import com.thoughtworks.feature.Factory
-  *          import com.thoughtworks.deeplearning.plugins.Builtins
-  *          val hyperparameters = Factory[Builtins].newInstance()
+  *          val hyperparameters = Factory[plugins.Builtins].newInstance()
   *          }}}
   *
   *          and `import` anything in [[implicits]],
@@ -24,13 +23,18 @@ package com.thoughtworks.deeplearning.plugins
   *
   *          {{{
   *          import org.nd4j.linalg.factory.Nd4j
-  *          val weight: hyperparameters.INDArrayWeight = hyperparameters.INDArrayWeight(Nd4j.rand(8, 1))
+  *          import org.nd4j.linalg.api.ndarray.INDArray
+  *          }}}
+  *          {{{
+  *          val numberOfInputFeatures = 8
+  *          val numberOfOutputFeatures = 1
+  *          val initialValueOfWeight: INDArray = Nd4j.rand(numberOfInputFeatures, numberOfOutputFeatures)
+  *          val weight: hyperparameters.INDArrayWeight = hyperparameters.INDArrayWeight(initialValueOfWeight)
   *          }}}
   *
-  *          Creating neural network layers:
+  *          Creating neural network layers,
   *
   *          {{{
-  *          import org.nd4j.linalg.api.ndarray.INDArray
   *          def fullyConnectedLayer(input: INDArray): hyperparameters.INDArrayLayer = {
   *            input dot weight
   *          }
@@ -39,20 +43,40 @@ package com.thoughtworks.deeplearning.plugins
   *          or loss functions:
   *
   *          {{{
-  *          def hingeLoss(scores: hyperparameters.INDArrayLayer, label: INDArray): hyperparameters.DoubleLayers = {
+  *          def hingeLoss(scores: hyperparameters.INDArrayLayer, label: INDArray): hyperparameters.DoubleLayer = {
   *            hyperparameters.max(0.0, 1.0 - label * scores).sum
   *          }
   *          }}}
   *
   *          Training:
   *          {{{
-  *          val input = Nd4j.rand(4, 8)
-  *          val label = Nd4j.rand(4, 1)
-  *          for {
-  *            lossBeforeTraining <- hingeLoss(fullyConnectedLayer(input), label).train
-  *            lossAfterTraining <- hingeLoss(fullyConnectedLayer(input), label).predict
-  *          } yield {
-  *            lossAfterTraining should be <= lossBeforeTraining
+  *          import scalaz.std.vector._
+  *          import scalaz.concurrent.Task
+  *          import com.thoughtworks.each.Monadic._
+  *          }}}
+  *
+  *          {{{
+  *          val batchSize = 4
+  *          val numberOfIterations = 10
+  *          val input = Nd4j.rand(batchSize, numberOfInputFeatures)
+  *          val label = Nd4j.rand(batchSize, numberOfOutputFeatures)
+  *          }}}
+  *
+  *          {{{
+  *          @monadic[Task]
+  *          def train: Task[Vector[Double]] = {
+  *            for (iteration <- (0 until numberOfIterations).toVector) yield {
+  *              hingeLoss(fullyConnectedLayer(input), label).train.each
+  *            }
+  *          }
+  *          }}}
+  *
+  *          When the training is done,
+  *          the loss of the last iteration should be no more than the loss of the first iteration
+  *
+  *          {{{
+  *          train.map { lossesByIteration =>
+  *            lossesByIteration.last should be <= lossesByIteration.head
   *          }
   *          }}}
   *
