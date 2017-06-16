@@ -2,8 +2,8 @@
 
 [![Join the chat at https://gitter.im/ThoughtWorksInc/DeepLearning.scala](https://badges.gitter.im/ThoughtWorksInc/DeepLearning.scala.svg)](https://gitter.im/ThoughtWorksInc/DeepLearning.scala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/ThoughtWorksInc/DeepLearning.scala.svg?branch=2.0.x)](https://travis-ci.org/ThoughtWorksInc/DeepLearning.scala)
-[![Latest version](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiable/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/differentiable)
-[![Scaladoc](https://javadoc.io/badge/com.thoughtworks.deeplearning/unidoc_2.11.svg?label=scaladoc)](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html)
+[![Latest version](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/plugins-builtins/latest.svg)](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala/plugins-builtins)
+[![Scaladoc](https://javadoc.io/badge/com.thoughtworks.deeplearning/deeplearning_2.11.svg?label=scaladoc)](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html)
 
 **DeepLearning.scala** is a DSL for creating complex neural networks.
 
@@ -13,7 +13,7 @@ With the help of DeepLearning.scala, regular programmers are able to build compl
 
 ### Differentiable basic types
 
-Like [Theano](http://deeplearning.net/software/theano/) and other deep learning toolkits, DeepLearning.scala allows you to build neural networks from mathematical formulas. It supports [floats](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableFloat$.html), [doubles](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableDouble$.html), [GPU-accelerated N-dimensional arrays](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableINDArray$.html), and calculates derivatives of the weights in the formulas.
+Like [Theano](http://deeplearning.net/software/theano/) and other deep learning toolkits, DeepLearning.scala allows you to build neural networks from mathematical formulas. It supports [floats](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/1.0.0/com/thoughtworks/deeplearning/DifferentiableFloat$.html), [doubles](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/1.0.0/com/thoughtworks/deeplearning/DifferentiableDouble$.html), [GPU-accelerated N-dimensional arrays](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/1.0.0/com/thoughtworks/deeplearning/DifferentiableINDArray$.html), and calculates derivatives of the weights in the formulas.
 
 ### Differentiable ADTs
 
