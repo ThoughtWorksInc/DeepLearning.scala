@@ -30,7 +30,7 @@ object RawINDArrayLayers {
   }
 
   // Workaround for https://github.com/deeplearning4j/nd4j/issues/1869
-  implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
+  private implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
     def broadcastFix(outputShape: Int*): INDArray = {
       val currentShape = indArray.shape.padTo(outputShape.length, 1)
       (0 until currentShape.length).foldLeft(indArray.reshape(currentShape: _*)) { (indArray, i) =>
