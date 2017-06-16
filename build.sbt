@@ -129,7 +129,8 @@ lazy val `plugins-Builtins` =
     `plugins-INDArrayLiterals`,
     `plugins-INDArrayWeights`,
     `plugins-RawINDArrayLayers`,
-    `plugins-INDArrayLayers`
+    `plugins-INDArrayLayers`,
+    DeepLearning % "test->test"
   )
 publishArtifact := false
 

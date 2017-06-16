@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning.plugins
 
-/**
+/** A plugin that enables all other DeepLearning.scala built-in plugins.
+  *
   * @author 杨博 (Yang Bo)
   */
 trait Builtins
