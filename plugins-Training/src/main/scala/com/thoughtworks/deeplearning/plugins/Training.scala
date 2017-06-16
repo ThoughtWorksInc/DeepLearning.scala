@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 package plugins
 
-/** A DeepLearning.scala plugin that enable methods defined in [[DeepLearning.Ops]] for neural networks.
+/** A DeepLearning.scala plugin that enables methods defined in [[DeepLearning.Ops]] for neural networks.
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
