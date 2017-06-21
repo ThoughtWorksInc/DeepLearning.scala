@@ -4,7 +4,7 @@ import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
-import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous.{Do, ParallelDo}
 import com.thoughtworks.raii.asynchronous.Do._
 import org.nd4j.linalg.api.ndarray.INDArray
 
@@ -84,7 +84,7 @@ trait RawINDArrayLayers extends RawDoubleLayers with DoubleLiterals with Implici
   }
 
   @transient
-  private lazy val doParallelApplicative = Do.doParallelApplicative(new Semigroup[Throwable] {
+  private lazy val doParallelApplicative = ParallelDo.doParallelApplicative(new Semigroup[Throwable] {
     override def append(f1: Throwable, f2: => Throwable): Throwable =
       f1 match {
         case MultipleException(exceptionSet1) =>
