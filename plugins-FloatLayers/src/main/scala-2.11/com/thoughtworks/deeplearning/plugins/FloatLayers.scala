@@ -30,7 +30,7 @@ trait FloatLayers extends RawFloatLayers {
   trait FloatLayerApi extends super[RawFloatLayers].FloatLayerApi {
 
     private lazy val forward0: Do[Tape[Float, Float]] = {
-      val Do(future) = super.forward.flatMap {
+      Do.shared(super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(Future.delay(new Releasable[Future, Try[Tape[Float, Float]]] {
 
@@ -65,9 +65,7 @@ trait FloatLayers extends RawFloatLayers {
             }
 
           }))
-      }
-      val ResourceT(sharedFuture) = ResourceT(future).shared
-      Do(sharedFuture)
+      })
     }
     abstract override def forward: Do[DeepLearning.Tape[Float, Float]] = forward0
 

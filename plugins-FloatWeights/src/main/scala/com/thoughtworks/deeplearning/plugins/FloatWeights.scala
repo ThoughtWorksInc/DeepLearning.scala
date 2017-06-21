@@ -18,7 +18,7 @@ trait FloatWeights extends Weights {
 
   trait FloatWeightApi extends WeightApi { this: FloatWeight =>
 
-    type Delta = Float
+    override type Delta = Float
     override type Data = Float
     override protected type Optimizer = FloatOptimizer
 

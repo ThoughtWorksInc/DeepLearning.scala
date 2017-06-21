@@ -55,15 +55,15 @@ trait Weights {
 
   trait ImplicitsApi {
     implicit def weightDeepLearning[SubtypeOfWeight,
-                                         Optimizer0 <: Optimizer,
-                                         Data0,
-                                         Delta0,
-                                         OptimizerConstructor,
-                                         WeightParameter,
-                                         WeightRest,
-                                         OriginalDeltaParameter,
-                                         OriginalDeltaRest,
-                                         SubtypeOfOptimizer](
+                                    Optimizer0 <: Optimizer,
+                                    Data0,
+                                    Delta0,
+                                    OptimizerConstructor,
+                                    WeightParameter,
+                                    WeightRest,
+                                    OriginalDeltaParameter,
+                                    OriginalDeltaRest,
+                                    SubtypeOfOptimizer](
         implicit asWeight: SubtypeOfWeight <:< Weight.Aux[Optimizer0, Data0, Delta0],
         factory: Factory.Aux[Optimizer0, OptimizerConstructor],
         partialApplyWeight: PartialApply.Aux[OptimizerConstructor, Witness.`"weight"`.T, WeightParameter, WeightRest],

@@ -26,7 +26,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
 
   trait INDArrayWeightApi extends WeightApi { this: INDArrayWeight =>
 
-    type Delta = INDArray
+    override type Delta = INDArray
     override type Data = INDArray
     override protected type Optimizer = INDArrayOptimizer
 
