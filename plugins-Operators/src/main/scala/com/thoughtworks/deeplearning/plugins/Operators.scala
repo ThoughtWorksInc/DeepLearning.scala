@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 package plugins
 import shapeless.{Poly1, Poly2}
 
-/** A namespace of definitions of polymorphic operators.
+/** A plugin of definitions of polymorphic operators.
   *
   * Those functions are implemented in [[RawFloatLayers]], [[RawDoubleLayers]] and [[RawINDArrayLayers]].
   * @author 杨博 (Yang Bo)
@@ -45,6 +45,8 @@ trait Operators {
 
     }
   }
+
+  /** @template */
   type Implicits <: ImplicitsApi
 
 }

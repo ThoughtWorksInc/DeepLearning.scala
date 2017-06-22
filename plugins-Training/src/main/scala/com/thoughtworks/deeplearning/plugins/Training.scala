@@ -6,6 +6,10 @@ package plugins
   * @author 杨博 (Yang Bo)
   */
 trait Training {
+
   trait ImplicitsApi extends DeepLearning.ToDeepLearningOps
+
+  /** @template */
   type Implicits <: ImplicitsApi
+
 }

@@ -25,6 +25,8 @@ trait Layers {
     protected def handleException(thrown: Throwable): Unit = ()
 
   }
+
+  /** @template */
   type Layer <: LayerApi
   object Layer {
     type Aux[Data0, Delta0] = Layer {
@@ -46,6 +48,7 @@ trait Layers {
     }
   }
 
+  /** @template */
   type Implicits <: ImplicitsApi
 
 }

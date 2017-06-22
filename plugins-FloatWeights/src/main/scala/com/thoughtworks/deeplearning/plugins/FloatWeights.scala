@@ -23,6 +23,8 @@ trait FloatWeights extends Weights {
     override protected type Optimizer = FloatOptimizer
 
   }
+
+  /** @template */
   type FloatWeight <: FloatWeightApi with Weight
 
   @inject
@@ -42,7 +44,7 @@ trait FloatWeights extends Weights {
 
   trait FloatOptimizerApi extends OptimizerApi { this: FloatOptimizer =>
 
-    type Delta = Float
+    override type Delta = Float
 
     override protected type Weight = FloatWeight
 
@@ -55,6 +57,8 @@ trait FloatWeights extends Weights {
     }
 
   }
+
+  /** @template */
   type FloatOptimizer <: FloatOptimizerApi with Optimizer
 
 }

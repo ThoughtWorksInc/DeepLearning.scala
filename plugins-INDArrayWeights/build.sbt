@@ -16,3 +16,5 @@ libraryDependencies ++= {
         "org.nd4j" % "nd4j-native-platform" % "0.8.0" % Test)
   }
 }
+
+enablePlugins(Example)

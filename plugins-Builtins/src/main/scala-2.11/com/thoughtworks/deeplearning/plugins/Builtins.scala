@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning.plugins
 
 /** A plugin that enables all other DeepLearning.scala built-in plugins.
   *
-  * @example When creating a [[Builtins]] from [[com.thoughtworks.feature.Factory]],
+  * @example When creating a [[Builtins]] from [[com.thoughtworks.feature.Factory$.apply Factory]],
   *
   *          {{{
   *          import com.thoughtworks.feature.Factory

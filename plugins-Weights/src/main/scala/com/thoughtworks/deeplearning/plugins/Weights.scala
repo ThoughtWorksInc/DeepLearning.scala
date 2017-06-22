@@ -27,6 +27,7 @@ trait Weights {
 
   }
 
+  /** @template */
   type Weight <: WeightApi
 
   object Weight {
@@ -51,6 +52,7 @@ trait Weights {
     private[Weights] def updateFriend(): Do[Unit] = update()
   }
 
+  /** @template */
   type Optimizer <: OptimizerApi
 
   trait ImplicitsApi {
@@ -104,6 +106,7 @@ trait Weights {
     }
   }
 
+  /** @template */
   type Implicits <: ImplicitsApi
 
 }

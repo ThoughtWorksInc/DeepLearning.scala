@@ -12,7 +12,8 @@ import annotation.meta.getter
 import scala.concurrent.ExecutionContext
 import scalaz.syntax.all._
 
-/**
+/** A plugin to create [[org.nd4j.linalg.api.ndarray.INDArray INDArray]] weight.
+  *
   * @author 杨博 (Yang Bo)
   */
 trait INDArrayWeights extends Weights with ImplicitsSingleton {
@@ -20,7 +21,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
   @inject
   implicit protected def deepLearningExecutionContext: ExecutionContext
 
-  type Implicits <: ImplicitsApi
+  override type Implicits <: ImplicitsApi
 
   import implicits._
 
@@ -31,6 +32,8 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
     override protected type Optimizer = INDArrayOptimizer
 
   }
+
+  /** @template */
   type INDArrayWeight <: INDArrayWeightApi with Weight
 
   @inject
@@ -50,7 +53,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
 
   trait INDArrayOptimizerApi extends OptimizerApi { this: INDArrayOptimizer =>
 
-    type Delta = INDArray
+    override type Delta = INDArray
 
     override protected type Weight = INDArrayWeight
 
@@ -64,6 +67,8 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
     }
 
   }
+
+  /** @template */
   type INDArrayOptimizer <: INDArrayOptimizerApi with Optimizer
 
 }

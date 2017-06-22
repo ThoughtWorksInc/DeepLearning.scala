@@ -202,6 +202,7 @@ trait RawFloatLayers extends Layers {
 
   override type Implicits <: ImplicitsApi
 
+  /** @template */
   type FloatLayer <: FloatLayerApi with Layer
 
   @inject

@@ -7,6 +7,10 @@ import Factory.inject
 
 import scala.annotation.meta.getter
 
+/** A plugin that creates the instance of [[implicits]].
+  *
+  * Any fields and methods in [[Implicits]] added by other plugins will be mixed-in and present in [[implicits]].
+  */
 trait ImplicitsSingleton {
   type Implicits
 

@@ -58,7 +58,8 @@ object Logging {
 
 }
 
-/**
+/** A plugin that logs uncaught exceptions raised from [[Layer]] and [[Weight]].
+  *
   * @author 杨博 (Yang Bo)
   */
 trait Logging extends Layers with Weights {
@@ -78,7 +79,7 @@ trait Logging extends Layers with Weights {
       logger.log(new ThrownInLayer(this, thrown))
     }
   }
-  type Layer <: LayerApi
+  override type Layer <: LayerApi
 
   trait WeightApi extends super.WeightApi with LoggingContext { this: Weight =>
     override protected def handleException(thrown: Throwable): Unit = {
@@ -86,7 +87,7 @@ trait Logging extends Layers with Weights {
       logger.log(new ThrownInWeight(this, thrown))
     }
   }
-  type Weight <: WeightApi
+  override type Weight <: WeightApi
   override type Implicits <: super[Layers].ImplicitsApi with super[Weights].ImplicitsApi
 
 }

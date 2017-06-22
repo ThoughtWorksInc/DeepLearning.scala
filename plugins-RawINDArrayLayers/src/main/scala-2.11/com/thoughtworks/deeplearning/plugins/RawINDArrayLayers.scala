@@ -577,6 +577,7 @@ trait RawINDArrayLayers extends RawDoubleLayers with DoubleLiterals with Implici
 
   override type Implicits <: ImplicitsApi
 
+  /** @template */
   type INDArrayLayer <: INDArrayLayerApi with Layer
 
   @inject
