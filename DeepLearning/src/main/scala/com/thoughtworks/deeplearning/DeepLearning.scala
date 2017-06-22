@@ -8,7 +8,7 @@ import com.thoughtworks.raii.asynchronous.Do._
 import simulacrum.typeclass
 
 import scala.language.implicitConversions
-import spire.algebra.MultiplicativeMonoid
+import algebra.ring.MultiplicativeMonoid
 
 object DeepLearning {
 

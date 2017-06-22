@@ -6,6 +6,6 @@ package plugins
   * @author 杨博 (Yang Bo)
   */
 trait FloatTraining extends Training {
-  trait ImplicitsApi extends super.ImplicitsApi with spire.std.FloatInstances
+  trait ImplicitsApi extends super.ImplicitsApi with algebra.instances.FloatInstances
   type Implicits <: ImplicitsApi
 }
