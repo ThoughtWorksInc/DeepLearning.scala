@@ -8,6 +8,7 @@ import scalaz.concurrent.Future
 
 import org.nd4j.linalg.api.ndarray.INDArray
 
+/** A plugin that enables [[org.nd4j.linalg.api.ndarray.INDArray]] in neural networks. */
 trait INDArrayLiterals {
   trait ImplicitsApi {
     implicit def indArrayLiteralDeepLearning: DeepLearning.Aux[INDArray, INDArray, INDArray] =

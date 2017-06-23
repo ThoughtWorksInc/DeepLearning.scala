@@ -6,6 +6,7 @@ import com.thoughtworks.raii.asynchronous.Do
 
 import scalaz.concurrent.Future
 
+/** A plugin that enables [[scala.Float]] in neural networks. */
 trait FloatLiterals {
 
   trait ImplicitsApi {
