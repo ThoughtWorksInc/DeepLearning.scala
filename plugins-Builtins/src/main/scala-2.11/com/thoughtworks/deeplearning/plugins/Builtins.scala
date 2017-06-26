@@ -50,7 +50,7 @@ package com.thoughtworks.deeplearning.plugins
   *
   *          Training:
   *          {{{
-  *          import scalaz.std.vector._
+  *          import scalaz.std.stream._
   *          import scalaz.concurrent.Task
   *          import com.thoughtworks.each.Monadic._
   *          }}}
@@ -64,8 +64,8 @@ package com.thoughtworks.deeplearning.plugins
   *
   *          {{{
   *          @monadic[Task]
-  *          def train: Task[Vector[Double]] = {
-  *            for (iteration <- (0 until numberOfIterations).toVector) yield {
+  *          def train: Task[Stream[Double]] = {
+  *            for (iteration <- (0 until numberOfIterations).toStream) yield {
   *              hingeLoss(fullyConnectedLayer(input), label).train.each
   *            }
   *          }
