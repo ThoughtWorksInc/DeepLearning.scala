@@ -29,7 +29,27 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
 
     override type Delta = INDArray
     override type Data = INDArray
-    override protected type Optimizer = INDArrayOptimizer
+
+    override protected type PartiallyAppliedOptimizer = indArrayPartialApplyOriginalDelta.Rest
+
+    override protected def backward[SubtypeOfOptimizer](originalDelta: INDArray)(
+        implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
+        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Unit] = {
+
+      Do.jump().map { _: Unit =>
+        val delta =
+          implicitApplyRest(
+            indArrayPartialApplyOriginalDelta(indArrayPartialApplyWeight(indArrayOptimizerFactory.newInstance,
+                                                                         indArrayWeightParameter(this)),
+                                              indArrayOriginalDeltaParameter(originalDelta))).delta
+
+        synchronized {
+          data -= delta
+          ()
+        }
+      }
+
+    }
 
   }
 
@@ -55,20 +75,25 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
 
     override type Delta = INDArray
 
-    override protected type Weight = INDArrayWeight
-
-    override protected def update(): Do[Unit] = {
-      Do.jump().map { _: Unit =>
-        weight.synchronized {
-          weight.data -= delta
-          ()
-        }
-      }
-    }
+    val weight: INDArrayWeight
 
   }
 
   /** @template */
-  type INDArrayOptimizer <: INDArrayOptimizerApi with Optimizer
+  type INDArrayOptimizer <: Optimizer with INDArrayOptimizerApi
+
+  @inject
+  protected val indArrayOptimizerFactory: Factory[INDArrayOptimizer]
+  @inject
+  protected val indArrayPartialApplyWeight: PartialApply[indArrayOptimizerFactory.Constructor, Witness.`"weight"`.T]
+  @inject
+  protected def indArrayWeightParameter: INDArrayWeight <:< indArrayPartialApplyWeight.Parameter
+
+  @inject
+  protected val indArrayPartialApplyOriginalDelta: PartialApply[indArrayPartialApplyWeight.Rest,
+                                                                Witness.`"originalDelta"`.T]
+
+  @inject
+  protected def indArrayOriginalDeltaParameter: INDArray <:< indArrayPartialApplyOriginalDelta.Parameter
 
 }

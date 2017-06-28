@@ -20,8 +20,24 @@ trait FloatWeights extends Weights {
 
     override type Delta = Float
     override type Data = Float
-    override protected type Optimizer = FloatOptimizer
 
+    override protected type PartiallyAppliedOptimizer = floatPartialApplyOriginalDelta.Rest
+
+    override protected def backward[SubtypeOfOptimizer](originalDelta: Float)(
+        implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
+        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Unit] = {
+      Do.delay {
+        val delta =
+          implicitApplyRest(
+            floatPartialApplyOriginalDelta(floatPartialApplyWeight(floatOptimizerFactory.newInstance,
+                                                                   floatWeightParameter(this)),
+                                           floatOriginalDeltaParameter(originalDelta))).delta
+        synchronized {
+          data -= delta
+        }
+      }
+
+    }
   }
 
   /** @template */
@@ -46,19 +62,26 @@ trait FloatWeights extends Weights {
 
     override type Delta = Float
 
-    override protected type Weight = FloatWeight
-
-    override protected def update() = {
-      Do.delay {
-        weight.synchronized {
-          weight.data -= delta
-        }
-      }
-    }
+    val weight: FloatWeight
 
   }
 
   /** @template */
   type FloatOptimizer <: FloatOptimizerApi with Optimizer
+
+  @inject
+  protected val floatOptimizerFactory: Factory[FloatOptimizer]
+
+  @inject
+  protected val floatPartialApplyWeight: PartialApply[floatOptimizerFactory.Constructor, Witness.`"weight"`.T]
+
+  @inject
+  protected def floatWeightParameter: FloatWeight <:< floatPartialApplyWeight.Parameter
+
+  @inject
+  protected val floatPartialApplyOriginalDelta: PartialApply[floatPartialApplyWeight.Rest, Witness.`"originalDelta"`.T]
+
+  @inject
+  protected def floatOriginalDeltaParameter: Float <:< floatPartialApplyOriginalDelta.Parameter
 
 }

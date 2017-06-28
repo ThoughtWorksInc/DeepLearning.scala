@@ -13,16 +13,40 @@ import scalaz.{-\/, \/-}
   */
 trait Weights {
 
-  trait WeightApi { self =>
-    protected type Optimizer <: Weights.this.Optimizer {
-      type Weight >: self.type
-      type Delta = self.Delta
+  trait WeightApi {
+
+    protected type PartiallyAppliedOptimizer
+
+    /** @usecase def forward: Do[Tape[Data, Delta] ] = ???
+      */
+    final def forward[SubtypeOfOptimizer](
+        implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
+        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Tape[Data, Delta]] = {
+      Do.now(
+        Tape[Data, Delta](
+          data, { doDelta: Do[Delta] =>
+            val doUpdate: Do[Unit] = Do.releaseFlatMap(doDelta) { delta =>
+              backward(delta)
+            }
+            Do.run(doUpdate).get.map {
+              case \/-(()) => ()
+              case -\/(e)  => handleException(e)
+            }
+          }
+        ))
     }
+
+    /** @usecase def backward: Do[Unit] = ???
+      */
+    protected def backward[SubtypeOfOptimizer](delta: Delta)(
+        implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
+        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Unit]
 
     type Data
     type Delta
-    private[Weights] def handleExceptionFriend(throwable: Throwable): Unit = handleException(throwable)
+
     protected def handleException(throwable: Throwable): Unit = ()
+
     var data: Data
 
   }
@@ -31,76 +55,42 @@ trait Weights {
   type Weight <: WeightApi
 
   object Weight {
-    type Aux[Optimizer0, Data0, Delta0] = Weight {
+    type Aux[PartiallyAppliedOptimizer0, Data0, Delta0] = Weight {
       type Data = Data0
       type Delta = Delta0
-      type Optimizer = Optimizer0
+      type PartiallyAppliedOptimizer = PartiallyAppliedOptimizer0
     }
   }
 
-  trait OptimizerApi { self =>
+  trait OptimizerApi {
     type Delta
-    protected type Weight <: Weights.this.Weight {
-      type Optimizer >: self.type
-    }
-
-    protected val weight: Weight
 
     protected val originalDelta: Delta
-    protected def delta: Delta = originalDelta
-    protected def update(): Do[Unit]
-    private[Weights] def updateFriend(): Do[Unit] = update()
+    def delta: Delta = originalDelta
   }
 
   /** @template */
   type Optimizer <: OptimizerApi
 
+  object Optimizer {
+    type Aux[Delta0] = Optimizer {
+      type Delta = Delta0
+    }
+  }
+
   trait ImplicitsApi {
-    implicit def weightDeepLearning[SubtypeOfWeight,
-                                    Optimizer0 <: Optimizer,
-                                    Data0,
-                                    Delta0,
-                                    OptimizerConstructor,
-                                    WeightParameter,
-                                    WeightRest,
-                                    OriginalDeltaParameter,
-                                    OriginalDeltaRest,
-                                    SubtypeOfOptimizer](
-        implicit asWeight: SubtypeOfWeight <:< Weight.Aux[Optimizer0, Data0, Delta0],
-        factory: Factory.Aux[Optimizer0, OptimizerConstructor],
-        partialApplyWeight: PartialApply.Aux[OptimizerConstructor, Witness.`"weight"`.T, WeightParameter, WeightRest],
-        asWeightParameter: SubtypeOfWeight <:< WeightParameter,
-        partialApplyOriginalDelta: PartialApply.Aux[WeightRest,
-                                                    Witness.`"originalDelta"`.T,
-                                                    OriginalDeltaParameter,
-                                                    OriginalDeltaRest],
-        asOriginalDeltaParameter: Delta0 <:< OriginalDeltaParameter,
+
+    implicit def weightDeepLearning[SubtypeOfWeight, Data0, Delta0, OriginalDeltaRest, SubtypeOfOptimizer](
+        implicit asWeight: SubtypeOfWeight <:< Weight.Aux[OriginalDeltaRest, Data0, Delta0],
         implicitApplyRest: ImplicitApply.Aux[OriginalDeltaRest, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< Optimizer0
+        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta0]
     ): DeepLearning.Aux[SubtypeOfWeight, Data0, Delta0] = {
       new DeepLearning[SubtypeOfWeight] {
         override type Data = Data0
         override type Delta = Delta0
 
         override def forward(subtypeOfWeight: SubtypeOfWeight): Do[Tape[Data0, Delta0]] = {
-          val weight = asWeight(subtypeOfWeight)
-          Do.now(
-            Tape[Data0, Delta0](
-              weight.data, { doDelta: Do[Delta0] =>
-                val doUpdate: Do[Unit] = Do.releaseFlatMap(doDelta) { delta =>
-                  asOptimizer(
-                    implicitApplyRest(
-                      partialApplyOriginalDelta(partialApplyWeight(factory.newInstance,
-                                                                   asWeightParameter(subtypeOfWeight)),
-                                                asOriginalDeltaParameter(delta)))).updateFriend()
-
-                }
-                Do.run(doUpdate).get.map {
-                  case \/-(()) => ()
-                  case -\/(e) => weight.handleExceptionFriend(e)
-                }
-              }
-            ))
+          asWeight(subtypeOfWeight).forward[SubtypeOfOptimizer]
         }
       }
     }
