@@ -1,5 +1,3 @@
-parallelExecution in Global := false
-
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
 lazy val DeepLearning = project
