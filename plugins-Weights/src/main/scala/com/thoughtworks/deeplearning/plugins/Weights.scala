@@ -36,7 +36,7 @@ trait Weights {
         ))
     }
 
-    /** @usecase def backward: Do[Unit] = ???
+    /** @usecase def backward(delta: Delta): Do[Unit] = ???
       */
     protected def backward[SubtypeOfOptimizer](delta: Delta)(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
