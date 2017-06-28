@@ -17,4 +17,6 @@ libraryDependencies ++= {
   }
 }
 
+fork in Test := true
+
 enablePlugins(Example)
