@@ -14,8 +14,6 @@ In DeepLearning.scala 2.0, a neural network is an ordinary Scala function that r
 
 See [Getting Started](http://deeplearning.thoughtworks.school/demo/2.0.0-Preview/GettingStarted.html) to have a try.
 
----
-
 ### Links
 
 * [DeepLearning.scala homepage](http://deeplearning.thoughtworks.school/)
