@@ -4,7 +4,7 @@ featured: images/pic01.jpg
 layout: post
 ---
 
-Today, we are happy to announce DeepLearning.scala 2.0.0, the new stable release of DeepLearning.scala, a simple language for creating complex neural networks.
+Today, we are happy to announce DeepLearning.scala 2.0.0, the new stable release of DeepLearning.scala, a simple library for creating complex neural networks.
 
 ## Features in DeepLearning.scala 2.0
 
