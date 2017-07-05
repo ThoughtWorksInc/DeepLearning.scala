@@ -4,7 +4,7 @@ featured: images/pic01.jpg
 layout: post
 ---
 
-Today, we are happy to announce DeepLearning.scala 2.0.0, the new stable release of DeepLearning.scala, a simple language for creating complex neural networks.
+Today, we are happy to announce DeepLearning.scala 2.0.0, the new stable release of DeepLearning.scala, a simple library for creating complex neural networks.
 
 ## Features in DeepLearning.scala 2.0
 
@@ -51,7 +51,7 @@ def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer {
 }
 ```
 
-The key construct in DeepLearning.scala 2.0 is the dependent type class [DeepLearning](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html), which witnesses a differentiable expression. In other word, by providing `DeepLearning` type class instances for these types, you can activate the deep learning ability to any types.
+The key construct in DeepLearning.scala 2.0 is the dependent type class [DeepLearning](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html), which witnesses a differentiable expression. In other words, given the `DeepLearning` type class instance, you can activate the deep learning ability of any type.
 
 ### Object-oriented programming
 
@@ -72,4 +72,4 @@ As always, all of the above features are statically type checked.
 * [DeepLearning.scala homepage](http://deeplearning.thoughtworks.school/)
 * [DeepLearning.scala on Github](https://github.com/ThoughtWorksInc/DeepLearning.scala/)
 * [Getting Started for DeepLearning.scala 2.0](http://deeplearning.thoughtworks.school/demo/2.0.0-Preview/GettingStarted.html)
-* [Scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html)
+* [API reference documentation](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html)
