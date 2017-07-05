@@ -54,7 +54,7 @@ def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer {
 }
 ```
 
-DeepLearning.scala 2.0的核心概念是依赖类型类（dependent type class）[DeepLearning](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html)，可以见证（witness）可微分表达式。换句话说，对于任何数据类型，包括用户定制类型，只要提供了对应的`DeepLearning`类型类实例，就能具备深度学习能力，成为深度神经网络的一部分。
+DeepLearning.scala 2.0的核心概念是依赖类型类（dependent type class）[DeepLearning](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html)，可以见证（witness）可微分表达式。换句话说，对于任何数据类型，包括你定制的类型，只要提供了对应的`DeepLearning`类型类的实例，就能具备深度学习能力，成为深度神经网络的一部分。
 
 ### 面向对象编程
 
