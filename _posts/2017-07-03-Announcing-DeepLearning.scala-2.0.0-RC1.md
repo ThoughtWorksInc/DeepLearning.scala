@@ -6,7 +6,7 @@ layout: post
 
 Today, we are happy to announce DeepLearning.scala 2.0.0-RC1, a release candidate of DeepLearning.scala 2.
 
-DeepLearning.scala 2.0 comes with two major features in addition to DeepLearning.scala 1.0: dynamic neural network and [Factory](https://javadoc.io/page/com.thoughtworks.feature/factory_2.11/latest/com/thoughtworks/feature/Factory.html)-based plugins.
+DeepLearning.scala 2.0 comes with two major features in addition to DeepLearning.scala 1.0: dynamic neural networks and [Factory](https://javadoc.io/page/com.thoughtworks.feature/factory_2.11/latest/com/thoughtworks/feature/Factory.html)-based plugins.
 
 In DeepLearning.scala 2.0, a neural network is an ordinary Scala function that returns a [Layer](https://javadoc.io/page/com.thoughtworks.deeplearning/plugins-builtins_2.11/latest/com/thoughtworks/deeplearning/plugins/Layers$Layer.html), which represents the process that dynamically creates computational graph nodes, instead of static computational graphs in TensorFlow or some other deep learning frameworks. All Scala features, including functions and expressions, are available in DeepLearning.scala's dynamic neural networks.
 
