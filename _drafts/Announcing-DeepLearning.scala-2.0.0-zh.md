@@ -4,7 +4,7 @@ featured: images/pic01.jpg
 layout: post
 ---
 
-今天我们很高兴，因为DeepLearning.scala 2.0.0发布了。这是DeepLearning.scala的最新稳定版本。
+今天，我们很荣幸宣布，DeepLearning.scala 2.0.0发布了。这是DeepLearning.scala的最新稳定版本。
 
 DeepLearning.scala是个Scala库，能简简单单的创建复杂神经网络。
 
