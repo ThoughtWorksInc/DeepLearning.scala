@@ -34,7 +34,7 @@ def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer(monadic[Do] {
 以上神经网络会根据`ordinaryScalaFunction`的返回值进入不同的子网络，而`ordinaryScalaFunction`只是个普通的Scala函数。
 
 
-有了动态创建神经网络的能力，普通的程序员能够用很简单的代码构建复杂神经网络。你还是像以前一样写程序，唯一的区别是，DeepLearning.scala里写的程序有学习能力，能够持续根据反馈修改自身参数。
+有了动态创建神经网络的能力，一名普通的程序员，就能够用很简单的代码构建复杂神经网络。你还是像以前一样写程序，唯一的区别是，DeepLearning.scala里写的程序有学习能力，能够持续根据反馈修改自身参数。
 
 ### 函数式编程
 
