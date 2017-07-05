@@ -51,7 +51,7 @@ def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer {
 }
 ```
 
-The key construct in DeepLearning.scala 2.0 is the dependent type class [DeepLearning](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html), which witnesses a differentiable expression. In other word, by providing `DeepLearning` type class instances for these types, you can activate the deep learning ability to any types.
+The key construct in DeepLearning.scala 2.0 is the dependent type class [DeepLearning](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html), which witnesses a differentiable expression. In other words, given the `DeepLearning` type class instance, you can activate the deep learning ability of any type.
 
 ### Object-oriented programming
 
