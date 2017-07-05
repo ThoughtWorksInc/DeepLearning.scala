@@ -58,7 +58,7 @@ DeepLearning.scala 2.0的核心概念是依赖类型类（dependent type class�
 
 ### 面向对象编程
 
-DeepLearning 2.0的代码结构利用了依赖对象类型演算（Dependent Object Type calculus，DOT）。每一个特性都是一个支持混入（mixin）的插件。所有DeepLearning.scala类型的行为和API都可以通过插件修改。这种方式不光解决了[expression problem](https://en.wikipedia.org/wiki/Expression_problem)，还让每个插件都可以“虚依赖”其他插件。
+DeepLearning 2.0的代码结构利用了依赖对象类型演算（Dependent Object Type calculus，DOT），所有特性都是支持混入（mixin）的插件实现。插件能修改一切DeepLearning.scala类型的行为和API。这种架构不光解决了[expression problem](https://en.wikipedia.org/wiki/Expression_problem)，还让每个插件都可以“虚依赖”其他插件。
 
 ### 静态类型系统
 
