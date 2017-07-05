@@ -38,7 +38,7 @@ def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer(monadic[Do] {
 
 ### 函数式编程
 
-DeepLearning.scala 2.0基于Monads，所以可以任意组合。即使是很复杂的网络也可以从原子操作组合出来。除了Monad以外，我们还提供了Applicative类型类（type class），能并行执行多处耗时计算。
+DeepLearning.scala 2.0基于Monads，所以可以任意组合。即使是很复杂的网络也可以从基本操作组合出来。除了Monad以外，我们还提供了Applicative类型类（type class），能并行执行多处耗时计算。
 
 比如，先前的例子可以用高阶函数风格写成这样：
 
