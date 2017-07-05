@@ -54,7 +54,7 @@ Version 3.0 will be released in late 2017.
 ## Links
 
 * [Getting started](https://thoughtworksinc.github.io/DeepLearning.scala/demo/GettingStarted.html)
-* [Scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/package.html)
+* [Scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html)
 
 ## Acknowledgements
 
