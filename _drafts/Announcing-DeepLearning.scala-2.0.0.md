@@ -72,4 +72,4 @@ As always, all of the above features are statically type checked.
 * [DeepLearning.scala homepage](http://deeplearning.thoughtworks.school/)
 * [DeepLearning.scala on Github](https://github.com/ThoughtWorksInc/DeepLearning.scala/)
 * [Getting Started for DeepLearning.scala 2.0](http://deeplearning.thoughtworks.school/demo/2.0.0-Preview/GettingStarted.html)
-* [Scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html)
+* [API reference documentation](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html)
