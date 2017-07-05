@@ -69,7 +69,7 @@ DeepLearning 2.0的代码结构利用了依赖对象类型演算（Dependent Obj
 * （此处将列出我们编写的插件，让用户感觉DeepLearning.scala 2.0功能很丰富）
 * [贡献你自己的插件](http://deeplearning.thoughtworks.school/get-involved)
 
-## Links
+## 相关链接
 
 * [DeepLearning.scala主页](http://deeplearning.thoughtworks.school/)
 * [DeepLearning.scala Github页面](https://github.com/ThoughtWorksInc/DeepLearning.scala/)
