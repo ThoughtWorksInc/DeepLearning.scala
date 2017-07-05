@@ -55,7 +55,7 @@ The key construct in DeepLearning.scala 2.0 is the dependent type class [DeepLea
 
 ### Object-oriented programming
 
-The code base of DeepLearning.scala 2.0 is organized according to Dependent Object Type calculus (DOT). All features are provided as mix-in-able plugins. A plugin is able to change behaviors or APIs of all DeepLearning.scala types. This approach not only resolves [expression problem](https://en.wikipedia.org/wiki/Expression_problem), but also gives plugins the additional ability of **virtually depending** on other plugins.
+The code base of DeepLearning.scala 2.0 is organized according to Dependent Object Type calculus (DOT). All features are provided as mixin-able plugins. A plugin is able to change behaviors or APIs of all DeepLearning.scala types. This approach not only resolves [expression problem](https://en.wikipedia.org/wiki/Expression_problem), but also gives plugins the additional ability of **virtually depending** on other plugins.
 
 ### Static type system
 
