@@ -36,7 +36,7 @@ object DeepLearning {
     /** Returns a [[scalaz.concurrent.Task Task]] that updates [[plugins.Weights.Weight Weight]] internally used by `differentiable`. */
     def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Task[Data]
 
-    /** Returns a [[scalaz.concurrent.Task Task]] of the value of the `differentiable` expression. */
+    /** Returns a [[scalaz.concurrent.Task Task]] of the [[Tape.data data]] of the `differentiable` expression. */
     def predict(differentiable: Differentiable): Task[Data]
   }
 
