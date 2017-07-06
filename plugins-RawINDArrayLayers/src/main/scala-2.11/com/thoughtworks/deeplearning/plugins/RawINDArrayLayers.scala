@@ -45,8 +45,16 @@ object RawINDArrayLayers {
     }
   }
 }
-// TODO: operation on INDArray with Double
-/**
+
+/** A plugin that provides differentiable operators
+  * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[org.nd4j.linalg.api.ndarray.INDArray]].
+  *
+  * @note By default, the computation in a [[INDArrayLayer]] will re-evaluate  again and again
+  *       if the `INDArrayLayer` is used by multiple other operations.
+  *
+  *       This behavior is very inefficient if there is are diamond dependencies in a neural network.
+  *       It's wise to use [[INDArrayLayers]] instead of this `RawINDArrayLayers` in such neural network.
+  * 
   * @author 杨博 (Yang Bo)
   */
 trait RawINDArrayLayers extends RawDoubleLayers with DoubleLiterals with ImplicitsSingleton {

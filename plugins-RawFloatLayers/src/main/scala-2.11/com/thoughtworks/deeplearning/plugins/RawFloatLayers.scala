@@ -12,16 +12,14 @@ import scalaz.Apply
 import scalaz.concurrent.Future
 import DeepLearning.ops._
 
-/**
-  * @example xxx
-  *          {{{
-  *          import com.thoughtworks.feature.Factory
-  *          import com.thoughtworks.deeplearning.plugins._
-  *          val hyperparameters = Factory[FloatLiterals with FloatTraining with RawFloatLayers with ImplicitsSingleton].newInstance()
-  *          import hyperparameters.implicits._
-  *          val network = (- (- (- FloatLayerOps(3.4f))))
-  *          network.predict
-  *          }}}
+/** A plugin that provides differentiable operators
+  * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[scala.Float]].
+  *
+  * @note By default, the computation in a [[FloatLayer]] will re-evaluate again and again
+  *       if the `FloatLayer` is used by multiple other operations.
+  *
+  *       This behavior is very inefficient if there is are diamond dependencies in a neural network.
+  *       It's wise to use [[FloatLayers]] instead of this `RawFloatLayers` in such neural network.
   *
   * @author 杨博 (Yang Bo)
   */

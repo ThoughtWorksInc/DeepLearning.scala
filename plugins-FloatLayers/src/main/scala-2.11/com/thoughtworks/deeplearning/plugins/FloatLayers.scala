@@ -12,16 +12,12 @@ import scala.util.{Success, Try}
 import scalaz.{-\/, \/-}
 import scalaz.syntax.all._
 
-/**
-  * @example xxx
-  *          {{{
-  *          import com.thoughtworks.feature.Factory
-  *          import com.thoughtworks.deeplearning.plugins._
-  *          val hyperparameters = Factory[FloatTraining with FloatLayers with FloatLiterals with ImplicitsSingleton with Operators].newInstance()
-  *          import hyperparameters.implicits._
-  *          val network: hyperparameters.FloatLayer = (- (6.1f - (- FloatLayerOps(3.4f))))
-  *          network.predict
-  *          }}}
+/** A plugin that provides differentiable operators
+  * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[scala.Float]].
+  *
+  * @note Unlike [[RawFloatLayers]], [[FloatLayer]] in this `FloatLayers` will share the [[DeepLearning.Tape Tape]]
+  *       created in [[FloatLayer.forward forward]] pass pass for all dependencies, avoiding re-evaluation
+  *       in the case of diamond dependencies in a neural network.
   *
   * @author 杨博 (Yang Bo)
   */

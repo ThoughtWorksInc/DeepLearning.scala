@@ -11,7 +11,11 @@ import annotation.meta.getter
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Future
 
-/**
+/** A plugin to create [[scala.Float]] weights.
+  *
+  * @note Custom optimization algorithm for updating [[FloatWeight]] can be implemented by creating a plugin
+  *       that provides an overridden [[FloatOptimizer]] that provides an overridden [[FloatOptimizer.delta]].
+  *
   * @author 杨博 (Yang Bo)
   */
 trait FloatWeights extends Weights {

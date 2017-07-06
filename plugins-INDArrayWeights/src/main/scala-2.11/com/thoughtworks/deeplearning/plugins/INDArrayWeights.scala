@@ -12,7 +12,10 @@ import annotation.meta.getter
 import scala.concurrent.ExecutionContext
 import scalaz.syntax.all._
 
-/** A plugin to create [[org.nd4j.linalg.api.ndarray.INDArray INDArray]] weight.
+/** A plugin to create [[org.nd4j.linalg.api.ndarray.INDArray]] weights.
+  *
+  * @note Custom optimization algorithm for updating [[INDArrayWeight]] can be implemented by creating a plugin
+  *       that provides a overridden [[INDArrayOptimizer]] that provides an overridden [[INDArrayOptimizer.delta]].
   *
   * @author 杨博 (Yang Bo)
   */

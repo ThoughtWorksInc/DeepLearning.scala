@@ -8,7 +8,8 @@ import shapeless.Witness
 
 import scalaz.{-\/, \/-}
 
-/**
+/** A plugin that enables [[Weight]] in neural networks.
+  *
   * @author 杨博 (Yang Bo)
   */
 trait Weights {

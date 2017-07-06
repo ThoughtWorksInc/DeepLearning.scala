@@ -19,7 +19,13 @@ private object INDArrayLayers {
   private val Zero = Nd4j.zeros(1, 1)
 }
 
-/**
+/** A plugin that provides differentiable operators
+  * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[org.nd4j.linalg.api.ndarray.INDArray]].
+  *
+  * @note Unlike [[RawINDArrayLayers]], [[INDArrayLayer]] in this `INDArrayLayers` will share the [[DeepLearning.Tape Tape]]
+  *       created in [[INDArrayLayer.forward forward]] pass for all dependencies, avoiding re-evaluation
+  *       in the case of diamond dependencies in a neural network.
+  *
   * @author 杨博 (Yang Bo)
   */
 trait INDArrayLayers extends RawINDArrayLayers {
