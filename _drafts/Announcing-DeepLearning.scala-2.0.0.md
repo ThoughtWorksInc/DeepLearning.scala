@@ -20,7 +20,7 @@ def ordinaryScalaFunction(a: INDArray): Boolean = {
 }
 
 def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer(monadic[Do] {
-  val outputOfLayer1: INDArray = layer1(input).forward.each
+  val outputOfLayer1 = layer1(input).forward.each
   if (ordinaryScalaFunction(outputOfLayer1.data)) {
     dynamicallySelectedLayer2(outputOfLayer1).forward.each
   } else {
