@@ -29,8 +29,8 @@ trait FloatLayers extends RawFloatLayers {
 
   trait FloatLayerApi extends super[RawFloatLayers].FloatLayerApi {
 
-    private lazy val forward0: Do[Tape[Float, Float]] = {
-      Do.shared(super.forward.flatMap {
+    private def doCumulativeTape: Do[Tape[Float, Float]] = {
+      super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(Future.delay(new Releasable[Future, Try[Tape[Float, Float]]] {
 
@@ -38,7 +38,7 @@ trait FloatLayers extends RawFloatLayers {
             private var currentDelta: Float = 0
 
             override def value: Try[Tape[Float, Float]] = {
-              def cumulativeBackward(doDelta: Do[Float]) = {
+              def cumulativeBackward(doDelta: Do[Float]): Future[Unit] = {
                 Do.run(doDelta)
                   .map { delta =>
                     synchronized {
@@ -48,9 +48,10 @@ trait FloatLayers extends RawFloatLayers {
                   .get
                   .map {
                     case \/-(()) => // Success. Do nothing
-                    case -\/(e) => handleException(e)
+                    case -\/(e)  => handleException(e)
                   }
               }
+
               Success(Tape(data, cumulativeBackward))
             }
 
@@ -65,9 +66,15 @@ trait FloatLayers extends RawFloatLayers {
             }
 
           }))
-      })
+      }
     }
-    abstract override def forward: Do[DeepLearning.Tape[Float, Float]] = forward0
+
+    @transient
+    private lazy val sharedForward: Do[Tape[Float, Float]] = {
+      Do.shared(doCumulativeTape)
+    }
+
+    abstract override def forward: Do[DeepLearning.Tape[Float, Float]] = sharedForward
 
   }
   override type FloatLayer <: FloatLayerApi with Layer

@@ -27,8 +27,8 @@ trait INDArrayLayers extends RawINDArrayLayers {
 
   trait INDArrayLayerApi extends super[RawINDArrayLayers].INDArrayLayerApi {
 
-    private lazy val forward0: Do[Tape[INDArray, INDArray]] = {
-      val Do(future) = super.forward.flatMap {
+    private def doCumulativeTape = {
+      super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(Future.delay(new Releasable[Future, Try[Tape[INDArray, INDArray]]] {
 
@@ -36,7 +36,7 @@ trait INDArrayLayers extends RawINDArrayLayers {
             private var currentDelta: INDArray = INDArrayLayers.Zero
 
             override def value: Try[Tape[INDArray, INDArray]] = {
-              def cumulativeBackward(doDelta: Do[INDArray]) = {
+              def cumulativeBackward(doDelta: Do[INDArray]): Future[Unit] = {
                 Do.run(doDelta)
                   .map {
                     delta =>
@@ -49,11 +49,12 @@ trait INDArrayLayers extends RawINDArrayLayers {
                             def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
                               require(shape1.length == shape2.length)
                               shape1.zip(shape2).map {
-                                case (1, bSize) => bSize
-                                case (aSize, 1) => aSize
+                                case (1, bSize)                       => bSize
+                                case (aSize, 1)                       => aSize
                                 case (aSize, bSize) if aSize == bSize => aSize
                               }
                             }
+
                             val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
                             nonZeroDelta.broadcast(shape: _*) + delta.broadcast(shape: _*)
                         }
@@ -62,9 +63,10 @@ trait INDArrayLayers extends RawINDArrayLayers {
                   .get
                   .map {
                     case \/-(()) => // Success. Do nothing
-                    case -\/(e) => handleException(e)
+                    case -\/(e)  => handleException(e)
                   }
               }
+
               Success(Tape(data, cumulativeBackward))
             }
 
@@ -84,10 +86,13 @@ trait INDArrayLayers extends RawINDArrayLayers {
 
           }))
       }
-      val ResourceT(sharedFuture) = ResourceT(future).shared
-      Do(sharedFuture)
     }
-    abstract override def forward: Do[DeepLearning.Tape[INDArray, INDArray]] = forward0
+
+    private lazy val sharedForward: Do[Tape[INDArray, INDArray]] = {
+      Do.shared(doCumulativeTape)
+    }
+
+    abstract override def forward: Do[DeepLearning.Tape[INDArray, INDArray]] = sharedForward
 
   }
   override type INDArrayLayer <: INDArrayLayerApi with Layer
