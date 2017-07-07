@@ -55,7 +55,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       }
     }
 
-    private lazy val sharedAccumulator = {
+    private lazy val accumulator = {
       super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(Future.delay(new Accumulator(data, flushBackward)))
@@ -105,7 +105,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       */
     def apply[Out <: DoubleLayer](indices: Int*)(
         implicit implicitApply: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
-      val doDoubleTape = sharedAccumulator.map { accumulator =>
+      val doDoubleTape = accumulator.map { accumulator =>
         def cumulativeBackward(doDelta: Do[Double]): Future[Unit] = {
           Do.run(doDelta)
             .map { delta: Double =>
@@ -137,42 +137,45 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       DoubleLayer(doDoubleTape)
     }
 
-    abstract override def forward: Do[Tape[INDArray, INDArray]] = {
-      sharedAccumulator.map { accumulator =>
-        def cumulativeBackward(doDelta: Do[INDArray]): Future[Unit] = {
-          Do.run(doDelta)
-            .map { delta =>
-              accumulator.synchronized {
-                accumulator.currentDelta = accumulator.currentDelta match {
-                  case null =>
-                    throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
-                  case Zero => delta
-                  case nonZeroDelta =>
-                    def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
-                      require(shape1.length == shape2.length)
-                      shape1.zip(shape2).map {
-                        case (1, bSize)                       => bSize
-                        case (aSize, 1)                       => aSize
-                        case (aSize, bSize) if aSize == bSize => aSize
-                      }
+    private lazy val sharedForward: Do[Tape[INDArray, INDArray]] = {
+      Do.shared(
+        accumulator.map { accumulator =>
+          def cumulativeBackward(doDelta: Do[INDArray]): Future[Unit] = {
+            Do.run(doDelta)
+              .map {
+                delta =>
+                  accumulator.synchronized {
+                    accumulator.currentDelta = accumulator.currentDelta match {
+                      case null =>
+                        throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
+                      case Zero => delta
+                      case nonZeroDelta =>
+                        def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
+                          require(shape1.length == shape2.length)
+                          shape1.zip(shape2).map {
+                            case (1, bSize)                       => bSize
+                            case (aSize, 1)                       => aSize
+                            case (aSize, bSize) if aSize == bSize => aSize
+                          }
+                        }
+
+                        val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
+                        nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
                     }
-
-                    val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
-                    nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
-                }
+                  }
               }
-            }
-            .get
-            .map {
-              case \/-(()) => // Success. Do nothing
-              case -\/(e)  => handleException(e)
-            }
+              .get
+              .map {
+                case \/-(()) => // Success. Do nothing
+                case -\/(e)  => handleException(e)
+              }
+          }
+          Tape(accumulator.data, cumulativeBackward)
         }
-        Tape(accumulator.data, cumulativeBackward)
-      }
-
+      )
     }
 
+    abstract override def forward = sharedForward
   }
   override type INDArrayLayer <: INDArrayLayerApi with Layer
 }
