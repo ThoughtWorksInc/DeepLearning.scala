@@ -35,7 +35,7 @@ object Logging {
     private lazy val defaultMessage: String = makeDefaultMessage.toString
 
     override def getMessage: String = super.getMessage match {
-      case null => defaultMessage
+      case null    => defaultMessage
       case message => message
     }
   }
@@ -65,15 +65,12 @@ object Logging {
 trait Logging extends Layers with Weights {
   import Logging._
 
-  protected trait LoggingContext {
+  @transient lazy val logger: Logger = Logger.getLogger(getClass.getName)
+
+  trait LayerApi extends super.LayerApi { this: Layer =>
     implicit protected def fullName: sourcecode.FullName
     implicit protected def methodName: sourcecode.Name
     implicit protected def caller: Caller[_]
-  }
-
-  @transient lazy val logger: Logger = Logger.getLogger(getClass.getName)
-
-  trait LayerApi extends super.LayerApi with LoggingContext { this: Layer =>
     override protected def handleException(thrown: Throwable): Unit = {
       super.handleException(thrown)
       logger.log(new ThrownInLayer(this, thrown))
@@ -81,7 +78,10 @@ trait Logging extends Layers with Weights {
   }
   override type Layer <: LayerApi
 
-  trait WeightApi extends super.WeightApi with LoggingContext { this: Weight =>
+  trait WeightApi extends super.WeightApi { this: Weight =>
+    implicit protected def fullName: sourcecode.FullName
+    implicit protected def methodName: sourcecode.Name
+    implicit protected def caller: Caller[_]
     override protected def handleException(thrown: Throwable): Unit = {
       super.handleException(thrown)
       logger.log(new ThrownInWeight(this, thrown))
