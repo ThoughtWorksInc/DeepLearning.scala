@@ -47,12 +47,13 @@ lazy val `plugins-INDArrayLiterals` = project.dependsOn(DeepLearning)
 lazy val `plugins-INDArrayWeights` = project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Weights`)
 
 lazy val `plugins-INDArrayLayers` =
-  project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Layers`,`plugins-DoubleLiterals`, `plugins-DoubleLayers`)
+  project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Layers`, `plugins-DoubleLiterals`, `plugins-DoubleLayers`)
 
 lazy val `plugins-CumulativeINDArrayLayers` =
   project.dependsOn(
     `plugins-INDArrayLayers`,
     `plugins-CumulativeDoubleLayers`,
+    DeepLearning % "test->test",
     `plugins-DoubleLiterals` % Test,
     `plugins-DoubleTraining` % Test,
     `plugins-INDArrayTraining` % Test,
