@@ -31,21 +31,18 @@ object INDArrayLayers {
     override def toString: String = throwableSet.mkString("\n")
 
     override def printStackTrace(): Unit = {
-      super.printStackTrace()
       for (throwable <- throwableSet) {
         throwable.printStackTrace()
       }
     }
 
     override def printStackTrace(s: PrintStream): Unit = {
-      super.printStackTrace(s)
       for (throwable <- throwableSet) {
         throwable.printStackTrace(s)
       }
     }
 
     override def printStackTrace(s: PrintWriter): Unit = {
-      super.printStackTrace(s)
       for (throwable <- throwableSet) {
         throwable.printStackTrace(s)
       }
