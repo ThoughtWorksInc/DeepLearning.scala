@@ -143,6 +143,19 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         })
       }
 
+      /** @usecase def mean(dimensions: Int*): INDArrayLayer = ???
+        */
+      def mean[Out <: INDArrayLayer](dimensions: Int*)(
+          implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]
+      ): Out = {
+        INDArrayLayer(operand0.forward.flatMap { tape =>
+          val shape = tape.data.shape
+          Operators
+            ./(operand0.sum(dimensions: _*), dimensions.map(shape(_).toDouble).product)(`INDArray/Double`)
+            .forward
+        })
+      }
+
       @deprecated(message = "Use `mean` instead.", since = "2.0.0")
       def meanT[Out <: DoubleLayer](
           implicit layerImplicits: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]
