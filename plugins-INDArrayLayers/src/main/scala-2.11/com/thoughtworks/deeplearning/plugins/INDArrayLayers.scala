@@ -33,7 +33,7 @@ object INDArrayLayers {
   private implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
     def broadcastFix(outputShape: Int*): INDArray = {
       val currentShape = indArray.shape.padTo(outputShape.length, 1)
-      (0 until currentShape.length).foldLeft(indArray.reshape(currentShape: _*)) { (indArray, i) =>
+      currentShape.indices.foldLeft(indArray.reshape(currentShape: _*)) { (indArray, i) =>
         val o = outputShape(i)
         if (o != 1 && o != currentShape(i)) {
           currentShape(i) = o
