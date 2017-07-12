@@ -2,7 +2,7 @@ package com.thoughtworks.deeplearning
 package plugins
 import shapeless.{Poly1, Poly2}
 
-/** A plugin contains definitions of polymorphic functions and methods.
+/** A plugin that contains definitions of polymorphic functions and methods.
   *
   * The implementations of polymorphic functions and methods can be found in [[FloatLayers.Implicits]], [[DoubleLayers.Implicits]] and [[INDArrayLayers.Implicits]].
   * @author 杨博 (Yang Bo)
