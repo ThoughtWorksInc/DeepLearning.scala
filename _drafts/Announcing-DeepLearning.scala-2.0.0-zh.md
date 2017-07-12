@@ -12,7 +12,7 @@ DeepLearning.scala是个Scala库，能简简单单的创建复杂神经网络。
 
 ### 动态神经网络
 
-与其他一些深度学习框架不同，DeepLearning.scala中的神经网络结构要在运行时才动态确定。我们的神经网络都是程序。一切Scala特性，包括函数和控制结构，都能从神经网络中直接调用。
+与其他一些深度学习框架不同，DeepLearning.scala中的神经网络结构会在运行时才动态确定。我们的神经网络都是程序。一切Scala特性，包括函数和控制结构，都能直接在神经网络中使用。
 
 比如：
 
@@ -34,7 +34,7 @@ def myDynamicNeuralNetwork(input: INDArray) = INDArrayLayer(monadic[Do] {
 以上神经网络会根据`ordinaryScalaFunction`的返回值进入不同的子网络，而`ordinaryScalaFunction`只是个普通的Scala函数。
 
 
-有了动态创建神经网络的能力，一名普通的程序员，就能够用很简单的代码构建复杂神经网络。你还是像以前一样写程序，唯一的区别是，DeepLearning.scala里写的程序有学习能力，能够持续根据反馈修改自身参数。
+有了动态创建神经网络的能力，一名普通的程序员，就能够用很简单的代码构建复杂神经网络。你还是像以前一样编写程序，唯一的区别是，DeepLearning.scala里写的程序有学习能力，能够持续根据反馈修改自身参数。
 
 ### 函数式编程
 
@@ -62,7 +62,7 @@ DeepLearning 2.0的代码结构利用了依赖对象类型演算（Dependent Obj
 
 ### 静态类型系统
 
-与DeepLearning 1.0一样，DeepLearning.scala 2.0所有特性都支持静态类型检查。
+与DeepLearning.scala 1.0一样，DeepLearning.scala 2.0所有特性都支持静态类型检查。
 
 ## DeepLearning.scala 2.0的插件
 
