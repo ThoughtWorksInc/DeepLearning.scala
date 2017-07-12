@@ -54,7 +54,7 @@ object INDArrayLayers {
   *
   *       This behavior is very inefficient if there is are diamond dependencies in a neural network.
   *       It's wise to use [[CumulativeINDArrayLayers]] instead of this `INDArrayLayers` in such neural network.
-  * 
+  *
   * @author 杨博 (Yang Bo)
   */
 trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSingleton {
@@ -75,8 +75,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   private def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
     require(shape1.length == shape2.length)
     shape1.zip(shape2).map {
-      case (1, bSize) => bSize
-      case (aSize, 1) => aSize
+      case (1, bSize)                       => bSize
+      case (aSize, 1)                       => aSize
       case (aSize, bSize) if aSize == bSize => aSize
     }
   }
@@ -98,12 +98,12 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         case MultipleException(exceptionSet1) =>
           f2 match {
             case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
-            case _: Throwable => MultipleException(exceptionSet1 + f2)
+            case _: Throwable                     => MultipleException(exceptionSet1 + f2)
           }
         case _: Throwable =>
           f2 match {
             case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
-            case _: Throwable => MultipleException(Set(f1, f2))
+            case _: Throwable                     => MultipleException(Set(f1, f2))
           }
       }
   })
@@ -135,6 +135,19 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       ): Out = {
         DoubleLayer(operand0.forward.flatMap { tape =>
           Operators./(operand0.sum, tape.data.length.toDouble).forward
+        })
+      }
+
+      /** @usecase def mean(dimensions: Int*): INDArrayLayer = ???
+        */
+      def mean[Out <: INDArrayLayer](dimensions: Int*)(
+          implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]
+      ): Out = {
+        INDArrayLayer(operand0.forward.flatMap { tape =>
+          val shape = tape.data.shape
+          Operators
+            ./(operand0.sum(dimensions: _*), dimensions.map(shape(_).toDouble).product)(`INDArray/Double`)
+            .forward
         })
       }
 
