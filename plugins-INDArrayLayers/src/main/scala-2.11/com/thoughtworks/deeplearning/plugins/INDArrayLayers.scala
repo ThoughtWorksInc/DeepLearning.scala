@@ -54,7 +54,7 @@ object INDArrayLayers {
   *
   *       This behavior is very inefficient if there is are diamond dependencies in a neural network.
   *       It's wise to use [[CumulativeINDArrayLayers]] instead of this `INDArrayLayers` in such neural network.
-  * 
+  *
   * @author 杨博 (Yang Bo)
   */
 trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSingleton {
@@ -75,8 +75,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   private def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
     require(shape1.length == shape2.length)
     shape1.zip(shape2).map {
-      case (1, bSize) => bSize
-      case (aSize, 1) => aSize
+      case (1, bSize)                       => bSize
+      case (aSize, 1)                       => aSize
       case (aSize, bSize) if aSize == bSize => aSize
     }
   }
@@ -98,12 +98,12 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         case MultipleException(exceptionSet1) =>
           f2 match {
             case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
-            case _: Throwable => MultipleException(exceptionSet1 + f2)
+            case _: Throwable                     => MultipleException(exceptionSet1 + f2)
           }
         case _: Throwable =>
           f2 match {
             case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
-            case _: Throwable => MultipleException(Set(f1, f2))
+            case _: Throwable                     => MultipleException(Set(f1, f2))
           }
       }
   })
@@ -112,6 +112,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
     Parallel.unwrap(doParallelApplicative.apply2(Parallel(doA), Parallel(doB))(f))
   }
 
+  /** The [[ExecutionContext]] used internally in plugins. */
   @inject
   implicit protected def deepLearningExecutionContext: ExecutionContext
 
@@ -119,6 +120,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
 
     implicit final class INDArrayLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray]) {
+      /** @usecase def unary_- : INDArrayLayer = ???
+        */
       def unary_-[Out <: INDArrayLayer](
           implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
         INDArrayLayer.unary(operand0) { data0: INDArray =>
@@ -130,6 +133,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         }
       }
 
+      /** @usecase def mean: DoubleLayer = ???
+        */
       def mean[Out <: DoubleLayer](
           implicit layerImplicits: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]
       ): Out = {
@@ -145,8 +150,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         mean
       }
 
-      /**
-        * @usecase def sum(dimensions: Int*): INDArrayLayer = ???
+      /** @usecase def sum(dimensions: Int*): INDArrayLayer = ???
         */
       def sum[Out <: INDArrayLayer](dimensions: Int*)(
           implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
@@ -160,8 +164,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         }
       }
 
-      /**
-        * @usecase def sum: DoubleLayer = ???
+      /** @usecase def sum: DoubleLayer = ???
         */
       def sum[Out <: DoubleLayer](
           implicit layerImplicits: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
@@ -180,6 +183,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
           implicit layerImplicits: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out =
         sum
 
+      /** @usecase def permute(dimensions: Int*): INDArrayLayer = ???
+        */
       def permute[Out <: INDArrayLayer](dimensions: Int*)(
           implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
         INDArrayLayer.unary(operand0) { data0: INDArray =>
@@ -192,6 +197,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         }
       }
 
+      /** @usecase def reshape(dimensions: Int*): INDArrayLayer = ???
+        */
       def reshape[Out <: INDArrayLayer](dimensions: Int*)(
           implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
         INDArrayLayer.unary(operand0) { data0: INDArray =>
@@ -204,6 +211,10 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         }
       }
 
+      /** @usecase def dot(operand1: INDArray): INDArrayLayer = ???
+        * @usecase def dot(operand1: INDArrayLayer): INDArrayLayer = ???
+        * @usecase def dot(operand1: INDArrayWeights#INDArrayWeight): INDArrayLayer = ???
+        */
       def dot[Operand1, Out <: INDArrayLayer](operand1: Operand1)(
           implicit deepLearning1: DeepLearning.Aux[Operand1, INDArray, INDArray],
           layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
@@ -601,17 +612,29 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   trait INDArrayLayerApi extends super.LayerApi {
     override type Data = INDArray
     override type Delta = INDArray
+
+    /** The original forward operation passed in [[INDArrayLayer$ FloatLayer.apply]].
+      *
+      * @note This [[rawForward]] may be different from [[forward]],
+      *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeINDArrayLayers]].
+      */
     protected val rawForward: Do[Tape[INDArray, INDArray]]
 
     override def forward: Do[Tape[INDArray, INDArray]] = rawForward
   }
   object INDArrayLayer {
+
+    /** @usecase def apply(forward: Do[Tape[INDArray, INDArray]]): INDArrayLayer = ???
+      *
+      *          Returns a [[INDArrayLayer]] according to the given `forward` operation.
+      */
     def apply[Out <: INDArrayLayer](forward: Do[Tape[INDArray, INDArray]])(
         implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
       layerImplicits(
         indArrayPartialApplyRawForward(indArrayLayerFactory.newInstance, indArrayRawForwardParameter(forward)))
     }
 
+    /** Internal helper to create unary [[INDArrayLayer]]. */
     def unary[Operand0, Input0Data, Input0Delta, Out <: INDArrayLayer](
         operand0: Operand0
     )(f: Input0Data => (INDArray, INDArray => Input0Delta))(
@@ -635,6 +658,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       })
     }
 
+    /** Internal helper to create binary [[INDArrayLayer]]. */
     def binary[Operand0, Operand1, Input0Data, Input0Delta, Input1Data, Input1Delta, Out <: INDArrayLayer](
         operand0: Operand0,
         operand1: Operand1
