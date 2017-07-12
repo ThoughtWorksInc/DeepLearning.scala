@@ -91,18 +91,18 @@ trait Builtins
     with FloatTraining
     with FloatLiterals
     with FloatWeights
-    with RawFloatLayers
     with FloatLayers
+    with CumulativeFloatLayers
     with DoubleTraining
     with DoubleLiterals
     with DoubleWeights
-    with RawDoubleLayers
     with DoubleLayers
+    with CumulativeDoubleLayers
     with INDArrayTraining
     with INDArrayLiterals
     with INDArrayWeights
-    with RawINDArrayLayers
-    with INDArrayLayers {
+    with INDArrayLayers
+    with CumulativeINDArrayLayers {
 
   trait ImplicitsApi
       extends super[Layers].ImplicitsApi
@@ -110,13 +110,13 @@ trait Builtins
       with super[Operators].ImplicitsApi
       with super[FloatTraining].ImplicitsApi
       with super[FloatLiterals].ImplicitsApi
-      with super[RawFloatLayers].ImplicitsApi
+      with super[FloatLayers].ImplicitsApi
       with super[DoubleTraining].ImplicitsApi
       with super[DoubleLiterals].ImplicitsApi
-      with super[RawDoubleLayers].ImplicitsApi
+      with super[DoubleLayers].ImplicitsApi
       with super[INDArrayTraining].ImplicitsApi
       with super[INDArrayLiterals].ImplicitsApi
-      with super[RawINDArrayLayers].ImplicitsApi
+      with super[INDArrayLayers].ImplicitsApi
 
   type Implicits <: ImplicitsApi
 }

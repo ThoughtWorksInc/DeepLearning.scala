@@ -20,7 +20,7 @@ lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
 
 lazy val `plugins-FloatWeights` = project.dependsOn(`plugins-Weights`)
 
-lazy val `plugins-RawFloatLayers` =
+lazy val `plugins-FloatLayers` =
   project.dependsOn(
     `plugins-Layers`,
     `plugins-Operators`,
@@ -29,9 +29,9 @@ lazy val `plugins-RawFloatLayers` =
     `plugins-ImplicitsSingleton` % Test
   )
 
-lazy val `plugins-FloatLayers` =
+lazy val `plugins-CumulativeFloatLayers` =
   project.dependsOn(
-    `plugins-RawFloatLayers`,
+    `plugins-FloatLayers`,
     `plugins-FloatTraining` % Test,
     `plugins-FloatLiterals` % Test,
     `plugins-FloatWeights` % Test,
@@ -46,13 +46,13 @@ lazy val `plugins-INDArrayLiterals` = project.dependsOn(DeepLearning)
 
 lazy val `plugins-INDArrayWeights` = project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Weights`)
 
-lazy val `plugins-RawINDArrayLayers` =
-  project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Layers`,`plugins-DoubleLiterals`, `plugins-RawDoubleLayers`)
-
 lazy val `plugins-INDArrayLayers` =
+  project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Layers`,`plugins-DoubleLiterals`, `plugins-DoubleLayers`)
+
+lazy val `plugins-CumulativeINDArrayLayers` =
   project.dependsOn(
-    `plugins-RawINDArrayLayers`,
-    `plugins-DoubleLayers`,
+    `plugins-INDArrayLayers`,
+    `plugins-CumulativeDoubleLayers`,
     `plugins-DoubleLiterals` % Test,
     `plugins-DoubleTraining` % Test,
     `plugins-INDArrayTraining` % Test,
@@ -98,15 +98,15 @@ lazy val `plugins-DoubleLiterals` =
     .dependsOn(`DeepLearning`)
     .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatLiterals`).taskValue)
 
-lazy val `plugins-RawDoubleLayers` =
-  project
-    .dependsOn(`plugins-Layers`, `plugins-Operators`)
-    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-RawFloatLayers`).taskValue)
-
 lazy val `plugins-DoubleLayers` =
   project
-    .dependsOn(`plugins-RawDoubleLayers`, `plugins-Operators`)
+    .dependsOn(`plugins-Layers`, `plugins-Operators`)
     .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatLayers`).taskValue)
+
+lazy val `plugins-CumulativeDoubleLayers` =
+  project
+    .dependsOn(`plugins-DoubleLayers`, `plugins-Operators`)
+    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-CumulativeFloatLayers`).taskValue)
 
 lazy val `plugins-Builtins` =
   project.dependsOn(
@@ -118,18 +118,18 @@ lazy val `plugins-Builtins` =
     `plugins-FloatTraining`,
     `plugins-FloatLiterals`,
     `plugins-FloatWeights`,
-    `plugins-RawFloatLayers`,
     `plugins-FloatLayers`,
+    `plugins-CumulativeFloatLayers`,
     `plugins-DoubleTraining`,
     `plugins-DoubleLiterals`,
     `plugins-DoubleWeights`,
-    `plugins-RawDoubleLayers`,
     `plugins-DoubleLayers`,
+    `plugins-CumulativeDoubleLayers`,
     `plugins-INDArrayTraining`,
     `plugins-INDArrayLiterals`,
     `plugins-INDArrayWeights`,
-    `plugins-RawINDArrayLayers`,
     `plugins-INDArrayLayers`,
+    `plugins-CumulativeINDArrayLayers`,
     DeepLearning % "test->test"
   )
 publishArtifact := false
