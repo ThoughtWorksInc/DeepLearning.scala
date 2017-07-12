@@ -36,7 +36,7 @@ object DeepLearning {
     /** Returns a [[scalaz.concurrent.Task Task]] that updates [[plugins.Weights.Weight Weight]] internally used by `differentiable`. */
     def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Task[Data]
 
-    /** Returns a [[scalaz.concurrent.Task Task]] of the [[Tape.data data]] of the `differentiable` expression. */
+    /** Returns a [[scalaz.concurrent.Task Task]] of the [[DeepLearning.Tape.data data]] of the `differentiable` expression. */
     def predict(differentiable: Differentiable): Task[Data]
   }
 
@@ -47,9 +47,9 @@ import DeepLearning._
   *
   * Common differentiable types that supports [[DeepLearning]] are:
   *
-  *  - [[scala.Float Float]], [[plugins.FloatWeights.FloatWeight FloatWeight]] or [[plugins.FloatLayers.FloatLayer FloatLayer]]
-  *  - [[scala.Double Double]], [[plugins.DoubleWeights.DoubleWeight DoubleWeight]] or [[plugins.DoubleLayers.DoubleLayer DoubleLayer]]
-  *  - [[org.nd4j.linalg.api.ndarray.INDArray INDArray]], [[plugins.INDArrayWeights.INDArrayWeight INDArrayWeight]] or [[plugins.INDArrayLayers.INDArrayLayer INDArrayLayer]]
+  *  - [[scala.Float Float]], [[plugins.FloatWeights.FloatWeight FloatWeight]] or [[plugins.CumulativeFloatLayers.FloatLayer FloatLayer]]
+  *  - [[scala.Double Double]], [[plugins.DoubleWeights.DoubleWeight DoubleWeight]] or [[plugins.CumulativeDoubleLayers.DoubleLayer DoubleLayer]]
+  *  - [[org.nd4j.linalg.api.ndarray.INDArray INDArray]], [[plugins.INDArrayWeights.INDArrayWeight INDArrayWeight]] or [[plugins.CumulativeINDArrayLayers.INDArrayLayer INDArrayLayer]]
   */
 @typeclass(excludeParents = List("SimulacrumIssue82WorkAround"))
 trait DeepLearning[Differentiable] extends SimulacrumIssue82WorkAround[Differentiable] {
