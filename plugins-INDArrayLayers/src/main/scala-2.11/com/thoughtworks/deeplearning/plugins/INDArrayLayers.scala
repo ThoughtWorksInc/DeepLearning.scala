@@ -31,21 +31,18 @@ object INDArrayLayers {
     override def toString: String = throwableSet.mkString("\n")
 
     override def printStackTrace(): Unit = {
-      super.printStackTrace()
       for (throwable <- throwableSet) {
         throwable.printStackTrace()
       }
     }
 
     override def printStackTrace(s: PrintStream): Unit = {
-      super.printStackTrace(s)
       for (throwable <- throwableSet) {
         throwable.printStackTrace(s)
       }
     }
 
     override def printStackTrace(s: PrintWriter): Unit = {
-      super.printStackTrace(s)
       for (throwable <- throwableSet) {
         throwable.printStackTrace(s)
       }
@@ -68,7 +65,7 @@ object INDArrayLayers {
   }
 
   // Workaround for https://github.com/deeplearning4j/nd4j/issues/1869
-  private implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
+  private[plugins] implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
     def broadcastFix(outputShape: Int*): INDArray = {
       val currentShape = indArray.shape.padTo(outputShape.length, 1)
       currentShape.indices.foldLeft(indArray.reshape(currentShape: _*)) { (indArray, i) =>
@@ -150,7 +147,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
     Parallel.unwrap(doParallelApplicative.apply2(Parallel(doA), Parallel(doB))(f))
   }
 
-  /** The [[ExecutionContext]] used internally in plugins. */
+  /** The [[scala.concurrent.ExecutionContext]] used internally in plugins. */
   @inject
   implicit protected def deepLearningExecutionContext: ExecutionContext
 
