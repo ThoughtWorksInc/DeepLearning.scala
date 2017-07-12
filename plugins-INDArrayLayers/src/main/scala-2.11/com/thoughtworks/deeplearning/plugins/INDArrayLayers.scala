@@ -1,5 +1,7 @@
 package com.thoughtworks.deeplearning.plugins
 
+import java.io.{PrintStream, PrintWriter}
+
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.Factory.inject
@@ -22,11 +24,47 @@ import scala.concurrent.ExecutionContext
 import scalaz.concurrent.Future
 import scala.util.control.NoStackTrace
 import scalaz.concurrent.Future.ParallelFuture
+
 object INDArrayLayers {
-  final case class MultipleException(throwableSet: Set[Throwable])
-      extends Exception("Multiple exceptions found")
-      with NoStackTrace {
-    override def toString: String = throwableSet.toString()
+
+  final case class MultipleException(throwableSet: Set[Throwable]) extends Exception("Multiple exceptions found") {
+    override def toString: String = throwableSet.mkString("\n")
+
+    override def printStackTrace(): Unit = {
+      super.printStackTrace()
+      for (throwable <- throwableSet) {
+        throwable.printStackTrace()
+      }
+    }
+
+    override def printStackTrace(s: PrintStream): Unit = {
+      super.printStackTrace(s)
+      for (throwable <- throwableSet) {
+        throwable.printStackTrace(s)
+      }
+    }
+
+    override def printStackTrace(s: PrintWriter): Unit = {
+      super.printStackTrace(s)
+      for (throwable <- throwableSet) {
+        throwable.printStackTrace(s)
+      }
+    }
+
+    override def getStackTrace: Array[StackTraceElement] = synchronized {
+      super.getStackTrace match {
+        case null =>
+          setStackTrace(throwableSet.flatMap(_.getStackTrace)(collection.breakOut))
+          super.getStackTrace
+        case stackTrace =>
+          stackTrace
+      }
+    }
+
+    override def fillInStackTrace(): this.type = {
+      this
+    }
+
   }
 
   // Workaround for https://github.com/deeplearning4j/nd4j/issues/1869
@@ -120,6 +158,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
 
     implicit final class INDArrayLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray]) {
+
       /** @usecase def unary_- : INDArrayLayer = ???
         */
       def unary_-[Out <: INDArrayLayer](
