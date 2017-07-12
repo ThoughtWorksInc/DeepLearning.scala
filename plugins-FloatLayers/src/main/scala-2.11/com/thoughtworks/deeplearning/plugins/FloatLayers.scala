@@ -29,6 +29,8 @@ trait FloatLayers extends Layers {
 
     implicit final class FloatLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning: DeepLearning.Aux[Operand0, Float, Float]) {
+      /** @usecase def unary_- : FloatLayer = ???
+        */
       def unary_-[Out <: FloatLayer](
           implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]): Out = {
         FloatLayer(
@@ -216,16 +218,28 @@ trait FloatLayers extends Layers {
   trait FloatLayerApi extends super[Layers].LayerApi {
     override type Data = Float
     override type Delta = Float
+
+    /** The original forward operation passed in [[FloatLayer$ FloatLayer.apply]].
+      *
+      * @note This [[rawForward]] may be different from [[forward]],
+      *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeFloatLayers]].
+      */
     protected val rawForward: Do[Tape[Float, Float]]
 
     override def forward: Do[Tape[Float, Float]] = rawForward
   }
   object FloatLayer {
+
+    /** @usecase def apply(forward: Do[Tape[Float, Float]]): FloatLayer = ???
+      *
+      *          Returns a [[FloatLayer]] according to the given `forward` operation.
+      */
     def apply[Out <: FloatLayer](forward: Do[Tape[Float, Float]])(
         implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]): Out = {
       implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
     }
 
+    /** Internal helper to create unary [[FloatLayer]]. */
     def unary[Operand0, Input0Data, Input0Delta, Out <: FloatLayer](
         operand0: Operand0
     )(f: Input0Data => (Float, Float => Input0Delta))(
@@ -243,6 +257,8 @@ trait FloatLayers extends Layers {
           Tape(outputData, backward)
       })
     }
+
+    /** Internal helper to create unary [[FloatLayer]]. */
     def binary[Operand0, Operand1, Input0Data, Input0Delta, Input1Data, Input1Delta, Out <: FloatLayer](
         operand0: Operand0,
         operand1: Operand1

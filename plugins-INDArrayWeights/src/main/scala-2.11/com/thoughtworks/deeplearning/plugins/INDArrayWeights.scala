@@ -67,7 +67,10 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
 
   @inject
   protected def indArrayDataParameter: INDArray <:< indArrayPartialApplyData.Parameter
-  object INDArrayWeight extends {
+  object INDArrayWeight {
+
+    /** @usecase def apply(data: Float): INDArrayWeight = ???
+      */
     def apply[SubtypeOfWeight, OptimizerFunction, Optimizer](data: INDArray)(
         implicit implicitApplyRest: ImplicitApply[indArrayPartialApplyData.Rest]) = {
       implicitApplyRest(indArrayPartialApplyData(indArrayWeightFactory.newInstance, indArrayDataParameter(data)))

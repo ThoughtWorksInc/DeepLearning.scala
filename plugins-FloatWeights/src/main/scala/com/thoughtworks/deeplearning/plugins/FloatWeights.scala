@@ -55,7 +55,10 @@ trait FloatWeights extends Weights {
 
   @inject
   protected def floatDataParameter: Float <:< floatPartialApplyData.Parameter
-  object FloatWeight extends {
+  object FloatWeight {
+
+    /** @usecase def apply(data: Float): FloatWeight = ???
+      */
     def apply[SubtypeOfWeight, OptimizerFunction, Optimizer](data: Float)(
         implicit implicitApplyRest: ImplicitApply[floatPartialApplyData.Rest]) = {
       implicitApplyRest(floatPartialApplyData(floatWeightFactory.newInstance, floatDataParameter(data)))

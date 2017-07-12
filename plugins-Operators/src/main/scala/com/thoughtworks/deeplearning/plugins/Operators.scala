@@ -2,10 +2,12 @@ package com.thoughtworks.deeplearning
 package plugins
 import shapeless.{Poly1, Poly2}
 
-/** A plugin of definitions of polymorphic operators.
+/** A plugin contains definitions of polymorphic functions and methods.
   *
-  * Those functions are implemented in [[FloatLayers]], [[DoubleLayers]] and [[INDArrayLayers]].
+  * The implementations of polymorphic functions and methods can be found in [[FloatLayers.Implicits]], [[DoubleLayers.Implicits]] and [[INDArrayLayers.Implicits]].
   * @author 杨博 (Yang Bo)
+  * @see [[https://github.com/milessabin/shapeless/wiki/Feature-overview:-shapeless-2.0.0#polymorphic-function-values Shapeless's Documentations]]
+  *      for the underlying mechanism of polymorphic functions.
   */
 trait Operators {
 
