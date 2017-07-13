@@ -55,11 +55,11 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       }
     }
 
-    private lazy val accumulator = {
-      super.forward.flatMap {
+    private lazy val sharedAccumulator = {
+      Do.shared(super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(Future.delay(new Accumulator(data, flushBackward)))
-      }
+      })
     }
 
     /** @usecase def apply(indices: Int*): DoubleLayer = ???
@@ -105,7 +105,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       */
     def apply[Out <: DoubleLayer](indices: Int*)(
         implicit implicitApply: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
-      val doDoubleTape = accumulator.map { accumulator =>
+      val doDoubleTape = sharedAccumulator.map { accumulator =>
         def cumulativeBackward(doDelta: Do[Double]): Future[Unit] = {
           Do.run(doDelta)
             .map { delta: Double =>
@@ -137,9 +137,8 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       DoubleLayer(doDoubleTape)
     }
 
-    private lazy val sharedForward: Do[Tape[INDArray, INDArray]] = {
-      Do.shared(
-        accumulator.map { accumulator =>
+    abstract override def forward: Do[Tape[INDArray, INDArray]] = {
+        sharedAccumulator.map { accumulator =>
           def cumulativeBackward(doDelta: Do[INDArray]): Future[Unit] = {
             Do.run(doDelta)
               .map {
@@ -172,10 +171,8 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
           }
           Tape(accumulator.data, cumulativeBackward)
         }
-      )
     }
 
-    abstract override def forward = sharedForward
   }
   override type INDArrayLayer <: INDArrayLayerApi with Layer
 }
