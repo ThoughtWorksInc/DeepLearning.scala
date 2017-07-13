@@ -148,3 +148,12 @@ lazy val unidoc =
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
 crossScalaVersions := Seq("2.11.11", "2.12.2")
+
+scalacOptions in ThisBuild ++= {
+  import scala.math.Ordering.Implicits._
+  if (VersionNumber(scalaVersion.value).numbers < Seq(2L, 12L)) {
+    Seq("-optimize")
+  } else {
+    Seq("-opt:l:project")
+  }
+}
