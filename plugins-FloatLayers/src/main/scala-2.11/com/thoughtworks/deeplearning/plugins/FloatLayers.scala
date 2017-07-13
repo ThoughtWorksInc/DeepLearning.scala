@@ -27,6 +27,9 @@ trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
 
+    /** An implicit wrapper that adds extension methods for differentiable float types
+      * that support the [[DeepLearning]] type class.
+      */
     implicit final class FloatLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning: DeepLearning.Aux[Operand0, Float, Float]) {
       /** @usecase def unary_- : FloatLayer = ???
