@@ -31,6 +31,7 @@ trait Operators {
 
   trait ImplicitsApi {
 
+    /** An implicit wrapper that adds extension methods of common mathematics operations. */
     implicit final class PolymorphicOps[Operand0](operand0: Operand0) {
       def +[Operand1](operand1: Operand1)(
           implicit methodCase: Operators.+.Case[Operand0, Operand1]): methodCase.Result =
@@ -46,6 +47,7 @@ trait Operators {
         methodCase(operand0, operand1)
 
     }
+
   }
 
   /** @template */

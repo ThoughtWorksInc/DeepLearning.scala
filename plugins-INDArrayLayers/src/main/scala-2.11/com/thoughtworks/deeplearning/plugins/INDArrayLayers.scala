@@ -153,6 +153,9 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
 
   trait ImplicitsApi extends super[DoubleLiterals].ImplicitsApi with super[DoubleLayers].ImplicitsApi {
 
+    /** An implicit wrapper that adds extension methods for differentiable n-dimensional array types
+      * that support the [[DeepLearning]] type class.
+      */
     implicit final class INDArrayLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray]) {
 
