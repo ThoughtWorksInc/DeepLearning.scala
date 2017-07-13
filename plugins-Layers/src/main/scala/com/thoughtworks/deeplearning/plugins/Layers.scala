@@ -28,16 +28,12 @@ trait Layers {
 
   /** @template */
   type Layer <: LayerApi
-  object Layer {
-    type Aux[Data0, Delta0] = Layer {
-      type Data = Data0
-      type Delta = Delta0
-    }
-  }
 
   trait ImplicitsApi {
-    implicit def layerDeepLearning[From, Data0, Delta0](
-        implicit asLayer: From <:< Layer.Aux[Data0, Delta0]): DeepLearning.Aux[From, Data0, Delta0] = {
+    implicit def layerDeepLearning[From, Data0, Delta0](implicit asLayer: From <:< LayerApi {
+      type Data = Data0
+      type Delta = Delta0
+    }): DeepLearning.Aux[From, Data0, Delta0] = {
       new DeepLearning[From] {
         type Data = Data0
         type Delta = Delta0

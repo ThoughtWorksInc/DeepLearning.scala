@@ -29,7 +29,7 @@ trait FloatWeights extends Weights {
 
     override protected def backward[SubtypeOfOptimizer](originalDelta: Float)(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Unit] = {
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: Float }): Do[Unit] = {
       Do.delay {
         val delta =
           implicitApplyRest(

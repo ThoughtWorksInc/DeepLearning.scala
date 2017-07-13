@@ -37,7 +37,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
 
     override protected def backward[SubtypeOfOptimizer](originalDelta: INDArray)(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Unit] = {
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: INDArray }): Do[Unit] = {
 
       Do.jump().map { _: Unit =>
         val delta =

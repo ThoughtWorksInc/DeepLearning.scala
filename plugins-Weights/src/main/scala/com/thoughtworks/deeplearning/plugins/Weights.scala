@@ -22,7 +22,8 @@ trait Weights {
       */
     final def forward[SubtypeOfOptimizer](
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Tape[Data, Delta]] = {
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: WeightApi.this.Delta })
+      : Do[Tape[Data, Delta]] = {
       Do.now(
         Tape[Data, Delta](
           data, { doDelta: Do[Delta] =>
@@ -41,7 +42,7 @@ trait Weights {
       */
     protected def backward[SubtypeOfOptimizer](delta: Delta)(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta]): Do[Unit]
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: WeightApi.this.Delta }): Do[Unit]
 
     type Data
     type Delta
@@ -55,14 +56,6 @@ trait Weights {
   /** @template */
   type Weight <: WeightApi
 
-  object Weight {
-    type Aux[PartiallyAppliedOptimizer0, Data0, Delta0] = Weight {
-      type Data = Data0
-      type Delta = Delta0
-      type PartiallyAppliedOptimizer = PartiallyAppliedOptimizer0
-    }
-  }
-
   trait OptimizerApi {
     type Delta
 
@@ -73,18 +66,17 @@ trait Weights {
   /** @template */
   type Optimizer <: OptimizerApi
 
-  object Optimizer {
-    type Aux[Delta0] = Optimizer {
-      type Delta = Delta0
-    }
-  }
-
   trait ImplicitsApi {
 
     implicit def weightDeepLearning[SubtypeOfWeight, Data0, Delta0, OriginalDeltaRest, SubtypeOfOptimizer](
-        implicit asWeight: SubtypeOfWeight <:< Weight.Aux[OriginalDeltaRest, Data0, Delta0],
+        implicit asWeight: SubtypeOfWeight <:<
+          WeightApi {
+            type Data = Data0
+            type Delta = Delta0
+            type PartiallyAppliedOptimizer = OriginalDeltaRest
+          },
         implicitApplyRest: ImplicitApply.Aux[OriginalDeltaRest, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< Optimizer.Aux[Delta0]
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta = Delta0 }
     ): DeepLearning.Aux[SubtypeOfWeight, Data0, Delta0] = {
       new DeepLearning[SubtypeOfWeight] {
         override type Data = Data0
