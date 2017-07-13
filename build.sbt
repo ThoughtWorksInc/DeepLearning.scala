@@ -31,6 +31,7 @@ lazy val `plugins-FloatLayers` =
 
 lazy val `plugins-CumulativeFloatLayers` =
   project.dependsOn(
+    DeepLearning % "test->test",
     `plugins-FloatLayers`,
     `plugins-FloatTraining` % Test,
     `plugins-FloatLiterals` % Test,
