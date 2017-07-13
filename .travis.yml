@@ -19,8 +19,7 @@ matrix:
       osx_image: xcode8
       language: java
       before_install:
-        - brew install sbt
-        - brew install graphviz
+        - brew install sbt graphviz
 
 before_cache:
   - find $HOME/.sbt -name '*.lock' -delete
