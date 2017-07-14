@@ -42,11 +42,13 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       override def value: Try[Accumulator] = Success(this)
 
       override def release(): Future[Unit] = {
-        synchronized {
-          val deltaOption = currentDelta
-          currentDelta = null
-          deltaOption
-        } match {
+        Future.delay {
+          synchronized {
+            val delta = currentDelta
+            currentDelta = null
+            delta
+          }
+        } flatMap {
           case Zero =>
             Future.now(())
           case nonZeroDelta =>

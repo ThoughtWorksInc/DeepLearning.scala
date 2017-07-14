@@ -19,6 +19,54 @@ import scalaz.syntax.all._
   *       created in [[FloatLayer.forward forward]] pass pass for all dependencies, avoiding re-evaluation
   *       in the case of diamond dependencies in a neural network.
   *
+  * @example Given two [[FloatWeight]]s,
+  *
+  *          {{{
+  *          import com.thoughtworks.deeplearning.plugins._
+  *          import com.thoughtworks.feature.Factory
+  *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
+  *          import hyperparameters.implicits._
+  *          val weight1 = hyperparameters.FloatWeight(10)
+  *          val weight2 = hyperparameters.FloatWeight(300)
+  *          }}}
+  *
+  *          when adding them together,
+  *
+  *          {{{
+  *          val weight1PlusWeight2 = weight1 + weight2
+  *          }}}
+  *
+  *          then the training result should be applied on both weight
+  *
+  *          {{{
+  *          weight1PlusWeight2.train.map { result =>
+  *            result should be(310.0f)
+  *
+  *            weight2.data should be < 300.0f
+  *            weight1.data should be < 10.0f
+  *          }
+  *          }}}
+  *
+  * @example Given a [[FloatWeight]],
+  *
+  *          {{{
+  *          import com.thoughtworks.deeplearning.plugins._
+  *          import com.thoughtworks.feature.Factory
+  *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
+  *          import hyperparameters.implicits._
+  *          val weight1 = hyperparameters.FloatWeight(10)
+  *          }}}
+  *
+  *          then the training result should be applied on it
+  *
+  *          {{{
+  *          weight1.train.map { result =>
+  *            result should be(10.0f)
+  *
+  *            weight1.data should be < 10.0f
+  *          }
+  *          }}}
+  *
   * @author 杨博 (Yang Bo)
   */
 trait CumulativeFloatLayers extends FloatLayers {
@@ -52,13 +100,19 @@ trait CumulativeFloatLayers extends FloatLayers {
             }
 
             override def release(): Future[Unit] = {
-              flushBackward(Do.delay {
-                synchronized {
-                  val delta = currentDelta
-                  currentDelta = 0
-                  delta
+              Future
+                .delay {
+                  synchronized {
+                    val delta = currentDelta
+                    currentDelta = 0
+                    delta
+                  }
                 }
-              })
+                .flatMap { delta =>
+                  flushBackward(Do.delay {
+                    delta
+                  })
+                }
             }
 
           }))
