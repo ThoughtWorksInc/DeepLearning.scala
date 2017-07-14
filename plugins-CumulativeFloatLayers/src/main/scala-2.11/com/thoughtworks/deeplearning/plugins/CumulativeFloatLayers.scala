@@ -109,9 +109,13 @@ trait CumulativeFloatLayers extends FloatLayers {
                   }
                 }
                 .flatMap { delta =>
-                  flushBackward(Do.delay {
-                    delta
-                  })
+                  if (delta == 0) {
+                    Future.now(())
+                  } else {
+                    flushBackward(Do.delay {
+                      delta
+                    })
+                  }
                 }
             }
 
