@@ -4,13 +4,7 @@ import java.util.logging.{Level, LogRecord, Logger}
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
-import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.feature.Caller
-import com.thoughtworks.feature.Factory.inject
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
-
-import scalaz.syntax.all._
 
 object Logging {
 
