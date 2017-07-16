@@ -6,9 +6,11 @@ import com.thoughtworks.feature.{Factory, ImplicitApply}
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.api.ops.impl.transforms.IsMax
 import org.nd4j.linalg.convolution.Convolution
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.ops.transforms.Transforms
+import org.nd4j.linalg.util.ArrayUtil
 import org.scalatest._
 import org.nd4s.Implicits._
 
@@ -79,6 +81,50 @@ object CumulativeINDArrayLayersSpec {
         val reshapeResult = plusResult.reshape(numberOfImages, height, width, numberOfKernels)
         reshapeResult.permute(0, 3, 1, 2).forward.each
       })
+    }
+
+    @inline
+    def maxPool[Operand0, Out <: INDArrayLayer](operand0: Operand0, poolSize: (Int, Int))(
+        implicit deepLearning: DeepLearning.Aux[Operand0, INDArray, INDArray],
+        layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
+      INDArrayLayer.unary(operand0) { data0: INDArray =>
+        val shape0 = data0.shape
+        val kernelAndStrideSize: Array[Int] = toArray(poolSize)
+        val preMaxPool: INDArray =
+          Convolution
+            .im2col(data0, kernelAndStrideSize, kernelAndStrideSize, Array(0, 0))
+            .permute(0, 1, 4, 5, 2, 3)
+        val preShape: Seq[Int] = preMaxPool.shape().toSeq
+        val lastDimensionSize: Int = preShape.takeRight(2).product
+        val reshapedPreMaxPool: INDArray = preMaxPool
+          .reshape(preShape.take(preShape.length - 2) :+ lastDimensionSize: _*)
+        val outputData = reshapedPreMaxPool.max(4)
+        val delta0 = { outputDelta: INDArray =>
+          val a = reshapedPreMaxPool
+          val upStreamDup = a.dup()
+          val rows = ArrayUtil.prod(a.length())
+
+          val isMax: INDArray = Nd4j.getExecutioner
+            .execAndReturn(new IsMax(upStreamDup, 4))
+            .reshape(preShape.take(preShape.length - 2) :+ poolSize._2 :+ poolSize._1: _*)
+            .permute(0, 1, 2, 4, 3, 5)
+            .reshape('c', rows, 1)
+
+          val outputDelta1d = {
+            outputDelta
+              .repeat(-1, poolSize._1)
+              .permute(1, 0, 3, 2)
+              .repeat(-1, poolSize._2)
+              .permute(1, 0, 3, 2)
+              .reshape('c', shape0.product, 1)
+          }
+
+          isMax
+            .muliColumnVector(outputDelta1d)
+            .reshape(shape0: _*)
+        }
+        (outputData, delta0)
+      }
     }
 
   }
@@ -682,6 +728,84 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
 
     p.future
   }
+
+  "INDArray maxPool poolsize --forward" in {
+
+    val hyperparameters =
+      Factory[
+        CNNs with Logging with ImplicitsSingleton with INDArrayTraining with INDArrayLiterals with DoubleLiterals with CumulativeDoubleLayers with Operators with CumulativeINDArrayLayers with FixedLearningRate]
+        .newInstance(fixedLearningRate = 1.0)
+    import hyperparameters.implicits._
+
+    val weight = hyperparameters.INDArrayWeight((1 to 96).toNDArray.reshape(2, 3, 4, 4))
+
+    def myNetwork(poolSize: (Int, Int)): hyperparameters.INDArrayLayer = {
+      hyperparameters.maxPool(weight,poolSize)
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    val p = Promise[Assertion]
+
+    myNetwork((2, 2)).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(result) =>
+            result.sumT should be(1224.0)
+        }
+      }
+    }
+
+    p.future
+  }
+
+  "INDArray maxPool poolsize -- train" in {
+
+    val hyperparameters =
+      Factory[
+        CNNs with Logging with ImplicitsSingleton with INDArrayTraining with INDArrayLiterals with DoubleLiterals with CumulativeDoubleLayers with Operators with CumulativeINDArrayLayers with FixedLearningRate]
+        .newInstance(fixedLearningRate = 1.0)
+    import hyperparameters.implicits._
+
+    val weight = hyperparameters.INDArrayWeight((1 to 96).toNDArray.reshape(2, 3, 4, 4))
+
+    def myNetwork(poolSize: (Int, Int)): hyperparameters.INDArrayLayer = {
+      hyperparameters.maxPool(weight,poolSize)
+    }
+
+    import scalaz.concurrent.Future._
+    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
+
+    val poolSize = (2, 2)
+
+    @monadic[Task]
+    val task: Task[Unit] = {
+      for (_ <- 1 to 700) {
+        myNetwork(poolSize).train.each
+      }
+    }
+
+    val result = throwableMonadic[Task] {
+      task.each
+      (myNetwork(poolSize)).predict.each
+    }
+
+    val p = Promise[Assertion]
+
+    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
+      p.success {
+        inside(either) {
+          case -\/(e) => throw e
+          case \/-(loss: INDArray) =>
+            loss.meanNumber.doubleValue should be < 10.0
+        }
+      }
+    }
+    p.future
+  }
+
   "4D INDArray * 4D INDArray -- forward" in {
 
     val weight = hyperparameters.INDArrayWeight((0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4))
