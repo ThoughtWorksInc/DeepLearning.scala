@@ -20,12 +20,19 @@ trait Operators {
   def log[Operand0](operand0: Operand0)(implicit functionCase: Operators.log.Case[Operand0]) = {
     functionCase(operand0)
   }
+  def sqrt[Operand0](operand0: Operand0)(implicit functionCase: Operators.sqrt.Case[Operand0]) = {
+    functionCase(operand0)
+  }
   def min[Operand0, Operand1](operand0: Operand0, operand1: Operand1)(
       implicit functionCase: Operators.min.Case[Operand0, Operand1]) = {
     functionCase(operand0, operand1)
   }
   def max[Operand0, Operand1](operand0: Operand0, operand1: Operand1)(
       implicit functionCase: Operators.max.Case[Operand0, Operand1]) = {
+    functionCase(operand0, operand1)
+  }
+  def pow[Operand0, Operand1](operand0: Operand0, operand1: Operand1)(
+      implicit functionCase: Operators.pow.Case[Operand0, Operand1]) = {
     functionCase(operand0, operand1)
   }
 
@@ -59,7 +66,9 @@ object Operators {
 
   object abs extends Poly1
   object exp extends Poly1
+  object sqrt extends Poly1
   object log extends Poly1
+  object pow extends Poly2
   object max extends Poly2
   object min extends Poly2
 

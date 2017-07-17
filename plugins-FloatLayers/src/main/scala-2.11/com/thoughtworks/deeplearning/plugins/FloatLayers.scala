@@ -32,17 +32,19 @@ trait FloatLayers extends Layers {
       */
     implicit final class FloatLayerOps[Operand0](operand0: Operand0)(
         implicit deepLearning: DeepLearning.Aux[Operand0, Float, Float]) {
+
       /** @usecase def unary_- : FloatLayer = ???
         */
       def unary_-[Out <: FloatLayer](
           implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]): Out = {
         FloatLayer(
-          operand0.forward.map { tape0 =>
-            val data = -tape0.data
-            def backward(doOutputDelta: Do[Float]) = {
-              tape0.backward(doOutputDelta.map(-_))
-            }
-            Tape(data, backward)
+          operand0.forward.map {
+            case tape0 @ Tape(data0, backward0) =>
+              val outputData = -data0
+              def backward(doOutputDelta: Do[Float]) = {
+                backward0(doOutputDelta.map(-_))
+              }
+              Tape(outputData, backward)
           }
         )
       }
@@ -53,13 +55,14 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.+.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) { (tape0, tape1) =>
-          val data = tape0.data + tape1.data
-          def backward(doOutputDelta: Do[Float]) = {
-            tape0.backward(doOutputDelta) >>
-              tape1.backward(doOutputDelta)
-          }
-          Tape(data, backward)
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            val outputData = data0 + data1
+            def backward(doOutputDelta: Do[Float]) = {
+              backward0(doOutputDelta) >>
+                backward1(doOutputDelta)
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -70,13 +73,14 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.-.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) { (tape0, tape1) =>
-          val data = tape0.data - tape1.data
-          def backward(doOutputDelta: Do[Float]) = {
-            tape0.backward(doOutputDelta) >>
-              tape1.backward(doOutputDelta.map(-_))
-          }
-          Tape(data, backward)
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            val outputData = data0 - data1
+            def backward(doOutputDelta: Do[Float]) = {
+              backward0(doOutputDelta) >>
+                backward1(doOutputDelta.map(-_))
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -87,13 +91,14 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.*.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) { (tape0, tape1) =>
-          val data = tape0.data * tape1.data
-          def backward(doOutputDelta: Do[Float]) = {
-            tape0.backward(doOutputDelta.map(_ * tape1.data)) >>
-              tape1.backward(doOutputDelta.map(_ * tape0.data))
-          }
-          Tape(data, backward)
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            val outputData = data0 * data1
+            def backward(doOutputDelta: Do[Float]) = {
+              backward0(doOutputDelta.map(_ * data1)) >>
+                backward1(doOutputDelta.map(_ * data0))
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -104,13 +109,14 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators./.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) { (tape0, tape1) =>
-          val data = tape0.data / tape1.data
-          def backward(doOutputDelta: Do[Float]) = {
-            tape0.backward(doOutputDelta.map(_ / tape1.data)) >>
-              tape1.backward(doOutputDelta.map(-_ * tape0.data / (tape1.data * tape1.data)))
-          }
-          Tape(data, backward)
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            val outputData = data0 / data1
+            def backward(doOutputDelta: Do[Float]) = {
+              backward0(doOutputDelta.map(_ / data1)) >>
+                backward1(doOutputDelta.map(-_ * data0 / (data1 * data1)))
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -121,12 +127,13 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.min.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) { (tape0, tape1) =>
-          if (tape0.data < tape1.data) {
-            tape0
-          } else {
-            tape1
-          }
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            if (data0 < data1) {
+              tape0
+            } else {
+              tape1
+            }
         }
         FloatLayer(forward)
       }
@@ -137,12 +144,31 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.max.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) { (tape0, tape1) =>
-          if (tape0.data > tape1.data) {
-            tape0
-          } else {
-            tape1
-          }
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            if (data0 > data1) {
+              tape0
+            } else {
+              tape1
+            }
+        }
+        FloatLayer(forward)
+      }
+    }
+
+    implicit def `pow(Float,Float)`[Operand0, Operand1, Out <: FloatLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
+        deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
+        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
+      Operators.pow.at[Operand0, Operand1] { (operand0, operand1) =>
+        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+            val outputData = math.pow(data0, data1).toFloat
+            def backward(doOutputDelta: Do[Float]) = {
+              backward0(doOutputDelta.map(_ * data1 * math.pow(data0, data1 - 1).toFloat)) >>
+                backward1(doOutputDelta.map(_ * math.log(data0).toFloat * outputData))
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -152,12 +178,13 @@ trait FloatLayers extends Layers {
         implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.log.at[Operand0] { operand0 =>
-        val forward = operand0.forward.map { tape0 =>
-          val data = math.log(tape0.data).toFloat
-          def backward(doOutputDelta: Do[Float]) = {
-            tape0.backward(doOutputDelta.map(_ / tape0.data))
-          }
-          Tape(data, backward)
+        val forward = operand0.forward.map {
+          case tape0 @ Tape(data0, backward0) =>
+            val outputData = math.log(data0).toFloat
+            def backward(doOutputDelta: Do[Float]) = {
+              backward0(doOutputDelta.map(_ / data0))
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -167,15 +194,16 @@ trait FloatLayers extends Layers {
         implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.exp.at[Operand0] { operand0 =>
-        val forward = operand0.forward.map { tape0 =>
-          val data = math.exp(tape0.data).toFloat
-          def backward(doOutputDelta: Do[Float]) = {
-            val doDelta = doOutputDelta.map { outputDelta =>
-              outputDelta * data
+        val forward = operand0.forward.map {
+          case tape0 @ Tape(data0, backward0) =>
+            val outputData = math.exp(data0).toFloat
+            def backward(doOutputDelta: Do[Float]) = {
+              val doDelta = doOutputDelta.map { outputDelta =>
+                outputDelta * outputData
+              }
+              backward0(doDelta)
             }
-            tape0.backward(doDelta)
-          }
-          Tape(data, backward)
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -185,17 +213,35 @@ trait FloatLayers extends Layers {
         implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.abs.at[Operand0] { operand0 =>
-        val forward = operand0.forward.map { tape0 =>
-          if (tape0.data < 0) {
-            val data = -tape0.data
-            def backward(doOutputDelta: Do[Float]) = {
-              tape0.backward(doOutputDelta.map(-_))
+        val forward = operand0.forward.map {
+          case tape0 @ Tape(data0, backward0) =>
+            if (data0 < 0) {
+              val outputData = -data0
+              def backward(doOutputDelta: Do[Float]) = {
+                backward0(doOutputDelta.map(-_))
+              }
+              Tape(outputData, backward)
+            } else {
+              tape0
             }
-            Tape(data, backward)
-          } else {
-            tape0
-          }
 
+        }
+        FloatLayer(forward)
+      }
+    }
+
+    implicit def `sqrt(Float)`[Operand0, Out <: FloatLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Float, Float],
+        implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
+      Operators.sqrt.at[Operand0] { operand0 =>
+        val forward = operand0.forward.map {
+          case tape0 @ Tape(data0, backward0) =>
+            val outputData = math.sqrt(data0).toFloat
+            def backward(doOutputDelta: Do[Float]) = {
+              val doDelta = doOutputDelta.map(_ * 0.5f / outputData)
+              backward0(doDelta)
+            }
+            Tape(outputData, backward)
         }
         FloatLayer(forward)
       }
@@ -250,7 +296,7 @@ trait FloatLayers extends Layers {
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]
     ): Out = {
       FloatLayer(deepLearning0.forward(operand0).map {
-        case Tape(data0, backward0) =>
+        case tape0 @ Tape(data0, backward0) =>
           val (outputData, delta0) = f(data0)
           def backward(doOutputDelta: Do[Float]) = {
             backward0(doOutputDelta.map { outputDelta =>
@@ -272,7 +318,7 @@ trait FloatLayers extends Layers {
     ): Out = {
       // TODO
       FloatLayer(Apply[Do].apply2(deepLearning0.forward(operand0), deepLearning1.forward(operand1)) {
-        case (Tape(data0, backward0), Tape(data1, backward1)) =>
+        case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
           val (outputData, delta0, delta1) = f(data0, data1)
           def backward(doOutputDelta: Do[Float]) = {
             backward0(doOutputDelta.map { outputDelta =>
