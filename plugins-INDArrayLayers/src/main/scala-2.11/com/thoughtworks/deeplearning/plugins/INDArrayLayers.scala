@@ -151,6 +151,21 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   @inject
   implicit protected def deepLearningExecutionContext: ExecutionContext
 
+  def dot[Operand0, Operand1, Out <: INDArrayLayer](operand0: Operand0, operand1: Operand1)(
+      implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray],
+      deepLearning1: DeepLearning.Aux[Operand1, INDArray, INDArray],
+      layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
+    INDArrayLayer.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
+      val outputData = data0 dot data1
+      val delta0 = { outputDelta: INDArray =>
+        outputDelta dot data1.T
+      }
+      val delta1 = { outputDelta: INDArray =>
+        data0.T dot outputDelta
+      }
+      (outputData, delta0, delta1)
+    }
+  }
   trait ImplicitsApi extends super[DoubleLiterals].ImplicitsApi with super[DoubleLayers].ImplicitsApi {
 
     /** An implicit wrapper that adds extension methods for differentiable n-dimensional array types
@@ -270,16 +285,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       def dot[Operand1, Out <: INDArrayLayer](operand1: Operand1)(
           implicit deepLearning1: DeepLearning.Aux[Operand1, INDArray, INDArray],
           layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
-        INDArrayLayer.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
-          val outputData = data0 dot data1
-          val delta0 = { outputDelta: INDArray =>
-            outputDelta dot data1.T
-          }
-          val delta1 = { outputDelta: INDArray =>
-            data0.T dot outputDelta
-          }
-          (outputData, delta0, delta1)
-        }
+        INDArrayLayers.this
+          .dot[Operand0, Operand1, Out](operand0, operand1)(deepLearning0, deepLearning1, layerImplicits)
       }
     }
 
