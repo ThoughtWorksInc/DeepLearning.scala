@@ -602,6 +602,24 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       }
     }
 
+    implicit def `pow(INDArray,Double)`[Operand0, Operand1, Out <: INDArrayLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray],
+        deepLearning1: DeepLearning.Aux[Operand1, Double, Double],
+        layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]) = {
+      Operators.pow.at[Operand0, Operand1] {
+        INDArrayLayer.binary(_, _) { (data0: INDArray, data1: Double) =>
+          val outputData = Transforms.pow(data0, data1)
+          val delta0 = { (outputDelta: INDArray) =>
+            outputDelta * data1 * Transforms.pow(data0, data1 - 1)
+          }
+          val delta1 = { (outputDelta: INDArray) =>
+            (outputDelta * Transforms.log(data0) * outputData).sumT
+          }
+          (outputData, delta0, delta1)
+        }
+      }
+    }
+
     implicit def `log(INDArray)`[Operand0, Out <: INDArrayLayer](
         implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray],
         layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]) = {
@@ -638,6 +656,20 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
           val outputData = Transforms.abs(data0)
           val delta0 = { outputDelta: INDArray =>
             outputDelta * Transforms.sign(data0)
+          }
+          (outputData, delta0)
+        }
+      }
+    }
+
+    implicit def `sqrt(INDArray)`[Operand0, Out <: INDArrayLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray],
+        layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]) = {
+      Operators.sqrt.at[Operand0] {
+        INDArrayLayer.unary(_) { data0: INDArray =>
+          val outputData = Transforms.sqrt(data0)
+          val delta0 = { outputDelta: INDArray =>
+            outputData * 0.5 / outputData
           }
           (outputData, delta0)
         }
