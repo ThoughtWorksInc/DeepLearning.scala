@@ -4,7 +4,7 @@ package com.thoughtworks.deeplearning.plugins
   *
   * @author 杨博 (Yang Bo)
   */
-trait Naming extends Layers with Weights {
+trait Names extends Layers with Weights {
 
   trait LayerApi extends super.LayerApi { this: Layer =>
     def fullName: sourcecode.FullName
