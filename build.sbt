@@ -10,7 +10,7 @@ lazy val `plugins-Layers` = project.dependsOn(DeepLearning)
 
 lazy val `plugins-Weights` = project.dependsOn(DeepLearning)
 
-lazy val `plugins-Naming` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
+lazy val `plugins-Names` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
 
 lazy val `plugins-Logging` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
 
@@ -118,7 +118,7 @@ lazy val `plugins-Builtins` =
     `plugins-Layers`,
     `plugins-Weights`,
     `plugins-Logging`,
-    `plugins-Naming`,
+    `plugins-Names`,
     `plugins-Operators`,
     `plugins-FloatTraining`,
     `plugins-FloatLiterals`,
