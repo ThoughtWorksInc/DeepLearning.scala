@@ -15,6 +15,7 @@ import scalaz.syntax.all._
 import scala.annotation.meta.getter
 import scalaz.concurrent.Task
 
+/** A plugin that enables [[Layer]] in neural networks. */
 trait Layers {
   trait LayerApi {
     type Data
@@ -26,7 +27,9 @@ trait Layers {
 
   }
 
-  /** @template */
+  /** A differentiable operation.
+    * @template
+    */
   type Layer <: LayerApi
 
   trait ImplicitsApi {
