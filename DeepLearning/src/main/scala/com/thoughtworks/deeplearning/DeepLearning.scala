@@ -20,7 +20,7 @@ object DeepLearning {
     type Delta = Delta0
   }
 
-  // The Scaladoc of members of trait DeepLearning must defined in `SimulacrumIssue82WorkAround`,
+  // The Scaladoc of members of trait DeepLearning must be defined in `SimulacrumIssue82WorkAround`,
   // in case of https://github.com/mpilquist/simulacrum/issues/82
   private[DeepLearning] sealed trait SimulacrumIssue82WorkAround[Differentiable] {
 
