@@ -13,14 +13,14 @@ object Logging {
       level: Level,
       message: String = null,
       parameters: Array[AnyRef] = null,
-      thrown: Throwable = null)(implicit fullName: sourcecode.FullName, methodName: sourcecode.Name, caller: Caller[_])
+      thrown: Throwable = null)(implicit fullName: sourcecode.FullName, name: sourcecode.Name, caller: Caller[_])
       extends LogRecord(level, message) {
 
     setParameters(parameters)
     setThrown(thrown)
     setLoggerName(fullName.value)
     setSourceClassName(caller.value.getClass.getName)
-    setSourceMethodName(methodName.value)
+    setSourceMethodName(name.value)
   }
 
   trait LazyMessage extends LogRecord {
@@ -35,7 +35,7 @@ object Logging {
   }
 
   final class ThrownInLayer(val layer: Layers#Layer, getThrown: Throwable)(implicit fullName: sourcecode.FullName,
-                                                                           methodName: sourcecode.Name,
+                                                                           name: sourcecode.Name,
                                                                            caller: Caller[_])
       extends ContextualLogRecord(Level.SEVERE, thrown = getThrown)
       with LazyMessage {
@@ -43,7 +43,7 @@ object Logging {
   }
 
   final class ThrownInWeight(val weight: Weights#Weight, getThrown: Throwable)(implicit fullName: sourcecode.FullName,
-                                                                               methodName: sourcecode.Name,
+                                                                               name: sourcecode.Name,
                                                                                caller: Caller[_])
       extends ContextualLogRecord(Level.SEVERE, thrown = getThrown)
       with LazyMessage {
@@ -63,7 +63,7 @@ trait Logging extends Layers with Weights {
 
   trait LayerApi extends super.LayerApi { this: Layer =>
     implicit protected def fullName: sourcecode.FullName
-    implicit protected def methodName: sourcecode.Name
+    implicit protected def name: sourcecode.Name
     implicit protected def caller: Caller[_]
     override protected def handleException(thrown: Throwable): Unit = {
       super.handleException(thrown)
@@ -74,7 +74,7 @@ trait Logging extends Layers with Weights {
 
   trait WeightApi extends super.WeightApi { this: Weight =>
     implicit protected def fullName: sourcecode.FullName
-    implicit protected def methodName: sourcecode.Name
+    implicit protected def name: sourcecode.Name
     implicit protected def caller: Caller[_]
     override protected def handleException(thrown: Throwable): Unit = {
       super.handleException(thrown)

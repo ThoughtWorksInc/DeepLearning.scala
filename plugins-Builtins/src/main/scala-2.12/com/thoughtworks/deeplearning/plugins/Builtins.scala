@@ -9,6 +9,7 @@ trait Builtins
     with Layers
     with Weights
     with Logging
+    with Naming
     with Operators
     with FloatTraining
     with FloatLiterals
@@ -27,4 +28,14 @@ trait Builtins
       with super[DoubleLiterals].ImplicitsApi
 
   type Implicits <: ImplicitsApi
+
+  trait LayerApi extends super[Logging].LayerApi with super[Naming].LayerApi { this: Layer =>
+  }
+
+  type Layer <: LayerApi
+
+  trait WeightApi extends super[Logging].WeightApi with super[Naming].WeightApi { this: Weight =>
+  }
+
+  type Weight <: WeightApi
 }
