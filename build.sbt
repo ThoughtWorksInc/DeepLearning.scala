@@ -146,7 +146,8 @@ lazy val unidoc =
       UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject),
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-      scalacOptions += "-Xexperimental"
+      scalacOptions += "-Xexperimental",
+      scalacOptions += "-Ypartial-unification"
     )
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
