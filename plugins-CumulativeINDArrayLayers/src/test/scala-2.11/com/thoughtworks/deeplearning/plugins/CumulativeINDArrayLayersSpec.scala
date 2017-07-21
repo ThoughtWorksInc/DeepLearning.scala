@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning
 package plugins
 
+import com.thoughtworks.deeplearning.scalatest.ScalazTaskToScalaFuture
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.feature.{Factory, ImplicitApply}
 import com.thoughtworks.raii.asynchronous.Do
@@ -16,7 +17,9 @@ import org.nd4s.Implicits._
 
 import scala.concurrent.Promise
 import scalaz.{-\/, \/, \/-}
-import scalaz.concurrent.Task
+import com.thoughtworks.future.Future, Future.futureMonadError
+import com.thoughtworks.future.continuation.Continuation, Continuation.continuationMonad
+
 import scalaz.std.iterable._
 
 object CumulativeINDArrayLayersSpec {
@@ -262,7 +265,7 @@ object CumulativeINDArrayLayersSpec {
 /**
   * @author 杨博 (Yang Bo)
   */
-class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Inside {
+class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Inside with ScalazTaskToScalaFuture {
 
   import CumulativeINDArrayLayersSpec._
 
@@ -277,9 +280,9 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
                                   trainTimes: Int = 2,
                                   expectedLoss: Int = 0,
                                   expectedWeightSum: Int = -16,
-                                  input: INDArray = Nd4j.ones(4, 4)): scala.concurrent.Future[Assertion] = {
-    @throwableMonadic[Task]
-    val run: Task[Assertion] = {
+                                  input: INDArray = Nd4j.ones(4, 4)): Future[Assertion] = {
+    @throwableMonadic[Future]
+    val run: Future[Assertion] = {
       for (_ <- 1 to trainTimes) {
         myNetwork(input).train.each.sumT
       }
@@ -287,15 +290,7 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       loss.sumT should be(expectedLoss)
       weight.data.sumT should be(expectedWeightSum)
     }
-    val p = Promise[Assertion]
-
-    run.unsafePerformAsync {
-      case -\/(e) =>
-        p.failure(e)
-      case \/-(assersion) =>
-        p.success(assersion)
-    }
-    p.future
+    run
   }
 
   "INDArray + INDArray" in {
@@ -427,34 +422,23 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       1.0 / weight
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 20000) {
         myNetwork(Nd4j.ones(4, 4)).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(Nd4j.ones(4, 4)).predict.each
+      val loss = myNetwork(Nd4j.ones(4, 4)).predict.each
+      loss.sumT should be < 0.5
+      weight.data.sumT should be > 600.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 0.5
-            weight.data.sumT should be > 600.0
-        }
-      }
-    }
-    p.future
   }
 
   "max(INDArray,Double)" in {
@@ -487,34 +471,23 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       hyperparameters.exp(weight)
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 50) {
         myNetwork(Nd4j.ones(4, 4)).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(Nd4j.ones(4, 4)).predict.each
+      val loss = myNetwork(Nd4j.ones(4, 4)).predict.each
+      loss.sumT should be < 1.0
+      weight.data.sumT should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-            weight.data.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "log(INDArray)" in {
@@ -525,34 +498,23 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       hyperparameters.log(weight)
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 50) {
         myNetwork(Nd4j.ones(4, 4)).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(Nd4j.ones(4, 4)).predict.each
+      val loss = myNetwork(Nd4j.ones(4, 4)).predict.each
+      loss.sumT should be < 10.0
+      weight.data.sumT should be < 22.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 10.0
-            weight.data.sumT should be < 22.0
-        }
-      }
-    }
-    p.future
   }
 
   "abs(INDArray)" in {
@@ -563,34 +525,23 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       hyperparameters.abs(weight)
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 10) {
         myNetwork(Nd4j.ones(4, 4)).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(Nd4j.ones(4, 4)).predict.each
+      val loss = myNetwork(Nd4j.ones(4, 4)).predict.each
+      loss.sumT should be < 1.0
+      weight.data.sumT should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-            weight.data.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "INDArray dot INDArray" in {
@@ -602,34 +553,23 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       input dot weight
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 10) {
         myNetwork(Nd4j.ones(4, 4)).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(Nd4j.ones(4, 4)).predict.each
+      val loss = myNetwork(Nd4j.ones(4, 4)).predict.each
+      loss.sumT should be(-1920.0)
+      weight.data.sumT should be(-480.0)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be(-1920.0)
-            weight.data.sumT should be(-480.0)
-        }
-      }
-    }
-    p.future
   }
 
   "INDArray im2col (kernel,stride,padding) --forward" in {
@@ -644,22 +584,9 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       hyperparameters.im2col(weight, kernel, stride, padding)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    val p = Promise[Assertion]
-
-    myNetwork((3, 3), (1, 1), (1, 1)).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(result) =>
-            result.sumT should be(-8085.0)
-        }
-      }
+    myNetwork((3, 3), (1, 1), (1, 1)).train.map { result =>
+      result.sumT should be(-8085.0)
     }
-
-    p.future
   }
 
   "INDArray im2col (kernel,stride,padding) --train" in {
@@ -674,33 +601,21 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       hyperparameters.im2col(weight, kernel, stride, padding)
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 1000) {
         myNetwork((3, 3), (1, 1), (1, 1)).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork((3, 3), (1, 1), (1, 1))).predict.each
+      val loss = (myNetwork((3, 3), (1, 1), (1, 1))).predict.each
+      loss.sumT should be < 1.0
     }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "INDArray reshape shapes --forward" in {
@@ -711,22 +626,10 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.reshape(dimensions: _*)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    val p = Promise[Assertion]
-
-    myNetwork(2, 3, 3, 3).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(result) =>
-            result.sumT should be(1431.0)
-        }
-      }
+    myNetwork(2, 3, 3, 3).train.map { result =>
+      result.sumT should be(1431.0)
     }
 
-    p.future
   }
 
   "INDArray maxPool poolsize --forward" in {
@@ -740,25 +643,12 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     val weight = hyperparameters.INDArrayWeight((1 to 96).toNDArray.reshape(2, 3, 4, 4))
 
     def myNetwork(poolSize: (Int, Int)): hyperparameters.INDArrayLayer = {
-      hyperparameters.maxPool(weight,poolSize)
+      hyperparameters.maxPool(weight, poolSize)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    val p = Promise[Assertion]
-
-    myNetwork((2, 2)).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(result) =>
-            result.sumT should be(1224.0)
-        }
-      }
+    myNetwork((2, 2)).train.map { result =>
+      result.sumT should be(1224.0)
     }
-
-    p.future
   }
 
   "INDArray maxPool poolsize -- train" in {
@@ -772,38 +662,24 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     val weight = hyperparameters.INDArrayWeight((1 to 96).toNDArray.reshape(2, 3, 4, 4))
 
     def myNetwork(poolSize: (Int, Int)): hyperparameters.INDArrayLayer = {
-      hyperparameters.maxPool(weight,poolSize)
+      hyperparameters.maxPool(weight, poolSize)
     }
-
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val poolSize = (2, 2)
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 700) {
         myNetwork(poolSize).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork(poolSize)).predict.each
+      val loss: INDArray = (myNetwork(poolSize)).predict.each
+      loss.meanT should be < 10.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss: INDArray) =>
-            loss.meanNumber.doubleValue should be < 10.0
-        }
-      }
-    }
-    p.future
   }
 
   "4D INDArray * 4D INDArray -- forward" in {
@@ -814,23 +690,15 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight * input
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val input = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
 
-    val p = Promise[Assertion]
-
-    myNetwork(input).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(result) =>
-            result.meanNumber.doubleValue should be(180.16666666666666667 +- 0.1)
-        }
-      }
+    myNetwork(input).train.map { (result) =>
+      result.meanNumber.doubleValue should be(180.16666666666666667 +- 0.1)
     }
-    p.future
+
   }
 
   "4D INDArray * 4D INDArray -- train" in {
@@ -841,35 +709,24 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight * input
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val input = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 100) {
         myNetwork(input).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork(input)).predict.each
+      val loss: INDArray = (myNetwork(input)).predict.each
+      loss.meanNumber.doubleValue should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss: INDArray) =>
-            loss.meanNumber.doubleValue should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "INDArray permute dimensions --forward" in {
@@ -880,22 +737,9 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.permute(dimensions: _*)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    val p = Promise[Assertion]
-
-    myNetwork(0, 2, 1).train.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(result) =>
-            result.sumT should be(1431.0)
-        }
-      }
+    myNetwork(0, 2, 1).train.map { (result) =>
+      result.sumT should be(1431.0)
     }
-
-    p.future
   }
 
   "conv2d(INDArray, INDArray, INDArray, kernel, stride, padding)" in {
@@ -913,28 +757,15 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       hyperparameters.conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    val p = Promise[Assertion]
-
     val expectResult = Array(14.00, 24.00, 30.00, 22.00, 33.00, 54.00, 63.00, 45.00, 57.00, 90.00, 99.00, 69.00, 46.00,
       72.00, 78.00, 54.00).toNDArray
       .reshape(1, 1, 4, 4)
 
     val input: INDArray = (1 to 16).toNDArray.reshape(1, 1, 4, 4)
-    val task: Task[INDArray] = convolution(input).train
-    task.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(result) =>
-            result.eq(expectResult).sumT should be(16)
-        }
-      }
+    convolution(input).train.map { (result) =>
+      result.eq(expectResult).sumT should be(16)
     }
 
-    p.future
   }
 
   "sumT(INDArray)" in {
@@ -945,33 +776,22 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.sum
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 54) {
         myNetwork().train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork().predict.each
+      val loss = myNetwork().predict.each
+      loss should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Double] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "sum(INDArray,dimensions) --2 dimensions" in {
@@ -982,33 +802,19 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.sum(dimensions: _*)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 54) {
         myNetwork(0).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(0).predict.each
+      val loss = myNetwork(0).predict.each
+      loss.sumT should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   // Failed due to nd4j bugs in broadcasting. TODO: Try to upgrade nd4j to a new version.
@@ -1020,33 +826,22 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.sum(dimensions: _*)
     }
 
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 54) {
         myNetwork(0, 1).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork(0, 1)).predict.each
+      val loss = myNetwork(0, 1).predict.each
+      loss.sumT should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "mean(INDArray)" in {
@@ -1057,33 +852,19 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.mean
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 27) {
         myNetwork().train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork()).predict.each
+      val loss = myNetwork().predict.each
+      loss should be < 27.5
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Double] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be < 27.5
-        }
-      }
-    }
-    p.future
   }
 
   "INDArray reshape shapes --train" in {
@@ -1097,33 +878,19 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.reshape(dimensions: _*)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 10000) {
         myNetwork(2, 3, 3, 3).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork(2, 3, 3, 3)).predict.each
+      val loss = (myNetwork(2, 3, 3, 3)).predict.each
+      loss.sumT should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 
   "INDArray permute dimensions --train" in {
@@ -1137,32 +904,18 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight.permute(dimensions: _*)
     }
 
-    import scalaz.concurrent.Future._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 10000) {
         myNetwork(0, 2, 1).train.each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      (myNetwork(0, 2, 1)).predict.each
+      val loss = myNetwork(0, 2, 1).predict.each
+      loss.sumT should be < 1.0
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, INDArray] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss.sumT should be < 1.0
-        }
-      }
-    }
-    p.future
   }
 }
