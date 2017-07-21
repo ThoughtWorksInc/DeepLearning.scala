@@ -11,13 +11,9 @@ trait ScalazTaskToScalaFuture {
 
   implicit def scalazTaskToScalaFuture[A](task: com.thoughtworks.future.Future[A]): scala.concurrent.Future[A] = {
     val promise = Promise[A]
-    com.thoughtworks.future.Future
-      .run(task) { either =>
-        Trampoline.delay {
-          val _ = promise.complete(either)
-        }
-      }
-      .run
+    com.thoughtworks.future.Future.onComplete(task) { either =>
+      val _ = promise.complete(either)
+    }
     promise.future
   }
 

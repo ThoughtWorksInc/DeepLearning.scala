@@ -31,10 +31,9 @@ trait Weights {
       Do.now(
         Tape[Data, Delta](
           data, { doDelta: Do[Delta] =>
-            val doUpdate: Do[Unit] = Do.releaseFlatMap(doDelta) { delta =>
-              backward(delta)
-            }
-            Future.toContinuation(Do.run(doUpdate)).map {
+            val doUpdate: Do[Unit] = Do.intransitiveFlatMap(doDelta)(backward(_))
+            val Future(TryT(continuation)) = Do.run(doUpdate)
+            continuation.map {
               case Success(()) => ()
               case Failure(e)  => handleException(e)
             }

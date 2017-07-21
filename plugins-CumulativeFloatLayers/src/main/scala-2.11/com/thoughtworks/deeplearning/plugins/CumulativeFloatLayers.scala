@@ -78,49 +78,50 @@ trait CumulativeFloatLayers extends FloatLayers {
     private def doCumulativeTape: Do[Tape[Float, Float]] = {
       super.forward.flatMap {
         case Tape(data, flushBackward) =>
-          Do(Continuation.delay(new Releasable[UnitContinuation, Try[Tape[Float, Float]]] {
+          Do(TryT(ResourceT(Continuation.delay[Unit, Releasable[UnitContinuation, Try[Tape[Float, Float]]]] {
+            new Releasable[UnitContinuation, Try[Tape[Float, Float]]] {
 
-            @volatile
-            private var currentDelta: Float = 0
+              @volatile
+              private var currentDelta: Float = 0
 
-            override def value: Try[Tape[Float, Float]] = {
-              def cumulativeBackward(doDelta: Do[Float]): UnitContinuation[Unit] = {
-                Future
-                  .toContinuation(Do.run(doDelta).map { delta =>
+              override def value: Try[Tape[Float, Float]] = {
+                def cumulativeBackward(doDelta: Do[Float]): UnitContinuation[Unit] = {
+                  val Future(TryT(continuation)) = Do.run(doDelta).map { delta =>
                     synchronized {
                       currentDelta += delta
                     }
-                  })
-                  .map {
+                  }
+                  continuation.map {
                     case Success(()) => // Success. Do nothing
                     case Failure(e)  => handleException(e)
                   }
-              }
-
-              Success(Tape(data, cumulativeBackward))
-            }
-
-            override def release(): UnitContinuation[Unit] = {
-              val deltaContinuation: UnitContinuation[Float] = Continuation.delay {
-                synchronized {
-                  val delta = currentDelta
-                  currentDelta = 0
-                  delta
                 }
+
+                Success(Tape(data, cumulativeBackward))
               }
 
-              deltaContinuation.flatMap { delta =>
-                if (delta == 0) {
-                  Continuation.now(())
-                } else {
-                  flushBackward(Do.delay {
+              override def release(): UnitContinuation[Unit] = {
+                val deltaContinuation: UnitContinuation[Float] = Continuation.delay {
+                  synchronized {
+                    val delta = currentDelta
+                    currentDelta = 0
                     delta
-                  })
+                  }
+                }
+
+                deltaContinuation.flatMap { delta =>
+                  if (delta == 0) {
+                    Continuation.now(())
+                  } else {
+                    flushBackward(Do.delay {
+                      delta
+                    })
+                  }
                 }
               }
-            }
 
-          }))
+            }
+          })))
       }
     }
 

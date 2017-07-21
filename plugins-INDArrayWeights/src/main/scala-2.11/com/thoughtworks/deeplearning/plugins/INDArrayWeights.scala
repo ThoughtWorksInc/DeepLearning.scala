@@ -39,7 +39,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: INDArray }): Do[Unit] = {
 
-      Do.jump().map { _: Unit =>
+      Do.execute {
         val delta =
           implicitApplyRest(
             indArrayPartialApplyOriginalDelta(indArrayPartialApplyWeight(indArrayOptimizerFactory.newInstance,
