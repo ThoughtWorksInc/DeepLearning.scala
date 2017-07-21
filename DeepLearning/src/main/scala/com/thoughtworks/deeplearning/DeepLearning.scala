@@ -1,7 +1,8 @@
 package com.thoughtworks.deeplearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
+import com.thoughtworks.future.continuation.{Continuation, UnitContinuation}
+import com.thoughtworks.future.Future
 
-import com.thoughtworks.future.continuation.Continuation, com.thoughtworks.future.Future
 import scalaz.syntax.all._
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
@@ -13,7 +14,7 @@ import algebra.ring.MultiplicativeMonoid
 object DeepLearning {
 
   /** The node of wengert list created during [[DeepLearning.forward forward]] pass */
-  final case class Tape[+Data, -Delta](data: Data, backward: Do[Delta] => Continuation[Unit])
+  final case class Tape[+Data, -Delta](data: Data, backward: Do[Delta] => UnitContinuation[Unit])
 
   type Aux[Differentiable, Data0, Delta0] = DeepLearning[Differentiable] {
     type Data = Data0

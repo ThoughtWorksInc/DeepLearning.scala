@@ -176,7 +176,7 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 1000) {
-        Future.jump().each
+        Future.execute(()).each
         trainMyNetwork(1.0f).each
       }
     }
@@ -274,7 +274,7 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 23) {
-        Future.jump().each
+        Future.execute(()).each
         trainMyNetwork(1.0f).each
       }
     }

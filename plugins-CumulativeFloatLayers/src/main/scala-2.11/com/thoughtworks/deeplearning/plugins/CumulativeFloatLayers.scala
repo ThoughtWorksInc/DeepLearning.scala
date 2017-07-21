@@ -6,7 +6,7 @@ import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.shared._
 import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.TryT
-import com.thoughtworks.future.continuation.Continuation
+import com.thoughtworks.future.continuation.{Continuation, UnitContinuation}
 import Continuation.continuationMonad
 import com.thoughtworks.future.Future
 import Future.futureMonadError
@@ -78,46 +78,46 @@ trait CumulativeFloatLayers extends FloatLayers {
     private def doCumulativeTape: Do[Tape[Float, Float]] = {
       super.forward.flatMap {
         case Tape(data, flushBackward) =>
-          Do(Continuation.delay(new Releasable[Continuation, Try[Tape[Float, Float]]] {
+          Do(Continuation.delay(new Releasable[UnitContinuation, Try[Tape[Float, Float]]] {
 
             @volatile
             private var currentDelta: Float = 0
 
             override def value: Try[Tape[Float, Float]] = {
-              def cumulativeBackward(doDelta: Do[Float]): Continuation[Unit] = {
-                val Future(TryT(continuation)) = Do.run(doDelta).map { delta =>
-                  synchronized {
-                    currentDelta += delta
+              def cumulativeBackward(doDelta: Do[Float]): UnitContinuation[Unit] = {
+                Future
+                  .toContinuation(Do.run(doDelta).map { delta =>
+                    synchronized {
+                      currentDelta += delta
+                    }
+                  })
+                  .map {
+                    case Success(()) => // Success. Do nothing
+                    case Failure(e)  => handleException(e)
                   }
-                }
-
-                continuation.map {
-                  case Success(()) => // Success. Do nothing
-                  case Failure(e)  => handleException(e)
-                }
               }
 
               Success(Tape(data, cumulativeBackward))
             }
 
-            override def release(): Continuation[Unit] = {
-              Continuation
-                .delay {
-                  synchronized {
-                    val delta = currentDelta
-                    currentDelta = 0
+            override def release(): UnitContinuation[Unit] = {
+              val deltaContinuation: UnitContinuation[Float] = Continuation.delay {
+                synchronized {
+                  val delta = currentDelta
+                  currentDelta = 0
+                  delta
+                }
+              }
+
+              deltaContinuation.flatMap { delta =>
+                if (delta == 0) {
+                  Continuation.now(())
+                } else {
+                  flushBackward(Do.delay {
                     delta
-                  }
+                  })
                 }
-                .flatMap { delta =>
-                  if (delta == 0) {
-                    Continuation.now(())
-                  } else {
-                    flushBackward(Do.delay {
-                      delta
-                    })
-                  }
-                }
+              }
             }
 
           }))

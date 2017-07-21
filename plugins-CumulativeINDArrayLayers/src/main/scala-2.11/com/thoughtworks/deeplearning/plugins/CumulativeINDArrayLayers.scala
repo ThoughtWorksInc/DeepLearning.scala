@@ -11,8 +11,7 @@ import org.nd4s.Implicits._
 import org.nd4s.IndexRange
 import com.thoughtworks.future.Future
 import Future.futureMonadError
-import com.thoughtworks.future.continuation.Continuation
-import Continuation._
+import com.thoughtworks.future.continuation.{Continuation, UnitContinuation},Continuation._
 import com.thoughtworks.tryt.covariant.TryT
 
 import scala.util.{Failure, Success, Try}
@@ -38,21 +37,23 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
 
   trait INDArrayLayerApi extends super[INDArrayLayers].INDArrayLayerApi {
 
-    private final class Accumulator(val data: INDArray, flushBackward: Do[INDArray] => Continuation[Unit])
-        extends Releasable[Continuation, Try[Accumulator]] {
+    private final class Accumulator(val data: INDArray, flushBackward: Do[INDArray] => UnitContinuation[Unit])
+        extends Releasable[UnitContinuation, Try[Accumulator]] {
       @volatile
       var currentDelta: INDArray = CumulativeINDArrayLayers.Zero
 
       override def value: Try[Accumulator] = Success(this)
 
-      override def release(): Continuation[Unit] = {
-        Continuation.delay {
+      override def release: UnitContinuation[Unit] = {
+        val deltaContinuation: UnitContinuation[INDArray] = Continuation.delay {
           synchronized {
             val delta = currentDelta
             currentDelta = null
             delta
           }
-        } flatMap {
+        }
+
+        deltaContinuation.flatMap {
           case Zero =>
             Continuation.now(())
           case nonZeroDelta =>
@@ -112,27 +113,25 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
     def apply[Out <: DoubleLayer](indices: Int*)(
         implicit implicitApply: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
       val doDoubleTape = sharedAccumulator.map { accumulator =>
-        def cumulativeBackward(doDelta: Do[Double]): Continuation[Unit] = {
-          val Future(TryT(continuation)) = Do
-            .run(doDelta)
-            .map { delta: Double =>
-              accumulator.synchronized {
-                accumulator.currentDelta = accumulator.currentDelta match {
-                  case null =>
-                    throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
-                  case Zero =>
-                    val zeros = Nd4j.zeros(accumulator.data.shape(): _*)
-                    val indexRanges = indices.map[IndexRange, Array[IndexRange]](i => i)(collection.breakOut)
-                    zeros(indexRanges) = delta
-                  case nonZeroDelta =>
-                    val broadcasted = nonZeroDelta.broadcastFix(accumulator.data.shape(): _*)
-                    val oldDelta = broadcasted(indices: _*)
-                    val indexRanges = indices.map[IndexRange, Array[IndexRange]](i => i)(collection.breakOut)
-                    broadcasted(indexRanges) = oldDelta + delta
-                    broadcasted
-                }
+        def cumulativeBackward(doDelta: Do[Double]): UnitContinuation[Unit] = {
+          val TryT(continuation) = Future.toTryT(Do.run(doDelta).map { delta: Double =>
+            accumulator.synchronized {
+              accumulator.currentDelta = accumulator.currentDelta match {
+                case null =>
+                  throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
+                case Zero =>
+                  val zeros = Nd4j.zeros(accumulator.data.shape(): _*)
+                  val indexRanges = indices.map[IndexRange, Array[IndexRange]](i => i)(collection.breakOut)
+                  zeros(indexRanges) = delta
+                case nonZeroDelta =>
+                  val broadcasted = nonZeroDelta.broadcastFix(accumulator.data.shape(): _*)
+                  val oldDelta = broadcasted(indices: _*)
+                  val indexRanges = indices.map[IndexRange, Array[IndexRange]](i => i)(collection.breakOut)
+                  broadcasted(indexRanges) = oldDelta + delta
+                  broadcasted
               }
             }
+          })
 
           continuation.map {
             case Success(()) => // Success. Do nothing
@@ -146,30 +145,28 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
 
     abstract override def forward: Do[Tape[INDArray, INDArray]] = {
       sharedAccumulator.map { accumulator =>
-        def cumulativeBackward(doDelta: Do[INDArray]): Continuation[Unit] = {
-          val Future(TryT(continuation)) = Do
-            .run(doDelta)
-            .map { delta =>
-              accumulator.synchronized {
-                accumulator.currentDelta = accumulator.currentDelta match {
-                  case null =>
-                    throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
-                  case Zero => delta
-                  case nonZeroDelta =>
-                    def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
-                      require(shape1.length == shape2.length)
-                      shape1.zip(shape2).map {
-                        case (1, bSize)                       => bSize
-                        case (aSize, 1)                       => aSize
-                        case (aSize, bSize) if aSize == bSize => aSize
-                      }
+        def cumulativeBackward(doDelta: Do[INDArray]): UnitContinuation[Unit] = {
+          val TryT(continuation) = Future.toTryT(Do.run(doDelta).map { delta =>
+            accumulator.synchronized {
+              accumulator.currentDelta = accumulator.currentDelta match {
+                case null =>
+                  throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
+                case Zero => delta
+                case nonZeroDelta =>
+                  def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
+                    require(shape1.length == shape2.length)
+                    shape1.zip(shape2).map {
+                      case (1, bSize)                       => bSize
+                      case (aSize, 1)                       => aSize
+                      case (aSize, bSize) if aSize == bSize => aSize
                     }
+                  }
 
-                    val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
-                    nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
-                }
+                  val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
+                  nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
               }
             }
+          })
 
           continuation.map {
             case Success(()) => // Success. Do nothing
