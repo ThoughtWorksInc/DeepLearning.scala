@@ -4,7 +4,7 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous.Do
 
-import scalaz.concurrent.Future
+import com.thoughtworks.future.continuation.Continuation
 
 /** A plugin that enables [[scala.Float]] in neural networks. */
 trait FloatLiterals {
@@ -15,7 +15,7 @@ trait FloatLiterals {
       override type Delta = Float
 
       override def forward(literal: Float): Do[Tape[Data, Delta]] = {
-        Do.now(Tape(literal, Function.const(Future.now(()))))
+        Do.now(Tape(literal, Function.const(Continuation.now(()))))
       }
     }
   }

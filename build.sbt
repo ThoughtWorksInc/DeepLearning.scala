@@ -2,7 +2,7 @@ parallelExecution in Global := false
 
 includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value && new SimpleFileFilter(_.isFile)
 
-lazy val DeepLearning = project
+lazy val DeepLearning = project.dependsOn(ProjectRef(file("RAII.scala"), "asynchronous"))
 
 lazy val `plugins-ImplicitsSingleton` = project
 

@@ -3,10 +3,13 @@ package com.thoughtworks.deeplearning.plugins
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
+import com.thoughtworks.future.Future
 import com.thoughtworks.raii.asynchronous.Do
-import shapeless.Witness
+import com.thoughtworks.tryt.covariant.TryT
 
-import scalaz.{-\/, \/-}
+import scala.util.{Failure, Success}
+import scalaz.syntax.functor._
+import com.thoughtworks.future.continuation.Continuation._
 
 /** A plugin that enables [[Weight]] in neural networks.
   *
@@ -30,9 +33,10 @@ trait Weights {
             val doUpdate: Do[Unit] = Do.releaseFlatMap(doDelta) { delta =>
               backward(delta)
             }
-            Do.run(doUpdate).get.map {
-              case \/-(()) => ()
-              case -\/(e)  => handleException(e)
+            val Future(TryT(continuation)) = Do.run(doUpdate)
+            continuation.map {
+              case Success(()) => ()
+              case Failure(e)  => handleException(e)
             }
           }
         ))

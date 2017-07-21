@@ -8,11 +8,15 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.covariant.ResourceT
 import org.scalactic.ErrorMessage
 import org.scalatest._
- 
+
 import scala.concurrent.{ExecutionContext, Promise}
 import scala.util.Try
 import scalaz.{-\/, \/, \/-}
-import scalaz.concurrent.{Future, Task}
+import com.thoughtworks.future.continuation.Continuation
+import com.thoughtworks.future.Future
+import Future._
+import com.thoughtworks.deeplearning.scalatest.ScalazTaskToScalaFuture
+
 import scalaz.std.iterable._
 
 object CumulativeFloatLayersSpec {
@@ -50,21 +54,12 @@ object CumulativeFloatLayersSpec {
 
   case class Boom(errorMessage: ErrorMessage) extends RuntimeException
 
-  private def jump()(implicit executionContext: ExecutionContext): Task[Unit] = {
-    Task.async { handler: ((Throwable \/ Unit) => Unit) =>
-      executionContext.execute {
-        new Runnable {
-          override def run(): Unit = handler(\/-(()))
-        }
-      }
-    }
-  }
 }
 
 /**
   * @author 杨博 (Yang Bo)
   */
-final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with Inside {
+final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with Inside with ScalazTaskToScalaFuture {
   // TODO: Add tests for exception handling
 
   import CumulativeFloatLayersSpec._
@@ -82,37 +77,25 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       6.7f + input + weight + 5.5f
     }
 
-    def train(inputData: Float): Task[Float] = {
+    def train(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    val task: Task[Unit] = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       train(1.0f).each
       train(1.0f).each
       train(1.0f).each
       train(1.0f).each
       train(1.0f).each
+      weight.data should be(-4)
     }
 
-    val p = Promise[Assertion]
-
-    task.unsafePerformAsync { either: \/[Throwable, Unit] =>
-      inside(either) {
-        case -\/(e) =>
-          p.failure(e)
-        case \/-(_) =>
-          p.success {
-            weight.data should be(-4)
-          }
-      }
-    }
-
-    p.future
   }
 
   "Plus with Predict" in {
-    val hyperparameters = Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
-      .newInstance(fixedLearningRate = 1.0f)
+    val hyperparameters =
+      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
     val weight = hyperparameters.FloatWeight(1.0f)
@@ -121,11 +104,11 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       1.0f + input + weight + 4.0f
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    val task: Task[Unit] = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       trainMyNetwork(1.0f).each
       trainMyNetwork(1.0f).each
       trainMyNetwork(1.0f).each
@@ -133,31 +116,16 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       trainMyNetwork(1.0f).each
       trainMyNetwork(1.0f).each
       trainMyNetwork(1.0f).each
+      val loss = myNetwork(1.0f).predict.each
+      loss should be(0.0f)
     }
 
-    val result = throwableMonadic[Task] {
-      task.each
-      myNetwork(1.0f).predict.each
-    }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be(0.0f)
-        }
-      }
-    }
-
-    p.future
   }
 
   "Predict -- use for" in {
-    val hyperparameters = Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
-      .newInstance(fixedLearningRate = 1.0f)
+    val hyperparameters =
+      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
     val weight = hyperparameters.FloatWeight(1.0f)
@@ -167,38 +135,26 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       //10.0f - (input - weight + 4.0f) //6
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
-    import scalaz.concurrent.Future._
+    import com.thoughtworks.future.continuation.Continuation._
     import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 6) {
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      loss should be(0.0f)
+      weight.data should be(-5)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be(0.0f)
-            weight.data should be(-5)
-        }
-      }
-    }
-
-    p.future
   }
 
   "will not stackOverFlow" in {
@@ -213,35 +169,24 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       -10.0f + 20.0f - ((input - weight + 4.0f) * 2.0f / 2.0f)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 1000) {
-        Task.apply(()).each
+        Future.jump().each
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      true should be(true)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) => true should be(true)
-        }
-      }
-    }
-
-    p.future
   }
 
   "min" in {
@@ -256,36 +201,24 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       5.0f - hyperparameters.min(5.0f, weight)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 4) {
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      loss should be(0.0f)
+      weight.data should be(5)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: Throwable \/ Float =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be(0.0f)
-            weight.data should be(5)
-        }
-      }
-    }
-
-    p.future
   }
 
   "max" in {
@@ -300,41 +233,30 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       10.0f - hyperparameters.max(0.0f, weight)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 9) {
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      loss should be(0.0f)
+      weight.data should be(10)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: Throwable \/ Float =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            loss should be(0.0f)
-            weight.data should be(10)
-        }
-      }
-    }
-
-    p.future
   }
 
   "log" in {
-    val hyperparameters = Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
-      .newInstance(fixedLearningRate = 0.5f)
+    val hyperparameters =
+      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        .newInstance(fixedLearningRate = 0.5f)
     import hyperparameters.implicits._
 
     val weight = hyperparameters.FloatWeight(1.0f)
@@ -345,42 +267,30 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       log5 - hyperparameters.log(weight)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 23) {
-        jump().each
+        Future.jump().each
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      scala.math.abs(weight.data - 5) should be < 0.1f
+      loss should be < 0.1f
     }
-
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            scala.math.abs(weight.data - 5) should be < 0.1f
-            loss should be < 0.1f
-        }
-      }
-    }
-
-    p.future
   }
 
   "exp" in {
-    val hyperparameters = Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
-      .newInstance(fixedLearningRate = 0.1f)
+    val hyperparameters =
+      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        .newInstance(fixedLearningRate = 0.1f)
     import hyperparameters.implicits._
 
     val weight = hyperparameters.FloatWeight(1.0f)
@@ -391,36 +301,24 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       exp3 - hyperparameters.exp(weight)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 4) {
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      scala.math.abs(weight.data - 3) should be < 0.1f
+      loss should be < 0.5f
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            scala.math.abs(weight.data - 3) should be < 0.1f
-            loss should be < 0.5f
-        }
-      }
-    }
-
-    p.future
   }
 
   "abs" in {
@@ -435,35 +333,24 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       5.0f - hyperparameters.abs(weight)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 4) {
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      weight.data should be(5.0f)
+      loss should be(0)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            weight.data should be(5.0f)
-            loss should be(0)
-        }
-      }
-    }
-    p.future
   }
 
   "unary_-" in {
@@ -478,34 +365,23 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
       hyperparameters.abs(-weight)
     }
 
-    def trainMyNetwork(inputData: Float): Task[Float] = {
+    def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
 
-    @monadic[Task]
-    val task: Task[Unit] = {
+    @monadic[Future]
+    val task: Future[Unit] = {
       for (_ <- 1 to 5) {
         trainMyNetwork(1.0f).each
       }
     }
 
-    val result = throwableMonadic[Task] {
+    throwableMonadic[Future] {
       task.each
-      myNetwork(1.0f).predict.each
+      val loss = myNetwork(1.0f).predict.each
+      weight.data should be(0.0f)
+      loss should be(0)
     }
 
-    val p = Promise[Assertion]
-
-    result.unsafePerformAsync { either: \/[Throwable, Float] =>
-      p.success {
-        inside(either) {
-          case -\/(e) => throw e
-          case \/-(loss) =>
-            weight.data should be(0.0f)
-            loss should be(0)
-        }
-      }
-    }
-    p.future
   }
 }

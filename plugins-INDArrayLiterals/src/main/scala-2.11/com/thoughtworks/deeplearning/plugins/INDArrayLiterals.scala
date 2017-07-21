@@ -4,7 +4,7 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous.Do
 
-import scalaz.concurrent.Future
+import com.thoughtworks.future.continuation.Continuation
 
 import org.nd4j.linalg.api.ndarray.INDArray
 
@@ -17,7 +17,7 @@ trait INDArrayLiterals {
         override type Delta = INDArray
 
         override def forward(literal: INDArray): Do[Tape[Data, Delta]] = {
-          Do.now(Tape(literal, Function.const(Future.now(()))))
+          Do.now(Tape(literal, Function.const(Continuation.now(()))))
         }
       }
   }

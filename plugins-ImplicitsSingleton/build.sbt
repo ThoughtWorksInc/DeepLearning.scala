@@ -1,6 +1,4 @@
-libraryDependencies += "org.scalaz" %% "scalaz-effect" % "7.2.11"
-
-libraryDependencies += "com.thoughtworks.raii" %% "asynchronous" % "1.0.0"
+libraryDependencies += "org.scalaz" %% "scalaz-effect" % "7.2.14"
 
 libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.0.1"
 

@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 
-import scalaz.concurrent.{Future, Task}
+import com.thoughtworks.future.continuation.Continuation, com.thoughtworks.future.Future
 import scalaz.syntax.all._
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
@@ -13,7 +13,7 @@ import algebra.ring.MultiplicativeMonoid
 object DeepLearning {
 
   /** The node of wengert list created during [[DeepLearning.forward forward]] pass */
-  final case class Tape[+Data, -Delta](data: Data, backward: Do[Delta] => Future[Unit])
+  final case class Tape[+Data, -Delta](data: Data, backward: Do[Delta] => Continuation[Unit])
 
   type Aux[Differentiable, Data0, Delta0] = DeepLearning[Differentiable] {
     type Data = Data0
@@ -33,11 +33,11 @@ object DeepLearning {
     /** Returns an asynchronous operation of forward pass, which creates a wengert list. */
     def forward(differentiable: Differentiable): Do[Tape[Data, Delta]]
 
-    /** Returns a [[scalaz.concurrent.Task Task]] that updates [[plugins.Weights.Weight Weight]] internally used by `differentiable`. */
-    def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Task[Data]
+    /** Returns a [[com.thoughtworks.future.Future Future]] that updates [[plugins.Weights.Weight Weight]] internally used by `differentiable`. */
+    def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Future[Data]
 
-    /** Returns a [[scalaz.concurrent.Task Task]] of the [[DeepLearning.Tape.data data]] of the `differentiable` expression. */
-    def predict(differentiable: Differentiable): Task[Data]
+    /** Returns a [[com.thoughtworks.future.Future Future]] of the [[DeepLearning.Tape.data data]] of the `differentiable` expression. */
+    def predict(differentiable: Differentiable): Future[Data]
   }
 
 }
@@ -59,15 +59,18 @@ trait DeepLearning[Differentiable] extends SimulacrumIssue82WorkAround[Different
 
   def forward(differentiable: Differentiable): Do[Tape[Data, Delta]]
 
-  final def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Task[Data] = {
+  final def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Future[Data] = {
     Do.run(forward(differentiable).flatMap[Data] { tape =>
-      Do.delay(tape.backward(Do.now(monoid.one))).map { _ =>
-        tape.data
-      }
+      Do.fromContinuation {
+          tape.backward(Do.now(monoid.one))
+        }
+        .map { loss =>
+          tape.data
+        }
     })
   }
 
-  final def predict(differentiable: Differentiable): Task[Data] = {
+  final def predict(differentiable: Differentiable): Future[Data] = {
     Do.run(forward(differentiable).map(_.data))
   }
 }

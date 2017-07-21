@@ -9,7 +9,7 @@ import com.thoughtworks.raii.asynchronous.Do._
 import scalaz.syntax.all._
 import scala.annotation.meta.getter
 import scalaz.Apply
-import scalaz.concurrent.Future
+import com.thoughtworks.future.continuation.Continuation, Continuation.continuationMonad
 import DeepLearning.ops._
 
 /** A plugin that provides differentiable operators

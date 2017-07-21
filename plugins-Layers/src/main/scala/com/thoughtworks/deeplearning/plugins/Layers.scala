@@ -13,7 +13,7 @@ import shapeless.poly.Case1
 
 import scalaz.syntax.all._
 import scala.annotation.meta.getter
-import scalaz.concurrent.Task
+import com.thoughtworks.future.Future
 
 /** A plugin that enables [[Layer]] in neural networks. */
 trait Layers {

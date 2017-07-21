@@ -9,9 +9,13 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.nd4s.IndexRange
+import com.thoughtworks.future.Future
+import Future.futureMonadError
+import com.thoughtworks.future.continuation.Continuation
+import Continuation._
+import com.thoughtworks.tryt.covariant.TryT
 
-import scalaz.concurrent.Future
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, \/-}
 import scalaz.syntax.all._
 
@@ -34,15 +38,15 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
 
   trait INDArrayLayerApi extends super[INDArrayLayers].INDArrayLayerApi {
 
-    private final class Accumulator(val data: INDArray, flushBackward: Do[INDArray] => Future[Unit])
-        extends Releasable[Future, Try[Accumulator]] {
+    private final class Accumulator(val data: INDArray, flushBackward: Do[INDArray] => Continuation[Unit])
+        extends Releasable[Continuation, Try[Accumulator]] {
       @volatile
       var currentDelta: INDArray = CumulativeINDArrayLayers.Zero
 
       override def value: Try[Accumulator] = Success(this)
 
-      override def release(): Future[Unit] = {
-        Future.delay {
+      override def release(): Continuation[Unit] = {
+        Continuation.delay {
           synchronized {
             val delta = currentDelta
             currentDelta = null
@@ -50,7 +54,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
           }
         } flatMap {
           case Zero =>
-            Future.now(())
+            Continuation.now(())
           case nonZeroDelta =>
             flushBackward(Do.now(nonZeroDelta))
         }
@@ -60,7 +64,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
     private lazy val sharedAccumulator = {
       Do.shared(super.forward.flatMap {
         case Tape(data, flushBackward) =>
-          Do(Future.delay(new Accumulator(data, flushBackward)))
+          Do[Accumulator](Continuation.delay(new Accumulator(data, flushBackward)))
       })
     }
 
@@ -108,8 +112,9 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
     def apply[Out <: DoubleLayer](indices: Int*)(
         implicit implicitApply: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
       val doDoubleTape = sharedAccumulator.map { accumulator =>
-        def cumulativeBackward(doDelta: Do[Double]): Future[Unit] = {
-          Do.run(doDelta)
+        def cumulativeBackward(doDelta: Do[Double]): Continuation[Unit] = {
+          val Future(TryT(continuation)) = Do
+            .run(doDelta)
             .map { delta: Double =>
               accumulator.synchronized {
                 accumulator.currentDelta = accumulator.currentDelta match {
@@ -128,11 +133,11 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
                 }
               }
             }
-            .get
-            .map {
-              case \/-(()) => // Success. Do nothing
-              case -\/(e)  => handleException(e)
-            }
+
+          continuation.map {
+            case Success(()) => // Success. Do nothing
+            case Failure(e)  => handleException(e)
+          }
         }
         Tape(accumulator.data(indices: _*), cumulativeBackward)
       }
@@ -140,39 +145,39 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
     }
 
     abstract override def forward: Do[Tape[INDArray, INDArray]] = {
-        sharedAccumulator.map { accumulator =>
-          def cumulativeBackward(doDelta: Do[INDArray]): Future[Unit] = {
-            Do.run(doDelta)
-              .map {
-                delta =>
-                  accumulator.synchronized {
-                    accumulator.currentDelta = accumulator.currentDelta match {
-                      case null =>
-                        throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
-                      case Zero => delta
-                      case nonZeroDelta =>
-                        def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
-                          require(shape1.length == shape2.length)
-                          shape1.zip(shape2).map {
-                            case (1, bSize)                       => bSize
-                            case (aSize, 1)                       => aSize
-                            case (aSize, bSize) if aSize == bSize => aSize
-                          }
-                        }
-
-                        val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
-                        nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
+      sharedAccumulator.map { accumulator =>
+        def cumulativeBackward(doDelta: Do[INDArray]): Continuation[Unit] = {
+          val Future(TryT(continuation)) = Do
+            .run(doDelta)
+            .map { delta =>
+              accumulator.synchronized {
+                accumulator.currentDelta = accumulator.currentDelta match {
+                  case null =>
+                    throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
+                  case Zero => delta
+                  case nonZeroDelta =>
+                    def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
+                      require(shape1.length == shape2.length)
+                      shape1.zip(shape2).map {
+                        case (1, bSize)                       => bSize
+                        case (aSize, 1)                       => aSize
+                        case (aSize, bSize) if aSize == bSize => aSize
+                      }
                     }
-                  }
+
+                    val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
+                    nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
+                }
               }
-              .get
-              .map {
-                case \/-(()) => // Success. Do nothing
-                case -\/(e)  => handleException(e)
-              }
+            }
+
+          continuation.map {
+            case Success(()) => // Success. Do nothing
+            case Failure(e)  => handleException(e)
           }
-          Tape(accumulator.data, cumulativeBackward)
         }
+        Tape(accumulator.data, cumulativeBackward)
+      }
     }
 
   }

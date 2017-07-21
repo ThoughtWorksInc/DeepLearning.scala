@@ -6,10 +6,12 @@ import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.shared._
 import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.TryT
+import com.thoughtworks.future.continuation.Continuation
+import Continuation.continuationMonad
+import com.thoughtworks.future.Future
+import Future.futureMonadError
 
-import scalaz.concurrent.Future
-import scala.util.{Success, Try}
-import scalaz.{-\/, \/-}
+import scala.util.{Failure, Success, Try}
 import scalaz.syntax.all._
 
 /** A plugin that provides differentiable operators
@@ -76,31 +78,30 @@ trait CumulativeFloatLayers extends FloatLayers {
     private def doCumulativeTape: Do[Tape[Float, Float]] = {
       super.forward.flatMap {
         case Tape(data, flushBackward) =>
-          Do(Future.delay(new Releasable[Future, Try[Tape[Float, Float]]] {
+          Do(Continuation.delay(new Releasable[Continuation, Try[Tape[Float, Float]]] {
 
             @volatile
             private var currentDelta: Float = 0
 
             override def value: Try[Tape[Float, Float]] = {
-              def cumulativeBackward(doDelta: Do[Float]): Future[Unit] = {
-                Do.run(doDelta)
-                  .map { delta =>
-                    synchronized {
-                      currentDelta += delta
-                    }
+              def cumulativeBackward(doDelta: Do[Float]): Continuation[Unit] = {
+                val Future(TryT(continuation)) = Do.run(doDelta).map { delta =>
+                  synchronized {
+                    currentDelta += delta
                   }
-                  .get
-                  .map {
-                    case \/-(()) => // Success. Do nothing
-                    case -\/(e)  => handleException(e)
-                  }
+                }
+
+                continuation.map {
+                  case Success(()) => // Success. Do nothing
+                  case Failure(e)  => handleException(e)
+                }
               }
 
               Success(Tape(data, cumulativeBackward))
             }
 
-            override def release(): Future[Unit] = {
-              Future
+            override def release(): Continuation[Unit] = {
+              Continuation
                 .delay {
                   synchronized {
                     val delta = currentDelta
@@ -110,7 +111,7 @@ trait CumulativeFloatLayers extends FloatLayers {
                 }
                 .flatMap { delta =>
                   if (delta == 0) {
-                    Future.now(())
+                    Continuation.now(())
                   } else {
                     flushBackward(Do.delay {
                       delta

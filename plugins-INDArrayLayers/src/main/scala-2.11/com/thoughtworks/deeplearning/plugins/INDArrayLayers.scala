@@ -21,9 +21,9 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.util.ArrayUtil
 
 import scala.concurrent.ExecutionContext
-import scalaz.concurrent.Future
+import com.thoughtworks.future.continuation.{Continuation, ParallelContinuation}
+
 import scala.util.control.NoStackTrace
-import scalaz.concurrent.Future.ParallelFuture
 
 object INDArrayLayers {
 
@@ -117,10 +117,10 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   }
 
   @transient
-  implicit private lazy val unitFutureSemigroup: Semigroup[Future[Unit]] = {
+  implicit private lazy val unitFutureSemigroup: Semigroup[Continuation[Unit]] = {
     Parallel.unsubst(
-      Semigroup.liftSemigroup[ParallelFuture, Unit](
-        Future.futureParallelApplicativeInstance,
+      Semigroup.liftSemigroup[ParallelContinuation, Unit](
+        Continuation.continuationParallelApplicative,
         scalaz.std.anyVal.unitInstance
       )
     )
