@@ -21,7 +21,7 @@ import scalaz.syntax.all._
   *       created in [[FloatLayer.forward forward]] pass pass for all dependencies, avoiding re-evaluation
   *       in the case of diamond dependencies in a neural network.
   *
-  * @example Given two [[FloatWeight]]s,
+  * @example Given two [[FloatWeights.FloatWeight FloatWeight]]s,
   *
   *          {{{
   *          import com.thoughtworks.deeplearning.plugins._
@@ -49,7 +49,7 @@ import scalaz.syntax.all._
   *          }
   *          }}}
   *
-  * @example Given a [[FloatWeight]],
+  * @example Given a [[FloatWeights.FloatWeight FloatWeight]],
   *
   *          {{{
   *          import com.thoughtworks.deeplearning.plugins._
