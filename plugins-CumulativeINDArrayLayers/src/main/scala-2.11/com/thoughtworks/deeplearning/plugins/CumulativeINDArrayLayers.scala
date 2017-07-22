@@ -61,12 +61,13 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
     }
 
     private lazy val sharedAccumulator = {
-      Do.shared(super.forward.flatMap {
+      val doAccumulator = super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(TryT(ResourceT(Continuation.delay[Unit, Releasable[UnitContinuation, Try[Accumulator]]] {
             new Accumulator(data, flushBackward)
           })))
-      })
+      }
+      doAccumulator.shared
     }
 
     /** @usecase def apply(indices: Int*): DoubleLayer = ???
@@ -114,7 +115,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
         implicit implicitApply: ImplicitApply.Aux[doublePartialApplyRawForward.Rest, Out]): Out = {
       val doDoubleTape = sharedAccumulator.map { accumulator =>
         def cumulativeBackward(doDelta: Do[Double]): UnitContinuation[Unit] = {
-          val Future(TryT(continuation)) = Do.run(doDelta).map { delta: Double =>
+          val Future(TryT(continuation)) = doDelta.run.map { delta: Double =>
             accumulator.synchronized {
               accumulator.currentDelta = accumulator.currentDelta match {
                 case null =>
@@ -146,7 +147,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
     abstract override def forward: Do[Tape[INDArray, INDArray]] = {
       sharedAccumulator.map { accumulator =>
         def cumulativeBackward(doDelta: Do[INDArray]): UnitContinuation[Unit] = {
-          val Future(TryT(continuation)) = Do.run(doDelta).map { delta =>
+          val Future(TryT(continuation)) = doDelta.run.map { delta =>
             accumulator.synchronized {
               accumulator.currentDelta = accumulator.currentDelta match {
                 case null =>

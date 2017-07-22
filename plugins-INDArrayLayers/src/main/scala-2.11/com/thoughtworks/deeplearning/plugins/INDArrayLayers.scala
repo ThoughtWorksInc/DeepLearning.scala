@@ -123,7 +123,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
 
   @transient
   private lazy val doParallelApplicative =
-    com.thoughtworks.raii.asynchronous.doParallelApplicative(new Semigroup[Throwable] {
+    com.thoughtworks.raii.asynchronous.asynchronousDoParallelApplicative(new Semigroup[Throwable] {
       override def append(f1: Throwable, f2: => Throwable): Throwable =
         f1 match {
           case MultipleException(exceptionSet1) =>
@@ -728,13 +728,13 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         implicit deepLearning0: DeepLearning.Aux[Operand0, Input0Data, Input0Delta],
         layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]
     ): Out = {
-      INDArrayLayer(Do.intransitiveFlatMap(Do.execute(())) { _ =>
+      INDArrayLayer(Do.execute(()).intransitiveFlatMap { _ =>
         deepLearning0.forward(operand0).map {
           case Tape(data0, backward0) =>
             val (outputData, delta0) = f(data0)
             val outputShape = outputData.shape
             def backward(doOutputDelta: Do[INDArray]) = {
-              backward0(Do.intransitiveFlatMap(Do.execute(())) { _ =>
+              backward0(Do.execute(()).intransitiveFlatMap { _ =>
                 doOutputDelta.map { outputDelta =>
                   delta0(outputDelta.broadcastFix(outputShape: _*))
                 }
@@ -754,17 +754,17 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         deepLearning1: DeepLearning.Aux[Operand1, Input1Data, Input1Delta],
         layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]
     ): Out = {
-      INDArrayLayer(Do.intransitiveFlatMap(Do.execute(())) { _ =>
+      INDArrayLayer(Do.execute(()).intransitiveFlatMap { _ =>
         parallelApply2(deepLearning0.forward(operand0), deepLearning1.forward(operand1)) {
           case (Tape(data0, backward0), Tape(data1, backward1)) =>
             val (outputData, delta0, delta1) = f(data0, data1)
             val outputShape = outputData.shape
             def backward(doOutputDelta: Do[INDArray]) = {
-              backward0(Do.intransitiveFlatMap(Do.execute(())) { _ =>
+              backward0(Do.execute(()).intransitiveFlatMap { _ =>
                 doOutputDelta.map { outputDelta =>
                   delta0(outputDelta.broadcastFix(outputShape: _*))
                 }
-              }) |+| backward1(Do.intransitiveFlatMap(Do.execute(())) { _ =>
+              }) |+| backward1(Do.execute(()).intransitiveFlatMap { _ =>
                 doOutputDelta.map { outputDelta =>
                   delta1(outputDelta.broadcastFix(outputShape: _*))
                 }
