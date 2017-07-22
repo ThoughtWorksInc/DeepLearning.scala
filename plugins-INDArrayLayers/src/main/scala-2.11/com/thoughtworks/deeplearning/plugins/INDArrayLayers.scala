@@ -6,24 +6,19 @@ import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
-import com.thoughtworks.raii.asynchronous.{Do, ParallelDo}
-import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.asynchronous._
 import org.nd4j.linalg.api.ndarray.INDArray
 
-import scala.annotation.meta.getter
 import scalaz.syntax.all._
 import scalaz.Tags.Parallel
-import scalaz.{@@, Apply, Isomorphism, IsomorphismSemigroup, Semigroup}
+import scalaz.Semigroup
 import org.nd4s.Implicits._
 import org.nd4j.linalg.ops.transforms.Transforms
 import DeepLearning.ops._
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.util.ArrayUtil
 
 import scala.concurrent.ExecutionContext
-import com.thoughtworks.future.continuation.{Continuation, ParallelContinuation, UnitContinuation}
-
-import scala.util.control.NoStackTrace
+import com.thoughtworks.continuation._
 
 object INDArrayLayers {
 
@@ -120,28 +115,29 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   implicit private lazy val unitFutureSemigroup: Semigroup[UnitContinuation[Unit]] = {
     Parallel.unsubst(
       Semigroup.liftSemigroup[ParallelContinuation, Unit](
-        Continuation.continuationParallelApplicative,
+        continuationParallelApplicative,
         scalaz.std.anyVal.unitInstance
       )
     )
   }
 
   @transient
-  private lazy val doParallelApplicative = ParallelDo.doParallelApplicative(new Semigroup[Throwable] {
-    override def append(f1: Throwable, f2: => Throwable): Throwable =
-      f1 match {
-        case MultipleException(exceptionSet1) =>
-          f2 match {
-            case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
-            case _: Throwable                     => MultipleException(exceptionSet1 + f2)
-          }
-        case _: Throwable =>
-          f2 match {
-            case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
-            case _: Throwable                     => MultipleException(Set(f1, f2))
-          }
-      }
-  })
+  private lazy val doParallelApplicative =
+    com.thoughtworks.raii.asynchronous.doParallelApplicative(new Semigroup[Throwable] {
+      override def append(f1: Throwable, f2: => Throwable): Throwable =
+        f1 match {
+          case MultipleException(exceptionSet1) =>
+            f2 match {
+              case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
+              case _: Throwable                     => MultipleException(exceptionSet1 + f2)
+            }
+          case _: Throwable =>
+            f2 match {
+              case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
+              case _: Throwable                     => MultipleException(Set(f1, f2))
+            }
+        }
+    })
 
   private def parallelApply2[A, B, C](doA: Do[A], doB: Do[B])(f: (A, B) => C): Do[C] = {
     Parallel.unwrap(doParallelApplicative.apply2(Parallel(doA), Parallel(doB))(f))

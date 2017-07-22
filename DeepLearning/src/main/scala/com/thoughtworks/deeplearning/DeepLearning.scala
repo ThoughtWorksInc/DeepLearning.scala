@@ -1,11 +1,10 @@
 package com.thoughtworks.deeplearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
-import com.thoughtworks.future.continuation.{Continuation, UnitContinuation}
-import com.thoughtworks.future.Future
+import com.thoughtworks.continuation._
+import com.thoughtworks.future._
 
 import scalaz.syntax.all._
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.asynchronous._
 import simulacrum.typeclass
 
 import scala.language.implicitConversions

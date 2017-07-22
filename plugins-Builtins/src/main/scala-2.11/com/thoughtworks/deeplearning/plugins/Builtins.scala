@@ -51,7 +51,7 @@ package com.thoughtworks.deeplearning.plugins
   *          Training:
   *          {{{
   *          import scalaz.std.stream._
-  *          import com.thoughtworks.future.Future, Future._
+  *          import com.thoughtworks.future._
   *          import com.thoughtworks.each.Monadic._
   *          }}}
   *

@@ -3,14 +3,13 @@ package com.thoughtworks.deeplearning.plugins
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
-import com.thoughtworks.future.Future
+import com.thoughtworks.future._
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.tryt.covariant.TryT
 
 import scala.util.{Failure, Success}
 import scalaz.syntax.functor._
-import com.thoughtworks.future.continuation.Continuation._
-import com.thoughtworks.future.continuation.UnitContinuation
+import com.thoughtworks.continuation._
 
 /** A plugin that enables [[Weight]] in neural networks.
   *

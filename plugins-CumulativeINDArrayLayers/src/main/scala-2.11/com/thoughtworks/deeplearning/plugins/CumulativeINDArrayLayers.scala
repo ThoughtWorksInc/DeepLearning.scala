@@ -2,17 +2,14 @@ package com.thoughtworks.deeplearning
 package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.ImplicitApply
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
 import org.nd4s.IndexRange
-import com.thoughtworks.future.Future
-import Future.futureMonadError
-import com.thoughtworks.future.continuation.{Continuation, UnitContinuation}
-import Continuation._
+import com.thoughtworks.future._
+import com.thoughtworks.continuation._
 import com.thoughtworks.tryt.covariant.TryT
 
 import scala.util.{Failure, Success, Try}
