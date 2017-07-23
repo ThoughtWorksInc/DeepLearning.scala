@@ -1,15 +1,12 @@
 package com.thoughtworks.deeplearning
 package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.shared._
 import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.TryT
-import com.thoughtworks.future.continuation.{Continuation, UnitContinuation}
-import Continuation.continuationMonad
-import com.thoughtworks.future.Future
-import Future.futureMonadError
+import com.thoughtworks.continuation._
+import com.thoughtworks.future._
 
 import scala.util.{Failure, Success, Try}
 import scalaz.syntax.all._
@@ -75,8 +72,9 @@ trait CumulativeFloatLayers extends FloatLayers {
 
   trait FloatLayerApi extends super[FloatLayers].FloatLayerApi {
 
-    private def doCumulativeTape: Do[Tape[Float, Float]] = {
-      super.forward.flatMap {
+    @transient
+    private lazy val sharedForward: Do[Tape[Float, Float]] = {
+      val doCumulativeTape: Do[Tape[Float, Float]] = super.forward.flatMap {
         case Tape(data, flushBackward) =>
           Do(TryT(ResourceT(Continuation.delay[Unit, Releasable[UnitContinuation, Try[Tape[Float, Float]]]] {
             new Releasable[UnitContinuation, Try[Tape[Float, Float]]] {
@@ -86,7 +84,7 @@ trait CumulativeFloatLayers extends FloatLayers {
 
               override def value: Try[Tape[Float, Float]] = {
                 def cumulativeBackward(doDelta: Do[Float]): UnitContinuation[Unit] = {
-                  val Future(TryT(continuation)) = Do.run(doDelta).map { delta =>
+                  val Future(TryT(continuation)) = doDelta.run.map { delta =>
                     synchronized {
                       currentDelta += delta
                     }
@@ -123,11 +121,8 @@ trait CumulativeFloatLayers extends FloatLayers {
             }
           })))
       }
-    }
 
-    @transient
-    private lazy val sharedForward: Do[Tape[Float, Float]] = {
-      Do.shared(doCumulativeTape)
+      doCumulativeTape.shared
     }
 
     abstract override def forward: Do[DeepLearning.Tape[Float, Float]] = sharedForward

@@ -5,7 +5,7 @@ exampleSuperTypes ~= { oldExampleSuperTypes =>
   updated(indexOf("_root_.org.scalatest.FreeSpec"), "_root_.org.scalatest.AsyncFreeSpec")
 }
 
-exampleSuperTypes += "_root_.com.thoughtworks.deeplearning.scalatest.ScalazTaskToScalaFuture"
+exampleSuperTypes += "_root_.com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture"
 
 libraryDependencies ++= {
   import Ordering.Implicits._

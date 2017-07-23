@@ -1,11 +1,10 @@
 package com.thoughtworks.deeplearning
 package plugins
 
-import com.thoughtworks.deeplearning.scalatest.ScalazTaskToScalaFuture
+import com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.feature.{Factory, ImplicitApply}
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.asynchronous._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.api.ops.impl.transforms.IsMax
 import org.nd4j.linalg.convolution.Convolution
@@ -15,10 +14,8 @@ import org.nd4j.linalg.util.ArrayUtil
 import org.scalatest._
 import org.nd4s.Implicits._
 
-import scala.concurrent.Promise
-import scalaz.{-\/, \/, \/-}
-import com.thoughtworks.future.Future, Future.futureMonadError
-import com.thoughtworks.future.continuation.Continuation, Continuation.continuationMonad
+import com.thoughtworks.continuation._
+import com.thoughtworks.future._
 
 import scalaz.std.iterable._
 
@@ -265,7 +262,11 @@ object CumulativeINDArrayLayersSpec {
 /**
   * @author 杨博 (Yang Bo)
   */
-class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Inside with ScalazTaskToScalaFuture {
+class CumulativeINDArrayLayersSpec
+    extends AsyncFreeSpec
+    with Matchers
+    with Inside
+    with ThoughtworksFutureToScalaFuture {
 
   import CumulativeINDArrayLayersSpec._
 
@@ -421,10 +422,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(input: INDArray): hyperparameters.INDArrayLayer = {
       1.0 / weight
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 20000) {
@@ -470,10 +467,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(input: INDArray): hyperparameters.INDArrayLayer = {
       hyperparameters.exp(weight)
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 50) {
@@ -497,10 +490,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(input: INDArray): hyperparameters.INDArrayLayer = {
       hyperparameters.log(weight)
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 50) {
@@ -524,10 +513,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(input: INDArray): hyperparameters.INDArrayLayer = {
       hyperparameters.abs(weight)
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 10) {
@@ -552,10 +537,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       def RichINDArray = ??? // Disable org.nd4s.Implicits.RichINDArray
       input dot weight
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 10) {
@@ -600,10 +581,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(kernel: (Int, Int), stride: (Int, Int), padding: (Int, Int)): hyperparameters.INDArrayLayer = {
       hyperparameters.im2col(weight, kernel, stride, padding)
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 1000) {
@@ -690,9 +667,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
       weight * input
     }
 
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     val input = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
 
     myNetwork(input).train.map { (result) =>
@@ -708,9 +682,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(input: INDArray): hyperparameters.INDArrayLayer = {
       weight * input
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     val input = (0 until (1 * 2 * 3 * 4)).toNDArray.reshape(1, 2, 3, 4)
 
@@ -775,10 +746,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(): hyperparameters.DoubleLayer = {
       weight.sum
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 54) {
@@ -825,10 +792,6 @@ class CumulativeINDArrayLayersSpec extends AsyncFreeSpec with Matchers with Insi
     def myNetwork(dimensions: Int*): hyperparameters.INDArrayLayer = {
       weight.sum(dimensions: _*)
     }
-
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
-
     @monadic[Future]
     val task: Future[Unit] = {
       for (_ <- 1 to 54) {

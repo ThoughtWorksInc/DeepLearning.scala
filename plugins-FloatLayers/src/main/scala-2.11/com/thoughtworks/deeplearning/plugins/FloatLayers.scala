@@ -3,13 +3,13 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.feature.Factory.inject
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.raii.asynchronous._
 
 import scalaz.syntax.all._
 import scala.annotation.meta.getter
 import scalaz.Apply
-import com.thoughtworks.future.continuation.Continuation, Continuation.continuationMonad
+import com.thoughtworks.continuation._
+import com.thoughtworks.future._
 import DeepLearning.ops._
 
 /** A plugin that provides differentiable operators

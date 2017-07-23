@@ -1,21 +1,13 @@
 package com.thoughtworks.deeplearning
 package plugins
 
-import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.Factory
-import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.each.Monadic._
-import com.thoughtworks.raii.covariant.ResourceT
 import org.scalactic.ErrorMessage
 import org.scalatest._
 
-import scala.concurrent.{ExecutionContext, Promise}
-import scala.util.Try
-import scalaz.{-\/, \/, \/-}
-import com.thoughtworks.future.continuation.Continuation
-import com.thoughtworks.future.Future
-import Future._
-import com.thoughtworks.deeplearning.scalatest.ScalazTaskToScalaFuture
+import com.thoughtworks.future._
+import com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture
 
 import scalaz.std.iterable._
 
@@ -59,7 +51,11 @@ object CumulativeFloatLayersSpec {
 /**
   * @author 杨博 (Yang Bo)
   */
-final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with Inside with ScalazTaskToScalaFuture {
+final class CumulativeFloatLayersSpec
+    extends AsyncFreeSpec
+    with Matchers
+    with Inside
+    with ThoughtworksFutureToScalaFuture {
   // TODO: Add tests for exception handling
 
   import CumulativeFloatLayersSpec._
@@ -138,8 +134,6 @@ final class CumulativeFloatLayersSpec extends AsyncFreeSpec with Matchers with I
     def trainMyNetwork(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
     }
-    import com.thoughtworks.future.continuation.Continuation._
-    import com.thoughtworks.raii.asynchronous.Do.doMonadErrorInstances
 
     @monadic[Future]
     val task: Future[Unit] = {

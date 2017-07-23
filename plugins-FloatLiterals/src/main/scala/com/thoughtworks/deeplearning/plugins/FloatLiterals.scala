@@ -4,7 +4,7 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous.Do
 
-import com.thoughtworks.future.continuation.Continuation
+import com.thoughtworks.continuation.Continuation
 
 /** A plugin that enables [[scala.Float]] in neural networks. */
 trait FloatLiterals {

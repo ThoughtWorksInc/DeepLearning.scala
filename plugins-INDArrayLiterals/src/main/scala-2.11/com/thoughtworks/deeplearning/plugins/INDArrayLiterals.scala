@@ -4,7 +4,7 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous.Do
 
-import com.thoughtworks.future.continuation.Continuation
+import com.thoughtworks.continuation._
 
 import org.nd4j.linalg.api.ndarray.INDArray
 
