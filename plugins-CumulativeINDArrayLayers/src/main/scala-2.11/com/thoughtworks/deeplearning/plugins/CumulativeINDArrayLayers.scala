@@ -164,7 +164,9 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
                   }
 
                   val shape = autoBroadcastShape(nonZeroDelta.shape(), delta.shape())
-                  nonZeroDelta.broadcastFix(shape: _*) + delta.broadcastFix(shape: _*)
+                  val broadcastDelta = nonZeroDelta.broadcastFix(shape: _*)
+                  broadcastDelta += delta.broadcastFix(shape: _*)
+                  broadcastDelta
               }
             }
           }
