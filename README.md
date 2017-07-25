@@ -9,7 +9,7 @@
  
  * DeepLearning.scala runs on JVM, can be used either in standalone JVM applications or a Jupyter Notebooks.
  * DeepLearning.scala is expressive. Various types of neural network layers can be created by composing `map`, `reduce` or other higher order functions.
- * DeepLearning.scala supports plug-ins. There are various plug-ins providing algorithms, models, hyperparameters or other features.
+ * DeepLearning.scala supports plugins. There are various plugins providing algorithms, models, hyperparameters or other features.
  * All the above features are statically type checked.
 
 ## Features
@@ -45,7 +45,7 @@ With the ability of creating dynamic neural networks, regular programmers are ab
 
 ### Functional programming
 
-DeepLearning.scala 2.0 is based on Monads, which are composable, thus a complex layer can be built from primitive operators. Along with the Monad, we provide an Applicative type class, to perform multiple calculations in parallel.
+DeepLearning.scala 2.0 is based on Monads, which are composable, thus a complex layer can be built from primitive operators or higher order functions like `map`/`reduce`. Along with the Monad, we provide an Applicative type class, to perform multiple calculations in parallel.
 
 For example, the previous example can be rewritten in higher-order function style as following:
 
