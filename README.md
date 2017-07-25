@@ -16,7 +16,7 @@
 
 ### Differentiable programming
 
-Like other deep learning toolkits, DeepLearning.scala allows you to build neural networks from mathematical formulas. It supports [floats](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/1.0.0/com/thoughtworks/deeplearning/DifferentiableFloat$.html), [doubles](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/1.0.0/com/thoughtworks/deeplearning/DifferentiableDouble$.html), [GPU-accelerated N-dimensional arrays](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/1.0.0/com/thoughtworks/deeplearning/DifferentiableINDArray$.html), and calculates derivatives of the weights in the formulas.
+Like other deep learning toolkits, DeepLearning.scala allows you to build neural networks from mathematical formulas. It supports [floats](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/plugins/FloatLayers.html), [doubles](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/plugins/DoubleLayers.html), [GPU-accelerated N-dimensional arrays](https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/plugins/INDArrayLayers.html), and calculates derivatives of the weights in the formulas.
 
 ### Dynamic neural networks
 
