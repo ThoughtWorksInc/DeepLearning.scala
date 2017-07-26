@@ -77,7 +77,7 @@ Version 2.0 is the current version with all of the above features.
 
 ### v3.0
 
-* Support `map`/`reduce` and other higher-order functions on GPU-accelerated differentiable N-dimensional arrays.
+* Support element-wise `map`/`reduce` and other higher-order functions on GPU.
 * Support distributed models and distributed training on [Spark](https://spark.apache.org/).
 
 Version 3.0 will be released in late 2017.
