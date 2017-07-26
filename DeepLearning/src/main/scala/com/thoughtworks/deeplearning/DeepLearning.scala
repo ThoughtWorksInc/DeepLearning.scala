@@ -30,7 +30,7 @@ object DeepLearning {
     /** The partial derivative for [[Data]] */
     type Delta
 
-    /** Returns an asynchronous operation of forward pass, which creates a wengert list. */
+    /** Returns an asynchronous [[com.thoughtworks.raii.asynchronous.Do Do]] of forward pass, which creates a wengert list. */
     def forward(differentiable: Differentiable): Do[Tape[Data, Delta]]
 
     /** Returns a [[com.thoughtworks.future.Future Future]] that updates [[plugins.Weights.Weight Weight]] internally used by `differentiable`. */
