@@ -98,9 +98,10 @@ Other contributors can be found at [here](https://github.com/ThoughtWorksInc/Dee
 ### Related projects
 
  * [Shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming used in this project.
- * [Scalaz](http://scalaz.org/) provides type classes used in this project.
+ * [Scalaz](http://scalaz.org/) and [Algebra](http://typelevel.org/algebra/) provides type classes used in this project.
  * [ThoughtWorks Each](https://github.com/ThoughtWorksInc/each) provides `async`/`await`-like syntax. You may want to use it to control your training process in an imperative style.
  * [nd4j](http://nd4j.org/) provides numerical computing used in this project.
  * [RAII.scala](https://github.com/ThoughtWorksInc/RAII.scala), [future.scala](https://github.com/ThoughtWorksInc/future.scala) and [tryt.scala](https://github.com/ThoughtWorksInc/tryt.scala) provides monadic asynchronous resource management used in this project.
  * [Import.scala](https://github.com/ThoughtWorksInc/Import.scala) is a Scala compiler plugin that enables magic imports. You may need it in those sbt project use DeepLearning.scala plugin hosted on Github Gist.
- * The unit tests of this projects are written in [ScalaTest](http://scalatest.org/) and [example.scala](https://github.com/ThoughtWorksInc/example.scala) syntax.
+ * The unit tests of this project are written in [ScalaTest](http://scalatest.org/) and [example.scala](https://github.com/ThoughtWorksInc/example.scala) syntax.
+ * Some type classes in this project are created by [simulacrum](https://github.com/mpilquist/simulacrum)'s `@typeclass` annotation.
