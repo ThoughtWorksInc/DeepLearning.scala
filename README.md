@@ -97,11 +97,13 @@ Other contributors can be found at [here](https://github.com/ThoughtWorksInc/Dee
 
 ### Related projects
 
- * [Shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming used in this project.
- * [Scalaz](http://scalaz.org/) and [Algebra](http://typelevel.org/algebra/) provides type classes used in this project.
+ * [Shapeless](https://github.com/milessabin/shapeless) provides a solid foundation for type-level programming used in DeepLearning.scala.
+ * [Scalaz](http://scalaz.org/) and [Algebra](http://typelevel.org/algebra/) provides type classes used in DeepLearning.scala.
  * [ThoughtWorks Each](https://github.com/ThoughtWorksInc/each) provides `async`/`await`-like syntax. You may want to use it to control your training process in an imperative style.
- * [nd4j](http://nd4j.org/) provides numerical computing used in this project.
- * [RAII.scala](https://github.com/ThoughtWorksInc/RAII.scala), [future.scala](https://github.com/ThoughtWorksInc/future.scala) and [tryt.scala](https://github.com/ThoughtWorksInc/tryt.scala) provides monadic asynchronous resource management used in this project.
+ * [nd4j](http://nd4j.org/) provides numerical computing used in DeepLearning.scala.
+ * [RAII.scala](https://github.com/ThoughtWorksInc/RAII.scala), [future.scala](https://github.com/ThoughtWorksInc/future.scala) and [tryt.scala](https://github.com/ThoughtWorksInc/tryt.scala) provides monadic asynchronous resource management used in DeepLearning.scala.
  * [Import.scala](https://github.com/ThoughtWorksInc/Import.scala) is a Scala compiler plugin that enables magic imports. You may need it in those sbt project use DeepLearning.scala plugin hosted on Github Gist.
- * The unit tests of this project are written in [ScalaTest](http://scalatest.org/) and [example.scala](https://github.com/ThoughtWorksInc/example.scala) syntax.
- * Some type classes in this project are created by [simulacrum](https://github.com/mpilquist/simulacrum)'s `@typeclass` annotation.
+ * DeepLearning.scala can run in [Jupyter Scala](https://github.com/alexarchambault/jupyter-scala) or [Ammonite](http://ammonite.io/).
+ * Plugins of DeepLearning.scala are based on [Factory](https://javadoc.io/page/com.thoughtworks.feature/factory_2.11/latest/com/thoughtworks/feature/Factory.html) and other dependent type classes in [feature.scala](https://github.com/ThoughtWorksInc/feature.scala).
+ * The unit tests of DeepLearning.scala are written in [ScalaTest](http://scalatest.org/) and [example.scala](https://github.com/ThoughtWorksInc/example.scala) syntax.
+ * Some type classes in DeepLearning.scala are created by [simulacrum](https://github.com/mpilquist/simulacrum)'s `@typeclass` annotation.
