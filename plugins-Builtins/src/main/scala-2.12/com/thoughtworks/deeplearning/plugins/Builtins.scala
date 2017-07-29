@@ -14,6 +14,7 @@ trait Builtins
     with FloatTraining
     with FloatLiterals
     with FloatWeights
+    with CumulativeFloatLayers
     with DoubleTraining
     with DoubleLiterals
     with DoubleWeights {
