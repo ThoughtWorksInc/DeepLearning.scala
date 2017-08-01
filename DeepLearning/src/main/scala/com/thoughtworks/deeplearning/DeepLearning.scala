@@ -20,8 +20,6 @@ object DeepLearning {
     type Delta = Delta0
   }
 
-  // The Scaladoc of members of trait DeepLearning must be defined in `SimulacrumIssue82WorkAround`,
-  // in case of https://github.com/mpilquist/simulacrum/issues/82
   private[DeepLearning] sealed trait SimulacrumIssue82WorkAround[Differentiable] {
 
     /** The result value of forward pass */
@@ -50,6 +48,9 @@ import DeepLearning._
   *  - [[scala.Float Float]], [[plugins.FloatWeights.FloatWeight FloatWeight]] or [[plugins.CumulativeFloatLayers.FloatLayer FloatLayer]]
   *  - [[scala.Double Double]], [[plugins.DoubleWeights.DoubleWeight DoubleWeight]] or [[plugins.CumulativeDoubleLayers.DoubleLayer DoubleLayer]]
   *  - [[org.nd4j.linalg.api.ndarray.INDArray INDArray]], [[plugins.INDArrayWeights.INDArrayWeight INDArrayWeight]] or [[plugins.CumulativeINDArrayLayers.INDArrayLayer INDArrayLayer]]
+  *
+  * @note The Scaladoc of members of trait DeepLearning are defined inside `SimulacrumIssue82WorkAround`,
+  *       in case of https://github.com/mpilquist/simulacrum/issues/82
   */
 @typeclass(excludeParents = List("SimulacrumIssue82WorkAround"))
 trait DeepLearning[Differentiable] extends SimulacrumIssue82WorkAround[Differentiable] {
