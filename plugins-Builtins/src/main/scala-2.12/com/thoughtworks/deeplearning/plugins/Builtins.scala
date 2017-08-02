@@ -14,10 +14,13 @@ trait Builtins
     with FloatTraining
     with FloatLiterals
     with FloatWeights
+    with FloatLayers
     with CumulativeFloatLayers
     with DoubleTraining
     with DoubleLiterals
-    with DoubleWeights {
+    with DoubleWeights
+    with DoubleLayers
+    with CumulativeDoubleLayers {
 
   trait ImplicitsApi
       extends super[Layers].ImplicitsApi
@@ -25,8 +28,10 @@ trait Builtins
       with super[Operators].ImplicitsApi
       with super[FloatTraining].ImplicitsApi
       with super[FloatLiterals].ImplicitsApi
+      with super[FloatLayers].ImplicitsApi
       with super[DoubleTraining].ImplicitsApi
       with super[DoubleLiterals].ImplicitsApi
+      with super[DoubleLayers].ImplicitsApi
 
   type Implicits <: ImplicitsApi
 
