@@ -62,7 +62,7 @@ trait DeepLearning[Differentiable] extends SimulacrumIssue82WorkAround[Different
 
   final def train(differentiable: Differentiable)(implicit monoid: MultiplicativeMonoid[Delta]): Future[Data] = {
     val doData = forward(differentiable).flatMap[Data] { tape =>
-      Do.garbageCollected(tape.backward(Do.now(monoid.one))).map { loss =>
+      Do.garbageCollected(tape.backward(Do.now(monoid.one))).intransitiveMap { _: Unit =>
         tape.data
       }
     }
