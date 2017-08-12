@@ -103,7 +103,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   }
 
   private def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
-    require(shape1.length == shape2.length)
+    require(shape1.length == shape2.length,
+            raw"""Cannot broadcast between shape ${shape1.mkString("[", ",", "]")} and ${shape2.mkString("[", ",", "]")}.""")
     shape1.zip(shape2).map {
       case (1, bSize)                       => bSize
       case (aSize, 1)                       => aSize
