@@ -3,7 +3,7 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.shared._
-import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
+import com.thoughtworks.raii.covariant.{Resource, ResourceT}
 import com.thoughtworks.tryt.covariant.TryT
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
@@ -76,8 +76,8 @@ trait CumulativeFloatLayers extends FloatLayers {
     private lazy val sharedForward: Do[Tape[Float, Float]] = {
       val doCumulativeTape: Do[Tape[Float, Float]] = super.forward.flatMap {
         case Tape(data, flushBackward) =>
-          Do(TryT(ResourceT(Continuation.delay[Unit, Releasable[UnitContinuation, Try[Tape[Float, Float]]]] {
-            new Releasable[UnitContinuation, Try[Tape[Float, Float]]] {
+          Do(TryT(ResourceT(Continuation.delay[Unit, Resource[UnitContinuation, Try[Tape[Float, Float]]]] {
+            new Resource[UnitContinuation, Try[Tape[Float, Float]]] {
 
               @volatile
               private var currentDelta: Float = 0
