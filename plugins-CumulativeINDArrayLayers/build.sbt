@@ -20,4 +20,8 @@ fork in Test := true
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
+libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.1" % Test
+
+libraryDependencies += "org.rauschig" % "jarchivelib" % "0.5.0" % Test
+
 scalacOptions += "-Ypartial-unification"

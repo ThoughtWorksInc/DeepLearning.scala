@@ -152,16 +152,34 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       implicit deepLearning0: DeepLearning.Aux[Operand0, INDArray, INDArray],
       deepLearning1: DeepLearning.Aux[Operand1, INDArray, INDArray],
       layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
-    INDArrayLayer.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
+    lazy val output: Out = INDArrayLayer.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
       val outputData = data0 dot data1
+      println("dot.forward:")
+      println(s"  operand0($operand0).data = $data0")
+      println(s"  operand1($operand1).data = $data1")
+      println(s"  output($output).data = $outputData")
+      println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val delta0 = { outputDelta: INDArray =>
-        outputDelta dot data1.T
+        println("dot.backward.0:")
+        val value = outputDelta dot data1.T
+        println(s"  output($output).delta($outputDelta)")
+        println(s"  data1.T(${data1.T})")
+        println(s"  operand0($operand0).delta = $value")
+        println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        value
       }
       val delta1 = { outputDelta: INDArray =>
-        data0.T dot outputDelta
+        println("dot.backward.1:")
+        val value = data0.T dot outputDelta
+        println(s"  data0.T(${data0.T})")
+        println(s"  outputDelta($outputDelta)")
+        println(s"  delta1 = $value")
+        println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        value
       }
       (outputData, delta0, delta1)
     }
+    output
   }
   trait ImplicitsApi extends super[DoubleLiterals].ImplicitsApi with super[DoubleLayers].ImplicitsApi {
 
@@ -218,14 +236,26 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         */
       def sum[Out <: INDArrayLayer](dimensions: Int*)(
           implicit layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
-        INDArrayLayer.unary(operand0) { data0: INDArray =>
+        val output: Out = INDArrayLayer.unary(operand0) { data0: INDArray =>
           val shape0 = data0.shape
           val outputData = data0.sum(dimensions: _*)
+
+          println("sum.forward:")
+          println(s"  operand0($operand0).data = $data0")
+          println(s"  output.data = $outputData")
+          println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
           val delta0 = { outputDelta: INDArray =>
-            outputDelta.broadcast(shape0: _*)
+            println("sum.backward.0:")
+            val value = outputDelta.broadcast(shape0: _*)
+            println(s"  outputDelta($outputDelta)")
+            println(s"  shape($shape0)")
+            println(s"  delta0 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           (outputData, delta0)
         }
+        output
       }
 
       /** @usecase def sum: DoubleLayer = ???
@@ -317,11 +347,28 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       Operators.+.at[Operand0, Operand1] {
         INDArrayLayer.binary(_, _) { (data0: INDArray, data1: Double) =>
           val outputData = data0 + data1
+
+          println("INDArray+Double.forward:")
+          println(s"  operand0.data = $data0")
+          println(s"  operand1.data = $data1")
+          println(s"  output.data = $outputData")
+          println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
           val delta0 = { (outputDelta: INDArray) =>
-            outputDelta
+            println("INDArray+Double.backward.0:")
+            val value = outputDelta
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta0 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           val delta1 = { (outputDelta: INDArray) =>
-            outputDelta.sumT
+            println("INDArray+Double.backward.1:")
+            val value = outputDelta.sumT
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta1 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           (outputData, delta0, delta1)
         }
@@ -349,11 +396,34 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
           val broadcastData0 = data0.broadcastFix(outputShape: _*)
           val broadcastData1 = data1.broadcastFix(outputShape: _*)
           val outputData = broadcastData0 - broadcastData1
+
+          println("INDArray-INDArray.forward:")
+          println(s"  operand0.data = $data0")
+          println(s"  operand1.data = $data1")
+          println(s"  output.data = $outputData")
+          println(s"  shape0 ${shape0.mkString("[", ",", "]")}")
+          println(s"  shape1 ${shape1.mkString("[", ",", "]")}")
+          println(s"  outputShape ${outputShape.mkString("[", ",", "]")}")
+          println(s"  broadcastData0 = $broadcastData0")
+          println(s"  broadcastData1 = $broadcastData1")
+          println(s"  outputData = $outputData")
+          println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
           val delta0 = { (outputDelta: INDArray) =>
-            sumAs(outputDelta, shape0)
+            println("INDArray-INDArray.backward.0:")
+            val value = sumAs(outputDelta, shape0)
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta0 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           val delta1 = { (outputDelta: INDArray) =>
-            -sumAs(outputDelta, shape1)
+            println("INDArray-INDArray.backward.1:")
+            val value = -sumAs(outputDelta, shape1)
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta1 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           (outputData, delta0, delta1)
         }
@@ -409,11 +479,31 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
           val broadcastData0 = data0.broadcastFix(outputShape: _*)
           val broadcastData1 = data1.broadcastFix(outputShape: _*)
           val outputData = broadcastData0 * broadcastData1
+
+          println("INDArray*INDArray.forward:")
+          println(s"  shape0 ${shape0.mkString("[", ",", "]")}")
+          println(s"  shape1 ${shape1.mkString("[", ",", "]")}")
+          println(s"  outputShape ${outputShape.mkString("[", ",", "]")}")
+          println(s"  broadcastData0 = $broadcastData0")
+          println(s"  broadcastData1 = $broadcastData1")
+          println(s"  outputData = $outputData")
+          println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
           val delta0 = { outputDelta: INDArray =>
-            sumAs(outputDelta * broadcastData1, shape0)
+            println("INDArray*INDArray.backward.0:")
+            val value = sumAs(outputDelta * broadcastData1, shape0)
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta0 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           val delta1 = { outputDelta: INDArray =>
-            sumAs(outputDelta * broadcastData0, shape1)
+            println("INDArray-INDArray.backward.1:")
+            val value = sumAs(outputDelta * broadcastData0, shape1)
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta1 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           (outputData, delta0, delta1)
         }
@@ -477,11 +567,26 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       Operators./.at[Operand0, Operand1] {
         INDArrayLayer.binary(_, _) { (data0: INDArray, data1: Double) =>
           val outputData = data0 / data1
+
+          println("INDArray/Double.forward:")
+          println(s"  outputData = $outputData")
+          println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
           val delta0 = { (outputDelta: INDArray) =>
-            outputDelta / data1
+            println("INDArray/Double.backward.0:")
+            val value = outputDelta / data1
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta0 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           val delta1 = { (outputDelta: INDArray) =>
-            -(outputDelta * data0).sumT / (data1 * data1)
+            println("INDArray/Double.backward.1:")
+            val value = -(outputDelta * data0).sumT / (data1 * data1)
+            println(s"  outputDelta($outputDelta)")
+            println(s"  delta1 = $value")
+            println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            value
           }
           (outputData, delta0, delta1)
         }
