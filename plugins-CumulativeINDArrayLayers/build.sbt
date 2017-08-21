@@ -20,4 +20,6 @@ fork in Test := true
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
+libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.1.0-M0" % Test
+
 scalacOptions += "-Ypartial-unification"

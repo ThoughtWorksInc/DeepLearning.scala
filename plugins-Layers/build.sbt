@@ -1,8 +1,8 @@
 enablePlugins(Example)
 
-libraryDependencies += "com.thoughtworks.feature" %% "partialapply" % "2.0.1"
+libraryDependencies += "com.thoughtworks.feature" %% "partialapply" % "2.1.0-M0"
 
-libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.0.1"
+libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.1.0-M0"
 
-libraryDependencies += "com.thoughtworks.feature" %% "factory" % "2.0.1"
+libraryDependencies += "com.thoughtworks.feature" %% "factory" % "2.1.0-M0"
 

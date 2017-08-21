@@ -10,3 +10,5 @@ exampleSuperTypes += "_root_.com.thoughtworks.deeplearning.scalatest.Thoughtwork
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
 scalacOptions += "-Ypartial-unification"
+
+libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.1.0-M0" % Test

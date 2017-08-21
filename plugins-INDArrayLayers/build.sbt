@@ -9,4 +9,6 @@ libraryDependencies ++= {
   }
 }
 
+libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.1.0-M0"
+
 fork in Test := true

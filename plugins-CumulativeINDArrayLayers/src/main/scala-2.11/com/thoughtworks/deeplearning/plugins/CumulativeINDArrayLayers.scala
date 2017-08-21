@@ -78,6 +78,7 @@ trait CumulativeINDArrayLayers extends INDArrayLayers {
       *          import org.nd4j.linalg.factory.Nd4j
       *          import com.thoughtworks.feature.Factory
       *          import com.thoughtworks.deeplearning.plugins._
+      *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
       *          val hyperparameters = Factory[DoubleTraining with CumulativeINDArrayLayers with INDArrayWeights with ImplicitsSingleton with Operators].newInstance()
       *          import hyperparameters.implicits._
       *          val weight = hyperparameters.INDArrayWeight(Nd4j.ones(2, 3))
