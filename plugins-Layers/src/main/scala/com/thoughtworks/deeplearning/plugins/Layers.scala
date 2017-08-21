@@ -23,7 +23,9 @@ trait Layers {
 
     def forward: Do[Tape[Data, Delta]]
 
-    protected def handleException(thrown: Throwable): Unit = ()
+    protected def handleException(throwable: Throwable): Unit = {
+      throw throwable
+    }
 
   }
 
