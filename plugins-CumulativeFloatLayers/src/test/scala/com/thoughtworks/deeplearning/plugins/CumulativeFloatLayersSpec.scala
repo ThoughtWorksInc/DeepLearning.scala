@@ -5,9 +5,9 @@ import com.thoughtworks.feature.Factory
 import com.thoughtworks.each.Monadic._
 import org.scalactic.ErrorMessage
 import org.scalatest._
-
 import com.thoughtworks.future._
 import com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
 
 import scalaz.std.iterable._
 

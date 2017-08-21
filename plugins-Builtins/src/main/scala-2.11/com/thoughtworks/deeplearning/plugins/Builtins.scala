@@ -1,5 +1,7 @@
 package com.thoughtworks.deeplearning.plugins
 
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
+
 /** A plugin that enables all other DeepLearning.scala built-in plugins.
   *
   * @example When creating a [[Builtins]] from [[com.thoughtworks.feature.Factory]],
@@ -79,7 +81,6 @@ package com.thoughtworks.deeplearning.plugins
   *            lossesByIteration.last should be <= lossesByIteration.head
   *          }
   *          }}}
-  *
   * @author 杨博 (Yang Bo)
   */
 trait Builtins

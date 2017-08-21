@@ -23,6 +23,7 @@ import scalaz.syntax.all._
   *          {{{
   *          import com.thoughtworks.deeplearning.plugins._
   *          import com.thoughtworks.feature.Factory
+  *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
   *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
   *          import hyperparameters.implicits._
   *          val weight1 = hyperparameters.FloatWeight(10)
@@ -51,6 +52,7 @@ import scalaz.syntax.all._
   *          {{{
   *          import com.thoughtworks.deeplearning.plugins._
   *          import com.thoughtworks.feature.Factory
+  *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
   *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
   *          import hyperparameters.implicits._
   *          val weight1 = hyperparameters.FloatWeight(10)

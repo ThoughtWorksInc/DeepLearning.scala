@@ -4,6 +4,7 @@ import java.io.{PrintStream, PrintWriter}
 
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.raii.asynchronous._

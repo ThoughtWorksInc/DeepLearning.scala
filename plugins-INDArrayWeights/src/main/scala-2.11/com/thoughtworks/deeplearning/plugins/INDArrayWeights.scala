@@ -7,6 +7,7 @@ import com.thoughtworks.raii.asynchronous.Do._
 import org.nd4j.linalg.api.ndarray.INDArray
 import shapeless.Witness
 import org.nd4s.Implicits._
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
 
 import annotation.meta.getter
 import scala.concurrent.ExecutionContext

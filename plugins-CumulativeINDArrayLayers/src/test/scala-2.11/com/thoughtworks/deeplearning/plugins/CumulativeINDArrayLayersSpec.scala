@@ -13,8 +13,8 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4j.linalg.util.ArrayUtil
 import org.scalatest._
 import org.nd4s.Implicits._
-
 import com.thoughtworks.continuation._
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.future._
 
 import scalaz.std.iterable._

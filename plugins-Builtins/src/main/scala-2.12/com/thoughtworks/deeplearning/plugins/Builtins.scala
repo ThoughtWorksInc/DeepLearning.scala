@@ -1,5 +1,7 @@
 package com.thoughtworks.deeplearning.plugins
 
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
+
 /** A plugin that enables all other DeepLearning.scala built-in plugins.
   *
   * @author 杨博 (Yang Bo)
