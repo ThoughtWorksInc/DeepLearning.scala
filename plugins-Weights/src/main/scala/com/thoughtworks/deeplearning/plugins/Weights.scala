@@ -50,7 +50,7 @@ trait Weights {
     type Delta
 
     protected def handleException(throwable: Throwable): Unit = {
-      throw throwable
+      throwable.printStackTrace()
     }
 
     var data: Data
