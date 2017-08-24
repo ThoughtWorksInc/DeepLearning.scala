@@ -66,7 +66,6 @@ trait Logging extends Layers with Weights {
     implicit protected def name: sourcecode.Name
     implicit protected def caller: Caller[_]
     override protected def handleException(thrown: Throwable): Unit = {
-      super.handleException(thrown)
       logger.log(new ThrownInLayer(this, thrown))
     }
   }
@@ -77,7 +76,6 @@ trait Logging extends Layers with Weights {
     implicit protected def name: sourcecode.Name
     implicit protected def caller: Caller[_]
     override protected def handleException(thrown: Throwable): Unit = {
-      super.handleException(thrown)
       logger.log(new ThrownInWeight(this, thrown))
     }
   }
