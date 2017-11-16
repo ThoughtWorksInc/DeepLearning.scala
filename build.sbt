@@ -104,6 +104,10 @@ lazy val `plugins-Builtins` =
     `plugins-CumulativeDoubleLayers`,
     DeepLearning % "test->test"
   )
+
+lazy val `plugins-OpenCLBuffers` =
+  project.dependsOn(DeepLearning, `plugins-Training` % Test, ProjectRef(file("Compute.scala"), "OpenCL"))
+
 publishArtifact := false
 
 lazy val unidoc =
