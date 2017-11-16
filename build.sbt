@@ -39,28 +39,6 @@ lazy val `plugins-CumulativeFloatLayers` =
 
 lazy val `plugins-Training` = project.dependsOn(DeepLearning)
 
-lazy val `plugins-INDArrayTraining` = project.dependsOn(`plugins-Training`)
-
-lazy val `plugins-INDArrayLiterals` = project.dependsOn(DeepLearning)
-
-lazy val `plugins-INDArrayWeights` = project.dependsOn(`plugins-Weights`)
-
-lazy val `plugins-INDArrayLayers` =
-  project.dependsOn(`plugins-Layers`, `plugins-DoubleLiterals`, `plugins-DoubleLayers`)
-
-lazy val `plugins-CumulativeINDArrayLayers` =
-  project.dependsOn(
-    `plugins-INDArrayLayers`,
-    `plugins-CumulativeDoubleLayers`,
-    DeepLearning % "test->test",
-    `plugins-DoubleLiterals` % Test,
-    `plugins-DoubleTraining` % Test,
-    `plugins-INDArrayTraining` % Test,
-    `plugins-INDArrayLiterals` % Test,
-    `plugins-INDArrayWeights` % Test,
-    `plugins-Logging` % Test
-  )
-
 lazy val FloatRegex = """(?i:float)""".r
 
 def copyAndReplace(floatProject: Project) = Def.task {
@@ -124,11 +102,6 @@ lazy val `plugins-Builtins` =
     `plugins-DoubleWeights`,
     `plugins-DoubleLayers`,
     `plugins-CumulativeDoubleLayers`,
-    `plugins-INDArrayTraining`,
-    `plugins-INDArrayLiterals`,
-    `plugins-INDArrayWeights`,
-    `plugins-INDArrayLayers`,
-    `plugins-CumulativeINDArrayLayers`,
     DeepLearning % "test->test"
   )
 publishArtifact := false
