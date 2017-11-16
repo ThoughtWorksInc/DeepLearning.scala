@@ -12,7 +12,7 @@ libraryDependencies ++= {
   if (VersionNumber(scalaVersion.value).numbers >= Seq(2, 12)) {
     Nil
   } else {
-    Seq("org.nd4j" % "nd4j-cuda-7.5-platform" % "0.9.1" % Test)
+    Seq("org.nd4j" % "nd4j-cuda-8.0-platform" % "0.8.0" % Test)
   }
 }
 

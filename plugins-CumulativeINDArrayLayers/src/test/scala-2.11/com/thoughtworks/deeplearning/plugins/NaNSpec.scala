@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning.plugins
 
-import org.scalatest.{FreeSpec}
+import org.scalatest._
 import com.thoughtworks.deeplearning.plugins._
 import com.thoughtworks.each.Monadic.{monadic, _}
 import com.thoughtworks.feature.{Factory, ImplicitApply}
@@ -17,12 +17,14 @@ import org.nd4j.linalg.api.ndarray.INDArray
 
 import $exec.`https://gist.github.com/Atry/1fb0608c655e3233e68b27ba99515f16/raw/39ba06ee597839d618f2fcfe9526744c60f2f70a/FixedLearningRate.sc`
 
-class NaNSpec extends FreeSpec {
+class NaNSpec extends FreeSpec with Matchers {
   "NaN should not happen when run this test on GPU" in {
     val hyperparameters =
       Factory[
-        FixedLearningRate with Logging with ImplicitsSingleton with DoubleTraining with INDArrayTraining with INDArrayLiterals with DoubleLiterals with CumulativeDoubleLayers with Operators with CumulativeINDArrayLayers]
-        .newInstance(learningRate = 0.003)
+        FixedLearningRate with Logging with ImplicitsSingleton with DoubleTraining with INDArrayTraining with INDArrayLiterals with DoubleLiterals with CumulativeDoubleLayers with Operators with CumulativeINDArrayLayers
+      ].newInstance(
+        learningRate = 0.003
+      )
 
     import hyperparameters.INDArrayWeight
     import hyperparameters.DoubleLayer
@@ -57,7 +59,7 @@ class NaNSpec extends FreeSpec {
     val robotWeight = INDArrayWeight(initialValueOfRobotWeight)
 
     def iqTestRobot(questions: INDArray): INDArrayLayer = {
-      0.0 + questions dot robotWeight
+      questions dot robotWeight
     }
 
     def squareLoss(questions: INDArray, expectAnswer: INDArray): DoubleLayer = {
@@ -65,13 +67,16 @@ class NaNSpec extends FreeSpec {
       (difference * difference).mean
     }
 
-    val TotalIterations = 100
+    val TotalIterations = 10000
 
     @monadic[Future]
     def train: Future[Stream[Double]] = {
       for (iteration <- (0 until TotalIterations).toStream) yield {
         val loss = squareLoss(TrainingQuestions, ExpectedAnswers).train.each
         println("loss:" + loss)
+        println("weight:" + robotWeight.data)
+        println()
+        loss should be < 200.0
         loss
       }
     }

@@ -154,11 +154,18 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]): Out = {
     INDArrayLayer.binary(operand0, operand1) { (data0: INDArray, data1: INDArray) =>
       val outputData = data0 dot data1
+      println(s"outputData = $outputData ($data0 dot $data1)")
       val delta0 = { outputDelta: INDArray =>
-        outputDelta dot data1.T
+        val data1T = data1.T
+        val result = outputDelta dot data1T
+        println(s"delta0 = $result ($outputDelta dot $data1T)")
+        result
       }
       val delta1 = { outputDelta: INDArray =>
-        data0.T dot outputDelta
+        val data0T = data0.T
+        val result = data0T dot outputDelta
+        println(s"delta1 = $result ($data0T dot $outputDelta)")
+        result
       }
       (outputData, delta0, delta1)
     }
@@ -235,6 +242,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         DoubleLayer.unary(operand0) { data0: INDArray =>
           val shape0 = data0.shape
           val outputData = data0.sumT
+          println(s"outputData = $outputData ($data0.sumT)")
           val delta0 = { outputDelta: Double =>
             Nd4j.valueArrayOf(shape0, outputDelta)
           }

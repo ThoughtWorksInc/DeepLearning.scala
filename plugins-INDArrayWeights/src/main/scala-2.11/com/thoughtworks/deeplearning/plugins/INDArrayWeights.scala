@@ -38,7 +38,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
     override protected def backward[SubtypeOfOptimizer](originalDelta: INDArray)(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: INDArray }): Do[Unit] = {
-
+      println(s"originalDelta: $originalDelta")
       Do.execute {
         val delta =
           implicitApplyRest(
@@ -47,6 +47,7 @@ trait INDArrayWeights extends Weights with ImplicitsSingleton {
                                               indArrayOriginalDeltaParameter(originalDelta))).delta
 
         synchronized {
+          println(s"delta: $delta")
           data -= delta
           ()
         }
