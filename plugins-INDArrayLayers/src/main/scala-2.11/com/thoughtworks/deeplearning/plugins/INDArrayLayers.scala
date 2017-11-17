@@ -111,7 +111,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       case (aSize, bSize) if aSize == bSize => aSize
       case _                                =>
         throw new IllegalArgumentException(
-          raw"Failed to automatically broadcast between shape [${shape1.mkString(",")] and [${shape2.mkString(",")}]}"
+          raw"Failed to automatically broadcast between shape [${shape1.mkString(",")}] and [${shape2.mkString(",")}]}"
         )
     }
   }
@@ -134,12 +134,13 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
           case MultipleException(exceptionSet1) =>
             f2 match {
               case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
-              case _: Throwable                     => MultipleException(exceptionSet1 + f2)
+              case e: Throwable                     => MultipleException(exceptionSet1 + e)
             }
           case _: Throwable =>
             f2 match {
               case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
-              case _: Throwable                     => MultipleException(Set(f1, f2))
+              case `f1`                             => f1
+              case e: Throwable                     => MultipleException(Set(f1, e))
             }
         }
     })
