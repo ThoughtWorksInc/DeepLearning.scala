@@ -22,7 +22,7 @@ import com.thoughtworks.continuation._
 
 object INDArrayLayers {
 
-  final case class MultipleException(throwableSet: Set[Throwable]) extends Exception("Multiple exceptions found") {
+  final case class MultipleException(throwableSet: Set[Throwable]) extends RuntimeException("Multiple exceptions found") {
     override def toString: String = throwableSet.mkString("\n")
 
     override def printStackTrace(): Unit = {
