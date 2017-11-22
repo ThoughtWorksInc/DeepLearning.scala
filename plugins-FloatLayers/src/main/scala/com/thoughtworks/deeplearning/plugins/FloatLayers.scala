@@ -27,6 +27,8 @@ trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
 
+    implicit def toFloatLayer:Layers.ToLayer.Aux[Float,Float,FloatLayer] = ???
+
     /** An implicit wrapper that adds extension methods for differentiable float types
       * that support the [[DeepLearning]] type class.
       */

@@ -14,6 +14,21 @@ import shapeless.poly.Case1
 import scalaz.syntax.all._
 import scala.annotation.meta.getter
 import com.thoughtworks.future.Future
+object Layers {
+  trait ToLayer[Data, Delta] {
+    type OutputLayer
+
+    def toLayer(forward: Do[Tape[Data, Delta]]): OutputLayer
+
+  }
+
+  object ToLayer {
+    type Aux[Data, Delta, OutputLayer0] = ToLayer[Data, Delta] {
+      type OutputLayer = OutputLayer0
+    }
+  }
+
+}
 
 /** A plugin that enables [[Layer]] in neural networks. */
 trait Layers {

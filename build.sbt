@@ -106,7 +106,12 @@ lazy val `plugins-Builtins` =
   )
 
 lazy val `plugins-OpenCLBuffers` =
-  project.dependsOn(DeepLearning, `plugins-Training` % Test, ProjectRef(file("Compute.scala"), "OpenCL"))
+  project.dependsOn(DeepLearning,
+                    `plugins-FloatTraining` % Test,
+                    `plugins-Weights`,
+                    `plugins-Layers`,
+                    `plugins-FloatLayers`,
+                    ProjectRef(file("Compute.scala"), "OpenCL"))
 
 publishArtifact := false
 

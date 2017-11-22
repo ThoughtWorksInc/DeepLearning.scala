@@ -12,13 +12,13 @@ import com.thoughtworks.raii.asynchronous.Do
 trait OpenCLBufferLiterals extends OpenCL {
 
   trait ImplicitsApi extends super.ImplicitsApi {
-    implicit def indArrayLiteralDeepLearning
-      : DeepLearning.Aux[DeviceBuffer[Float], DeviceBuffer[Float], DeviceBuffer[Float]] =
-      new DeepLearning[DeviceBuffer[Float]] {
-        override type Data = DeviceBuffer[Float]
-        override type Delta = DeviceBuffer[Float]
+    implicit def indArrayLiteralDeepLearning[Element]
+      : DeepLearning.Aux[DeviceBuffer[Element], DeviceBuffer[Element], DeviceBuffer[Element]] =
+      new DeepLearning[DeviceBuffer[Element]] {
+        override type Data = DeviceBuffer[Element]
+        override type Delta = DeviceBuffer[Element]
 
-        override def forward(literal: DeviceBuffer[Float]): Do[Tape[Data, Delta]] = {
+        override def forward(literal: DeviceBuffer[Element]): Do[Tape[Data, Delta]] = {
           Do.now(Tape(literal, Function.const(Continuation.now(()))))
         }
       }

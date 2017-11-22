@@ -6,7 +6,6 @@ import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import shapeless.Witness
 
-
 /** A plugin to create [[scala.Float]] weights.
   *
   * @note Custom optimization algorithm for updating [[FloatWeight]] can be implemented by creating a plugin
@@ -27,11 +26,12 @@ trait FloatWeights extends Weights {
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: Float }): Do[Unit] = {
       Do.delay {
-        val delta =
+        val optimizer: OptimizerApi { type Delta <: Float } = asOptimizer(
           implicitApplyRest(
             floatPartialApplyOriginalDelta(floatPartialApplyWeight(floatOptimizerFactory.newInstance,
                                                                    floatWeightParameter(this)),
-                                           floatOriginalDeltaParameter(originalDelta))).delta
+                                           floatOriginalDeltaParameter(originalDelta))))
+        val delta = optimizer.delta
         synchronized {
           data -= delta
         }
@@ -63,7 +63,7 @@ trait FloatWeights extends Weights {
 
   trait FloatOptimizerApi extends OptimizerApi { this: FloatOptimizer =>
 
-    override type Delta = Float
+    type Delta = Float
 
     val weight: FloatWeight
 
