@@ -31,23 +31,19 @@ object Layers {
 }
 
 /** A plugin that enables [[Layer]] in neural networks. */
-trait Layers {
-  trait LayerApi {
+trait Layers extends Differentiables {
+  trait LayerApi extends DifferentiableApi {
     type Data
     type Delta
 
     def forward: Do[Tape[Data, Delta]]
-
-    protected def handleException(throwable: Throwable): Unit = {
-      throwable.printStackTrace()
-    }
 
   }
 
   /** A differentiable operation.
     * @template
     */
-  type Layer <: LayerApi
+  type Layer <: LayerApi with Differentiable
 
   trait ImplicitsApi {
     implicit def layerDeepLearning[From, Data0, Delta0](implicit asLayer: From <:< LayerApi {

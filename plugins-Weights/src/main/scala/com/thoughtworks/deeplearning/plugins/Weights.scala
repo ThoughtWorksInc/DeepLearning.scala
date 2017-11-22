@@ -15,9 +15,9 @@ import com.thoughtworks.continuation._
   *
   * @author 杨博 (Yang Bo)
   */
-trait Weights {
+trait Weights extends Differentiables {
 
-  trait WeightApi {
+  trait WeightApi extends DifferentiableApi {
 
     protected type PartiallyAppliedOptimizer
 
@@ -49,16 +49,12 @@ trait Weights {
     type Data
     type Delta
 
-    protected def handleException(throwable: Throwable): Unit = {
-      throwable.printStackTrace()
-    }
-
     var data: Data
 
   }
 
   /** @template */
-  type Weight <: WeightApi
+  type Weight <: WeightApi with Differentiable
 
   trait OptimizerApi {
     type Delta
