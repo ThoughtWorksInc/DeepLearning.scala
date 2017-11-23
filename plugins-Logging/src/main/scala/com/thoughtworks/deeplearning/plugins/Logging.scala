@@ -4,6 +4,7 @@ import java.util.logging.{Level, LogRecord, Logger}
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
+import com.thoughtworks.continuation._
 import com.thoughtworks.feature.Caller
 
 object Logging {
@@ -57,8 +58,10 @@ trait Logging extends Differentiables {
     implicit protected def fullName: sourcecode.FullName
     implicit protected def name: sourcecode.Name
     implicit protected def caller: Caller[_]
-    override protected def handleException(thrown: Throwable): Unit = {
-      logger.log(new UncaughtException(this, thrown))
+    override protected def handleException(thrown: Throwable): UnitContinuation[Unit] = {
+      UnitContinuation.delay {
+        logger.log(new UncaughtException(this, thrown))
+      }
     }
   }
 

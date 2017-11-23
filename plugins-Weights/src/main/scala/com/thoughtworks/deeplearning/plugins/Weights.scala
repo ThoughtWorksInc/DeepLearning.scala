@@ -8,7 +8,7 @@ import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.tryt.covariant.TryT
 
 import scala.util.{Failure, Success}
-import scalaz.syntax.functor._
+import scalaz.syntax.bind._
 import com.thoughtworks.continuation._
 
 /** A plugin that enables [[Weight]] in neural networks.
@@ -32,8 +32,8 @@ trait Weights extends Differentiables {
           data, { doDelta: Do[Delta] =>
             val doUpdate: Do[Unit] = doDelta.intransitiveFlatMap(backward(_))
             val Future(TryT(continuation)) = doUpdate.run
-            continuation.map {
-              case Success(()) => ()
+            continuation.flatMap {
+              case Success(()) => UnitContinuation.now(())
               case Failure(e)  => handleException(e)
             }
           }
