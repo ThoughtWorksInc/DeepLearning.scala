@@ -75,10 +75,10 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.-.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
+        val forward: Do[Tape[Float, Float]] = Apply[Do].apply2(operand0.forward/* deepLearning0.forward(operand0) */, operand1.forward) {
           case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
             val outputData = data0 - data1
-            def backward(doOutputDelta: Do[Float]) = {
+            def backward(doOutputDelta: Do[Float]): UnitContinuation[Unit] = {
               backward0(doOutputDelta) >>
                 backward1(doOutputDelta.map(-_))
             }

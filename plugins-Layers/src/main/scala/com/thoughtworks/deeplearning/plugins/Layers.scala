@@ -54,7 +54,7 @@ trait Layers extends Differentiables {
         type Data = Data0
         type Delta = Delta0
         override def forward(from: From): Do[Tape[Data0, Delta0]] = {
-          from.forward
+          asLayer(from).forward
         }
       }
     }
