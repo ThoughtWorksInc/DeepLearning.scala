@@ -27,7 +27,7 @@ trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
 
-    implicit def toFloatLayer:Layers.ToLayer.Aux[Float,Float,FloatLayer] = ???
+    implicit def toFloatLayer: Layers.ToLayer.Aux[Float, Float, FloatLayer] = ???
 
     /** An implicit wrapper that adds extension methods for differentiable float types
       * that support the [[DeepLearning]] type class.
@@ -75,15 +75,16 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.-.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward: Do[Tape[Float, Float]] = Apply[Do].apply2(operand0.forward/* deepLearning0.forward(operand0) */, operand1.forward) {
-          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
-            val outputData = data0 - data1
-            def backward(doOutputDelta: Do[Float]): UnitContinuation[Unit] = {
-              backward0(doOutputDelta) >>
-                backward1(doOutputDelta.map(-_))
-            }
-            Tape(outputData, backward)
-        }
+        val forward: Do[Tape[Float, Float]] =
+          Apply[Do].apply2(operand0.forward /* deepLearning0.forward(operand0) */, operand1.forward) {
+            case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+              val outputData = data0 - data1
+              def backward(doOutputDelta: Do[Float]): UnitContinuation[Unit] = {
+                backward0(doOutputDelta) >>
+                  backward1(doOutputDelta.map(-_))
+              }
+              Tape(outputData, backward)
+          }
         FloatLayer(forward)
       }
     }
@@ -267,17 +268,8 @@ trait FloatLayers extends Layers {
                                                           shapeless.Witness.`"rawForward"`.T]
 
   trait FloatLayerApi extends super[Layers].LayerApi {
-    override type Data = Float
-    override type Delta = Float
-
-    /** The original forward operation passed in [[FloatLayer$ FloatLayer.apply]].
-      *
-      * @note This [[rawForward]] may be different from [[forward]],
-      *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeFloatLayers]].
-      */
-    protected val rawForward: Do[Tape[Float, Float]]
-
-    override def forward: Do[Tape[Float, Float]] = rawForward
+    type Data = Float
+    type Delta = Float
   }
   object FloatLayer {
 

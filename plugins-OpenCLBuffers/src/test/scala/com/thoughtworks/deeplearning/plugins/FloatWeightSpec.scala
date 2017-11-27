@@ -69,7 +69,7 @@ final class FloatWeightSpec {
       val robotWeight: FloatDeviceBufferWeight = FloatDeviceBufferWeight(initialValueOfRobotWeight)
 
       def iqTestRobot(questions: hyperparameters.DeviceBuffer[Float]): FloatDeviceBufferLayer = {
-        hyperparameters.matrixMultiply(questions, robotWeight, 3)
+        hyperparameters.matrixMultiply(questions, robotWeight, 3) //3 is matrix0Columns
       }
 
       def deviceBufferOf[Element](elements: Element*)(implicit memory: Memory[Element]): Do[DeviceBuffer[Element]] = {
@@ -86,12 +86,12 @@ final class FloatWeightSpec {
           def squareLoss(questions: DeviceBuffer[Float],
                          expectAnswer: DeviceBuffer[Float]): hyperparameters.FloatLayer = {
 
-            val xxx: DeepLearning.Aux[FloatDeviceBufferLayer,
-                                                                          DeviceBuffer[Float],
-                                                                          DeviceBuffer[Float]] = DeepLearning[FloatDeviceBufferLayer]
-            ???
-//
-//
+//            val xxx: DeepLearning.Aux[FloatDeviceBufferLayer,
+//                                                                          DeviceBuffer[Float],
+//                                                                          DeviceBuffer[Float]] = DeepLearning[FloatDeviceBufferLayer]
+//            ???
+////
+////
             val difference = hyperparameters.subtract(iqTestRobot(questions), expectAnswer)
             val loss = hyperparameters.multiply(difference, difference)
             hyperparameters.mean(loss)
