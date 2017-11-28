@@ -36,10 +36,6 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
     this: FloatDeviceBufferWeight =>
     type Element = Float
 
-//    val implicitApplyRest: ImplicitApply[partialApply.Rest] = ???
-//
-//    val outIsOptimizer: implicitApplyRest.Out <:< FloatDeviceBufferOptimizer = ???
-
     protected type PartiallyAppliedOptimizer = floatDeviceBufferPartialApplyOriginalDelta.Rest
 
     /** @usecase def backward(delta: Delta): Do[Unit] = ???
@@ -66,6 +62,9 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
       val delta = optimizer.delta
 
+      // FIXME: should use queue
+//
+//      data -= delta
       ???
     }
 //
@@ -109,8 +108,26 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
   type FloatDeviceBufferWeight <: DeviceBufferWeight with FloatDeviceBufferWeightApi
 
+  @inject
+  protected val floatDeviceBufferWeightFactory: Factory[FloatDeviceBufferWeight]
+
+  @inject
+  protected val floatDeviceBufferWeightPartialApplyData: PartialApply[floatDeviceBufferWeightFactory.Constructor,
+                                                                      Witness.`"data"`.T]
+  @inject
+  protected def floatDeviceBufferWeightDataParameter
+    : DeviceBuffer[Float] <:< floatDeviceBufferWeightPartialApplyData.Parameter
+
+
   object FloatDeviceBufferWeight {
-    def apply(data: DeviceBuffer[Float]): FloatDeviceBufferWeight = ???
+    def apply[Out <: FloatDeviceBufferWeight](data: DeviceBuffer[Float])(
+        implicit implicitApplyRest: ImplicitApply.Aux[floatDeviceBufferWeightPartialApplyData.Rest, Out]
+    ): FloatDeviceBufferWeight = {
+      implicitApplyRest(
+        floatDeviceBufferWeightPartialApplyData(floatDeviceBufferWeightFactory.newInstance,
+                                                floatDeviceBufferWeightDataParameter(data))
+      )
+    }
   }
 
   trait FloatDeviceBufferOptimizerApi extends OptimizerApi {
