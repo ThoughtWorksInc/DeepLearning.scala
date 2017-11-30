@@ -1,11 +1,14 @@
 package com.thoughtworks.deeplearning.plugins
 
+import com.thoughtworks.compute.Memory
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.ImplicitApply.Aux
-import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.asynchronous._
 import shapeless.Witness
+
+import scalaz.syntax.all._
 
 trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
@@ -47,63 +50,41 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
           OptimizerApi {
             type Delta <: DeviceBuffer[Float]
           }): Do[Unit] = {
+      Do.delay {
+        val optimizer: OptimizerApi {
+          type Delta <: DeviceBuffer[Float]
+        } =
+          asOptimizer(
+            implicitApplyRest(floatDeviceBufferPartialApplyOriginalDelta(
+              floatDeviceBufferPartialApplyWeight(
+                floatDeviceBufferOptimizerFactory.newInstance,
+                floatDeviceBufferWeightParameter(this)
+              ),
+              floatDeviceBufferOriginalDeltaParameter(originalDelta)
+            )))
 
-      val optimizer: OptimizerApi {
-        type Delta <: DeviceBuffer[Float]
-      } = asOptimizer(
-        implicitApplyRest(
-          floatDeviceBufferPartialApplyOriginalDelta(
-            floatDeviceBufferPartialApplyWeight(
-              floatDeviceBufferOptimizerFactory.newInstance,
-              floatDeviceBufferWeightParameter(this)
-            ),
-            floatDeviceBufferOriginalDeltaParameter(originalDelta)
-          )))
+        val delta = optimizer.delta
 
-      val delta = optimizer.delta
+        subtractInplace(data, delta)
 
-      // FIXME: should use queue
-//
-//      data -= delta
-      ???
+      }
     }
-//
-//    /** @usecase def backward(delta: Delta): Do[Unit] = ???
-//      */
-//    override protected def backward[SubtypeOfOptimizer](originalDelta: DeviceBuffer[Float])(
-//        implicit implicitApplyRest: ImplicitApply.Aux[floatDeviceBufferPartialApplyOriginalDelta.Rest, SubtypeOfOptimizer],
-//        asOptimizer: SubtypeOfOptimizer <:<
-//          OptimizerApi {
-//            type Delta <: Do[DeviceBuffer[Float]]
-//          }): Do[Unit] = {
-////      val optimizer: OptimizerApi {
-////        type Delta <: Do[DeviceBuffer[Float]]
-////      } = asOptimizer(
-////        implicitApplyRest(
-////          floatDeviceBufferPartialApplyOriginalDelta(
-////            floatDeviceBufferPartialApplyWeight(
-////              floatDeviceBufferOptimizerFactory.newInstance,
-////              floatDeviceBufferWeightParameter(this)
-////            ),
-////            floatDeviceBufferOriginalDeltaParameter(originalDelta)
-////          )))
-////
-////      val delta = optimizer.delta
-//
-//      ???
-////      val rest: partialApply.Rest = partialApply(floatDeviceBufferOptimizerFactory.newInstance, thisIsParameter(this))
-////
-////      val optimizer: FloatDeviceBufferOptimizer = outIsOptimizer(implicitApplyRest(rest))
-////
-////      ???
-////      Do.delay {
-////        val optimizer: FloatDeviceBufferOptimizer = ???
-////        val delta = optimizer.delta
-////        synchronized {
-////          data -= delta
-////        }
-////      }
-//    }
+
+  }
+
+  def subtractInplace(input0: DeviceBuffer[Float], input1: DeviceBuffer[Float]): Do[Unit] = {
+    Do.monadicCloseable(subtractInplaceProgram.createFirstKernel())
+      .flatMap { kernel =>
+        kernel(0) = input0
+        kernel(1) = input1
+        val length = input0.length
+        val self: this.type = this
+        val doEvent: Do[Event] = kernel.enqueue(length)(Witness(self))
+        doEvent.flatMap { event =>
+          val doWait: Do[Unit] = Do.garbageCollected(event.waitForComplete())
+          doWait
+        }
+      }
   }
 
   type FloatDeviceBufferWeight <: DeviceBufferWeight with FloatDeviceBufferWeightApi
@@ -118,15 +99,16 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
   protected def floatDeviceBufferWeightDataParameter
     : DeviceBuffer[Float] <:< floatDeviceBufferWeightPartialApplyData.Parameter
 
-
   object FloatDeviceBufferWeight {
-    def apply[Out <: FloatDeviceBufferWeight](data: DeviceBuffer[Float])(
-        implicit implicitApplyRest: ImplicitApply.Aux[floatDeviceBufferWeightPartialApplyData.Rest, Out]
+    def apply[Out](data: DeviceBuffer[Float])(
+        implicit implicitApplyRest: ImplicitApply.Aux[floatDeviceBufferWeightPartialApplyData.Rest, Out],
+        isFloatDeviceBufferWeight: Out <:< FloatDeviceBufferWeight
     ): FloatDeviceBufferWeight = {
-      implicitApplyRest(
-        floatDeviceBufferWeightPartialApplyData(floatDeviceBufferWeightFactory.newInstance,
-                                                floatDeviceBufferWeightDataParameter(data))
-      )
+      isFloatDeviceBufferWeight(
+        implicitApplyRest(
+          floatDeviceBufferWeightPartialApplyData(floatDeviceBufferWeightFactory.newInstance,
+                                                  floatDeviceBufferWeightDataParameter(data))
+        ))
     }
   }
 
@@ -142,13 +124,17 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
   /** @template */
   type FloatDeviceBufferOptimizer <: FloatDeviceBufferOptimizerApi with Optimizer
 
-//  @inject
-//  protected val floatDeviceBufferOptimizerFactory: Factory[FloatDeviceBufferOptimizer]
+  private lazy val subtractInplaceProgram: Program = {
+    val program = createProgramWithSource(
+      Seq("""
+        kernel void subtract_inplace(global float* restrict input0, global const float* restrict input1) {
+          const size_t index = get_global_id(0);
+          input0[index] -= input1[index];
+        }
+      """)
+    )
 
-  //def xxx: FloatDeviceBufferOptimizer = ???
-  //
-  //  trait ImplicitsApi extends super[Weights].ImplicitsApi with super[OpenCL].ImplicitsApi {
-  //    implicit def deviceBufferWeightDeepLearning[Element]
-  //    : DeepLearning.Aux[DeviceBufferWeight[Element], DeviceBuffer[Element], DeviceBuffer[Element]] = ???
-  //  }
+    program.build()
+    program
+  }
 }

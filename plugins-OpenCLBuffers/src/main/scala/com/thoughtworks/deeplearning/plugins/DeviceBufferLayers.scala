@@ -70,7 +70,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
         def outputData(data0: DeviceBuffer[Element], data1: DeviceBuffer[Element]): Do[DeviceBuffer[Element]] = {
           val doOutputBuffer = allocateBuffer[Element](matrix0Rows * matrix1Columns).flatMap {
             output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(matrixMultiplyProgram.firstKernel)
+              Do.monadicCloseable(matrixMultiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
                   kernel(0) = data0
                   kernel(1) = data1
@@ -99,7 +99,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
             }
 
             allocateBuffer[Element](matrix0Rows * matrix1Columns).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(backwardMatrixMultiplyProgram.firstKernel)
+              Do.monadicCloseable(backwardMatrixMultiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
                   kernel(0) = outputDelta
                   kernel(1) = data1
@@ -118,7 +118,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
           }
           val delta1: Do[DeviceBuffer[Element]] = doOutputDelta.flatMap { outputDelta: DeviceBuffer[Element] =>
             allocateBuffer[Element](matrix0Rows * matrix1Columns).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(backwardMatrixMultiplyProgram.firstKernel)
+              Do.monadicCloseable(backwardMatrixMultiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
                   kernel(0) = outputDelta
                   kernel(1) = data1
@@ -136,7 +136,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
             }
 
           }
-          ???
+          backward0(delta0) >> backward1(delta1)
         }
         outputData(data0, data1).map(Tape(_, backward))
     }
@@ -166,13 +166,13 @@ trait DeviceBufferLayers extends Layers with OpenCL {
             throw new IllegalArgumentException("The length of data0 should equal the length of data1")
           }
           val doOutputBuffer = allocateBuffer[Element](length).flatMap { output: DeviceBuffer[Element] =>
-            Do.monadicCloseable(subtractProgram.firstKernel)
+            Do.monadicCloseable(subtractProgram.createFirstKernel())
               .flatMap { kernel =>
                 kernel(0) = data0
                 kernel(1) = data1
                 kernel(2) = output
                 val self: this.type = this
-                val doEvent: Do[Event] = kernel.enqueue(length, length, length)(Witness(self))
+                val doEvent: Do[Event] = kernel.enqueue(length)(Witness(self))
                 doEvent.flatMap { event =>
                   val doWait: Do[Unit] = Do.garbageCollected(event.waitForComplete())
                   doWait
@@ -189,12 +189,12 @@ trait DeviceBufferLayers extends Layers with OpenCL {
           val delta0 = doOutputDelta
           val delta1: Do[DeviceBuffer[Element]] = doOutputDelta.flatMap { outputDelta: DeviceBuffer[Element] =>
             allocateBuffer[Element](length).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(negativeProgram.firstKernel)
+              Do.monadicCloseable(negativeProgram.createFirstKernel())
                 .flatMap { kernel =>
                   kernel(0) = outputDelta
                   kernel(1) = output
                   val self: this.type = this
-                  kernel.enqueue(length, length)(Witness(self)).flatMap { event =>
+                  kernel.enqueue(length)(Witness(self)).flatMap { event =>
                     Do.garbageCollected(event.waitForComplete())
                   }
                 }
@@ -250,13 +250,13 @@ trait DeviceBufferLayers extends Layers with OpenCL {
           }
 
           val doOutputBuffer = allocateBuffer[Element](length).flatMap { output: DeviceBuffer[Element] =>
-            Do.monadicCloseable(matrixMultiplyProgram.firstKernel)
+            Do.monadicCloseable(matrixMultiplyProgram.createFirstKernel())
               .flatMap { kernel =>
                 kernel(0) = data0
                 kernel(1) = data1
                 kernel(2) = output
                 val self: this.type = this
-                val doEvent: Do[Event] = kernel.enqueue(length, length, length)(Witness(self))
+                val doEvent: Do[Event] = kernel.enqueue(length)(Witness(self))
                 doEvent.flatMap { event =>
                   val doWait: Do[Unit] = Do.garbageCollected(event.waitForComplete())
                   doWait
@@ -272,13 +272,13 @@ trait DeviceBufferLayers extends Layers with OpenCL {
         def backward(doOutputDelta: Do[DeviceBuffer[Element]]): UnitContinuation[Unit] = {
           val delta0: Do[DeviceBuffer[Element]] = doOutputDelta.flatMap { outputDelta: DeviceBuffer[Element] =>
             allocateBuffer[Element](outputDelta.length).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(multiplyProgram.firstKernel)
+              Do.monadicCloseable(multiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
                   kernel(0) = outputDelta
                   kernel(1) = data1
                   kernel(2) = output
                   val self: this.type = this
-                  kernel.enqueue(length, length, length)(Witness(self)).flatMap { event =>
+                  kernel.enqueue(length)(Witness(self)).flatMap { event =>
                     Do.garbageCollected(event.waitForComplete())
                   }
                 }
@@ -289,13 +289,13 @@ trait DeviceBufferLayers extends Layers with OpenCL {
           }
           val delta1: Do[DeviceBuffer[Element]] = doOutputDelta.flatMap { outputDelta: DeviceBuffer[Element] =>
             allocateBuffer[Element](outputDelta.length).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(multiplyProgram.firstKernel)
+              Do.monadicCloseable(multiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
                   kernel(0) = outputDelta
                   kernel(1) = data0
                   kernel(2) = output
                   val self: this.type = this
-                  kernel.enqueue(length, length, length)(Witness(self)).flatMap { event =>
+                  kernel.enqueue(length)(Witness(self)).flatMap { event =>
                     Do.garbageCollected(event.waitForComplete())
                   }
                 }

@@ -8,8 +8,6 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 
 scalacOptions += "-Ypartial-unification"
 
-
-
 val lwjglNatives: String = {
   if (util.Properties.isMac) {
     "natives-macos"
@@ -22,4 +20,8 @@ val lwjglNatives: String = {
   }
 }
 
+libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2"
+
 libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Test classifier lwjglNatives
+
+fork := true
