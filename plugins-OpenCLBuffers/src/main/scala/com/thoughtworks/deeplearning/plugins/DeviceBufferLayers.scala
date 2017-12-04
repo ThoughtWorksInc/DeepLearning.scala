@@ -387,7 +387,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
           const size_t j = get_global_id(1);
 
           float value = 0.0f;
-          for (int k = 0; k < matrix0Columns; ++k) {
+          for (int k = 0; k < matrix0_columns; ++k) {
             float elementA = input0[i * matrix0_columns + k];
             float elementB = input1[j * matrix0_columns + k];
             value += elementA * elementB;
