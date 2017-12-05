@@ -47,7 +47,7 @@ final class DeviceBufferLayersSpec extends AsyncFreeSpec /* AsyncFeatureSpec wit
 
   private def configure =
     Do.monadicCloseable(Factory[
-      DeviceBufferOf with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseAllDevices with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with NormalDistributionRandom]
+      DeviceBufferOf with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with NormalDistributionRandom]
       .newInstance(
         handleOpenCLNotification = handleOpenCLNotification,
         numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>
@@ -90,7 +90,7 @@ final class DeviceBufferLayersSpec extends AsyncFreeSpec /* AsyncFeatureSpec wit
 
   }
 
-  "backward pass of matrix multiplication" in {
+  "backward pass of matrix multiplication and right can train" in {
     configure
       .flatMap { hyperparameters0 =>
         val hyperparameters = hyperparameters0
@@ -102,23 +102,107 @@ final class DeviceBufferLayersSpec extends AsyncFreeSpec /* AsyncFeatureSpec wit
           expectedAnswers: DeviceBuffer[Float] =>
             FloatDeviceBufferWeight(expectedAnswers)
         }
+
         deviceBufferOf(0f, 1f, 2f, 4f, 7f, 10f, 13f, 15f, 17f)
           .flatMap { trainingQuestions =>
             weight.flatMap { weights =>
               info("When I ask to matrixMultiply two matrix")
-              val matrixCalculate /*: Do[Tape[DeviceBuffer[Float], FloatDeviceBufferWeight]]*/ =
-                hyperparameters.matrixMultiply(trainingQuestions, weights, 3).forward
+              val matrixCalculate =
+                hyperparameters.matrixMultiply(trainingQuestions, weights /*right train*/, 3).forward
               matrixCalculate
                 .intransitiveFlatMap { tape =>
                   val backwardBuffer = deviceBufferOf(3f, 13f, 19f)
                   Do.garbageCollected(tape.backward(backwardBuffer))
                 }
                 .flatMap { _: Unit =>
-                  info("Then I should have a 3x1 matrix of (51f, 293f, 557f)")
+                  info("Then I should have a 3x1 matrix of (-296f,-366f,-440f)")
                   weights.data.toHostBuffer.map { buffer =>
-                    val expected = Seq(51f, 293f, 557f)
+                    val expected = Seq(-296f, -366f, -440f)
 
                     0.until(buffer.capacity).map(buffer.get) should be(expected)
+
+                  }
+                }
+
+            }
+
+          }
+      }
+      .run
+      .toScalaFuture
+  }
+
+  "backward pass of matrix multiplication and left can train" in {
+    configure
+      .flatMap { hyperparameters0 =>
+        val hyperparameters = hyperparameters0
+        import hyperparameters._
+        import hyperparameters.implicits._
+        info("Given I have a 3x3 matrix of (0f, 1f, 2f, 4f, 7f, 10f, 13f, 15f, 17f) and a 3x1 matrix of (3f, 13f, 19f)")
+
+        val weight: Do[FloatDeviceBufferWeight] = deviceBufferOf(0f, 1f, 2f, 4f, 7f, 10f, 13f, 15f, 17f).map {
+          expectedAnswers: DeviceBuffer[Float] =>
+            FloatDeviceBufferWeight(expectedAnswers)
+        }
+        deviceBufferOf(3f, 13f, 19f)
+          .flatMap { trainingQuestions =>
+            weight.flatMap { weights =>
+              info("When I ask to matrixMultiply two matrix")
+              val matrixCalculate =
+                hyperparameters.matrixMultiply(weights /*left*/, trainingQuestions, 3).forward
+              matrixCalculate
+                .intransitiveFlatMap { tape =>
+                  val backwardBuffer = deviceBufferOf(3f, 13f, 19f)
+                  Do.garbageCollected(tape.backward(backwardBuffer))
+                }
+                .flatMap { _: Unit =>
+                  info("Then I should have a 3x3 matrix of (-9f, -38f, -55f, -35f, -162f, -237f, -44f, -232f, -344f)")
+                  weights.data.toHostBuffer.map { buffer =>
+                    val expected = Seq(-9f, -38f, -55f, -35f, -162f, -237f, -44f, -232f, -344f)
+
+                    0.until(buffer.capacity).map(buffer.get) should be(expected)
+
+                  }
+                }
+
+            }
+
+          }
+      }
+      .run
+      .toScalaFuture
+  }
+
+  "1x1 backward pass of matrix multiplication" in {
+    configure
+      .flatMap { hyperparameters0 =>
+        val hyperparameters = hyperparameters0
+        import hyperparameters._
+        import hyperparameters.implicits._
+        info("Given I have a 1x1 matrix of (10f) and a 1x1 weight matrix of (1000f)")
+
+        val weight: Do[FloatDeviceBufferWeight] = deviceBufferOf(1000f).map { expectedAnswers: DeviceBuffer[Float] =>
+          FloatDeviceBufferWeight(expectedAnswers)
+        }
+
+        deviceBufferOf(10f)
+          .flatMap { trainingQuestions =>
+            weight.flatMap { weights =>
+              info("When I ask to matrixMultiply two matrix")
+              val matrixCalculate =
+                hyperparameters.matrixMultiply(trainingQuestions, weights, 1).forward
+              matrixCalculate
+                .intransitiveFlatMap { tape =>
+                  val backwardBuffer = deviceBufferOf(2f)
+                  Do.garbageCollected(tape.backward(backwardBuffer))
+                }
+                .flatMap { _: Unit =>
+                  info("Then I should have a 1x1 matrix of (980f)")
+                  weights.data.toHostBuffer.map { buffer =>
+                    val expected = Seq(980f)
+
+                    0.until(buffer.capacity).map(buffer.get) should be(expected)
+
                   }
                 }
 
@@ -131,4 +215,37 @@ final class DeviceBufferLayersSpec extends AsyncFreeSpec /* AsyncFeatureSpec wit
 
   }
 
+  "1x1 forward pass of multiplication" in {
+    configure
+      .flatMap { hyperparameters0 =>
+        val hyperparameters = hyperparameters0
+        import hyperparameters._
+        import hyperparameters.implicits._
+        info("Given I have a 1x1 matrix of (10f) and a 1x1 matrix of (10f)")
+
+        deviceBufferOf(10f)
+          .flatMap { trainingQuestions =>
+            deviceBufferOf(10f).flatMap { weights =>
+              info("When I ask to matrixMultiply two matrix")
+              val matrixCalculate =
+                hyperparameters.multiply(trainingQuestions, weights).forward
+              matrixCalculate.flatMap {
+                case (tape @ Tape(data, backward)) =>
+                  data.toHostBuffer.map { buffer =>
+                    info("Then I should have a 1x1 matrix of (100f)")
+                    val expected = Seq(100f)
+
+                    0.until(buffer.capacity).map(buffer.get) should be(expected)
+
+                  }
+              }
+            }
+
+          }
+
+      }
+      .run
+      .toScalaFuture
+
+  }
 }
