@@ -1,16 +1,22 @@
 package com.thoughtworks.deeplearning.plugins
 
+import com.sun.tools.doclets.internal.toolkit.util.DocFinder.Output
 import com.thoughtworks.compute.Memory
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.ImplicitApply.Aux
 import com.thoughtworks.raii.asynchronous._
+import com.thoughtworks.future._
+
 import shapeless.Witness
 
 import scalaz.syntax.all._
 
 trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
+
+  // Workaround for https://github.com/milessabin/shapeless/issues/755
+  implicit private def witnessThis: Witness.Aux[this.type] = Witness.mkWitness(this)
 
   trait ImplicitsApi extends super[DeviceBufferWeights].ImplicitsApi with super[Weights].ImplicitsApi
 
@@ -50,12 +56,12 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
           OptimizerApi {
             type Delta <: DeviceBuffer[Float]
           }): Do[Unit] = {
-      Do.delay {
-        val optimizer: OptimizerApi {
-          type Delta <: DeviceBuffer[Float]
-        } =
-          asOptimizer(
-            implicitApplyRest(floatDeviceBufferPartialApplyOriginalDelta(
+      val optimizer: OptimizerApi {
+        type Delta <: DeviceBuffer[Float]
+      } =
+        asOptimizer(
+          implicitApplyRest(
+            floatDeviceBufferPartialApplyOriginalDelta(
               floatDeviceBufferPartialApplyWeight(
                 floatDeviceBufferOptimizerFactory.newInstance,
                 floatDeviceBufferWeightParameter(this)
@@ -63,11 +69,9 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
               floatDeviceBufferOriginalDeltaParameter(originalDelta)
             )))
 
-        val delta = optimizer.delta
+      val delta = optimizer.delta
+      subtractInplace(data, delta)
 
-        subtractInplace(data, delta)
-
-      }
     }
 
   }
@@ -78,8 +82,7 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
         kernel(0) = input0
         kernel(1) = input1
         val length = input0.length
-        val self: this.type = this
-        val doEvent: Do[Event] = kernel.enqueue(length)(Witness(self))
+        val doEvent: Do[Event] = kernel.enqueue(length)
         doEvent.flatMap { event =>
           val doWait: Do[Unit] = Do.garbageCollected(event.waitForComplete())
           doWait
@@ -137,4 +140,5 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
     program.build()
     program
   }
+
 }

@@ -98,14 +98,14 @@ trait DeviceBufferLayers extends Layers with OpenCL {
               throw new IllegalArgumentException("The outputDelta should be matrix")
             }
 
-            allocateBuffer[Element](matrix0Rows * matrix1Columns).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(backwardMatrixMultiplyProgram.createFirstKernel())
+            allocateBuffer[Element](matrix0Rows * matrix0Columns).flatMap { output: DeviceBuffer[Element] =>
+              Do.monadicCloseable(backwardData1MatrixMultiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
-                  kernel(0) = outputDelta
-                  kernel(1) = data1
+                  kernel(0) = data1
+                  kernel(1) = outputDelta
                   kernel(2) = output
-                  kernel(3) = matrix1Columns
-                  kernel(4) = matrix0Columns
+                  kernel(3) = matrix0Columns
+                  kernel(4) = matrix1Columns
                   val self: this.type = this
                   kernel.enqueue(matrix0Rows, matrix1Rows)(Witness(self)).flatMap { event =>
                     Do.garbageCollected(event.waitForComplete())
@@ -117,26 +117,27 @@ trait DeviceBufferLayers extends Layers with OpenCL {
             }
           }
           val delta1: Do[DeviceBuffer[Element]] = doOutputDelta.flatMap { outputDelta: DeviceBuffer[Element] =>
-            allocateBuffer[Element](matrix0Rows * matrix1Columns).flatMap { output: DeviceBuffer[Element] =>
-              Do.monadicCloseable(backwardMatrixMultiplyProgram.createFirstKernel())
+            allocateBuffer[Element](matrix1Rows * matrix1Columns).flatMap { output: DeviceBuffer[Element] =>
+              Do.monadicCloseable(backwardData0MatrixMultiplyProgram.createFirstKernel())
                 .flatMap { kernel =>
-                  kernel(0) = outputDelta
-                  kernel(1) = data1
+                  kernel(0) = data0
+                  kernel(1) = outputDelta
                   kernel(2) = output
-                  kernel(3) = matrix1Columns
-                  kernel(4) = matrix0Columns
+                  kernel(3) = matrix0Columns
+                  kernel(4) = matrix1Columns
                   val self: this.type = this
-                  kernel.enqueue(matrix0Rows, matrix1Rows)(Witness(self)).flatMap { event =>
+                  kernel.enqueue(matrix0Columns, matrix1Columns)(Witness(self)).flatMap { event =>
                     Do.garbageCollected(event.waitForComplete())
                   }
                 }
                 .intransitiveMap { _: Unit =>
                   output
+
                 }
             }
 
           }
-          backward0(delta0) >> backward1(delta1)
+          parallelAppend(backward0(delta0), backward1(delta1))
         }
         outputData(data0, data1).map(Tape(_, backward))
     }
@@ -250,7 +251,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
           }
 
           val doOutputBuffer = allocateBuffer[Element](length).flatMap { output: DeviceBuffer[Element] =>
-            Do.monadicCloseable(matrixMultiplyProgram.createFirstKernel())
+            Do.monadicCloseable(multiplyProgram.createFirstKernel())
               .flatMap { kernel =>
                 kernel(0) = data0
                 kernel(1) = data1
@@ -378,24 +379,48 @@ trait DeviceBufferLayers extends Layers with OpenCL {
     program
   }
 
-  private lazy val backwardMatrixMultiplyProgram: Program = {
+  private lazy val backwardData0MatrixMultiplyProgram: Program = {
     val program = createProgramWithSource(
       Seq(
         """
-        kernel void backward_matrix_multiply(global const float* restrict input0, global const float* restrict input1, global float* restrict output, size_t matrix0_columns, size_t matrix1_rows) {
+        kernel void backward_data0_matrix_multiply(global const float* restrict input0, global const float* restrict input1, global float* restrict output, size_t matrix0_columns, size_t matrix1_columns) {
           const size_t i = get_global_id(0);
           const size_t j = get_global_id(1);
 
           float value = 0.0f;
           for (int k = 0; k < matrix0_columns; ++k) {
-            float elementA = input0[i * matrix0_columns + k];
-            float elementB = input1[j * matrix0_columns + k];
+            float elementA = input0[k * matrix0_columns + i];
+            float elementB = input1[k * matrix1_columns + j];
             value += elementA * elementB;
           }
-          output[i * matrix1_rows + j] = value;
+          output[i * matrix1_columns + j] = value;
         }
       """)
     )
+    program.build()
+    program
+  }
+
+  private lazy val backwardData1MatrixMultiplyProgram: Program = {
+    val program = createProgramWithSource(
+      Seq(
+        """
+        kernel void backward_data1_matrix_multiply(global const float* restrict input0, global const float* restrict input1, global float* restrict output, size_t matrix0_columns, size_t matrix1_columns) {
+          const size_t i = get_global_id(0);
+          const size_t j = get_global_id(1);
+
+          float value = 0.0f;
+          for (int k = 0; k < matrix0_columns; ++k) {
+            float elementA = input0[k * matrix0_columns + i];
+            float elementB = input1[k * matrix1_columns + j];
+            value += elementA * elementB;
+          }
+          output[i * matrix0_columns + j] = value;
+        }
+      """)
+    )
+
+    // matrix0_columns == matrix1_rows
     program.build()
     program
   }
