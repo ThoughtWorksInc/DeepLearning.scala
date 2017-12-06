@@ -11,6 +11,7 @@ import scalaz.Apply
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
 import DeepLearning.ops._
+import com.thoughtworks.deeplearning.plugins.Layers.ToLayer
 
 /** A plugin that provides differentiable operators
   * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[scala.Float]].
@@ -26,8 +27,27 @@ import DeepLearning.ops._
 trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
+//
+//    @inject
+//    protected val floatLayerFactory: Factory[FloatLayer]
+//
+//    @inject
+//    protected val floatLayerPartialApplyRawForward: PartialApply[floatLayerFactory.Constructor,
+//                                                                 shapeless.Witness.`"rawForward"`.T]
+//
+//    @inject
+//    protected def floatLayerPartialApplyRawForwardParameter
+//      : Do[Tape[Float, Float]] <:< floatLayerPartialApplyRawForward.Parameter
 
-    implicit def toFloatLayer: Layers.ToLayer.Aux[Float, Float, FloatLayer] = ???
+    implicit def toFloatLayer[Out <: FloatLayer](
+        implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out])
+      : Layers.ToLayer.Aux[Float, Float, FloatLayer] = new ToLayer[Float, Float] {
+      type OutputLayer = FloatLayer
+
+      override def toLayer(forward: Do[Tape[Float, Float]]): FloatLayer = {
+        implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
+      }
+    }
 
     /** An implicit wrapper that adds extension methods for differentiable float types
       * that support the [[DeepLearning]] type class.

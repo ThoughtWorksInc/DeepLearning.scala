@@ -17,6 +17,9 @@ import scalaz.{Apply, Semigroup}
 
 trait DeviceBufferLayers extends Layers with OpenCL {
 
+  // Workaround for https://github.com/milessabin/shapeless/issues/755
+  implicit private def witnessThis: Witness.Aux[this.type] = Witness.mkWitness(this)
+
   trait ImplicitsApi extends super[Layers].ImplicitsApi with super[OpenCL].ImplicitsApi
 
   override type Implicits <: ImplicitsApi
@@ -30,11 +33,6 @@ trait DeviceBufferLayers extends Layers with OpenCL {
 
   type DeviceBufferLayer <: DeviceBufferLayerApi with Layer
 
-  def mean[Operand0, Buffer, Element, OutputLayer](operand0: Operand0)(
-      implicit
-      deepLearning0: DeepLearning.Aux[Operand0, Buffer, Buffer],
-      isDoBuffer: Do[Tape[Buffer, Buffer]] <:< Do[Tape[DeviceBuffer[Element], DeviceBuffer[Element]]],
-      layerFactory: ToLayer.Aux[Element, Element, OutputLayer]): OutputLayer = ???
 
   def matrixMultiply[Operand0, Operand1, Buffer, Element, OutputLayer /* <: DeviceBufferLayer */ ](operand0: Operand0,
                                                                                                    operand1: Operand1,
