@@ -112,6 +112,7 @@ lazy val `plugins-OpenCLBuffers` =
                     `plugins-Weights`,
                     `plugins-Layers`,
                     `plugins-FloatLayers`,
+                    `plugins-Logging`,
                     ProjectRef(file("Compute.scala"), "OpenCL"))
 
 publishArtifact := false

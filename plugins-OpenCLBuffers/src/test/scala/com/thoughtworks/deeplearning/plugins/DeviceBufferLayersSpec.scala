@@ -4,7 +4,6 @@ import java.nio.{ByteBuffer, FloatBuffer}
 
 import com.thoughtworks.compute.{Memory, OpenCL}
 import com.thoughtworks.continuation.UnitContinuation
-import com.thoughtworks.deeplearning.plugins.FloatWeightSpec.NormalDistributionRandom
 import com.thoughtworks.future._
 import com.thoughtworks.feature.Factory
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
@@ -47,7 +46,7 @@ final class DeviceBufferLayersSpec extends AsyncFreeSpec /* AsyncFeatureSpec wit
 
   private def configure =
     Do.monadicCloseable(Factory[
-      DeviceBufferOf with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with NormalDistributionRandom]
+      DeviceBufferOf with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers]
       .newInstance(
         handleOpenCLNotification = handleOpenCLNotification,
         numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>

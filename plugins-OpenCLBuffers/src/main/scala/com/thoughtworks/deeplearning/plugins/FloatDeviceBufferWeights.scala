@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning.plugins
 
-import com.sun.tools.doclets.internal.toolkit.util.DocFinder.Output
 import com.thoughtworks.compute.Memory
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
