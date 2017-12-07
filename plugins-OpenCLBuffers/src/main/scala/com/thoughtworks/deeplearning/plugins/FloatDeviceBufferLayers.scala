@@ -102,7 +102,7 @@ trait FloatDeviceBufferLayers extends DeviceBufferLayers with FloatLayers {
   private lazy val fillValue: Program = {
     val program = createProgramWithSource(
       Seq("""
-        kernel void fill_value(global float* restrict output, const float value) {
+        kernel void fill_value(global float* restrict output, float value) {
           const size_t i = get_global_id(0);
           output[i] = value;
         }

@@ -55,7 +55,7 @@ final class FloatWeightSpec {
       }
     }
     val doHyperparameters = Do.monadicCloseable(Factory[
-      FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseAllCPUDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with Logging]
+      Logging with Names with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstGPUDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers]
       .newInstance(
         handleOpenCLNotification = handleOpenCLNotification,
         numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>
@@ -73,7 +73,7 @@ final class FloatWeightSpec {
       import hyperparameters.FloatDeviceBufferLayer
 
       def randn(length: Int)(implicit memory: Memory[Float]): Do[DeviceBuffer[Float]] = {
-        val randomSeq = (0 until length).map(_ => random.nextFloat())
+        val randomSeq = (0 until length).map(_ => 1000000f /*_ => random.nextFloat()*/ )
         deviceBufferOf[Float](randomSeq: _*)
       }
 
