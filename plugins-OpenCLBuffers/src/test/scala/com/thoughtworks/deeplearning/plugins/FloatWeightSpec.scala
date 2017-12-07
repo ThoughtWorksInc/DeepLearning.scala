@@ -25,8 +25,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 // INDArray -> OpenCLBuffer
 object FloatWeightSpec {
-  trait NormalDistributionRandom extends OpenCL {
-    def randn[A](length: Int): DeviceBuffer[A] = ???
+//  trait NormalDistributionRandom extends OpenCL {
+//    def randn[Element](length: Int)(implicit memory: Memory[Element]): Do[DeviceBuffer[Element]] = ???
+//  }
+
+  def main(args: Array[String]): Unit = {
+    new FloatWeightSpec().test.run.blockingAwait
   }
 }
 final class FloatWeightSpec {
@@ -34,6 +38,9 @@ final class FloatWeightSpec {
   import FloatWeightSpec._
 
   def test: Do[Stream[Float]] = {
+
+    import scala.util.Random
+    val random = new Random()
 
     val handleOpenCLNotification = { (errorInfo: String, buffer: ByteBuffer) =>
       if (buffer.remaining > 0) {
@@ -48,7 +55,7 @@ final class FloatWeightSpec {
       }
     }
     val doHyperparameters = Do.monadicCloseable(Factory[
-      FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseAllDevices with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with NormalDistributionRandom]
+      Logging with Names with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstGPUDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers]
       .newInstance(
         handleOpenCLNotification = handleOpenCLNotification,
         numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>
@@ -65,11 +72,9 @@ final class FloatWeightSpec {
       import hyperparameters.FloatDeviceBufferWeight
       import hyperparameters.FloatDeviceBufferLayer
 
-      val initialValueOfRobotWeight: DeviceBuffer[Float] = hyperparameters.randn(3)
-      val robotWeight: FloatDeviceBufferWeight = FloatDeviceBufferWeight(initialValueOfRobotWeight)
-
-      def iqTestRobot(questions: hyperparameters.DeviceBuffer[Float]): FloatDeviceBufferLayer = {
-        hyperparameters.matrixMultiply(questions, robotWeight, 3)
+      def randn(length: Int)(implicit memory: Memory[Float]): Do[DeviceBuffer[Float]] = {
+        val randomSeq = (0 until length).map(_ => 1000000f /*_ => random.nextFloat()*/ )
+        deviceBufferOf[Float](randomSeq: _*)
       }
 
       def deviceBufferOf[Element](elements: Element*)(implicit memory: Memory[Element]): Do[DeviceBuffer[Element]] = {
@@ -81,33 +86,38 @@ final class FloatWeightSpec {
         hyperparameters.allocateBufferFrom[Element, memory.HostBuffer](hostBuffer)(memory)
       }
 
-      deviceBufferOf(0f, 1f, 2f, 4f, 7f, 10f, 13f, 15f, 17f).flatMap { trainingQuestions =>
-        deviceBufferOf(3f, 13f, 19f).flatMap { expectedAnswers =>
-          def squareLoss(questions: DeviceBuffer[Float],
-                         expectAnswer: DeviceBuffer[Float]): hyperparameters.FloatLayer = {
+      val initialValueOfRobotWeights: Do[DeviceBuffer[Float]] = randn(3)
 
-            val xxx: DeepLearning.Aux[FloatDeviceBufferLayer,
-                                                                          DeviceBuffer[Float],
-                                                                          DeviceBuffer[Float]] = DeepLearning[FloatDeviceBufferLayer]
-            ???
-//
-//
-            val difference = hyperparameters.subtract(iqTestRobot(questions), expectAnswer)
-            val loss = hyperparameters.multiply(difference, difference)
-            hyperparameters.mean(loss)
+      initialValueOfRobotWeights.flatMap { initialValueOfRobotWeight =>
+        val robotWeight: FloatDeviceBufferWeight = FloatDeviceBufferWeight(initialValueOfRobotWeight)
 
-          }
-
-          val TotalIterations = 500
-
-          @monadic[Future]
-          def train: Future[Stream[Float]] = {
-            for (iteration <- (0 until TotalIterations).toStream) yield {
-              squareLoss(trainingQuestions, expectedAnswers).train.each
+        deviceBufferOf(0f, 1f, 2f, 4f, 7f, 10f, 13f, 15f, 17f).flatMap { trainingQuestions =>
+          deviceBufferOf(3f, 13f, 19f).flatMap { expectedAnswers =>
+            def iqTestRobot(questions: hyperparameters.DeviceBuffer[Float]): FloatDeviceBufferLayer = {
+              hyperparameters.matrixMultiply(questions, robotWeight, 3) //3 is matrix0Columns
             }
-          }
 
-          Do.garbageCollected(train)
+            def squareLoss(questions: DeviceBuffer[Float],
+                           expectAnswer: DeviceBuffer[Float]): hyperparameters.FloatLayer = {
+              val difference = hyperparameters.subtract(iqTestRobot(questions), expectAnswer)
+              val loss = hyperparameters.multiply(difference, difference)
+              hyperparameters.mean(loss)
+
+            }
+
+            val TotalIterations = 500
+
+            @monadic[Future]
+            def train: Future[Stream[Float]] = {
+              for (iteration <- (0 until TotalIterations).toStream) yield {
+                val loss = squareLoss(trainingQuestions, expectedAnswers).train.each
+                hyperparameters.logger.info(s"iteration=$iteration loss=$loss")
+                loss
+              }
+            }
+
+            Do.garbageCollected(train)
+          }
         }
       }
     }

@@ -36,7 +36,14 @@ trait Layers extends Differentiables {
     type Data
     type Delta
 
-    def forward: Do[Tape[Data, Delta]]
+    /** The original forward operation passed in, for creating this [[Layer]].
+      *
+      * @note This [[rawForward]] may be different from [[forward]],
+      *       in the case of [[forward]] was overridden by other plugins, e.g. [[CumulativeFloatLayers]].
+      */
+    protected val rawForward: Do[Tape[Data, Delta]]
+
+    def forward: Do[Tape[Data, Delta]] = rawForward
 
   }
 
@@ -54,7 +61,7 @@ trait Layers extends Differentiables {
         type Data = Data0
         type Delta = Delta0
         override def forward(from: From): Do[Tape[Data0, Delta0]] = {
-          from.forward
+          asLayer(from).forward
         }
       }
     }

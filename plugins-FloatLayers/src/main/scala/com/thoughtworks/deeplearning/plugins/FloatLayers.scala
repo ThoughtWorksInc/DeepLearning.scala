@@ -11,6 +11,7 @@ import scalaz.Apply
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
 import DeepLearning.ops._
+import com.thoughtworks.deeplearning.plugins.Layers.ToLayer
 
 /** A plugin that provides differentiable operators
   * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[scala.Float]].
@@ -26,8 +27,27 @@ import DeepLearning.ops._
 trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
+//
+//    @inject
+//    protected val floatLayerFactory: Factory[FloatLayer]
+//
+//    @inject
+//    protected val floatLayerPartialApplyRawForward: PartialApply[floatLayerFactory.Constructor,
+//                                                                 shapeless.Witness.`"rawForward"`.T]
+//
+//    @inject
+//    protected def floatLayerPartialApplyRawForwardParameter
+//      : Do[Tape[Float, Float]] <:< floatLayerPartialApplyRawForward.Parameter
 
-    implicit def toFloatLayer:Layers.ToLayer.Aux[Float,Float,FloatLayer] = ???
+    implicit def toFloatLayer[Out <: FloatLayer](
+        implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out])
+      : Layers.ToLayer.Aux[Float, Float, FloatLayer] = new ToLayer[Float, Float] {
+      type OutputLayer = FloatLayer
+
+      override def toLayer(forward: Do[Tape[Float, Float]]): FloatLayer = {
+        implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
+      }
+    }
 
     /** An implicit wrapper that adds extension methods for differentiable float types
       * that support the [[DeepLearning]] type class.
@@ -75,15 +95,16 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.-.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
-          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
-            val outputData = data0 - data1
-            def backward(doOutputDelta: Do[Float]) = {
-              backward0(doOutputDelta) >>
-                backward1(doOutputDelta.map(-_))
-            }
-            Tape(outputData, backward)
-        }
+        val forward: Do[Tape[Float, Float]] =
+          Apply[Do].apply2(operand0.forward /* deepLearning0.forward(operand0) */, operand1.forward) {
+            case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+              val outputData = data0 - data1
+              def backward(doOutputDelta: Do[Float]): UnitContinuation[Unit] = {
+                backward0(doOutputDelta) >>
+                  backward1(doOutputDelta.map(-_))
+              }
+              Tape(outputData, backward)
+          }
         FloatLayer(forward)
       }
     }
@@ -267,17 +288,8 @@ trait FloatLayers extends Layers {
                                                           shapeless.Witness.`"rawForward"`.T]
 
   trait FloatLayerApi extends super[Layers].LayerApi {
-    override type Data = Float
-    override type Delta = Float
-
-    /** The original forward operation passed in [[FloatLayer$ FloatLayer.apply]].
-      *
-      * @note This [[rawForward]] may be different from [[forward]],
-      *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeFloatLayers]].
-      */
-    protected val rawForward: Do[Tape[Float, Float]]
-
-    override def forward: Do[Tape[Float, Float]] = rawForward
+    type Data = Float
+    type Delta = Float
   }
   object FloatLayer {
 
