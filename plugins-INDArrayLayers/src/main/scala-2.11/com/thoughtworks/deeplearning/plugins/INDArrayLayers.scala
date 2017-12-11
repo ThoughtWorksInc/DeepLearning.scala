@@ -22,7 +22,8 @@ import com.thoughtworks.continuation._
 
 object INDArrayLayers {
 
-  final case class MultipleException(throwableSet: Set[Throwable]) extends RuntimeException("Multiple exceptions found") {
+  final case class MultipleException(throwableSet: Set[Throwable])
+      extends RuntimeException("Multiple exceptions found") {
     override def toString: String = throwableSet.mkString("\n")
 
     override def printStackTrace(): Unit = {
@@ -62,15 +63,19 @@ object INDArrayLayers {
   // Workaround for https://github.com/deeplearning4j/nd4j/issues/1869
   private[plugins] implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
     def broadcastFix(outputShape: Int*): INDArray = {
-      val currentShape = indArray.shape.padTo(outputShape.length, 1)
-      currentShape.indices.foldLeft(indArray.reshape(currentShape: _*)) { (indArray, i) =>
-        val o = outputShape(i)
-        if (o != 1 && o != currentShape(i)) {
-          currentShape(i) = o
-          indArray.broadcast(currentShape: _*)
-        } else {
-          indArray
-        }
+      indArray.shape match {
+        case currentShape if (currentShape: Seq[Int]) == outputShape => indArray
+        case currentShape =>
+          currentShape.padTo(outputShape.length, 1).indices.foldLeft(indArray.reshape(currentShape: _*)) {
+            (indArray, i) =>
+              val o = outputShape(i)
+              if (o != 1 && o != currentShape(i)) {
+                currentShape(i) = o
+                indArray.broadcast(currentShape: _*)
+              } else {
+                indArray
+              }
+          }
       }
     }
   }
@@ -103,13 +108,14 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   }
 
   private def autoBroadcastShape(shape1: Array[Int], shape2: Array[Int]): Array[Int] = {
-    require(shape1.length == shape2.length,
-            raw"""Cannot broadcast between shape ${shape1.mkString("[", ",", "]")} and ${shape2.mkString("[", ",", "]")}.""")
+    require(
+      shape1.length == shape2.length,
+      raw"""Cannot broadcast between shape ${shape1.mkString("[", ",", "]")} and ${shape2.mkString("[", ",", "]")}.""")
     shape1.zip(shape2).map {
       case (1, bSize)                       => bSize
       case (aSize, 1)                       => aSize
       case (aSize, bSize) if aSize == bSize => aSize
-      case _                                =>
+      case _ =>
         throw new IllegalArgumentException(
           raw"Failed to automatically broadcast between shape [${shape1.mkString(",")}] and [${shape2.mkString(",")}]}"
         )
