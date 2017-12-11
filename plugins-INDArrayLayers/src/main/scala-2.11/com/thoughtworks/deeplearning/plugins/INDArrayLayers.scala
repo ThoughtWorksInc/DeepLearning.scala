@@ -64,17 +64,17 @@ object INDArrayLayers {
   private[plugins] implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
     def broadcastFix(outputShape: Int*): INDArray = {
       indArray.shape match {
-        case currentShape if (currentShape: Seq[Int]) == outputShape => indArray
-        case currentShape =>
-          currentShape.padTo(outputShape.length, 1).indices.foldLeft(indArray.reshape(currentShape: _*)) {
-            (indArray, i) =>
-              val o = outputShape(i)
-              if (o != 1 && o != currentShape(i)) {
-                currentShape(i) = o
-                indArray.broadcast(currentShape: _*)
-              } else {
-                indArray
-              }
+        case oldShape if (oldShape: Seq[Int]) == outputShape => indArray
+        case oldShape =>
+          val currentShape = oldShape.padTo(outputShape.length, 1)
+          currentShape.indices.foldLeft(indArray) { (indArray, i) =>
+            val o = outputShape(i)
+            if (o != 1 && o != currentShape(i)) {
+              currentShape(i) = o
+              indArray.broadcast(currentShape: _*)
+            } else {
+              indArray
+            }
           }
       }
     }
