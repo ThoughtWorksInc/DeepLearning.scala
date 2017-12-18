@@ -30,7 +30,7 @@ trait Weights extends Differentiables {
       Do.now(
         Tape[Data, Delta](
           data, { doDelta: Do[Delta] =>
-            val doUpdate: Do[Unit] = doDelta.intransitiveFlatMap(backward(_))
+            val doUpdate: Do[Unit] = backward(doDelta)
             val Future(TryT(continuation)) = doUpdate.run
             continuation.flatMap {
               case Success(()) => UnitContinuation.now(())
@@ -42,7 +42,7 @@ trait Weights extends Differentiables {
 
     /** @usecase def backward(delta: Delta): Do[Unit] = ???
       */
-    protected def backward[SubtypeOfOptimizer](delta: Delta)(
+    protected def backward[SubtypeOfOptimizer](delta: Do[Delta])(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: WeightApi.this.Delta }): Do[Unit]
 
@@ -59,8 +59,8 @@ trait Weights extends Differentiables {
   trait OptimizerApi {
     type Delta
 
-    protected val originalDelta: Delta
-    def delta: Delta = originalDelta
+    protected val originalDelta: Do[Delta]
+    def delta: Do[Delta] = originalDelta
   }
 
   /** @template */
