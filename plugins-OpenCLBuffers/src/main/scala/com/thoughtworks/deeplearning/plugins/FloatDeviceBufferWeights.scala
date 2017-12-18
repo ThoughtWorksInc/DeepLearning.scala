@@ -38,7 +38,7 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
   @inject
   protected def floatDeviceBufferOriginalDeltaParameter
-    : DeviceBuffer[Float] <:< floatDeviceBufferPartialApplyOriginalDelta.Parameter
+    : Do[DeviceBuffer[Float]] <:< floatDeviceBufferPartialApplyOriginalDelta.Parameter
 
   trait FloatDeviceBufferWeightApi extends DeviceBufferWeightApi {
     this: FloatDeviceBufferWeight =>
@@ -48,7 +48,7 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
     /** @usecase def backward(delta: Delta): Do[Unit] = ???
       */
-    protected def backward[SubtypeOfOptimizer](originalDelta: DeviceBuffer[Float])(
+    protected def backward[SubtypeOfOptimizer](originalDelta: Do[DeviceBuffer[Float]])(
         implicit implicitApplyRest: ImplicitApply.Aux[floatDeviceBufferPartialApplyOriginalDelta.Rest,
                                                       SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:<
@@ -68,19 +68,22 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
               floatDeviceBufferOriginalDeltaParameter(originalDelta)
             )))
 
-      val delta = optimizer.delta
-      subtractInplace(data, delta)
+      val doDelta = optimizer.delta
+      doDelta.intransitiveFlatMap { delta =>
+        // TODO: synchronize
+        subtractInplace(data, delta)
+      }
 
     }
 
   }
 
-  def subtractInplace(input0: DeviceBuffer[Float], input1: DeviceBuffer[Float]): Do[Unit] = {
+  def subtractInplace(data: DeviceBuffer[Float], delta: DeviceBuffer[Float]): Do[Unit] = {
     Do.monadicCloseable(subtractInplaceProgram.createFirstKernel())
       .flatMap { kernel =>
-        kernel(0) = input0
-        kernel(1) = input1
-        val length = input0.length
+        kernel(0) = data
+        kernel(1) = delta
+        val length = data.length
         val doEvent: Do[Event] = kernel.enqueue(length)
         doEvent.flatMap { event =>
           val doWait: Do[Unit] = Do.garbageCollected(event.waitForComplete())
