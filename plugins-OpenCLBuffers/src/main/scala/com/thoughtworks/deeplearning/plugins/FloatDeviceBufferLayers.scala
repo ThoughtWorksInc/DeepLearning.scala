@@ -65,8 +65,8 @@ trait FloatDeviceBufferLayers extends DeviceBufferLayers with FloatLayers {
     val forward: Do[Tape[Float, Float]] = operand0Forward.flatMap {
       case (Tape(data0, backward0)) =>
         def outputData(data: DeviceBuffer[Float]): Do[Float] = {
-          data.toHostBuffer.map { databuffer =>
-            val elements: Array[Float] = memory.toArray(databuffer)
+          data.toHostBuffer.map { dataBuffer =>
+            val elements: Array[Float] = memory.toArray(dataBuffer)
             elements.sum / elements.length
           }
         }
