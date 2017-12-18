@@ -8,6 +8,8 @@ import org.scalatest._
 import com.thoughtworks.future._
 import com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
+import com.thoughtworks.raii.asynchronous._
+import scalaz.syntax.all._
 
 import scalaz.std.iterable._
 
@@ -24,7 +26,7 @@ object CumulativeFloatLayersSpec {
   trait LearningRate extends FloatWeights {
     trait FloatOptimizerApi extends super.FloatOptimizerApi { this: FloatOptimizer =>
       def learningRate: scala.Float
-      override def delta: scala.Float = super.delta * learningRate
+      override def delta: Do[Float] = super.delta.map(learningRate.*)
     }
     override type FloatOptimizer <: FloatOptimizerApi with Optimizer
   }
@@ -32,14 +34,14 @@ object CumulativeFloatLayersSpec {
   trait L1Regularization extends FloatWeights {
     def l1Regularization: scala.Float
     trait FloatOptimizerApi extends super.FloatOptimizerApi { this: FloatOptimizer =>
-      override def delta: scala.Float = super.delta + scala.math.signum(weight.data) * l1Regularization
+      override def delta: Do[Float] = super.delta.map(_ + scala.math.signum(weight.data) * l1Regularization)
     }
     override type FloatOptimizer <: FloatOptimizerApi with Optimizer
   }
   trait L2Regularization extends FloatWeights {
     def l2Regularization: scala.Float
     trait FloatOptimizerApi extends super.FloatOptimizerApi { this: FloatOptimizer =>
-      override def delta: scala.Float = super.delta + weight.data * l2Regularization
+      override def delta: Do[Float] = super.delta.map(_ + weight.data * l2Regularization)
     }
     override type FloatOptimizer <: FloatOptimizerApi with Optimizer
   }
