@@ -2,10 +2,12 @@ package com.thoughtworks.deeplearning
 package plugins
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
-import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.future._
+import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.asynchronous.Do._
 import shapeless.Witness
 
+import scala.util.{Failure, Success}
 
 /** A plugin to create [[scala.Float]] weights.
   *
@@ -23,20 +25,20 @@ trait FloatWeights extends Weights {
 
     override protected type PartiallyAppliedOptimizer = floatPartialApplyOriginalDelta.Rest
 
-    override protected def backward[SubtypeOfOptimizer](originalDelta: Float)(
+    override protected def backward[SubtypeOfOptimizer](originalDelta: Do[Float])(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: Float }): Do[Unit] = {
-      Do.delay {
-        val delta =
-          implicitApplyRest(
-            floatPartialApplyOriginalDelta(floatPartialApplyWeight(floatOptimizerFactory.newInstance,
-                                                                   floatWeightParameter(this)),
-                                           floatOriginalDeltaParameter(originalDelta))).delta
+      val doDelta =
+        implicitApplyRest(
+          floatPartialApplyOriginalDelta(
+            floatPartialApplyWeight(floatOptimizerFactory.newInstance, floatWeightParameter(this)),
+            floatOriginalDeltaParameter(originalDelta))).delta
+
+      doDelta.intransitiveMap { delta =>
         synchronized {
           data -= delta
         }
       }
-
     }
   }
 
@@ -85,6 +87,6 @@ trait FloatWeights extends Weights {
   protected val floatPartialApplyOriginalDelta: PartialApply[floatPartialApplyWeight.Rest, Witness.`"originalDelta"`.T]
 
   @inject
-  protected def floatOriginalDeltaParameter: Float <:< floatPartialApplyOriginalDelta.Parameter
+  protected def floatOriginalDeltaParameter: Do[Float] <:< floatPartialApplyOriginalDelta.Parameter
 
 }
