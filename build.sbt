@@ -133,4 +133,4 @@ lazy val unidoc =
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions := Seq("2.12.4")
