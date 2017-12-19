@@ -65,9 +65,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
         }
 
         val width1 = lengh1 / width0
-
-        println(s"[$height0, $width0] x [$width0, $width1] = [$height0, $width1]")
-
+//        println(s"[$height0, $width0] x [$width0, $width1] = [$height0, $width1]")
         def outputData(data0: DeviceBuffer[Element], data1: DeviceBuffer[Element]): Do[DeviceBuffer[Element]] = {
           val doOutputBuffer = allocateBuffer[Element](height0 * width1).flatMap { output: DeviceBuffer[Element] =>
             Do.monadicCloseable(matrixMultiplyForwardProgram.createFirstKernel())
