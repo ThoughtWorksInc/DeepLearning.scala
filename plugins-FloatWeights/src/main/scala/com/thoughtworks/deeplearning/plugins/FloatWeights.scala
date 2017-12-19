@@ -18,7 +18,8 @@ import scala.util.{Failure, Success}
   */
 trait FloatWeights extends Weights {
 
-  trait FloatWeightApi extends WeightApi { this: FloatWeight =>
+  trait FloatWeightApi extends WeightApi {
+    this: FloatWeight =>
 
     override type Delta = Float
     override type Data = Float
@@ -28,12 +29,13 @@ trait FloatWeights extends Weights {
     override protected def backward[SubtypeOfOptimizer](originalDelta: Do[Float])(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: Float }): Do[Unit] = {
-      val doDelta =
-        implicitApplyRest(
-          floatPartialApplyOriginalDelta(
-            floatPartialApplyWeight(floatOptimizerFactory.newInstance, floatWeightParameter(this)),
-            floatOriginalDeltaParameter(originalDelta))).delta
 
+      val optimizer: OptimizerApi { type Delta <: Float } = asOptimizer(
+        implicitApplyRest(
+          floatPartialApplyOriginalDelta(floatPartialApplyWeight(floatOptimizerFactory.newInstance,
+                                                                 floatWeightParameter(this)),
+                                         floatOriginalDeltaParameter(originalDelta))))
+      val doDelta = optimizer.delta
       doDelta.intransitiveMap { delta =>
         synchronized {
           data -= delta
@@ -65,7 +67,7 @@ trait FloatWeights extends Weights {
 
   trait FloatOptimizerApi extends OptimizerApi { this: FloatOptimizer =>
 
-    override type Delta = Float
+    type Delta = Float
 
     val weight: FloatWeight
 

@@ -4,6 +4,7 @@ import java.util.logging.{Level, LogRecord, Logger}
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
+import com.thoughtworks.continuation._
 import com.thoughtworks.feature.Caller
 
 object Logging {
@@ -33,53 +34,37 @@ object Logging {
       case message => message
     }
   }
-
-  final class ThrownInLayer(val layer: Layers#Layer, getThrown: Throwable)(implicit fullName: sourcecode.FullName,
-                                                                           name: sourcecode.Name,
-                                                                           caller: Caller[_])
+  final class UncaughtException(val differentiable: Logging#DifferentiableApi, getThrown: Throwable)(
+      implicit fullName: sourcecode.FullName,
+      name: sourcecode.Name,
+      caller: Caller[_])
       extends ContextualLogRecord(Level.SEVERE, thrown = getThrown)
       with LazyMessage {
-    override protected def makeDefaultMessage: Fastring = fast"An exception is thrown in layer $layer"
-  }
-
-  final class ThrownInWeight(val weight: Weights#Weight, getThrown: Throwable)(implicit fullName: sourcecode.FullName,
-                                                                               name: sourcecode.Name,
-                                                                               caller: Caller[_])
-      extends ContextualLogRecord(Level.SEVERE, thrown = getThrown)
-      with LazyMessage {
-    override protected def makeDefaultMessage: Fastring = fast"An exception is thrown in weight $weight"
+    override protected def makeDefaultMessage: Fastring = fast"An exception is thrown in $differentiable"
   }
 
 }
 
-/** A plugin that logs uncaught exceptions raised from [[Layer]] and [[Weight]].
+/** A plugin that logs uncaught exceptions.
   *
   * @author 杨博 (Yang Bo)
   */
-trait Logging extends Layers with Weights {
+trait Logging extends Differentiables {
   import Logging._
 
   @transient lazy val logger: Logger = Logger.getLogger(getClass.getName)
 
-  trait LayerApi extends super.LayerApi { this: Layer =>
+  trait DifferentiableApi extends super.DifferentiableApi {
     implicit protected def fullName: sourcecode.FullName
     implicit protected def name: sourcecode.Name
     implicit protected def caller: Caller[_]
-    override protected def handleException(thrown: Throwable): Unit = {
-      logger.log(new ThrownInLayer(this, thrown))
+    override protected def handleException(thrown: Throwable): UnitContinuation[Unit] = {
+      UnitContinuation.delay {
+        logger.log(new UncaughtException(this, thrown))
+      }
     }
   }
-  override type Layer <: LayerApi
 
-  trait WeightApi extends super.WeightApi { this: Weight =>
-    implicit protected def fullName: sourcecode.FullName
-    implicit protected def name: sourcecode.Name
-    implicit protected def caller: Caller[_]
-    override protected def handleException(thrown: Throwable): Unit = {
-      logger.log(new ThrownInWeight(this, thrown))
-    }
-  }
-  override type Weight <: WeightApi
-  override type Implicits <: super[Layers].ImplicitsApi with super[Weights].ImplicitsApi
+  type Differentiable <: DifferentiableApi
 
 }

@@ -37,13 +37,6 @@ trait Builtins
 
   type Implicits <: ImplicitsApi
 
-  trait LayerApi extends super[Logging].LayerApi with super[Names].LayerApi { this: Layer =>
-  }
-
-  type Layer <: LayerApi
-
-  trait WeightApi extends super[Logging].WeightApi with super[Names].WeightApi { this: Weight =>
-  }
-
-  type Weight <: WeightApi
+  trait DifferentiableApi extends super[Logging].DifferentiableApi with super[Names].DifferentiableApi
+  type Differentiable <: DifferentiableApi
 }

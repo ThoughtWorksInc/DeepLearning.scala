@@ -4,13 +4,13 @@ includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value &
 
 lazy val DeepLearning = project
 
-lazy val `plugins-Layers` = project.dependsOn(DeepLearning)
+lazy val `plugins-Layers` = project.dependsOn(DeepLearning, `plugins-Differentiables`)
 
-lazy val `plugins-Weights` = project.dependsOn(DeepLearning)
+lazy val `plugins-Weights` = project.dependsOn(DeepLearning, `plugins-Differentiables`)
 
-lazy val `plugins-Names` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
+lazy val `plugins-Names` = project.dependsOn(`plugins-Differentiables`)
 
-lazy val `plugins-Logging` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
+lazy val `plugins-Logging` = project.dependsOn(`plugins-Differentiables`)
 
 lazy val `plugins-Operators` = project
 
@@ -104,6 +104,20 @@ lazy val `plugins-Builtins` =
     `plugins-CumulativeDoubleLayers`,
     DeepLearning % "test->test"
   )
+lazy val `plugins-Differentiables` = project
+
+lazy val `plugins-OpenCLBuffers` =
+  project.dependsOn(
+    DeepLearning,
+    `plugins-FloatTraining` % Test,
+    `plugins-Weights`,
+    `plugins-Layers`,
+    `plugins-FloatLayers`,
+    `plugins-Logging`,
+    `plugins-Names`,
+    ProjectRef(file("Compute.scala"), "OpenCL")
+  )
+
 publishArtifact := false
 
 lazy val unidoc =
@@ -119,4 +133,4 @@ lazy val unidoc =
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions := Seq("2.12.4")
