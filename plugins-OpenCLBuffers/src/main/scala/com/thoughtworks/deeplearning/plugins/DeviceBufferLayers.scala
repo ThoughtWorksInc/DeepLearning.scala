@@ -354,6 +354,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
   }
 
   private lazy val matrixMultiplyForwardProgram: Program = {
+    // TODO: Use OpenCL 2.0's reduce function, which is supported by POCL
     val program = createProgramWithSource(
       Seq("""
         kernel void matrix_multiply_forward(global const float* const restrict data0,
@@ -378,6 +379,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
   }
 
   private lazy val matrixMultiplyBackwardDelta0Program: Program = {
+    // TODO: Use OpenCL 2.0's reduce function, which is supported by POCL
     val program = createProgramWithSource(
       Seq("""
         kernel void matrix_multiply_backward_delta0(global const float* const restrict output_delta,
@@ -401,6 +403,7 @@ trait DeviceBufferLayers extends Layers with OpenCL {
   }
 
   private lazy val matrixMultiplyBackwardDelta1Program: Program = {
+    // TODO: Use OpenCL 2.0's reduce function, which is supported by POCL
     val program = createProgramWithSource(
       Seq("""
         kernel void matrix_multiply_backward_delta1(global const float* const restrict output_delta,
