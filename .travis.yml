@@ -48,6 +48,8 @@ cache:
     - $HOME/.sbt/boot/
     - $HOME/Library/Caches/Homebrew
 
+before_script:
+
 script:
   - sbt +test +unidoc
 
