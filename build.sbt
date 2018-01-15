@@ -124,7 +124,7 @@ lazy val unidoc =
   project
     .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
     .settings(
-      UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject),
+      unidocProjectFilter in ScalaUnidoc in BaseUnidocPlugin.autoImport.unidoc := inAggregates(LocalRootProject),
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
       scalacOptions += "-Xexperimental",

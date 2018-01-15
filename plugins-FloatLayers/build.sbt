@@ -1,4 +1,4 @@
-incOptions in Test := incOptions.value.withRecompileOnMacroDef(true)
+incOptions in Test := incOptions.value.withRecompileOnMacroDef(java.util.Optional.of(true))
 
 enablePlugins(Example)
 
