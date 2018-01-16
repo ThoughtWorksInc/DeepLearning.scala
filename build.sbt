@@ -115,6 +115,7 @@ lazy val `plugins-OpenCLBuffers` =
     `plugins-FloatLayers`,
     `plugins-Logging`,
     `plugins-Names`,
+    ProjectRef(file("Expressions.scala"), "Expressions"),
     ProjectRef(file("Compute.scala"), "OpenCL")
   )
 
