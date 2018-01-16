@@ -25,4 +25,6 @@ libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.5"
 
 libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.5" % Test classifier lwjglNatives
 
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
+
 fork := true
