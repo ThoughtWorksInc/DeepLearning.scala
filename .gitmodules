@@ -1,3 +1,6 @@
 [submodule "Compute.scala"]
 	path = Compute.scala
 	url = https://github.com/ThoughtWorksInc/Compute.scala.git
+[submodule "Expressions.scala"]
+	path = Expressions.scala
+	url = https://github.com/ThoughtWorksInc/Expressions.scala.git

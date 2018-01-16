@@ -1,4 +1,4 @@
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.3" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.4" % Test
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
@@ -21,8 +21,8 @@ val lwjglNatives: String = {
   }
 }
 
-libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2"
+libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.5"
 
-libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Test classifier lwjglNatives
+libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.5" % Test classifier lwjglNatives
 
 fork := true
