@@ -14,7 +14,7 @@ trait DeviceBufferWeights extends Weights with OpenCL {
   trait DeviceBufferWeightApi extends WeightApi { this: DeviceBufferWeight =>
     type Element
     override type Data = DeviceBuffer[Element]
-    override type Delta = DeviceBuffer[Element]
+    override type Delta = DeviceBuffer[Element] => Do[Unit]
 
   }
 
