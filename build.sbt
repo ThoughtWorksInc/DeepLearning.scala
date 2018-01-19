@@ -14,6 +14,9 @@ lazy val `plugins-Logging` = project.dependsOn(`plugins-Differentiables`)
 
 lazy val `plugins-Operators` = project
 
+lazy val `plugins-Tensors` =
+  project.dependsOn(ProjectRef(file("Expressions.scala"), "Expressions"), ProjectRef(file("Compute.scala"), "OpenCL"))
+
 lazy val `plugins-FloatTraining` = project.dependsOn(`plugins-Training`)
 
 lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
@@ -116,6 +119,7 @@ lazy val `plugins-OpenCLBuffers` =
     `plugins-Logging`,
     `plugins-Names`,
     ProjectRef(file("Expressions.scala"), "Expressions"),
+    ProjectRef(file("Compute.scala"), "OpenCLCodeGenerator"),
     ProjectRef(file("Compute.scala"), "OpenCL")
   )
 

@@ -1,6 +1,6 @@
 package com.thoughtworks.deeplearning.plugins
 
-/** A plugin that automatically names [[Layer]]s and [[Weight]]s.
+/** A plugin that automatically names [[Layers.Layer Layer]]s and [[Weights.Weight Weight]]s.
   *
   * @author 杨博 (Yang Bo)
   */

@@ -4,7 +4,7 @@ import shapeless.{Poly1, Poly2}
 
 /** A plugin that contains definitions of polymorphic functions and methods.
   *
-  * The implementations of polymorphic functions and methods can be found in [[FloatLayers.Implicits]], [[DoubleLayers.Implicits]] and [[INDArrayLayers.Implicits]].
+  * The implementations of polymorphic functions and methods can be found in [[FloatLayers.Implicits]] and [[DoubleLayers.Implicits]].
   * @author 杨博 (Yang Bo)
   * @see [[https://github.com/milessabin/shapeless/wiki/Feature-overview:-shapeless-2.0.0#polymorphic-function-values Shapeless's Documentations]]
   *      for the underlying mechanism of polymorphic functions.
