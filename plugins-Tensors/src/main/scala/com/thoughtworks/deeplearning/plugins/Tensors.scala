@@ -79,6 +79,8 @@ trait Tensors extends OpenCL {
 
     def enqueue: Do[PendingBuffer]
 
+    def padding: Float
+
   }
 
   trait CompiledKernel extends MonadicCloseable[UnitContinuation] {
@@ -121,6 +123,7 @@ trait Tensors extends OpenCL {
 //        val debuggingInformation: Implicitly[DebuggingInformation] = InlineTensor.this.debuggingInformation
         val shape: Seq[Int] = InlineTensor.this.shape
         val enqueue: Do[PendingBuffer] = InlineTensor.this.enqueue
+        val padding: Float = InlineTensor.this.padding
       } with BufferedTensor
     }
 
@@ -208,13 +211,13 @@ trait Tensors extends OpenCL {
     def matrix: RealMatrix
 
     val closure: ValueTerm = {
-      array.parameter(checkpoint, float, shape: _*).transform(matrix).extract
+      array.parameter(checkpoint, float, padding, shape: _*).transform(matrix).extract
     }
   }
 
   trait BufferedTensor extends Tensor {
     val closure: ValueTerm = {
-      array.parameter(this, float, shape: _*).extract
+      array.parameter(this, float, padding, shape: _*).extract
     }
   }
 
@@ -242,11 +245,12 @@ trait Tensors extends OpenCL {
           val checkpoint: Tensor = previousTensor.checkpoint
           val shape: Seq[Int] = previousTensor.shape
 //          val debuggingInformation: Implicitly[DebuggingInformation] = debuggingInformation0
+          val padding: Float = previousTensor.padding
         }
       case _ =>
         new TransformedTensor {
           val checkpoint: Tensor = previousTensor
-          val shape: Seq[Int] = checkpoint.shape
+          val shape: Seq[Int] = newShape
 //          val debuggingInformation: Implicitly[DebuggingInformation] = debuggingInformation0
           val matrix: RealMatrix = {
             val newMatrix = MatrixUtils.createRealMatrix(shape.length, shape.length + 1)
@@ -256,6 +260,8 @@ trait Tensors extends OpenCL {
             }
             newMatrix
           }
+
+          def padding: Float = checkpoint.padding
         }
     }
   }
