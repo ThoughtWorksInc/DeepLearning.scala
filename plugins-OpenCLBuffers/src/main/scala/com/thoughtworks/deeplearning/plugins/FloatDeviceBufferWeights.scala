@@ -1,5 +1,6 @@
 package com.thoughtworks.deeplearning.plugins
 
+import com.dongxiguo.fastring.Fastring.Implicits._
 import com.thoughtworks.compute.Memory
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
@@ -38,7 +39,7 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
   @inject
   protected def floatDeviceBufferOriginalDeltaParameter
-    : Do[DeviceBuffer[Float]] <:< floatDeviceBufferPartialApplyOriginalDelta.Parameter
+    : Do[DeviceBuffer[Float] => Do[Unit]] <:< floatDeviceBufferPartialApplyOriginalDelta.Parameter
 
   trait FloatDeviceBufferWeightApi extends DeviceBufferWeightApi {
     this: FloatDeviceBufferWeight =>
@@ -48,15 +49,15 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
 
     /** @usecase def backward(delta: Delta): Do[Unit] = ???
       */
-    protected def backward[SubtypeOfOptimizer](originalDelta: Do[DeviceBuffer[Float]])(
+    protected def backward[SubtypeOfOptimizer](originalDelta: Do[DeviceBuffer[Float] => Do[Unit]])(
         implicit implicitApplyRest: ImplicitApply.Aux[floatDeviceBufferPartialApplyOriginalDelta.Rest,
                                                       SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:<
           OptimizerApi {
-            type Delta <: DeviceBuffer[Float]
+            type Delta <: DeviceBuffer[Float] => Do[Unit]
           }): Do[Unit] = {
       val optimizer: OptimizerApi {
-        type Delta <: DeviceBuffer[Float]
+        type Delta <: DeviceBuffer[Float] => Do[Unit]
       } =
         asOptimizer(
           implicitApplyRest(
@@ -69,13 +70,15 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
             )))
 
       val doDelta = optimizer.delta
-      doDelta.intransitiveFlatMap { delta =>
-        // TODO: synchronize
-        subtractInplace(data, delta)
+      allocateBuffer[Float](scalarDeltaSize * data.length).intransitiveFlatMap { delta =>
+        doDelta.flatMap { setDelta =>
+          setDelta(delta).flatMap { _: Unit =>
+            // TODO: Add a lock for data
+            subtractInplace(data, delta)
+          }
+        }
       }
-
     }
-
   }
 
   def subtractInplace(data: DeviceBuffer[Float], delta: DeviceBuffer[Float]): Do[Unit] = {
@@ -83,6 +86,7 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
       .flatMap { kernel =>
         kernel(0) = data
         kernel(1) = delta
+        kernel(2) = delta.length
         val length = data.length
         val doEvent: Do[Event] = kernel.enqueue(length)
         doEvent.flatMap { event =>
@@ -120,7 +124,7 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
   trait FloatDeviceBufferOptimizerApi extends OptimizerApi {
     this: FloatDeviceBufferOptimizer =>
 
-    type Delta = DeviceBuffer[Float]
+    type Delta = DeviceBuffer[Float] => Do[Unit]
 
     val weight: FloatDeviceBufferWeight
 
@@ -129,14 +133,32 @@ trait FloatDeviceBufferWeights extends DeviceBufferWeights with Weights {
   /** @template */
   type FloatDeviceBufferOptimizer <: FloatDeviceBufferOptimizerApi with Optimizer
 
+  /** For performance purpose, the delta of a scalar value are not summed to a scalar until the delta is used.
+    *
+    * Instead, the delta is stored as a small array of [[scalarDeltaSize]] items,
+    * by summing a very large array to this small array.
+    * When running a kernel that produce the small array,
+    * both the global size and local size can be [[scalarDeltaSize]].
+    *
+    * @note `scalarDeltaSize` should be a multiple of the warp size (NVIDIA) or the wavefront size (AMD),
+    *       which can be determined by invoke [[org.lwjgl.opencl.CL10.clGetKernelInfo clGetKernelInfo]]
+    *       with [[org.lwjgl.opencl.CL11.CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]].
+    *
+    */
+  val scalarDeltaSize = 256
+
   private lazy val subtractInplaceProgram: Program = {
     val program = createProgramWithSource(
-      Seq("""
-        kernel void subtract_inplace(global float* restrict input0, global const float* restrict input1) {
-          const size_t index = get_global_id(0);
-          input0[index] -= input1[index];
+      fast"""
+        kernel void subtract_inplace(global float * restrict data, global const float (* restrict delta)[$scalarDeltaSize]) {
+          global const float (* restrict currentDelta)[$scalarDeltaSize] = delta + get_global_id(0)
+          float total_delta = 0.0f;
+          for (int i = 0; i < $scalarDeltaSize; i++) {
+            total_delta += (*currentDelta)[i];
+          }
+          data[get_global_id(0)] -= total_delta;
         }
-      """)
+      """
     )
 
     program.build()
