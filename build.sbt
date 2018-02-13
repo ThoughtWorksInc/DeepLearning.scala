@@ -14,6 +14,9 @@ lazy val `plugins-Logging` = project.dependsOn(`plugins-Differentiables`)
 
 lazy val `plugins-Operators` = project
 
+lazy val `plugins-Tensors` =
+  project.dependsOn(ProjectRef(file("Expressions.scala"), "Expressions"), ProjectRef(file("Compute.scala"), "OpenCL"))
+
 lazy val `plugins-FloatTraining` = project.dependsOn(`plugins-Training`)
 
 lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
@@ -116,6 +119,7 @@ lazy val `plugins-OpenCLBuffers` =
     `plugins-Logging`,
     `plugins-Names`,
     ProjectRef(file("Expressions.scala"), "Expressions"),
+    ProjectRef(file("Compute.scala"), "OpenCLCodeGenerator"),
     ProjectRef(file("Compute.scala"), "OpenCL")
   )
 
@@ -134,4 +138,4 @@ lazy val unidoc =
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-crossScalaVersions := Seq("2.11.12", "2.12.4")
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4")
