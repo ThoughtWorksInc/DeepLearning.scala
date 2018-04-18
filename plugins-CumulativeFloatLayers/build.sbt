@@ -1,13 +1,19 @@
 enablePlugins(Example)
 
-exampleSuperTypes ~= { oldExampleSuperTypes =>
-  import oldExampleSuperTypes._
-  updated(indexOf("_root_.org.scalatest.FreeSpec"), "_root_.org.scalatest.AsyncFreeSpec")
+import scala.meta._
+
+exampleSuperTypes := exampleSuperTypes.value.map {
+  case ctor"_root_.org.scalatest.FreeSpec" =>
+    ctor"_root_.org.scalatest.AsyncFreeSpec"
+  case otherTrait =>
+    otherTrait
 }
 
-exampleSuperTypes += "_root_.com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture"
+exampleSuperTypes += ctor"_root_.com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture"
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 scalacOptions += "-Ypartial-unification"
 
