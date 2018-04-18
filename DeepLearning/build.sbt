@@ -1,4 +1,4 @@
-libraryDependencies += "com.thoughtworks.raii" %% "asynchronous" % "3.0.0-M10"
+libraryDependencies += "com.thoughtworks.raii" %% "asynchronous" % "3.0.0-M11"
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
