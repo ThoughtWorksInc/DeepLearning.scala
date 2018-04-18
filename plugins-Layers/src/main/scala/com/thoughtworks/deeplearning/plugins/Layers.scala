@@ -8,8 +8,6 @@ import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.shared._
-import shapeless.{Poly1, Poly2}
-import shapeless.poly.Case1
 
 import scalaz.syntax.all._
 import scala.annotation.meta.getter
