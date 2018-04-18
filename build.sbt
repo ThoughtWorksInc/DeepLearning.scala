@@ -37,6 +37,29 @@ lazy val `plugins-CumulativeFloatLayers` =
     `plugins-FloatWeights` % Test
   )
 
+lazy val `plugins-TensorTraining` = project.dependsOn(`plugins-Training`, ProjectRef(file("Compute.scala"), "Tensors"))
+
+lazy val `plugins-TensorLiterals` = project.dependsOn(`DeepLearning`, ProjectRef(file("Compute.scala"), "Tensors"))
+
+lazy val `plugins-TensorWeights` = project.dependsOn(`plugins-Weights`, ProjectRef(file("Compute.scala"), "Tensors"))
+
+lazy val `plugins-TensorLayers` =
+  project.dependsOn(
+    `plugins-Layers`,
+    `plugins-Operators`,
+    `plugins-TensorLiterals` % Test,
+    `plugins-TensorTraining` % Test
+  )
+
+lazy val `plugins-CumulativeTensorLayers` =
+  project.dependsOn(
+    DeepLearning % "test->test",
+    `plugins-TensorLayers`,
+    `plugins-TensorTraining` % Test,
+    `plugins-TensorLiterals` % Test,
+    `plugins-TensorWeights` % Test
+  )
+
 lazy val `plugins-Training` = project.dependsOn(DeepLearning)
 
 lazy val FloatRegex = """(?i:float)""".r
@@ -121,4 +144,4 @@ lazy val unidoc =
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-crossScalaVersions := Seq("2.11.12", "2.12.4")
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4")
