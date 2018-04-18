@@ -106,19 +106,6 @@ lazy val `plugins-Builtins` =
   )
 lazy val `plugins-Differentiables` = project
 
-lazy val `plugins-OpenCLBuffers` =
-  project.dependsOn(
-    DeepLearning,
-    `plugins-FloatTraining` % Test,
-    `plugins-Weights`,
-    `plugins-Layers`,
-    `plugins-FloatLayers`,
-    `plugins-Logging`,
-    `plugins-Names`,
-    ProjectRef(file("Expressions.scala"), "Expressions"),
-    ProjectRef(file("Compute.scala"), "OpenCL")
-  )
-
 publishArtifact := false
 
 lazy val unidoc =
