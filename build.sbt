@@ -131,16 +131,12 @@ lazy val `plugins-Differentiables` = project
 
 publishArtifact := false
 
-lazy val unidoc =
-  project
-    .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
-    .settings(
-      unidocProjectFilter in ScalaUnidoc in BaseUnidocPlugin.autoImport.unidoc := inAggregates(LocalRootProject),
-      addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-      scalacOptions += "-Xexperimental",
-      scalacOptions += "-Ypartial-unification"
-    )
+enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
+unidocProjectFilter in ScalaUnidoc in BaseUnidocPlugin.autoImport.unidoc := inAggregates(LocalRootProject)
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+scalacOptions += "-Xexperimental"
+scalacOptions += "-Ypartial-unification"
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
