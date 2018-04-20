@@ -27,17 +27,6 @@ import com.thoughtworks.deeplearning.plugins.Layers.ToLayer
 trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
-//
-//    @inject
-//    protected val floatLayerFactory: Factory[FloatLayer]
-//
-//    @inject
-//    protected val floatLayerPartialApplyRawForward: PartialApply[floatLayerFactory.Constructor,
-//                                                                 shapeless.Witness.`"rawForward"`.T]
-//
-//    @inject
-//    protected def floatLayerPartialApplyRawForwardParameter
-//      : Do[Tape[Float, Float]] <:< floatLayerPartialApplyRawForward.Parameter
 
     implicit def toFloatLayer[Out <: FloatLayer](
         implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out])
