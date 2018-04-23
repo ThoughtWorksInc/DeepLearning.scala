@@ -19,7 +19,7 @@ trait TensorWeights extends Tensors with Weights {
     this: TensorWeight =>
 
     override type Delta = Tensor
-    override type Data = CachedTensor
+    override type Data = Tensor // TODO: Data is actually a CachedTensor
 
     override protected type PartiallyAppliedOptimizer = tensorPartialApplyOriginalDelta.Rest
 
