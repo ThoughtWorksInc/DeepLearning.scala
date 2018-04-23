@@ -279,6 +279,21 @@ trait FloatLayers extends Layers {
   trait FloatLayerApi extends super[Layers].LayerApi {
     type Data = Float
     type Delta = Float
+
+    final def predict: Future[Data] = {
+      val doData = forward.map(_.data)
+      doData.run
+    }
+
+    final def train: Future[Data] = {
+      val doData = forward.flatMap[Data] { tape =>
+        Do.garbageCollected(tape.backward(Do.now(1.0f.toFloat))).intransitiveMap { _: Unit =>
+          tape.data
+        }
+      }
+      doData.run
+    }
+
   }
   object FloatLayer {
 

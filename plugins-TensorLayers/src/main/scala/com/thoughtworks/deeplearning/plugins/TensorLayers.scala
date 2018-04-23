@@ -40,6 +40,7 @@ private object TensorLayers {
   */
 trait TensorLayers extends Tensors with Layers {
   import TensorLayers._
+  private lazy val One: Tensor = Tensor.scalar(1.0f)
 
   trait TensorLayerApi extends super[Layers].LayerApi {
     type Data = Tensor
@@ -53,6 +54,18 @@ trait TensorLayers extends Tensors with Layers {
     protected val rawForward: Do[Tape[Tensor, Tensor]]
 
     override def forward: Do[Tape[Tensor, Tensor]] = rawForward
+
+    final def train: Do[Data] = {
+      forward.flatMap[Data] { tape =>
+        Do.garbageCollected(tape.backward(Do.now(One))).intransitiveMap { _: Unit =>
+          tape.data
+        }
+      }
+    }
+
+    final def predict: Do[Data] = {
+      forward.map(_.data)
+    }
 
   }
 

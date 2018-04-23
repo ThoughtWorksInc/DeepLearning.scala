@@ -55,7 +55,7 @@ final class FloatWeightSpec {
       }
     }
     val doHyperparameters = Do.monadicCloseable(Factory[
-      Logging with Names with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstGpuDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers]
+      Logging with Names with FloatLayers with OpenCLBufferLiterals with ImplicitsSingleton with OpenCL.UseFirstGpuDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers]
       .newInstance(
         handleOpenCLNotification = handleOpenCLNotification,
         numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>
