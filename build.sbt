@@ -48,7 +48,8 @@ lazy val `plugins-TensorLayers` =
     `plugins-Layers`,
     `plugins-Operators`,
     `plugins-TensorLiterals` % Test,
-    `plugins-TensorTraining` % Test
+    `plugins-TensorTraining` % Test,
+    ProjectRef(file("Compute.scala"), "Tensors")
   )
 
 lazy val `plugins-CumulativeTensorLayers` =
