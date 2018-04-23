@@ -21,19 +21,18 @@ trait TensorWeights extends Tensors with Weights {
     override type Delta = Tensor
     override type Data = CachedTensor
 
-//    override protected type PartiallyAppliedOptimizer = tensorPartialApplyOriginalDelta.Rest
+    override protected type PartiallyAppliedOptimizer = tensorPartialApplyOriginalDelta.Rest
 
     override protected def backward[SubtypeOfOptimizer](originalDelta: Do[Tensor])(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: Tensor }): Do[Unit] = {
 
       val optimizer: OptimizerApi { type Delta <: Tensor } = {
-        ???
-//        asOptimizer(
-//          implicitApplyRest(
-//            tensorPartialApplyOriginalDelta(tensorPartialApplyWeight(tensorOptimizerFactory.newInstance,
-//                                                                     tensorWeightParameter(this)),
-//                                            tensorOriginalDeltaParameter(originalDelta))))
+        asOptimizer(
+          implicitApplyRest(
+            tensorPartialApplyOriginalDelta(tensorPartialApplyWeight(tensorOptimizerFactory.newInstance,
+                                                                     tensorWeightParameter(this)),
+                                            tensorOriginalDeltaParameter(originalDelta))))
       }
       val doDelta = optimizer.delta
       doDelta.intransitiveFlatMap { delta =>
@@ -127,32 +126,32 @@ trait TensorWeights extends Tensors with Weights {
       implicitApplyRest(monadicCloseApplied)
     }
   }
-//
-//  trait TensorOptimizerApi extends OptimizerApi { this: TensorOptimizer =>
-//
-//    type Delta = Tensor
-//
-//    val weight: TensorWeight
-//
-//  }
-//
-//  /** @template */
-//  type TensorOptimizer <: TensorOptimizerApi with Optimizer
-//
-//  @inject
-//  protected val tensorOptimizerFactory: Factory[TensorOptimizer]
-//
-//  @inject
-//  protected val tensorPartialApplyWeight: PartialApply[tensorOptimizerFactory.Constructor, Witness.`"weight"`.T]
-//
-//  @inject
-//  protected def tensorWeightParameter: TensorWeight <:< tensorPartialApplyWeight.Parameter
-//
-//  @inject
-//  protected val tensorPartialApplyOriginalDelta: PartialApply[tensorPartialApplyWeight.Rest,
-//                                                              Witness.`"originalDelta"`.T]
-//
-//  @inject
-//  protected def tensorOriginalDeltaParameter: Do[Tensor] <:< tensorPartialApplyOriginalDelta.Parameter
+
+  trait TensorOptimizerApi extends OptimizerApi { this: TensorOptimizer =>
+
+    type Delta = Tensor
+
+    val weight: TensorWeight
+
+  }
+
+  /** @template */
+  type TensorOptimizer <: TensorOptimizerApi with Optimizer
+
+  @inject
+  protected val tensorOptimizerFactory: Factory[TensorOptimizer]
+
+  @inject
+  protected val tensorPartialApplyWeight: PartialApply[tensorOptimizerFactory.Constructor, Witness.`"weight"`.T]
+
+  @inject
+  protected def tensorWeightParameter: TensorWeight <:< tensorPartialApplyWeight.Parameter
+
+  @inject
+  protected val tensorPartialApplyOriginalDelta: PartialApply[tensorPartialApplyWeight.Rest,
+                                                              Witness.`"originalDelta"`.T]
+
+  @inject
+  protected def tensorOriginalDeltaParameter: Do[Tensor] <:< tensorPartialApplyOriginalDelta.Parameter
 
 }
