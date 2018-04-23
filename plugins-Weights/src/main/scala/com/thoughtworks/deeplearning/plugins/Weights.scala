@@ -19,26 +19,13 @@ trait Weights extends Differentiables {
 
   trait WeightApi extends DifferentiableApi {
 
-    protected type PartiallyAppliedOptimizer
-
     /** @usecase def forward: Do[Tape[Data, Delta] ] = ???
       */
-    final def forward[SubtypeOfOptimizer](
+    def forward[SubtypeOfOptimizer](
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
-        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: WeightApi.this.Delta })
-      : Do[Tape[Data, Delta]] = {
-      Do.now(
-        Tape[Data, Delta](
-          data, { doDelta: Do[Delta] =>
-            val doUpdate: Do[Unit] = backward(doDelta)
-            val Future(TryT(continuation)) = doUpdate.run
-            continuation.flatMap {
-              case Success(()) => UnitContinuation.now(())
-              case Failure(e)  => handleException(e)
-            }
-          }
-        ))
-    }
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: WeightApi.this.Delta }): Do[Tape[Data, Delta]]
+
+    protected type PartiallyAppliedOptimizer
 
     /** @usecase def backward(delta: Delta): Do[Unit] = ???
       */

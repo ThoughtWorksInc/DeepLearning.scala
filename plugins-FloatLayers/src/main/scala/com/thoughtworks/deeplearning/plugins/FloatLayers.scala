@@ -306,7 +306,7 @@ trait FloatLayers extends Layers {
       implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
     }
 
-    /** Internal helper to create unary [[FloatLayer]]. */
+    /** Internal helper to create an unary [[FloatLayer]]. */
     def unary[Operand0, Input0Data, Input0Delta, Out <: FloatLayer](
         operand0: Operand0
     )(f: Input0Data => (Float, Float => Input0Delta))(
@@ -325,7 +325,7 @@ trait FloatLayers extends Layers {
       })
     }
 
-    /** Internal helper to create unary [[FloatLayer]]. */
+    /** Internal helper to create a binary [[FloatLayer]]. */
     def binary[Operand0, Operand1, Input0Data, Input0Delta, Input1Data, Input1Delta, Out <: FloatLayer](
         operand0: Operand0,
         operand1: Operand1

@@ -2,13 +2,17 @@ package com.thoughtworks.deeplearning.plugins
 
 import com.thoughtworks.compute.{OpenCL, Tensors}
 import com.thoughtworks.continuation._
+import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.future._
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.raii.asynchronous._
-import com.thoughtworks.raii.covariant.{MonadicCloseable, Resource}
+import com.thoughtworks.raii.covariant.{MonadicCloseable, Resource, ResourceT}
+import com.thoughtworks.tryt.covariant.TryT
 import shapeless.Witness
 import scalaz.syntax.all._
+
+import scala.util.{Failure, Success}
 
 /**
   * @author 杨博 (Yang Bo)
@@ -17,6 +21,26 @@ trait TensorWeights extends Tensors with Weights {
 
   trait TensorWeightApi extends WeightApi with MonadicCloseable[UnitContinuation] {
     this: TensorWeight =>
+
+    /** @usecase def forward: Do[Tape[Data, Delta] ] = ???
+      */
+    final def forward[SubtypeOfOptimizer](
+        implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: TensorWeightApi.this.Delta })
+      : Do[Tape[Data, Delta]] = {
+      data.doCache.map { data =>
+        Tape[Data, Delta](
+          data, { doDelta: Do[Delta] =>
+            val doUpdate: Do[Unit] = backward(doDelta)
+            val Future(TryT(continuation)) = doUpdate.run
+            continuation.flatMap {
+              case Success(()) => UnitContinuation.now(())
+              case Failure(e)  => handleException(e)
+            }
+          }
+        )
+      }
+    }
 
     override type Delta = Tensor
     override type Data = Tensor // TODO: Data is actually a CachedTensor
@@ -35,6 +59,10 @@ trait TensorWeights extends Tensors with Weights {
                                             tensorOriginalDeltaParameter(originalDelta))))
       }
       val doDelta = optimizer.delta
+//      doDelta.intransitiveFlatMap {delta=>
+//        (data - delta).doCache
+//      }
+
       doDelta.intransitiveFlatMap { delta =>
         Do.garbageCollected((data - delta).doCache.acquire).intransitiveFlatMap {
           case Resource(newData, releaseNewData) =>

@@ -57,7 +57,7 @@ trait TensorLayers extends Tensors with Layers {
 
     final def train: Do[Data] = {
       forward.flatMap[Data] { tape =>
-        Do.garbageCollected(tape.backward(Do.now(One))).intransitiveMap { _: Unit =>
+        Do.garbageCollected(tape.backward(Do.now(One))).map { _: Unit =>
           tape.data
         }
       }
@@ -93,8 +93,22 @@ trait TensorLayers extends Tensors with Layers {
     }
   }
 
+  private def broadcastThenSum(tensor: Tensor, shape: Array[Int]) = {
+    val broad = if (tensor.shape.length < shape.length) {
+      tensor.broadcast(Array.tabulate(shape.length) { i =>
+        if (i < tensor.shape.length) { tensor.shape(i) } else {
+          shape(i)
+        }
+      })
+    } else {
+      tensor
+    }
+    sumAs(broad, shape)
+  }
+
   // TODO: Use device side loops once https://github.com/ThoughtWorksInc/Compute.scala/issues/62 is implemented
   private def sumAs(tensor: Tensor, shape: Array[Int]) = {
+
     require(shape.length == tensor.shape.length, errorMessage)
 
     def errorMessage = s"Cannot sum [${tensor.shape.mkString(",")}] to [${shape.mkString(",")}]"
@@ -133,10 +147,10 @@ trait TensorLayers extends Tensors with Layers {
             val shape1 = data1.shape
             val outputData = data0 + data1
             def delta0(outputDelta: Tensor) = {
-              sumAs(outputDelta, shape0)
+              broadcastThenSum(outputDelta, shape0)
             }
             def delta1(outputDelta: Tensor) = {
-              sumAs(outputDelta, shape1)
+              broadcastThenSum(outputDelta, shape1)
             }
             def backward(outputDelta: Do[Tensor]) = {
               parallelUnitContinuation(backward0(outputDelta.map(delta0)), backward1(outputDelta.map(delta1)))
