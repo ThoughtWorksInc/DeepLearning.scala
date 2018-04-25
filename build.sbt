@@ -132,7 +132,7 @@ lazy val `plugins-Differentiables` = project
 publishArtifact := false
 
 enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
-unidocProjectFilter in ScalaUnidoc in BaseUnidocPlugin.autoImport.unidoc := inAggregates(LocalRootProject)
+unidocProjectFilter in ScalaUnidoc in unidoc := inAggregates(LocalRootProject)
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 scalacOptions += "-Xexperimental"
