@@ -26,7 +26,7 @@ matrix:
 
 before_install:
   - if [ $TRAVIS_OS_NAME = "linux" ]; then
-      bash .travis/amd_sdk.sh &&
+      wget --output-document=/tmp/AMD-SDK.tar.bz2 http://cs.wisc.edu/~riccardo/assets/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2 &&
       tar -xjf /tmp/AMD-SDK.tar.bz2 -m -C /tmp && (
         AMDAPPSDK=${HOME}/AMDAPPSDK;
         export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors;
