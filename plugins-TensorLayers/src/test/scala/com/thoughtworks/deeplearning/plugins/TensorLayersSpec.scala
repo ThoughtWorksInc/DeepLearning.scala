@@ -16,7 +16,7 @@ import com.typesafe.scalalogging.StrictLogging
   */
 class TensorLayersSpec extends AsyncFreeSpec with Matchers {
 
-  "xxx" in {
+  "plus" in {
 
     Do.monadicCloseable {
         Factory[
@@ -27,28 +27,22 @@ class TensorLayersSpec extends AsyncFreeSpec with Matchers {
         import hyperparameters._, implicits._
         TensorWeight.allocate(Tensor(Array(Array(1.0f, 2.0f), Array(3.0f, 4.0f)))).flatMap { weight =>
           def plus = weight + weight
+          Do.garbageCollected {
+            plus.forward
+              .flatMap { tape =>
+                tape.data.toString should be("[[2.0,4.0],[6.0,8.0]]")
+                Do.garbageCollected(tape.backward(Do.now(Tensor.scalar(1.0f)))).map { _: Unit =>
+                  tape.data.toString should be("[[2.0,4.0],[6.0,8.0]]")
 
-          plus.forward.flatMap { tape =>
-            tape.data.toString should be("[[2.0,4.0],[6.0,8.0]]")
-            Do.garbageCollected(tape.backward(Do.now(Tensor.scalar(1.0f)))).map { _: Unit =>
-              tape.data.toString should be("[[2.0,4.0],[6.0,8.0]]")
+                  succeed
 
-              succeed
-
-            }
+                }
+              }
+              .run
+              .map { _: Any =>
+                weight.data.toString should be("[[-1.0,0.0],[1.0,2.0]]")
+              }
           }
-
-//          Do.garbageCollected(plus.train.map { y =>
-//            y.toString should be("[[2.0,4.0],[6.0,8.0]]")
-////                succeed
-//          }.run)
-//              .map { _: Any =>
-////                weight.data.toString should be("[[1.0,2.0],[3.0,4.0]]")
-//                succeed
-//              })
-
-        // FIXME: exception thrown here is ignored
-//          weight.data.toString should be("[[1.0,2.0],[3.0,4.0]]")
         }
       }
       .run
