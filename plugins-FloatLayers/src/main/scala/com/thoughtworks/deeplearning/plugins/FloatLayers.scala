@@ -279,6 +279,21 @@ trait FloatLayers extends Layers {
   trait FloatLayerApi extends super[Layers].LayerApi {
     type Data = Float
     type Delta = Float
+
+    final def predict: Future[Data] = {
+      val doData = forward.map(_.data)
+      doData.run
+    }
+
+    final def train: Future[Data] = {
+      val doData = forward.flatMap[Data] { tape =>
+        Do.garbageCollected(tape.backward(Do.now(1.0f.toFloat))).intransitiveMap { _: Unit =>
+          tape.data
+        }
+      }
+      doData.run
+    }
+
   }
   object FloatLayer {
 
@@ -291,7 +306,7 @@ trait FloatLayers extends Layers {
       implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
     }
 
-    /** Internal helper to create unary [[FloatLayer]]. */
+    /** Internal helper to create an unary [[FloatLayer]]. */
     def unary[Operand0, Input0Data, Input0Delta, Out <: FloatLayer](
         operand0: Operand0
     )(f: Input0Data => (Float, Float => Input0Delta))(
@@ -310,7 +325,7 @@ trait FloatLayers extends Layers {
       })
     }
 
-    /** Internal helper to create unary [[FloatLayer]]. */
+    /** Internal helper to create a binary [[FloatLayer]]. */
     def binary[Operand0, Operand1, Input0Data, Input0Delta, Input1Data, Input1Delta, Out <: FloatLayer](
         operand0: Operand0,
         operand1: Operand1

@@ -12,3 +12,13 @@ libraryDependencies += ("org.lwjgl" % "lwjgl" % "3.1.6" % Test).jar().classifier
 }
 
 fork := true
+
+enablePlugins(Example)
+
+import scala.meta._
+exampleSuperTypes := exampleSuperTypes.value.map {
+  case ctor"_root_.org.scalatest.FreeSpec" =>
+    ctor"_root_.org.scalatest.AsyncFreeSpec"
+  case otherTrait =>
+    otherTrait
+}

@@ -24,7 +24,7 @@ import scalaz.syntax.all._
   *          import com.thoughtworks.deeplearning.plugins._
   *          import com.thoughtworks.feature.Factory
   *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
-  *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
+  *          val hyperparameters = Factory[ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
   *          import hyperparameters.implicits._
   *          val weight1 = hyperparameters.FloatWeight(10)
   *          val weight2 = hyperparameters.FloatWeight(300)
@@ -50,10 +50,12 @@ import scalaz.syntax.all._
   * @example Given a [[FloatWeights.FloatWeight FloatWeight]],
   *
   *          {{{
+  *          import scalaz.syntax.all._
+  *          import com.thoughtworks.raii.asynchronous._
   *          import com.thoughtworks.deeplearning.plugins._
   *          import com.thoughtworks.feature.Factory
   *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
-  *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
+  *          val hyperparameters = Factory[ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
   *          import hyperparameters.implicits._
   *          val weight1 = hyperparameters.FloatWeight(10)
   *          }}}
@@ -61,9 +63,10 @@ import scalaz.syntax.all._
   *          then the training result should be applied on it
   *
   *          {{{
-  *          weight1.train.map { result =>
-  *            result should be(10.0f)
-  *
+  *          weight1.forward.flatMap { tape =>
+  *            tape.data should be(10.0f)
+  *            Do.garbageCollected(tape.backward(Do.now(1.0f)))
+  *          }.run.map { _: Unit =>
   *            weight1.data should be < 10.0f
   *          }
   *          }}}

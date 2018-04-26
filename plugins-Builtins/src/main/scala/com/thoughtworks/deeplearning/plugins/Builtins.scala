@@ -13,12 +13,10 @@ trait Builtins
     with Logging
     with Names
     with Operators
-    with FloatTraining
     with FloatLiterals
     with FloatWeights
     with FloatLayers
     with CumulativeFloatLayers
-    with DoubleTraining
     with DoubleLiterals
     with DoubleWeights
     with DoubleLayers
@@ -28,10 +26,8 @@ trait Builtins
       extends super[Layers].ImplicitsApi
       with super[Weights].ImplicitsApi
       with super[Operators].ImplicitsApi
-      with super[FloatTraining].ImplicitsApi
       with super[FloatLiterals].ImplicitsApi
       with super[FloatLayers].ImplicitsApi
-      with super[DoubleTraining].ImplicitsApi
       with super[DoubleLiterals].ImplicitsApi
       with super[DoubleLayers].ImplicitsApi
 

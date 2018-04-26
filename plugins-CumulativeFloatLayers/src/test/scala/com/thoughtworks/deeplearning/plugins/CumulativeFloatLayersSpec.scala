@@ -65,7 +65,7 @@ final class CumulativeFloatLayersSpec
   "Plus" in {
 
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -92,7 +92,7 @@ final class CumulativeFloatLayersSpec
 
   "Plus with Predict" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -122,7 +122,7 @@ final class CumulativeFloatLayersSpec
 
   "Predict -- use for" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -155,7 +155,7 @@ final class CumulativeFloatLayersSpec
 
   "will not stackOverFlow" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -187,7 +187,7 @@ final class CumulativeFloatLayersSpec
 
   "min" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -219,7 +219,7 @@ final class CumulativeFloatLayersSpec
 
   "max" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -251,7 +251,7 @@ final class CumulativeFloatLayersSpec
 
   "log" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 0.5f)
     import hyperparameters.implicits._
 
@@ -285,7 +285,7 @@ final class CumulativeFloatLayersSpec
 
   "exp" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 0.1f)
     import hyperparameters.implicits._
 
@@ -319,7 +319,7 @@ final class CumulativeFloatLayersSpec
 
   "abs" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 
@@ -351,7 +351,7 @@ final class CumulativeFloatLayersSpec
 
   "unary_-" in {
     val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+      Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
         .newInstance(fixedLearningRate = 1.0f)
     import hyperparameters.implicits._
 

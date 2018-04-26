@@ -120,7 +120,7 @@ class ExitCode134Debug {
       }
     }
     val doHyperparameters = Do.monadicCloseable(Factory[
-      Logging with FloatLayers with OpenCLBufferLiterals with FloatTraining with ImplicitsSingleton with OpenCL.UseFirstDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with DeviceBufferOf with FloatDeviceBufferLearningRate]
+      Logging with FloatLayers with OpenCLBufferLiterals with ImplicitsSingleton with OpenCL.UseFirstDevice with OpenCL.UseFirstPlatform with OpenCL.CommandQueuePool with DeviceBufferWeights with FloatDeviceBufferWeights with DeviceBufferLayers with FloatDeviceBufferLayers with DeviceBufferOf with FloatDeviceBufferLearningRate]
       .newInstance(
         handleOpenCLNotification = handleOpenCLNotification,
         numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>

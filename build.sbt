@@ -14,8 +14,6 @@ lazy val `plugins-Logging` = project.dependsOn(`plugins-Differentiables`)
 
 lazy val `plugins-Operators` = project
 
-lazy val `plugins-FloatTraining` = project.dependsOn(`plugins-Training`)
-
 lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
 
 lazy val `plugins-FloatWeights` = project.dependsOn(`plugins-Weights`)
@@ -24,20 +22,16 @@ lazy val `plugins-FloatLayers` =
   project.dependsOn(
     `plugins-Layers`,
     `plugins-Operators`,
-    `plugins-FloatLiterals` % Test,
-    `plugins-FloatTraining` % Test
+    `plugins-FloatLiterals` % Test
   )
 
 lazy val `plugins-CumulativeFloatLayers` =
   project.dependsOn(
     DeepLearning % "test->test",
     `plugins-FloatLayers`,
-    `plugins-FloatTraining` % Test,
     `plugins-FloatLiterals` % Test,
     `plugins-FloatWeights` % Test
   )
-
-lazy val `plugins-TensorTraining` = project.dependsOn(`plugins-Training`, ProjectRef(file("Compute.scala"), "Tensors"))
 
 lazy val `plugins-TensorLiterals` = project.dependsOn(`DeepLearning`, ProjectRef(file("Compute.scala"), "Tensors"))
 
@@ -47,20 +41,18 @@ lazy val `plugins-TensorLayers` =
   project.dependsOn(
     `plugins-Layers`,
     `plugins-Operators`,
+    `plugins-TensorWeights` % Test,
     `plugins-TensorLiterals` % Test,
-    `plugins-TensorTraining` % Test
+    ProjectRef(file("Compute.scala"), "Tensors")
   )
 
 lazy val `plugins-CumulativeTensorLayers` =
   project.dependsOn(
     DeepLearning % "test->test",
     `plugins-TensorLayers`,
-    `plugins-TensorTraining` % Test,
     `plugins-TensorLiterals` % Test,
     `plugins-TensorWeights` % Test
   )
-
-lazy val `plugins-Training` = project.dependsOn(DeepLearning)
 
 lazy val FloatRegex = """(?i:float)""".r
 
@@ -88,11 +80,6 @@ lazy val `plugins-DoubleWeights` =
     .dependsOn(`plugins-Weights`)
     .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatWeights`).taskValue)
 
-lazy val `plugins-DoubleTraining` =
-  project
-    .dependsOn(`plugins-Training`)
-    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatTraining`).taskValue)
-
 lazy val `plugins-DoubleLiterals` =
   project
     .dependsOn(`DeepLearning`)
@@ -115,12 +102,10 @@ lazy val `plugins-Builtins` =
     `plugins-Logging`,
     `plugins-Names`,
     `plugins-Operators`,
-    `plugins-FloatTraining`,
     `plugins-FloatLiterals`,
     `plugins-FloatWeights`,
     `plugins-FloatLayers`,
     `plugins-CumulativeFloatLayers`,
-    `plugins-DoubleTraining`,
     `plugins-DoubleLiterals`,
     `plugins-DoubleWeights`,
     `plugins-DoubleLayers`,

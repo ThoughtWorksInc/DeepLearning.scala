@@ -22,3 +22,5 @@ exampleSuperTypes := exampleSuperTypes.value.map {
   case otherTrait =>
     otherTrait
 }
+
+scalacOptions += "-Ypartial-unification"
