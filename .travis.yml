@@ -17,26 +17,24 @@ matrix:
         on:
           condition: -e ./deploy.sbt
           all_branches: true
+      before_install:
+        - wget -qO --output-document=/tmp/AMD-SDK.tar.bz2 http://cs.wisc.edu/~riccardo/assets/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
+        - mkdir /tmp/amd-app-sdk-installer
+        - tar -xjf /tmp/AMD-SDK.tar.bz2 -C /tmp/amd-app-sdk-installer
+        - export AMDAPPSDK=${HOME}/AMDAPPSDK
+        - export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors
+        - mkdir -p ${OPENCL_VENDOR_PATH}
+        - sh /tmp/amd-app-sdk-installer/AMD-APP-SDK*.sh --tar -xf -C ${AMDAPPSDK}
+        - echo libamdocl64.so > ${OPENCL_VENDOR_PATH}/amdocl64.icd
+        - export LD_LIBRARY_PATH=${AMDAPPSDK}/lib/x86_64/sdk:${LD_LIBRARY_PATH}
+        - chmod +x ${AMDAPPSDK}/bin/x86_64/clinfo
+        - ${AMDAPPSDK}/bin/x86_64/clinfo
     - os: osx
       osx_image: xcode8
       language: java
       before_install:
         - brew update
         - brew install sbt graphviz
-
-before_install:
-  - if [ $TRAVIS_OS_NAME = "linux" ]; then
-      bash .travis/amd_sdk.sh;
-      tar -xjf /tmp/AMD-SDK.tar.bz2 -C /tmp;
-      AMDAPPSDK=${HOME}/AMDAPPSDK;
-      export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors;
-      mkdir -p ${OPENCL_VENDOR_PATH};
-      sh /tmp/AMD-APP-SDK*.sh --tar -xf -C ${AMDAPPSDK};
-      echo libamdocl64.so > ${OPENCL_VENDOR_PATH}/amdocl64.icd;
-      export LD_LIBRARY_PATH=${AMDAPPSDK}/lib/x86_64:${LD_LIBRARY_PATH};
-      chmod +x ${AMDAPPSDK}/bin/x86_64/clinfo;
-      ${AMDAPPSDK}/bin/x86_64/clinfo;
-    fi;
 
 before_cache:
   - find $HOME/.sbt -name '*.lock' -delete
