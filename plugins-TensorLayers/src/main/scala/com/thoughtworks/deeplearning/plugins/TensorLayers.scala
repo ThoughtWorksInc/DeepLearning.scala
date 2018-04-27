@@ -46,7 +46,7 @@ trait TensorLayers extends Tensors with Layers {
     type Data = Tensor
     type Delta = Tensor
 
-    /** The original forward operation passed in [[TensorLayer$ FloatLayer.apply]].
+    /** The original forward operation passed in [[TensorLayer$ TensorLayer.apply]].
       *
       * @note This [[rawForward]] may be different from [[forward]],
       *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeTensorLayers]].

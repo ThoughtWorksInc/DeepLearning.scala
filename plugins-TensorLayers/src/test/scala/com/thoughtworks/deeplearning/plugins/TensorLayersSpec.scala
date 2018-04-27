@@ -33,9 +33,6 @@ class TensorLayersSpec extends AsyncFreeSpec with Matchers {
                 tape.data.toString should be("[[2.0,4.0],[6.0,8.0]]")
                 Do.garbageCollected(tape.backward(Do.now(Tensor.scalar(1.0f)))).map { _: Unit =>
                   tape.data.toString should be("[[2.0,4.0],[6.0,8.0]]")
-
-                  succeed
-
                 }
               }
               .run

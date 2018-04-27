@@ -28,7 +28,7 @@ trait CumulativeTensorLayers extends TensorLayers {
   trait TensorLayerApi extends super[TensorLayers].TensorLayerApi {
 
     private final class Accumulator(val data: Tensor, flushBackward: Do[Tensor] => UnitContinuation[Unit])
-        extends Releasable[UnitContinuation, Try[Accumulator]] {
+        extends Resource[UnitContinuation, Try[Accumulator]] {
       @volatile
       var currentDelta: Tensor = zero
 
