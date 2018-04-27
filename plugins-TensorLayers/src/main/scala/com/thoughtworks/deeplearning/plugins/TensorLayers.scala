@@ -81,6 +81,11 @@ trait TensorLayers extends Tensors with Layers {
   protected val tensorPartialApplyRawForward: PartialApply[tensorLayerFactory.Constructor,
                                                            shapeless.Witness.`"rawForward"`.T]
 
+  /** Contains line number, caller and other debugging information for [[TensorLayer]]
+    * @documentable
+    */
+  type TensorLayerDebugging[Out <: TensorLayer] = ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]
+
   object TensorLayer {
 
     /** @usecase def apply(forward: Do[Tape[Tensor, Tensor]]): TensorLayer = ???
