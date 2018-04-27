@@ -160,6 +160,32 @@ trait TensorLayers extends Tensors with Layers {
       }
     }
 
+    implicit def `Tensor*Tensor`[Operand0, Operand1, Out <: TensorLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
+        deepLearning1: DeepLearning.Aux[Operand1, Tensor, Tensor],
+        layerImplicits: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out])
+      : Operators.*.Case.Aux[Operand0, Operand1, Out] = {
+
+      Operators.*.at[Operand0, Operand1] { (operand0: Operand0, operand1: Operand1) =>
+        TensorLayer(parallelApply2(operand0.forward, operand1.forward) {
+          case (Tape(data0, backward0), Tape(data1, backward1)) =>
+            val shape0 = data0.shape
+            val shape1 = data1.shape
+            val outputData = data0 * data1
+            def delta0(outputDelta: Tensor) = {
+              broadcastThenSum(outputDelta * data1, shape0)
+            }
+            def delta1(outputDelta: Tensor) = {
+              broadcastThenSum(outputDelta * data0, shape1)
+            }
+            def backward(outputDelta: Do[Tensor]) = {
+              parallelUnitContinuation(backward0(outputDelta.map(delta0)), backward1(outputDelta.map(delta1)))
+            }
+            Tape(outputData, backward)
+        })
+      }
+    }
+
   }
   type Implicits <: ImplicitsApi
 }
