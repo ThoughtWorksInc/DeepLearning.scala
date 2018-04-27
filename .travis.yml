@@ -18,7 +18,7 @@ matrix:
           condition: -e ./deploy.sbt
           all_branches: true
       before_install:
-        - wget -qO --output-document=/tmp/AMD-SDK.tar.bz2 http://cs.wisc.edu/~riccardo/assets/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
+        - wget --quiet --output-document=/tmp/AMD-SDK.tar.bz2 http://cs.wisc.edu/~riccardo/assets/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
         - mkdir /tmp/amd-app-sdk-installer
         - tar -xjf /tmp/AMD-SDK.tar.bz2 -C /tmp/amd-app-sdk-installer
         - export AMDAPPSDK=${HOME}/AMDAPPSDK
