@@ -12,7 +12,7 @@ import com.thoughtworks.deeplearning.DeepLearning.ops._
 import scalaz.{Applicative, Apply}
 import scalaz.syntax.all._
 import scalaz.Tags.Parallel
-private object TensorLayers {
+private[plugins] object TensorLayers {
 
   private val MergeUnit = { (_: Unit, _: Unit) =>
     ()
