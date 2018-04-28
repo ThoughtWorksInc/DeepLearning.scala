@@ -1,0 +1,3 @@
+[submodule "Compute.scala"]
+	path = Compute.scala
+	url = https://github.com/ThoughtWorksInc/Compute.scala.git
