@@ -163,6 +163,29 @@ trait TensorLayers extends Tensors with Layers {
   }
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
+
+    /** An implicit wrapper that adds extension methods for differentiable n-dimensional array types
+      * that support the [[DeepLearning]] type class.
+      */
+    implicit final class TensorLayerOps[Operand0](operand0: Operand0)(
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor]) {
+
+      def translate[Out <: TensorLayer](offset: Array[Double])(
+          implicit layerImplicits: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Out = {
+        TensorLayer(
+          operand0.forward.map {
+            case Tape(data0, backwoard0) =>
+              val outputData = data0.translate(offset)
+              def backward(outputDelta: Do[Tensor]) = {
+                backwoard0(outputDelta.map(_.translate(offset.map(-_))))
+              }
+              Tape(outputData, backward)
+          }
+        )
+      }
+
+    }
+
     implicit def `Tensor+Tensor`[Operand0, Operand1, Out <: TensorLayer](
         implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
         deepLearning1: DeepLearning.Aux[Operand1, Tensor, Tensor],
