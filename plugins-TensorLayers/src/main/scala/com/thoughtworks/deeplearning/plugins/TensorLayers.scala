@@ -9,11 +9,17 @@ import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.future._
 import com.thoughtworks.deeplearning.DeepLearning.ops._
+import com.thoughtworks.raii.covariant.{Resource, ResourceT}
+import com.thoughtworks.tryt.covariant.TryT
 import scalaz.{@@, Applicative, Apply}
 import scalaz.syntax.all._
+import scalaz.std.list._
 import scalaz.std.iterable._
 import scalaz.std.vector._
 import scalaz.Tags.Parallel
+
+import scala.collection.mutable
+import scala.util.{Success, Try}
 
 private[plugins] object TensorLayers {
 
@@ -43,6 +49,9 @@ private[plugins] object TensorLayers {
   */
 trait TensorLayers extends Tensors with Layers {
   import TensorLayers._
+
+  private lazy val doZero: Do[Tensor] = Do.now(Tensor.scalar(0.0f))
+
   private lazy val doOne: Do[Tensor] = Do.now(Tensor.scalar(1.0f))
 
   trait TensorLayerApi extends super[Layers].LayerApi {
@@ -182,6 +191,54 @@ trait TensorLayers extends Tensors with Layers {
               Tape(outputData, backward)
           }
         )
+      }
+
+      def split[Out <: TensorLayer](dimension: Int)(
+          implicit layerImplicits: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Do[Seq[Out]] = {
+
+        operand0.forward.flatMap {
+          case Tape(inputData, flushBackward) =>
+            val resourceContinuation: UnitContinuation[Resource[UnitContinuation, Try[Seq[Out]]]] = {
+              UnitContinuation.delay {
+
+                val slices: IndexedSeq[Tensor] = inputData.split(dimension)
+
+                val deltaSlices = mutable.ArraySeq.fill[Do[Tensor]](slices.length)(doZero)
+
+                def release: UnitContinuation[Unit] = UnitContinuation.suspend {
+                  flushBackward(deltaSlices.synchronized {
+                    val doInputDelta = deltaSlices.toList.sequence.map { tensorSlices =>
+                      Tensor.join(tensorSlices, dimension)
+                    }
+                    for (i <- deltaSlices.indices) {
+                      deltaSlices(i) = doZero
+                    }
+                    doInputDelta
+                  })
+
+                }
+
+                def sliceLayers = mutable.ArraySeq.tabulate(slices.length) { i =>
+                  val slice = slices(i)
+
+                  def sliceBackward(outputDelta: Do[Tensor]): UnitContinuation[Unit] = UnitContinuation.delay {
+                    deltaSlices.synchronized {
+                      deltaSlices(i) match {
+                        case null =>
+                          deltaSlices(i) = outputDelta
+                        case nonNull =>
+                          deltaSlices(i) = parallelApply2(nonNull, outputDelta)(_ + _)
+                      }
+                    }
+                  }
+
+                  TensorLayer(Do.now(Tape(slice, sliceBackward)))
+                }
+                Resource[UnitContinuation, Try[Seq[Out]]](Success(sliceLayers), release)
+              }
+            }
+            Do(TryT(ResourceT(resourceContinuation))).shared
+        }
       }
 
     }
