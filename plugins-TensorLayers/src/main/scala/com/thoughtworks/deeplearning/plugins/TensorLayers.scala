@@ -43,7 +43,7 @@ private[plugins] object TensorLayers {
   */
 trait TensorLayers extends Tensors with Layers {
   import TensorLayers._
-  private lazy val One: Tensor = Tensor.scalar(1.0f)
+  private lazy val doOne: Do[Tensor] = Do.now(Tensor.scalar(1.0f))
 
   trait TensorLayerApi extends super[Layers].LayerApi {
     type Data = Tensor
@@ -60,7 +60,7 @@ trait TensorLayers extends Tensors with Layers {
 
     final def train: Do[Data] = {
       forward.flatMap[Data] { tape =>
-        Do.garbageCollected(tape.backward(Do.now(One))).map { _: Unit =>
+        Do.garbageCollected(tape.backward(doOne)).map { _: Unit =>
           tape.data
         }
       }
