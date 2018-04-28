@@ -9,9 +9,12 @@ import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.future._
 import com.thoughtworks.deeplearning.DeepLearning.ops._
-import scalaz.{Applicative, Apply}
+import scalaz.{@@, Applicative, Apply}
 import scalaz.syntax.all._
+import scalaz.std.iterable._
+import scalaz.std.vector._
 import scalaz.Tags.Parallel
+
 private[plugins] object TensorLayers {
 
   private val MergeUnit = { (_: Unit, _: Unit) =>
@@ -132,6 +135,31 @@ trait TensorLayers extends Tensors with Layers {
     }
 
     loop(tensor, 0)
+  }
+
+  def join[Operand0, Out <: TensorLayer](operands: Seq[Operand0])(
+      implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
+      implicitApply: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Out = {
+    val doTapes: Vector[ParallelDo[Tape[Tensor, Tensor]]] = operands.map { operand =>
+      Parallel(operand.forward)
+    }(collection.breakOut(Vector.canBuildFrom))
+    TensorLayer(
+      Parallel
+        .unwrap(Applicative[ParallelDo].sequence(doTapes))
+        .map { tapes =>
+          val outputData = Tensor.join(tapes.map(_.data))
+          def backward(doOutputDelta: Do[Tensor]): UnitContinuation[Unit] = {
+            val tapeView: Iterable[Tape[Tensor, Tensor]] = tapes.view
+            Parallel.unwrap(tapeView.zipWithIndex.traverse_[ParallelContinuation] {
+              case (tape, i) =>
+                Parallel(tape.backward(doOutputDelta.map { outputDelta =>
+                  outputDelta.split(outputDelta.shape.length - 1).apply(i)
+                }))
+            })
+          }
+          Tape(outputData, backward)
+        }
+    )
   }
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
