@@ -81,6 +81,8 @@ trait TensorLayers extends Tensors with Layers {
 
   }
 
+  type DeepLearningTensor[Differentiable] = DeepLearning.Aux[Differentiable, Tensor, Tensor]
+
   type TensorLayer <: TensorLayerApi with Layer
 
   @inject
