@@ -9,9 +9,18 @@ import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.future._
 import com.thoughtworks.deeplearning.DeepLearning.ops._
-import scalaz.{Applicative, Apply}
+import com.thoughtworks.raii.covariant.{Resource, ResourceT}
+import com.thoughtworks.tryt.covariant.TryT
+import scalaz.{@@, Applicative, Apply}
 import scalaz.syntax.all._
+import scalaz.std.list._
+import scalaz.std.iterable._
+import scalaz.std.vector._
 import scalaz.Tags.Parallel
+
+import scala.collection.mutable
+import scala.util.{Success, Try}
+
 private[plugins] object TensorLayers {
 
   private val MergeUnit = { (_: Unit, _: Unit) =>
@@ -40,7 +49,10 @@ private[plugins] object TensorLayers {
   */
 trait TensorLayers extends Tensors with Layers {
   import TensorLayers._
-  private lazy val One: Tensor = Tensor.scalar(1.0f)
+
+  private lazy val doZero: Do[Tensor] = Do.now(Tensor.scalar(0.0f))
+
+  private lazy val doOne: Do[Tensor] = Do.now(Tensor.scalar(1.0f))
 
   trait TensorLayerApi extends super[Layers].LayerApi {
     type Data = Tensor
@@ -57,7 +69,7 @@ trait TensorLayers extends Tensors with Layers {
 
     final def train: Do[Data] = {
       forward.flatMap[Data] { tape =>
-        Do.garbageCollected(tape.backward(Do.now(One))).map { _: Unit =>
+        Do.garbageCollected(tape.backward(doOne)).map { _: Unit =>
           tape.data
         }
       }
@@ -68,6 +80,8 @@ trait TensorLayers extends Tensors with Layers {
     }
 
   }
+
+  type DeepLearningTensor[Differentiable] = DeepLearning.Aux[Differentiable, Tensor, Tensor]
 
   type TensorLayer <: TensorLayerApi with Layer
 
@@ -134,7 +148,128 @@ trait TensorLayers extends Tensors with Layers {
     loop(tensor, 0)
   }
 
+  def join[Operand0, Out <: TensorLayer](operands: Seq[Operand0], dimension: Int)(
+      implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
+      implicitApply: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Out = {
+    val doTapes: Vector[ParallelDo[Tape[Tensor, Tensor]]] = operands.map { operand =>
+      Parallel(operand.forward)
+    }(collection.breakOut(Vector.canBuildFrom))
+    TensorLayer(
+      Parallel
+        .unwrap(Applicative[ParallelDo].sequence(doTapes))
+        .map { tapes =>
+          val outputData = Tensor.join(tapes.map(_.data), dimension)
+          def backward(doOutputDelta: Do[Tensor]): UnitContinuation[Unit] = {
+            val tapeView: Iterable[Tape[Tensor, Tensor]] = tapes.view
+            Parallel.unwrap(tapeView.zipWithIndex.traverse_[ParallelContinuation] {
+              case (tape, i) =>
+                Parallel(tape.backward(doOutputDelta.map { outputDelta =>
+                  outputDelta.split(dimension).apply(i)
+                }))
+            })
+          }
+          Tape(outputData, backward)
+        }
+    )
+  }
+
+  def join[Operand0, Out <: TensorLayer](operands: Seq[Operand0])(
+      implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
+      implicitApply: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Out = {
+    val doTapes: Vector[ParallelDo[Tape[Tensor, Tensor]]] = operands.map { operand =>
+      Parallel(operand.forward)
+    }(collection.breakOut(Vector.canBuildFrom))
+    TensorLayer(
+      Parallel
+        .unwrap(Applicative[ParallelDo].sequence(doTapes))
+        .map { tapes =>
+          val outputData = Tensor.join(tapes.map(_.data))
+          def backward(doOutputDelta: Do[Tensor]): UnitContinuation[Unit] = {
+            val tapeView: Iterable[Tape[Tensor, Tensor]] = tapes.view
+            Parallel.unwrap(tapeView.zipWithIndex.traverse_[ParallelContinuation] {
+              case (tape, i) =>
+                Parallel(tape.backward(doOutputDelta.map { outputDelta =>
+                  outputDelta.split(outputDelta.shape.length - 1).apply(i)
+                }))
+            })
+          }
+          Tape(outputData, backward)
+        }
+    )
+  }
+
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
+
+    /** An implicit wrapper that adds extension methods for differentiable n-dimensional array types
+      * that support the [[DeepLearning]] type class.
+      */
+    implicit final class TensorLayerOps[Operand0](operand0: Operand0)(
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor]) {
+
+      def translate[Out <: TensorLayer](offset: Array[Double])(
+          implicit layerImplicits: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Out = {
+        TensorLayer(
+          operand0.forward.map {
+            case Tape(data0, backwoard0) =>
+              val outputData = data0.translate(offset)
+              def backward(outputDelta: Do[Tensor]) = {
+                backwoard0(outputDelta.map(_.translate(offset.map(-_))))
+              }
+              Tape(outputData, backward)
+          }
+        )
+      }
+
+      def split[Out <: TensorLayer](dimension: Int)(
+          implicit layerImplicits: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out]): Do[Seq[Out]] = {
+
+        operand0.forward.flatMap {
+          case Tape(inputData, flushBackward) =>
+            val resourceContinuation: UnitContinuation[Resource[UnitContinuation, Try[Seq[Out]]]] = {
+              UnitContinuation.delay {
+
+                val slices: IndexedSeq[Tensor] = inputData.split(dimension)
+
+                val deltaSlices = mutable.ArraySeq.fill[Do[Tensor]](slices.length)(doZero)
+
+                def release: UnitContinuation[Unit] = UnitContinuation.suspend {
+                  flushBackward(deltaSlices.synchronized {
+                    val doInputDelta = deltaSlices.toList.sequence.map { tensorSlices =>
+                      Tensor.join(tensorSlices, dimension)
+                    }
+                    for (i <- deltaSlices.indices) {
+                      deltaSlices(i) = doZero
+                    }
+                    doInputDelta
+                  })
+
+                }
+
+                def sliceLayers = mutable.ArraySeq.tabulate(slices.length) { i =>
+                  val slice = slices(i)
+
+                  def sliceBackward(outputDelta: Do[Tensor]): UnitContinuation[Unit] = UnitContinuation.delay {
+                    deltaSlices.synchronized {
+                      deltaSlices(i) match {
+                        case null =>
+                          deltaSlices(i) = outputDelta
+                        case nonNull =>
+                          deltaSlices(i) = parallelApply2(nonNull, outputDelta)(_ + _)
+                      }
+                    }
+                  }
+
+                  TensorLayer(Do.now(Tape(slice, sliceBackward)))
+                }
+                Resource[UnitContinuation, Try[Seq[Out]]](Success(sliceLayers), release)
+              }
+            }
+            Do(TryT(ResourceT(resourceContinuation))).shared
+        }
+      }
+
+    }
+
     implicit def `Tensor+Tensor`[Operand0, Operand1, Out <: TensorLayer](
         implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
         deepLearning1: DeepLearning.Aux[Operand1, Tensor, Tensor],
@@ -151,6 +286,32 @@ trait TensorLayers extends Tensors with Layers {
             }
             def delta1(outputDelta: Tensor) = {
               broadcastThenSum(outputDelta, shape1)
+            }
+            def backward(outputDelta: Do[Tensor]) = {
+              parallelUnitContinuation(backward0(outputDelta.map(delta0)), backward1(outputDelta.map(delta1)))
+            }
+            Tape(outputData, backward)
+        })
+      }
+    }
+
+    implicit def `Tensor*Tensor`[Operand0, Operand1, Out <: TensorLayer](
+        implicit deepLearning0: DeepLearning.Aux[Operand0, Tensor, Tensor],
+        deepLearning1: DeepLearning.Aux[Operand1, Tensor, Tensor],
+        layerImplicits: ImplicitApply.Aux[tensorPartialApplyRawForward.Rest, Out])
+      : Operators.*.Case.Aux[Operand0, Operand1, Out] = {
+
+      Operators.*.at[Operand0, Operand1] { (operand0: Operand0, operand1: Operand1) =>
+        TensorLayer(parallelApply2(operand0.forward, operand1.forward) {
+          case (Tape(data0, backward0), Tape(data1, backward1)) =>
+            val shape0 = data0.shape
+            val shape1 = data1.shape
+            val outputData = data0 * data1
+            def delta0(outputDelta: Tensor) = {
+              broadcastThenSum(outputDelta * data1, shape0)
+            }
+            def delta1(outputDelta: Tensor) = {
+              broadcastThenSum(outputDelta * data0, shape1)
             }
             def backward(outputDelta: Do[Tensor]) = {
               parallelUnitContinuation(backward0(outputDelta.map(delta0)), backward1(outputDelta.map(delta1)))
