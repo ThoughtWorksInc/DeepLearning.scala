@@ -12,14 +12,15 @@ import com.thoughtworks.continuation.Continuation
   */
 trait TensorLiterals extends Tensors {
 
-  implicit def tensorLiteralDeepLearning: DeepLearning.Aux[Tensor, Tensor, Tensor] = new DeepLearning[Tensor] {
+  implicit def tensorLiteralDeepLearning[SubtypeOfTensor <: Tensor]: DeepLearning.Aux[SubtypeOfTensor, Tensor, Tensor] =
+    new DeepLearning[SubtypeOfTensor] {
 
-    override type Data = Tensor
-    override type Delta = Tensor
+      override type Data = Tensor
+      override type Delta = Tensor
 
-    override def forward(literal: Tensor): Do[Tape[Data, Delta]] = {
-      Do.now(Tape(literal, Function.const(Continuation.now(()))))
+      override def forward(literal: SubtypeOfTensor): Do[Tape[Data, Delta]] = {
+        Do.now(Tape(literal, Function.const(Continuation.now(()))))
+      }
     }
-  }
 
 }
