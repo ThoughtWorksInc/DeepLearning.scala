@@ -1,46 +1,38 @@
 package com.thoughtworks.deeplearning.plugins
 
-import java.util.logging.{Level, LogRecord, Logger}
+import java.nio.ByteBuffer
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
 import com.thoughtworks.continuation._
 import com.thoughtworks.feature.Caller
+import com.typesafe.scalalogging.{CanLog, Logger}
+import org.slf4j.MDC
+import sourcecode.{FullName, Name}
 
-object Logging {
+private object Logging {
 
-  /** A [[java.util.logging.LogRecord LogRecord]] that contains current source contextual information. */
-  class ContextualLogRecord(
-      level: Level,
-      message: String = null,
-      parameters: Array[AnyRef] = null,
-      thrown: Throwable = null)(implicit fullName: sourcecode.FullName, name: sourcecode.Name, caller: Caller[_])
-      extends LogRecord(level, message) {
+  implicit object CanLogSourceCode extends CanLog[(sourcecode.FullName, sourcecode.Name, Caller[_])] {
 
-    setParameters(parameters)
-    setThrown(thrown)
-    setLoggerName(fullName.value)
-    setSourceClassName(caller.value.getClass.getName)
-    setSourceMethodName(name.value)
-  }
+    private final val mdcKeyFullName = "sourcecode.FullName"
+    private final val mdcKeyName = "sourcecode.Name"
+    private final val mdcKeyCaller = "com.thoughtworks.feature.Caller"
 
-  trait LazyMessage extends LogRecord {
-    protected def makeDefaultMessage: Fastring
+    def logMessage(originalMessage: String, attachments: (sourcecode.FullName, sourcecode.Name, Caller[_])): String = {
 
-    private lazy val defaultMessage: String = makeDefaultMessage.toString
-
-    override def getMessage: String = super.getMessage match {
-      case null    => defaultMessage
-      case message => message
+      MDC.put(mdcKeyFullName, attachments._1.value)
+      MDC.put(mdcKeyName, attachments._2.value)
+      MDC.put(mdcKeyCaller, attachments._3.value.getClass.getCanonicalName)
+      originalMessage
     }
-  }
-  final class UncaughtException(val differentiable: Logging#DifferentiableApi, getThrown: Throwable)(
-      implicit fullName: sourcecode.FullName,
-      name: sourcecode.Name,
-      caller: Caller[_])
-      extends ContextualLogRecord(Level.SEVERE, thrown = getThrown)
-      with LazyMessage {
-    override protected def makeDefaultMessage: Fastring = fast"An exception is thrown in $differentiable"
+
+    override def afterLog(attachments: (sourcecode.FullName, sourcecode.Name, Caller[_])): Unit = {
+      MDC.remove(mdcKeyFullName)
+      MDC.remove(mdcKeyName)
+      MDC.remove(mdcKeyCaller)
+      super.afterLog(attachments)
+    }
+
   }
 
 }
@@ -52,15 +44,17 @@ object Logging {
 trait Logging extends Differentiables {
   import Logging._
 
-  @transient lazy val logger: Logger = Logger.getLogger(getClass.getName)
+  protected val logger: Logger
 
   trait DifferentiableApi extends super.DifferentiableApi {
-    implicit protected def fullName: sourcecode.FullName
-    implicit protected def name: sourcecode.Name
+    implicit protected def fullName: FullName
+    implicit protected def name: Name
     implicit protected def caller: Caller[_]
     override protected def handleException(thrown: Throwable): UnitContinuation[Unit] = {
       UnitContinuation.delay {
-        logger.log(new UncaughtException(this, thrown))
+        Logger
+          .takingImplicit[(FullName, Name, Caller[_])](logger.underlying)
+          .error("An uncaught exception is thrown", thrown)((fullName, name, caller))
       }
     }
   }
