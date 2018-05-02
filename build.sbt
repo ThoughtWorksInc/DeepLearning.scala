@@ -50,6 +50,7 @@ lazy val `plugins-CumulativeTensorLayers` =
   project.dependsOn(
     DeepLearning % "test->test",
     `plugins-TensorLayers`,
+    `plugins-Logging` % Test,
     `plugins-TensorLiterals` % Test,
     `plugins-TensorWeights` % Test
   )
