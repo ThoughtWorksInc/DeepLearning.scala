@@ -59,9 +59,6 @@ trait TensorWeights extends Tensors with Weights {
                                             tensorOriginalDeltaParameter(originalDelta))))
       }
       val doDelta = optimizer.delta
-//      doDelta.intransitiveFlatMap {delta=>
-//        (data - delta).doCache
-//      }
 
       doDelta.intransitiveFlatMap { delta =>
         Do.garbageCollected((data - delta).doCache.acquire).intransitiveFlatMap {
