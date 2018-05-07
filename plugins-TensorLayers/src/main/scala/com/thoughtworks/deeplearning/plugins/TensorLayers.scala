@@ -212,8 +212,9 @@ trait TensorLayers extends Tensors with Layers {
           operand0.forward.map {
             case Tape(data0, backwoard0) =>
               val outputData = data0.translate(offset)
+              val shape0 = data0.shape
               def backward(outputDelta: Do[Tensor]) = {
-                backwoard0(outputDelta.map(_.translate(offset.map(-_))))
+                backwoard0(outputDelta.map(_.broadcast(shape0).translate(offset.map(-_))))
               }
               Tape(outputData, backward)
           }

@@ -63,6 +63,69 @@ private object CumulativeTensorLayersSpec {
 final class CumulativeTensorLayersSpec extends AsyncFreeSpec with Matchers {
   import CumulativeTensorLayersSpec._
 
+  "translate" in {
+    Do.monadicCloseable {
+        Factory[
+          Logging with TensorLiterals with TensorWeights with CNNs with Operators with StrictLogging with Tensors.UnsafeMathOptimizations with OpenCL.LogContextNotification with OpenCL.GlobalExecutionContext with OpenCL.CommandQueuePool with OpenCL.UseAllCpuDevices with OpenCL.DontReleaseEventTooEarly with OpenCL.SynchronizedCreatingKernel with OpenCL.HandleEventInExecutionContextForIntelAndAMDPlatform with Tensors.WangHashingRandomNumberGenerator with ImplicitsSingleton]
+          .newInstance(numberOfCommandQueuesPerDevice = 5)
+      }
+      .flatMap { hyperparameters =>
+        import hyperparameters._, implicits._
+        TensorWeight
+          .allocate {
+            val weightArray = Array.ofDim[Float](3, 3, 3, 2) /* kernelHeight × kernelWidth × depth × filterSize */
+            weightArray(1)(1)(0)(0) = 3.0f
+            weightArray(1)(1)(0)(1) = 4.0f
+            weightArray(0)(1)(0)(0) = 5.0f
+            weightArray(2)(2)(0)(1) = 6.0f
+
+            Tensor(weightArray)
+          }
+          .flatMap { weight =>
+            val oldWeight = weight.data
+            val translated = weight.translate(Array(1, 0, 0, 0))
+            Do.garbageCollected(
+              translated.train
+                .intransitiveFlatMap { outputTensor =>
+                  Do.garbageCollected(outputTensor.flatArray).intransitiveMap { a =>
+                    val outputArray = a
+                      .grouped(2)
+                      .toArray
+                      .grouped(3)
+                      .toArray
+                      .grouped(3)
+                      .toArray
+
+                    outputArray.length should be(3)
+
+                    outputArray(2)(1)(0)(0) should be(3.0f)
+                    outputArray(2)(1)(0)(1) should be(4.0f)
+                    outputArray(1)(1)(0)(0) should be(5.0f)
+                  }
+                }
+                .run
+                .flatMap { _: Assertion =>
+                  weight.data shouldNot be theSameInstanceAs oldWeight
+                  weight.data.flatArray.map { a =>
+                    val weightArray = a
+                      .grouped(2)
+                      .toArray
+                      .grouped(3)
+                      .toArray
+                      .grouped(3)
+                      .toArray
+                    weightArray should have length 3
+
+                    weightArray(1)(1)(0)(0) should be(2.0f)
+                    weightArray(1)(1)(0)(1) should be(3.0f)
+                    weightArray(0)(1)(0)(0) should be(4.0f)
+                    weightArray(2)(2)(0)(1) should be(6.0f)
+                  }
+                })
+          }
+      }
+  }.run.toScalaFuture
+
   "convolute" in {
 
     Do.monadicCloseable {
