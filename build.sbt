@@ -111,6 +111,10 @@ lazy val `plugins-Builtins` =
     `plugins-DoubleWeights`,
     `plugins-DoubleLayers`,
     `plugins-CumulativeDoubleLayers`,
+    `plugins-TensorLiterals`,
+    `plugins-TensorWeights`,
+    `plugins-TensorLayers`,
+    `plugins-CumulativeTensorLayers`,
     DeepLearning % "test->test"
   )
 lazy val `plugins-Differentiables` = project

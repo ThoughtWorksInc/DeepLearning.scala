@@ -20,7 +20,11 @@ trait Builtins
     with DoubleLiterals
     with DoubleWeights
     with DoubleLayers
-    with CumulativeDoubleLayers {
+    with CumulativeDoubleLayers
+    with TensorLiterals
+    with TensorWeights
+    with TensorLayers
+    with CumulativeTensorLayers {
 
   trait ImplicitsApi
       extends super[Layers].ImplicitsApi
@@ -30,6 +34,8 @@ trait Builtins
       with super[FloatLayers].ImplicitsApi
       with super[DoubleLiterals].ImplicitsApi
       with super[DoubleLayers].ImplicitsApi
+      with super[TensorLiterals].ImplicitsApi
+      with super[TensorLayers].ImplicitsApi
 
   type Implicits <: ImplicitsApi
 
