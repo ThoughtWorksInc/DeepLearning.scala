@@ -123,20 +123,31 @@ trait TensorLayers extends Tensors with Layers {
   // TODO: Use device side loops once https://github.com/ThoughtWorksInc/Compute.scala/issues/62 is implemented
   private def sumAs(tensor: Tensor, shape: Array[Int]) = {
 
-    require(shape.length == tensor.shape.length, errorMessage)
+    require(shape.length <= tensor.shape.length, errorMessage)
 
     def errorMessage = s"Cannot sum [${tensor.shape.mkString(",")}] to [${shape.mkString(",")}]"
-    def loop(tensor: Tensor, i: Int): Tensor = {
-      if (i < shape.length) {
-        if (tensor.shape(i) != 1 && shape(i) == 1) {
+
+    def loop(tensor: Tensor, i: Int, j: Int): Tensor = {
+      if (j < tensor.shape.length) {
+        if (i >= shape.length) {
           tensor
-            .split(i)
+            .split(j)
             .map { subtensor =>
-              loop(subtensor, i + 1)
+              loop(subtensor, i + 1, j)
             }
             .reduce(_ + _)
-        } else if (tensor.shape(i) == shape(i)) {
-          loop(tensor, i + 1)
+        } else if (tensor.shape(i) != 1 && shape(i) == 1) {
+          tensor
+            .split(j)
+            .map { subtensor =>
+              subtensor.permute(
+                ((0.until(j).view :+ subtensor.shape.length) ++ j.until(subtensor.shape.length)).toArray)
+
+              loop(subtensor, i + 1, j + 1)
+            }
+            .reduce(_ + _)
+        } else if (tensor.shape(j) == shape(i)) {
+          loop(tensor, i + 1, j + 1)
         } else {
           throw new IllegalArgumentException(errorMessage)
         }
@@ -145,7 +156,9 @@ trait TensorLayers extends Tensors with Layers {
       }
     }
 
-    loop(tensor, 0)
+    loop(tensor, 0, 0).ensuring{ t: Tensor=>
+      (java.util.Arrays.equals(t.shape, shape))
+    }
   }
 
   def join[Operand0, Out <: TensorLayer](operands: Seq[Operand0], dimension: Int)(
@@ -159,12 +172,13 @@ trait TensorLayers extends Tensors with Layers {
         .unwrap(Applicative[ParallelDo].sequence(doTapes))
         .map { tapes =>
           val outputData = Tensor.join(tapes.map(_.data), dimension)
+          val outputShape = outputData.shape
           def backward(doOutputDelta: Do[Tensor]): UnitContinuation[Unit] = {
             val tapeView: Iterable[Tape[Tensor, Tensor]] = tapes.view
             Parallel.unwrap(tapeView.zipWithIndex.traverse_[ParallelContinuation] {
               case (tape, i) =>
                 Parallel(tape.backward(doOutputDelta.map { outputDelta =>
-                  outputDelta.split(dimension).apply(i)
+                  outputDelta.broadcast(outputShape).split(dimension).apply(i)
                 }))
             })
           }
@@ -184,12 +198,14 @@ trait TensorLayers extends Tensors with Layers {
         .unwrap(Applicative[ParallelDo].sequence(doTapes))
         .map { tapes =>
           val outputData = Tensor.join(tapes.map(_.data))
+          val outputShape = outputData.shape
           def backward(doOutputDelta: Do[Tensor]): UnitContinuation[Unit] = {
             val tapeView: Iterable[Tape[Tensor, Tensor]] = tapes.view
             Parallel.unwrap(tapeView.zipWithIndex.traverse_[ParallelContinuation] {
               case (tape, i) =>
                 Parallel(tape.backward(doOutputDelta.map { outputDelta =>
-                  outputDelta.split(outputDelta.shape.length - 1).apply(i)
+                  val element = outputDelta.broadcast(outputShape).split(outputShape.length - 1).apply(i)
+                  element
                 }))
             })
           }
@@ -213,8 +229,8 @@ trait TensorLayers extends Tensors with Layers {
             case Tape(data0, backwoard0) =>
               val outputData = data0.translate(offset)
               val shape0 = data0.shape
-              def backward(outputDelta: Do[Tensor]) = {
-                backwoard0(outputDelta.map(_.broadcast(shape0).translate(offset.map(-_))))
+              def backward(doOutputDelta: Do[Tensor]) = {
+                backwoard0(doOutputDelta.map(_.broadcast(shape0).translate(offset.map(-_))))
               }
               Tape(outputData, backward)
           }
@@ -248,12 +264,13 @@ trait TensorLayers extends Tensors with Layers {
 
                 def sliceLayers = mutable.ArraySeq.tabulate(slices.length) { i =>
                   val slice = slices(i)
+                  val sliceShape = slice.shape
 
                   def sliceBackward(outputDelta: Do[Tensor]): UnitContinuation[Unit] = UnitContinuation.delay {
                     deltaSlices.synchronized {
                       deltaSlices(i) match {
                         case null =>
-                          deltaSlices(i) = outputDelta
+                          deltaSlices(i) = outputDelta.map(_.broadcast(sliceShape))
                         case nonNull =>
                           deltaSlices(i) = parallelApply2(nonNull, outputDelta)(_ + _)
                       }

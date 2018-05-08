@@ -119,7 +119,7 @@ final class CumulativeTensorLayersSpec extends AsyncFreeSpec with Matchers {
                     weightArray(1)(1)(0)(0) should be(2.0f)
                     weightArray(1)(1)(0)(1) should be(3.0f)
                     weightArray(0)(1)(0)(0) should be(4.0f)
-                    weightArray(2)(2)(0)(1) should be(6.0f)
+                    weightArray(2)(2)(0)(1) should be(5.0f)
                   }
                 })
           }
@@ -146,6 +146,7 @@ final class CumulativeTensorLayersSpec extends AsyncFreeSpec with Matchers {
             Tensor(weightArray)
           }
           .flatMap { weight =>
+            val oldWeight = weight.data
             TensorWeight
               .allocate {
                 val biasArray = Array[Float](100000.0f, 200000.0f) /* filterSize */
@@ -191,10 +192,11 @@ final class CumulativeTensorLayersSpec extends AsyncFreeSpec with Matchers {
                     }
                     .run
                     .flatMap { _: Assertion =>
+                      weight.data shouldNot be theSameInstanceAs oldWeight
                       weight.data.flatArray.map { a =>
                         val weightArray = a.grouped(2).toArray.grouped(3).toArray.grouped(3).toArray
-//                        weightArray(1)(1)(0)(0) should be(null)
-                        succeed
+                        weightArray should have length (3)
+                        weightArray(1)(1)(0)(0) should be(-108.0f)
                       }
                     })
               }

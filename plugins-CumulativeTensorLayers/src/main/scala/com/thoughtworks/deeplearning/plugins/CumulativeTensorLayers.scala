@@ -11,6 +11,7 @@ import com.thoughtworks.tryt.covariant.TryT
 import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, \/-}
 import scalaz.syntax.all._
+import scalaz.Tags.Parallel
 
 /** A plugin that provides differentiable operators
   * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[org.nd4j.linalg.api.ndarray.Tensor]].
@@ -24,31 +25,29 @@ import scalaz.syntax.all._
 trait CumulativeTensorLayers extends TensorLayers {
   import TensorLayers._
   private val zero = Tensor.scalar(0.0f)
+  private val doZero = Do.now(zero)
 
   trait TensorLayerApi extends super[TensorLayers].TensorLayerApi {
 
     private final class Accumulator(val data: Tensor, flushBackward: Do[Tensor] => UnitContinuation[Unit])
         extends Resource[UnitContinuation, Try[Accumulator]] {
       @volatile
-      var currentDelta: Tensor = zero
+      var currentDelta: Do[Tensor] = doZero
 
       override def value: Try[Accumulator] = Success(this)
 
-      override def release: UnitContinuation[Unit] = {
-        val deltaContinuation: UnitContinuation[Tensor] = Continuation.delay {
+      override def release: UnitContinuation[Unit] = UnitContinuation.suspend {
+        val delta: Do[Tensor] = {
           synchronized {
             val delta = currentDelta
-            currentDelta = null
+            currentDelta = null.asInstanceOf[Do[Tensor]]
             delta
           }
         }
-
-        deltaContinuation.flatMap { delta =>
-          if (delta == zero) {
-            Continuation.now(())
-          } else {
-            flushBackward(Do.now(delta))
-          }
+        if (delta == doZero) {
+          Continuation.now(())
+        } else {
+          flushBackward(delta)
         }
       }
     }
@@ -65,22 +64,17 @@ trait CumulativeTensorLayers extends TensorLayers {
 
     abstract override def forward: Do[Tape[Tensor, Tensor]] = {
       sharedAccumulator.map { accumulator =>
-        def cumulativeBackward(doDelta: Do[Tensor]): UnitContinuation[Unit] = {
-          val Future(TryT(continuation)) = doDelta.run.map { delta =>
-            accumulator.synchronized {
-              accumulator.currentDelta = accumulator.currentDelta match {
-                case null =>
-                  throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
-                case `zero` => delta
-                case nonZeroDelta =>
-                  nonZeroDelta + delta
-              }
+        def cumulativeBackward(doDelta: Do[Tensor]): UnitContinuation[Unit] = UnitContinuation.delay {
+          synchronized {
+            accumulator.currentDelta = accumulator.currentDelta match {
+              case null =>
+                throw new IllegalStateException("Cannot perform Tape.backward after the Tape is released")
+              case `zero` =>
+                doDelta
+              case nonZeroAccumulator =>
+                Parallel.unwrap(
+                  asynchronousDoParallelApplicative.apply2(Parallel(nonZeroAccumulator), Parallel(doDelta))(_ + _))
             }
-          }
-
-          continuation.map {
-            case Success(()) => // Success. Do nothing
-            case Failure(e)  => handleException(e)
           }
         }
         Tape(accumulator.data, cumulativeBackward)
