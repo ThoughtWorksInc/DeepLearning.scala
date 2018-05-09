@@ -66,7 +66,7 @@ final class CumulativeTensorLayersSpec extends AsyncFreeSpec with Matchers {
   "translate" in {
     Do.monadicCloseable {
         Factory[
-          Logging with TensorLiterals with TensorWeights with CNNs with Operators with StrictLogging with Tensors.UnsafeMathOptimizations with OpenCL.LogContextNotification with OpenCL.GlobalExecutionContext with OpenCL.CommandQueuePool with OpenCL.UseAllCpuDevices with OpenCL.DontReleaseEventTooEarly with OpenCL.SynchronizedCreatingKernel with OpenCL.HandleEventInExecutionContextForIntelAndAMDPlatform with Tensors.WangHashingRandomNumberGenerator with ImplicitsSingleton]
+          Logging with TensorLiterals with TensorWeights with CNNs with Operators with StrictLogging with OpenCL.UnsafeMathOptimizations with OpenCL.LogContextNotification with OpenCL.GlobalExecutionContext with OpenCL.CommandQueuePool with OpenCL.UseAllCpuDevices with OpenCL.DontReleaseEventTooEarly with OpenCL.SynchronizedCreatingKernel with OpenCL.HandleEventInExecutionContextForIntelAndAMDPlatform with Tensors.WangHashingRandomNumberGenerator with ImplicitsSingleton]
           .newInstance(numberOfCommandQueuesPerDevice = 5)
       }
       .flatMap { hyperparameters =>
@@ -130,7 +130,7 @@ final class CumulativeTensorLayersSpec extends AsyncFreeSpec with Matchers {
 
     Do.monadicCloseable {
         Factory[
-          Logging with TensorLiterals with TensorWeights with CNNs with Operators with StrictLogging with Tensors.UnsafeMathOptimizations with OpenCL.LogContextNotification with OpenCL.GlobalExecutionContext with OpenCL.CommandQueuePool with OpenCL.UseAllCpuDevices with OpenCL.DontReleaseEventTooEarly with OpenCL.SynchronizedCreatingKernel with OpenCL.HandleEventInExecutionContextForIntelAndAMDPlatform with Tensors.WangHashingRandomNumberGenerator with ImplicitsSingleton]
+          Logging with TensorLiterals with TensorWeights with CNNs with Operators with StrictLogging with OpenCL.UnsafeMathOptimizations with OpenCL.LogContextNotification with OpenCL.GlobalExecutionContext with OpenCL.CommandQueuePool with OpenCL.UseAllCpuDevices with OpenCL.DontReleaseEventTooEarly with OpenCL.SynchronizedCreatingKernel with OpenCL.HandleEventInExecutionContextForIntelAndAMDPlatform with Tensors.WangHashingRandomNumberGenerator with ImplicitsSingleton]
           .newInstance(numberOfCommandQueuesPerDevice = 5)
       }
       .flatMap { hyperparameters =>

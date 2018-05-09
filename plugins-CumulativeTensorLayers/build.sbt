@@ -1,4 +1,4 @@
-libraryDependencies += ("org.lwjgl" % "lwjgl" % "3.1.6" % Test).jar().classifier {
+libraryDependencies += ("org.lwjgl" % "lwjgl" % "3.1.6" % Optional).jar().classifier {
   import scala.util.Properties._
   if (isMac) {
     "natives-macos"
