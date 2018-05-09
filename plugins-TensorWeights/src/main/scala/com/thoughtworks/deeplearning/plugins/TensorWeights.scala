@@ -116,7 +116,7 @@ trait TensorWeights extends Tensors with Weights {
       *            Factory[
       *              TensorWeights
       *                 with StrictLogging
-      *                 with Tensors.UnsafeMathOptimizations
+      *                 with OpenCL.UnsafeMathOptimizations
       *                 with OpenCL.LogContextNotification
       *                 with OpenCL.GlobalExecutionContext
       *                 with OpenCL.CommandQueuePool
