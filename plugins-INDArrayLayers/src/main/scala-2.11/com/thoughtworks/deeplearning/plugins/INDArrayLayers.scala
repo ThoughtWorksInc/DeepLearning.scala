@@ -8,7 +8,6 @@ import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.raii.asynchronous._
 import org.nd4j.linalg.api.ndarray.INDArray
-
 import scalaz.syntax.all._
 import scalaz.Tags.Parallel
 import scalaz.Semigroup
@@ -19,6 +18,8 @@ import org.nd4j.linalg.factory.Nd4j
 
 import scala.concurrent.ExecutionContext
 import com.thoughtworks.continuation._
+import com.thoughtworks.deeplearning.plugins.Layers.Eager
+import com.thoughtworks.dsl.Dsl
 
 object INDArrayLayers {
 
@@ -175,6 +176,19 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
     }
   }
   trait ImplicitsApi extends super[DoubleLiterals].ImplicitsApi with super[DoubleLayers].ImplicitsApi {
+
+    implicit def eagerINDArrayDsl[Differentiable, Data, Delta, Constructor, Out <: INDArrayLayer](
+        implicit implicitApply: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]
+    ): Dsl[Eager[Differentiable, Data, Delta], INDArrayLayer, Data] = {
+      new Dsl[Eager[Differentiable, Data, Delta], INDArrayLayer, Data] {
+        def interpret(keyword: Eager[Differentiable, Data, Delta], handler: Data => INDArrayLayer): Out =
+          INDArrayLayer(
+            keyword.deepLearning.forward(keyword.operand0).flatMap { tape =>
+              handler(tape.data).internalForward
+            }
+          )
+      }
+    }
 
     /** An implicit wrapper that adds extension methods for differentiable n-dimensional array types
       * that support the [[DeepLearning]] type class.
@@ -718,6 +732,9 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
       *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeINDArrayLayers]].
       */
     protected val rawForward: Do[Tape[INDArray, INDArray]]
+
+    /** A bridge for calling [[rawForward]] in [[INDArrayLayers]] */
+    private[INDArrayLayers] final def internalForward: Do[Tape[INDArray, INDArray]] = rawForward
 
     override def forward: Do[Tape[INDArray, INDArray]] = rawForward
   }
