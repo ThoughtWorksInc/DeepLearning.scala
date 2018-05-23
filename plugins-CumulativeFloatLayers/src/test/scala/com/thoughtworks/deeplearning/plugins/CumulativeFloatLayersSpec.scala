@@ -378,4 +378,36 @@ final class CumulativeFloatLayersSpec
     }
 
   }
+
+  "EagerExecution" in {
+
+    val hyperparameters =
+      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        .newInstance(fixedLearningRate = 1.0f)
+
+    import hyperparameters.implicits._
+
+    val weight = hyperparameters.FloatWeight(1.0f)
+
+    def myNetwork(input: Float): hyperparameters.FloatLayer = {
+      // FIXME: inlining !-notation does not compile due to https://github.com/ThoughtWorksInc/Dsl.scala/issues/119
+      // 6.7f + !(input + weight) + weight + 5.5f
+
+      val f = !(input + weight)
+      6.7f + f + weight + 5.5f
+    }: @com.thoughtworks.dsl.Dsl.reset
+
+    def train(inputData: Float): Future[Float] = {
+      myNetwork(inputData).train
+    }
+
+    for {
+      _ <- train(1.0f)
+      _ <- train(1.0f)
+      _ <- train(1.0f)
+      _ <- train(1.0f)
+      _ <- train(1.0f)
+    } yield weight.data should be(-4)
+
+  }
 }
