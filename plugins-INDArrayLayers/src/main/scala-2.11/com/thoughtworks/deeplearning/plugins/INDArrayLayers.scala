@@ -23,43 +23,7 @@ import com.thoughtworks.dsl.Dsl
 
 object INDArrayLayers {
 
-  final case class MultipleException(throwableSet: Set[Throwable])
-      extends RuntimeException("Multiple exceptions found") {
-    override def toString: String = throwableSet.mkString("\n")
-
-    override def printStackTrace(): Unit = {
-      for (throwable <- throwableSet) {
-        throwable.printStackTrace()
-      }
-    }
-
-    override def printStackTrace(s: PrintStream): Unit = {
-      for (throwable <- throwableSet) {
-        throwable.printStackTrace(s)
-      }
-    }
-
-    override def printStackTrace(s: PrintWriter): Unit = {
-      for (throwable <- throwableSet) {
-        throwable.printStackTrace(s)
-      }
-    }
-
-    override def getStackTrace: Array[StackTraceElement] = synchronized {
-      super.getStackTrace match {
-        case null =>
-          setStackTrace(throwableSet.flatMap(_.getStackTrace)(collection.breakOut))
-          super.getStackTrace
-        case stackTrace =>
-          stackTrace
-      }
-    }
-
-    override def fillInStackTrace(): this.type = {
-      this
-    }
-
-  }
+  final case class MultipleException(throwableSet: Set[Throwable]) extends DeepLearning.AbstractMultipleException
 
   // Workaround for https://github.com/deeplearning4j/nd4j/issues/1869
   private[plugins] implicit final class Nd4jIssues1869Workaround(indArray: INDArray) {
@@ -134,23 +98,8 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
   }
 
   @transient
-  private lazy val doParallelApplicative =
-    com.thoughtworks.raii.asynchronous.asynchronousDoParallelApplicative(new Semigroup[Throwable] {
-      override def append(f1: Throwable, f2: => Throwable): Throwable =
-        f1 match {
-          case MultipleException(exceptionSet1) =>
-            f2 match {
-              case MultipleException(exceptionSet2) => MultipleException(exceptionSet1 ++ exceptionSet2)
-              case e: Throwable                     => MultipleException(exceptionSet1 + e)
-            }
-          case _: Throwable =>
-            f2 match {
-              case MultipleException(exceptionSet2) => MultipleException(exceptionSet2 + f1)
-              case `f1`                             => f1
-              case e: Throwable                     => MultipleException(Set(f1, e))
-            }
-        }
-    })
+  implicit private lazy val doParallelApplicative =
+    asynchronousDoParallelApplicative(DeepLearning.multipleExceptionThrowableSemigroup)
 
   private def parallelApply2[A, B, C](doA: Do[A], doB: Do[B])(f: (A, B) => C): Do[C] = {
     Parallel.unwrap(doParallelApplicative.apply2(Parallel(doA), Parallel(doB))(f))

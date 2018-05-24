@@ -1,16 +1,78 @@
 package com.thoughtworks.deeplearning
+import java.io.{PrintStream, PrintWriter}
+
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
-
 import scalaz.syntax.all._
 import com.thoughtworks.raii.asynchronous._
 import simulacrum.typeclass
 
 import scala.language.implicitConversions
 import algebra.ring.MultiplicativeMonoid
+import scalaz.Semigroup
 
 object DeepLearning {
+
+  implicit object multipleExceptionThrowableSemigroup extends Semigroup[Throwable] {
+    override def append(f1: Throwable, f2: => Throwable): Throwable =
+      f1 match {
+        case me1: AbstractMultipleException =>
+          f2 match {
+            case me2: AbstractMultipleException => MultipleException(me1.throwableSet ++ me2.throwableSet)
+            case e: Throwable                   => MultipleException(me1.throwableSet + e)
+          }
+        case _: Throwable =>
+          f2 match {
+            case me2: AbstractMultipleException => MultipleException(me2.throwableSet + f1)
+            case `f1`                           => f1
+            case e: Throwable                   => MultipleException(Set(f1, e))
+          }
+      }
+  }
+
+  private final case class MultipleException(throwableSet: Set[Throwable])
+      extends DeepLearning.AbstractMultipleException
+
+  abstract class AbstractMultipleException extends RuntimeException("Multiple exceptions found") {
+
+    def throwableSet: Set[Throwable]
+
+    override def toString: String = throwableSet.mkString("\n")
+
+    override def printStackTrace(): Unit = {
+      for (throwable <- throwableSet) {
+        throwable.printStackTrace()
+      }
+    }
+
+    override def printStackTrace(s: PrintStream): Unit = {
+      for (throwable <- throwableSet) {
+        throwable.printStackTrace(s)
+      }
+    }
+
+    override def printStackTrace(s: PrintWriter): Unit = {
+      for (throwable <- throwableSet) {
+        throwable.printStackTrace(s)
+      }
+    }
+
+    override def getStackTrace: Array[StackTraceElement] = synchronized {
+      super.getStackTrace match {
+        case null =>
+          setStackTrace(throwableSet.flatMap(_.getStackTrace)(collection.breakOut))
+          super.getStackTrace
+        case stackTrace =>
+          stackTrace
+      }
+    }
+
+    override def fillInStackTrace(): this.type = {
+      this
+    }
+
+  }
 
   /** The node of wengert list created during [[DeepLearning.forward forward]] pass */
   final case class Tape[+Data, -Delta](data: Data, backward: Do[Delta] => UnitContinuation[Unit])
