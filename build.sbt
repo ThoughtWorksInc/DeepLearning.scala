@@ -18,6 +18,8 @@ lazy val `plugins-Operators` = project
 
 lazy val `plugins-HLists` = project.dependsOn(DeepLearning)
 
+lazy val `plugins-Products` = project.dependsOn(`plugins-HLists`)
+
 lazy val `plugins-FloatTraining` = project.dependsOn(`plugins-Training`)
 
 lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
@@ -40,7 +42,8 @@ lazy val `plugins-CumulativeFloatLayers` =
     `plugins-FloatTraining` % Test,
     `plugins-FloatLiterals` % Test,
     `plugins-FloatWeights` % Test,
-    `plugins-ImplicitsSingleton` % Test
+    `plugins-ImplicitsSingleton` % Test,
+    `plugins-Products` % Test
   )
 
 lazy val `plugins-Training` = project.dependsOn(DeepLearning)
@@ -116,6 +119,7 @@ lazy val `plugins-CumulativeDoubleLayers` =
 
 lazy val `plugins-Builtins` =
   project.dependsOn(
+    `plugins-Products`,
     `plugins-HLists`,
     `plugins-ImplicitsSingleton`,
     `plugins-Layers`,
