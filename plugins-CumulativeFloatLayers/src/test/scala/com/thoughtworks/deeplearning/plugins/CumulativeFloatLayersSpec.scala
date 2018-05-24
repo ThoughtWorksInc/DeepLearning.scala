@@ -379,31 +379,58 @@ final class CumulativeFloatLayersSpec
 
   }
 
-  "EagerExecution" in {
+  "eager execution" - {
+    "single expression" in {
+      val hyperparameters =
+        Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+          .newInstance(fixedLearningRate = 1.0f)
 
-    val hyperparameters =
-      Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
-        .newInstance(fixedLearningRate = 1.0f)
+      import hyperparameters.implicits._
 
-    import hyperparameters.implicits._
+      val weight = hyperparameters.FloatWeight(1.0f)
 
-    val weight = hyperparameters.FloatWeight(1.0f)
+      def myNetwork(input: Float): hyperparameters.FloatLayer = {
+        6.7f + !(input + weight) + weight + 5.5f
+      }
 
-    def myNetwork(input: Float): hyperparameters.FloatLayer = {
-      6.7f + !(input + weight) + weight + 5.5f
+      def train(inputData: Float): Future[Float] = {
+        myNetwork(inputData).train
+      }
+
+      for {
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+      } yield weight.data should be(-4)
     }
 
-    def train(inputData: Float): Future[Float] = {
-      myNetwork(inputData).train
+    "multiple expression" in {
+      val hyperparameters =
+        Factory[Products with FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+          .newInstance(fixedLearningRate = 1.0f)
+
+      import hyperparameters.implicits._
+
+      val weight = hyperparameters.FloatWeight(1.0f)
+
+      def myNetwork(input: Float): hyperparameters.FloatLayer = {
+        val (a, b, c) = !(input + weight, 2.0f, weight)
+        6.7f + a + b + c + weight + 5.5f
+      }
+
+      def train(inputData: Float): Future[Float] = {
+        myNetwork(inputData).train
+      }
+
+      for {
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+        _ <- train(1.0f)
+      } yield weight.data should be(-4)
     }
-
-    for {
-      _ <- train(1.0f)
-      _ <- train(1.0f)
-      _ <- train(1.0f)
-      _ <- train(1.0f)
-      _ <- train(1.0f)
-    } yield weight.data should be(-4)
-
   }
 }

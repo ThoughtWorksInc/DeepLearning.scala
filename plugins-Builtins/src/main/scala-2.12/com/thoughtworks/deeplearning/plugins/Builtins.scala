@@ -20,7 +20,9 @@ trait Builtins
     with DoubleLiterals
     with DoubleWeights
     with DoubleLayers
-    with CumulativeDoubleLayers {
+    with CumulativeDoubleLayers
+    with HLists
+    with Products {
 
   trait ImplicitsApi
       extends super[Layers].ImplicitsApi
@@ -32,6 +34,8 @@ trait Builtins
       with super[DoubleTraining].ImplicitsApi
       with super[DoubleLiterals].ImplicitsApi
       with super[DoubleLayers].ImplicitsApi
+      with super[HLists].ImplicitsApi
+      with super[Products].ImplicitsApi
 
   type Implicits <: ImplicitsApi
 

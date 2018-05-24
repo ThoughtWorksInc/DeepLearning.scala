@@ -103,7 +103,9 @@ trait Builtins
     with INDArrayLiterals
     with INDArrayWeights
     with INDArrayLayers
-    with CumulativeINDArrayLayers {
+    with CumulativeINDArrayLayers
+    with HLists
+    with Products {
 
   trait ImplicitsApi
       extends super[Layers].ImplicitsApi
@@ -118,6 +120,8 @@ trait Builtins
       with super[INDArrayTraining].ImplicitsApi
       with super[INDArrayLiterals].ImplicitsApi
       with super[INDArrayLayers].ImplicitsApi
+      with super[HLists].ImplicitsApi
+      with super[Products].ImplicitsApi
 
   type Implicits <: ImplicitsApi
 
