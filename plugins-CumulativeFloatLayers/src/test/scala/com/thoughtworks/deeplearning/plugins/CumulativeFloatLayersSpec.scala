@@ -390,12 +390,8 @@ final class CumulativeFloatLayersSpec
     val weight = hyperparameters.FloatWeight(1.0f)
 
     def myNetwork(input: Float): hyperparameters.FloatLayer = {
-      // FIXME: inlining !-notation does not compile due to https://github.com/ThoughtWorksInc/Dsl.scala/issues/119
-      // 6.7f + !(input + weight) + weight + 5.5f
-
-      val f = !(input + weight)
-      6.7f + f + weight + 5.5f
-    }: @com.thoughtworks.dsl.Dsl.reset
+      6.7f + !(input + weight) + weight + 5.5f
+    }
 
     def train(inputData: Float): Future[Float] = {
       myNetwork(inputData).train
