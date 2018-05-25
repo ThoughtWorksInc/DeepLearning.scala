@@ -4,14 +4,16 @@ import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.raii.asynchronous._
-
 import scalaz.syntax.all._
+
 import scala.annotation.meta.getter
 import scalaz.Apply
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
 import DeepLearning.ops._
 import com.thoughtworks.deeplearning.plugins.Layers.ToLayer
+import com.thoughtworks.deeplearning.plugins.Layers.Eager
+import com.thoughtworks.dsl.Dsl
 
 /** A plugin that provides differentiable operators
   * on neural networks whose [[DeepLearning.Data Data]] and [[DeepLearning.Delta Delta]] is [[scala.Float]].
@@ -27,6 +29,18 @@ import com.thoughtworks.deeplearning.plugins.Layers.ToLayer
 trait FloatLayers extends Layers {
 
   trait ImplicitsApi extends super[Layers].ImplicitsApi {
+    implicit def eagerFloatDsl[Differentiable, Data, Delta, Constructor, Out <: FloatLayer](
+        implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]
+    ): Dsl[Eager[Differentiable, Data, Delta], FloatLayer, Data] = {
+      new Dsl[Eager[Differentiable, Data, Delta], FloatLayer, Data] {
+        def interpret(keyword: Eager[Differentiable, Data, Delta], handler: Data => FloatLayer): Out =
+          FloatLayer(
+            keyword.deepLearning.forward(keyword.operand0).flatMap { tape =>
+              handler(tape.data).internalForward
+            }
+          )
+      }
+    }
 
     implicit def toFloatLayer[Out <: FloatLayer](
         implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out])
@@ -294,7 +308,12 @@ trait FloatLayers extends Layers {
       doData.run
     }
 
+    /** A bridge for calling [[rawForward]] in [[FloatLayers]] */
+    private[FloatLayers] final def internalForward: Do[Tape[Float, Float]] = rawForward
+
+    override def forward: Do[Tape[Float, Float]] = rawForward
   }
+
   object FloatLayer {
 
     /** @usecase def apply(forward: Do[Tape[Float, Float]]): FloatLayer = ???

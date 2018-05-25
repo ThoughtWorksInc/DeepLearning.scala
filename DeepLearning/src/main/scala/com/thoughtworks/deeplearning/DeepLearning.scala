@@ -1,14 +1,16 @@
 package com.thoughtworks.deeplearning
+import java.io.{PrintStream, PrintWriter}
+
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
-
 import scalaz.syntax.all._
 import com.thoughtworks.raii.asynchronous._
 import simulacrum.typeclass
 
 import scala.language.implicitConversions
 import algebra.ring.MultiplicativeMonoid
+import scalaz.Semigroup
 
 object DeepLearning {
 

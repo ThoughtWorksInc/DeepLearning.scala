@@ -3,6 +3,7 @@ package plugins
 import java.util.logging.Logger
 
 import com.thoughtworks.deeplearning.DeepLearning.Tape
+import com.thoughtworks.dsl.Dsl.Keyword
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply, The}
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.raii.asynchronous.Do
@@ -10,9 +11,15 @@ import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.shared._
 
 import scalaz.syntax.all._
+import scala.language.implicitConversions
+
 import scala.annotation.meta.getter
 import com.thoughtworks.future.Future
 object Layers {
+  final case class Eager[Operand0, Data, Delta](operand0: Operand0)(
+      implicit val deepLearning: DeepLearning.Aux[Operand0, Data, Delta])
+      extends Keyword[Eager[Operand0, Data, Delta], Data]
+
   trait ToLayer[Data, Delta] {
     type OutputLayer
 
@@ -30,6 +37,7 @@ object Layers {
 
 /** A plugin that enables [[Layer]] in neural networks. */
 trait Layers extends Differentiables {
+  import com.thoughtworks.deeplearning.plugins.Layers._
   trait LayerApi extends DifferentiableApi {
     type Data
     type Delta
@@ -51,6 +59,13 @@ trait Layers extends Differentiables {
   type Layer <: LayerApi with Differentiable
 
   trait ImplicitsApi {
+
+    @inline
+    implicit def implicitEager[Operand0](a: Operand0)(
+        implicit deepLearning: DeepLearning[Operand0]): Eager[Operand0, deepLearning.Data, deepLearning.Delta] = {
+      new Eager[Operand0, deepLearning.Data, deepLearning.Delta](a)(deepLearning)
+    }
+
     implicit def layerDeepLearning[From, Data0, Delta0](implicit asLayer: From <:< LayerApi {
       type Data = Data0
       type Delta = Delta0

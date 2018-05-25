@@ -14,6 +14,10 @@ lazy val `plugins-Logging` = project.dependsOn(`plugins-Differentiables`)
 
 lazy val `plugins-Operators` = project
 
+lazy val `plugins-HLists` = project.dependsOn(DeepLearning)
+
+lazy val `plugins-Products` = project.dependsOn(`plugins-HLists`)
+
 lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
 
 lazy val `plugins-FloatWeights` = project.dependsOn(`plugins-Weights`)
@@ -30,7 +34,8 @@ lazy val `plugins-CumulativeFloatLayers` =
     DeepLearning % "test->test",
     `plugins-FloatLayers`,
     `plugins-FloatLiterals` % Test,
-    `plugins-FloatWeights` % Test
+    `plugins-FloatWeights` % Test,
+    `plugins-Products` % Test
   )
 
 lazy val `plugins-TensorLiterals` = project.dependsOn(`DeepLearning`, ProjectRef(file("Compute.scala"), "Tensors"))
@@ -98,6 +103,8 @@ lazy val `plugins-CumulativeDoubleLayers` =
 
 lazy val `plugins-Builtins` =
   project.dependsOn(
+    `plugins-Products`,
+    `plugins-HLists`,
     `plugins-Layers`,
     `plugins-Weights`,
     `plugins-Logging`,

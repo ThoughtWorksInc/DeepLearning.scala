@@ -24,7 +24,9 @@ trait Builtins
     with TensorLiterals
     with TensorWeights
     with TensorLayers
-    with CumulativeTensorLayers {
+    with CumulativeTensorLayers
+    with HLists
+    with Products {
 
   trait ImplicitsApi
       extends super[Layers].ImplicitsApi
@@ -36,6 +38,8 @@ trait Builtins
       with super[DoubleLayers].ImplicitsApi
       with super[TensorLiterals].ImplicitsApi
       with super[TensorLayers].ImplicitsApi
+      with super[HLists].ImplicitsApi
+      with super[Products].ImplicitsApi
 
   type Implicits <: ImplicitsApi
 
