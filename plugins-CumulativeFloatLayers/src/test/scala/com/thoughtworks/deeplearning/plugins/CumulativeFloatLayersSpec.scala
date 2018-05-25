@@ -384,7 +384,7 @@ final class CumulativeFloatLayersSpec
   "eager execution" - {
     "single expression" in {
       val hyperparameters =
-        Factory[FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        Factory[Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
           .newInstance(fixedLearningRate = 1.0f)
 
       import hyperparameters.implicits._
@@ -410,7 +410,7 @@ final class CumulativeFloatLayersSpec
 
     "multiple expression" in {
       val hyperparameters =
-        Factory[Products with FloatTraining with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
+        Factory[Products with Operators with FloatLiterals with CumulativeFloatLayers with ImplicitsSingleton with FixedLearningRate]
           .newInstance(fixedLearningRate = 1.0f)
 
       import hyperparameters.implicits._

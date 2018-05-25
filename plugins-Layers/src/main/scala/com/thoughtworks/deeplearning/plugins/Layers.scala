@@ -10,15 +10,16 @@ import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.shared._
 
-import shapeless.{Poly1, Poly2}
-import shapeless.poly.Case1
-
 import scalaz.syntax.all._
 import scala.language.implicitConversions
 
 import scala.annotation.meta.getter
 import com.thoughtworks.future.Future
 object Layers {
+  final case class Eager[Operand0, Data, Delta](operand0: Operand0)(
+      implicit val deepLearning: DeepLearning.Aux[Operand0, Data, Delta])
+      extends Keyword[Eager[Operand0, Data, Delta], Data]
+
   trait ToLayer[Data, Delta] {
     type OutputLayer
 
@@ -82,10 +83,4 @@ trait Layers extends Differentiables {
   /** @template */
   type Implicits <: ImplicitsApi
 
-}
-
-object Layers {
-  final case class Eager[Operand0, Data, Delta](operand0: Operand0)(
-      implicit val deepLearning: DeepLearning.Aux[Operand0, Data, Delta])
-      extends Keyword[Eager[Operand0, Data, Delta], Data]
 }
