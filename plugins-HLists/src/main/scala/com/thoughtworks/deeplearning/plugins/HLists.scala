@@ -1,6 +1,7 @@
 package com.thoughtworks.deeplearning.plugins
 
 import com.thoughtworks.continuation._
+import com.thoughtworks.future._
 import com.thoughtworks.deeplearning.DeepLearning
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous._
@@ -15,8 +16,7 @@ import scalaz.Semigroup
 
 private object HLists {
 
-  implicit val doParallelApplicative =
-    asynchronousDoParallelApplicative(DeepLearning.multipleExceptionThrowableSemigroup)
+  implicit val doParallelApplicative = asynchronousDoParallelApplicative
 
   private val noop: Do[HNil] => UnitContinuation[Unit] = {
     Function.const(UnitContinuation.now(()))
@@ -53,7 +53,7 @@ trait HLists {
 
         val doTail: ParallelDo[Tape[TailData, TailDelta]] = Parallel(tailDeepLearning.forward(tail))
 
-        Parallel.unwrap(Applicative[ParallelDo].tuple2(doHead, doTail)).map {
+        Parallel.unwrap(doParallelApplicative.tuple2(doHead, doTail)).map {
           case (Tape(headData, headBackward), Tape(tailData, tailBackward)) =>
             def backward(doDelta: Do[HeadDelta :: TailDelta]) = {
               val continuationHead: ParallelContinuation[Unit] = Parallel(headBackward(doDelta.map(_.head)))
