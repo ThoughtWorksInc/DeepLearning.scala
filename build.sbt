@@ -4,23 +4,19 @@ includeFilter in unmanagedSources := (includeFilter in unmanagedSources).value &
 
 lazy val DeepLearning = project
 
-lazy val `plugins-ImplicitsSingleton` = project
+lazy val `plugins-Layers` = project.dependsOn(DeepLearning, `plugins-Differentiables`)
 
-lazy val `plugins-Layers` = project.dependsOn(DeepLearning)
+lazy val `plugins-Weights` = project.dependsOn(DeepLearning, `plugins-Differentiables`)
 
-lazy val `plugins-Weights` = project.dependsOn(DeepLearning)
+lazy val `plugins-Names` = project.dependsOn(`plugins-Differentiables`)
 
-lazy val `plugins-Names` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
-
-lazy val `plugins-Logging` = project.dependsOn(`plugins-Layers`, `plugins-Weights`)
+lazy val `plugins-Logging` = project.dependsOn(`plugins-Differentiables`)
 
 lazy val `plugins-Operators` = project
 
 lazy val `plugins-HLists` = project.dependsOn(DeepLearning)
 
 lazy val `plugins-Products` = project.dependsOn(`plugins-HLists`)
-
-lazy val `plugins-FloatTraining` = project.dependsOn(`plugins-Training`)
 
 lazy val `plugins-FloatLiterals` = project.dependsOn(`DeepLearning`)
 
@@ -30,45 +26,38 @@ lazy val `plugins-FloatLayers` =
   project.dependsOn(
     `plugins-Layers`,
     `plugins-Operators`,
-    `plugins-FloatLiterals` % Test,
-    `plugins-FloatTraining` % Test,
-    `plugins-ImplicitsSingleton` % Test
+    `plugins-FloatLiterals` % Test
   )
 
 lazy val `plugins-CumulativeFloatLayers` =
   project.dependsOn(
     DeepLearning % "test->test",
     `plugins-FloatLayers`,
-    `plugins-FloatTraining` % Test,
     `plugins-FloatLiterals` % Test,
     `plugins-FloatWeights` % Test,
-    `plugins-ImplicitsSingleton` % Test,
     `plugins-Products` % Test
   )
 
-lazy val `plugins-Training` = project.dependsOn(DeepLearning)
+lazy val `plugins-TensorLiterals` = project.dependsOn(`DeepLearning`, ProjectRef(file("Compute.scala"), "Tensors"))
 
-lazy val `plugins-INDArrayTraining` = project.dependsOn(`plugins-Training`)
+lazy val `plugins-TensorWeights` = project.dependsOn(`plugins-Weights`, ProjectRef(file("Compute.scala"), "Tensors"))
 
-lazy val `plugins-INDArrayLiterals` = project.dependsOn(DeepLearning)
-
-lazy val `plugins-INDArrayWeights` = project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Weights`)
-
-lazy val `plugins-INDArrayLayers` =
-  project.dependsOn(`plugins-ImplicitsSingleton`, `plugins-Layers`, `plugins-DoubleLiterals`, `plugins-DoubleLayers`)
-
-lazy val `plugins-CumulativeINDArrayLayers` =
+lazy val `plugins-TensorLayers` =
   project.dependsOn(
-    `plugins-INDArrayLayers`,
-    `plugins-CumulativeDoubleLayers`,
+    `plugins-Layers`,
+    `plugins-Operators`,
+    `plugins-TensorWeights` % Test,
+    `plugins-TensorLiterals` % Test,
+    ProjectRef(file("Compute.scala"), "Tensors")
+  )
+
+lazy val `plugins-CumulativeTensorLayers` =
+  project.dependsOn(
     DeepLearning % "test->test",
-    `plugins-DoubleLiterals` % Test,
-    `plugins-DoubleTraining` % Test,
-    `plugins-INDArrayTraining` % Test,
-    `plugins-INDArrayLiterals` % Test,
-    `plugins-INDArrayWeights` % Test,
+    `plugins-TensorLayers`,
     `plugins-Logging` % Test,
-    `plugins-ImplicitsSingleton` % Test
+    `plugins-TensorLiterals` % Test,
+    `plugins-TensorWeights` % Test
   )
 
 lazy val FloatRegex = """(?i:float)""".r
@@ -97,11 +86,6 @@ lazy val `plugins-DoubleWeights` =
     .dependsOn(`plugins-Weights`)
     .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatWeights`).taskValue)
 
-lazy val `plugins-DoubleTraining` =
-  project
-    .dependsOn(`plugins-Training`)
-    .settings(sourceGenerators in Compile += copyAndReplace(`plugins-FloatTraining`).taskValue)
-
 lazy val `plugins-DoubleLiterals` =
   project
     .dependsOn(`DeepLearning`)
@@ -121,42 +105,36 @@ lazy val `plugins-Builtins` =
   project.dependsOn(
     `plugins-Products`,
     `plugins-HLists`,
-    `plugins-ImplicitsSingleton`,
     `plugins-Layers`,
     `plugins-Weights`,
     `plugins-Logging`,
     `plugins-Names`,
     `plugins-Operators`,
-    `plugins-FloatTraining`,
     `plugins-FloatLiterals`,
     `plugins-FloatWeights`,
     `plugins-FloatLayers`,
     `plugins-CumulativeFloatLayers`,
-    `plugins-DoubleTraining`,
     `plugins-DoubleLiterals`,
     `plugins-DoubleWeights`,
     `plugins-DoubleLayers`,
     `plugins-CumulativeDoubleLayers`,
-    `plugins-INDArrayTraining`,
-    `plugins-INDArrayLiterals`,
-    `plugins-INDArrayWeights`,
-    `plugins-INDArrayLayers`,
-    `plugins-CumulativeINDArrayLayers`,
+    `plugins-TensorLiterals`,
+    `plugins-TensorWeights`,
+    `plugins-TensorLayers`,
+    `plugins-CumulativeTensorLayers`,
     DeepLearning % "test->test"
   )
+lazy val `plugins-Differentiables` = project
+
 publishArtifact := false
 
-lazy val unidoc =
-  project
-    .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
-    .settings(
-      UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := inAggregates(LocalRootProject),
-      addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-      scalacOptions += "-Xexperimental",
-      scalacOptions += "-Ypartial-unification"
-    )
+enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
+unidocProjectFilter in ScalaUnidoc in unidoc := inAggregates(LocalRootProject)
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+scalacOptions += "-Xexperimental"
+scalacOptions += "-Ypartial-unification"
 
 organization in ThisBuild := "com.thoughtworks.deeplearning"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions in Global := Seq("2.11.12", "2.12.4")

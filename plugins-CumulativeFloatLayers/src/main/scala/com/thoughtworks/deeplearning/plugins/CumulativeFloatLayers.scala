@@ -3,7 +3,7 @@ package plugins
 import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.shared._
-import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
+import com.thoughtworks.raii.covariant.{Resource, ResourceT}
 import com.thoughtworks.tryt.covariant.TryT
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
@@ -23,7 +23,8 @@ import scalaz.syntax.all._
   *          {{{
   *          import com.thoughtworks.deeplearning.plugins._
   *          import com.thoughtworks.feature.Factory
-  *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
+  *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
+  *          val hyperparameters = Factory[ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
   *          import hyperparameters.implicits._
   *          val weight1 = hyperparameters.FloatWeight(10)
   *          val weight2 = hyperparameters.FloatWeight(300)
@@ -49,9 +50,12 @@ import scalaz.syntax.all._
   * @example Given a [[FloatWeights.FloatWeight FloatWeight]],
   *
   *          {{{
+  *          import scalaz.syntax.all._
+  *          import com.thoughtworks.raii.asynchronous._
   *          import com.thoughtworks.deeplearning.plugins._
   *          import com.thoughtworks.feature.Factory
-  *          val hyperparameters = Factory[FloatTraining with ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
+  *          import com.thoughtworks.feature.mixins.ImplicitsSingleton
+  *          val hyperparameters = Factory[ImplicitsSingleton with Operators with CumulativeFloatLayers with FloatWeights].newInstance()
   *          import hyperparameters.implicits._
   *          val weight1 = hyperparameters.FloatWeight(10)
   *          }}}
@@ -59,9 +63,10 @@ import scalaz.syntax.all._
   *          then the training result should be applied on it
   *
   *          {{{
-  *          weight1.train.map { result =>
-  *            result should be(10.0f)
-  *
+  *          weight1.forward.flatMap { tape =>
+  *            tape.data should be(10.0f)
+  *            Do.garbageCollected(tape.backward(Do.now(1.0f)))
+  *          }.run.map { _: Unit =>
   *            weight1.data should be < 10.0f
   *          }
   *          }}}
@@ -76,8 +81,8 @@ trait CumulativeFloatLayers extends FloatLayers {
     private lazy val sharedForward: Do[Tape[Float, Float]] = {
       val doCumulativeTape: Do[Tape[Float, Float]] = super.forward.flatMap {
         case Tape(data, flushBackward) =>
-          Do(TryT(ResourceT(Continuation.delay[Unit, Releasable[UnitContinuation, Try[Tape[Float, Float]]]] {
-            new Releasable[UnitContinuation, Try[Tape[Float, Float]]] {
+          Do(TryT(ResourceT(Continuation.delay[Unit, Resource[UnitContinuation, Try[Tape[Float, Float]]]] {
+            new Resource[UnitContinuation, Try[Tape[Float, Float]]] {
 
               @volatile
               private var currentDelta: Float = 0

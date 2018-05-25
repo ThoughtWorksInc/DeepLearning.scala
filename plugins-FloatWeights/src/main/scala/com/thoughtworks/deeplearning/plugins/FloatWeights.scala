@@ -1,11 +1,18 @@
 package com.thoughtworks.deeplearning
 package plugins
+import com.thoughtworks.continuation.UnitContinuation
+import com.thoughtworks.deeplearning.DeepLearning.Tape
 import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.{Factory, ImplicitApply, PartialApply}
-import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.future._
+import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.asynchronous.Do._
+import com.thoughtworks.tryt.covariant.TryT
 import shapeless.Witness
+import scalaz.syntax.all._
+import com.thoughtworks.continuation._
 
+import scala.util.{Failure, Success}
 
 /** A plugin to create [[scala.Float]] weights.
   *
@@ -16,27 +23,48 @@ import shapeless.Witness
   */
 trait FloatWeights extends Weights {
 
-  trait FloatWeightApi extends WeightApi { this: FloatWeight =>
+  trait FloatWeightApi extends WeightApi {
+    this: FloatWeight =>
+
+    /** @usecase def forward: Do[Tape[Data, Delta] ] = ???
+      */
+    final def forward[SubtypeOfOptimizer](
+        implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
+        asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: FloatWeightApi.this.Delta })
+      : Do[Tape[Data, Delta]] = {
+      Do.now(
+        Tape[Data, Delta](
+          data, { doDelta: Do[Delta] =>
+            val doUpdate: Do[Unit] = backward(doDelta)
+            val Future(TryT(continuation)) = doUpdate.run
+            continuation.flatMap {
+              case Success(()) => UnitContinuation.now(())
+              case Failure(e)  => handleException(e)
+            }
+          }
+        ))
+    }
 
     override type Delta = Float
     override type Data = Float
 
     override protected type PartiallyAppliedOptimizer = floatPartialApplyOriginalDelta.Rest
 
-    override protected def backward[SubtypeOfOptimizer](originalDelta: Float)(
+    override protected def backward[SubtypeOfOptimizer](originalDelta: Do[Float])(
         implicit implicitApplyRest: ImplicitApply.Aux[PartiallyAppliedOptimizer, SubtypeOfOptimizer],
         asOptimizer: SubtypeOfOptimizer <:< OptimizerApi { type Delta <: Float }): Do[Unit] = {
-      Do.delay {
-        val delta =
-          implicitApplyRest(
-            floatPartialApplyOriginalDelta(floatPartialApplyWeight(floatOptimizerFactory.newInstance,
-                                                                   floatWeightParameter(this)),
-                                           floatOriginalDeltaParameter(originalDelta))).delta
+
+      val optimizer: OptimizerApi { type Delta <: Float } = asOptimizer(
+        implicitApplyRest(
+          floatPartialApplyOriginalDelta(floatPartialApplyWeight(floatOptimizerFactory.newInstance,
+                                                                 floatWeightParameter(this)),
+                                         floatOriginalDeltaParameter(originalDelta))))
+      val doDelta = optimizer.delta
+      doDelta.intransitiveMap { delta =>
         synchronized {
           data -= delta
         }
       }
-
     }
   }
 
@@ -55,15 +83,14 @@ trait FloatWeights extends Weights {
 
     /** @usecase def apply(data: Float): FloatWeight = ???
       */
-    def apply[SubtypeOfWeight, OptimizerFunction, Optimizer](data: Float)(
-        implicit implicitApplyRest: ImplicitApply[floatPartialApplyData.Rest]) = {
+    def apply[SubtypeOfWeight](data: Float)(implicit implicitApplyRest: ImplicitApply[floatPartialApplyData.Rest]) = {
       implicitApplyRest(floatPartialApplyData(floatWeightFactory.newInstance, floatDataParameter(data)))
     }
   }
 
   trait FloatOptimizerApi extends OptimizerApi { this: FloatOptimizer =>
 
-    override type Delta = Float
+    type Delta = Float
 
     val weight: FloatWeight
 
@@ -85,6 +112,6 @@ trait FloatWeights extends Weights {
   protected val floatPartialApplyOriginalDelta: PartialApply[floatPartialApplyWeight.Rest, Witness.`"originalDelta"`.T]
 
   @inject
-  protected def floatOriginalDeltaParameter: Float <:< floatPartialApplyOriginalDelta.Parameter
+  protected def floatOriginalDeltaParameter: Do[Float] <:< floatPartialApplyOriginalDelta.Parameter
 
 }

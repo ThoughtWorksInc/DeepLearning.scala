@@ -9,32 +9,53 @@ import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.asynchronous.Do._
 import com.thoughtworks.raii.shared._
+
 import shapeless.{Poly1, Poly2}
 import shapeless.poly.Case1
+
 import scalaz.syntax.all._
 import scala.language.implicitConversions
 
 import scala.annotation.meta.getter
 import com.thoughtworks.future.Future
+object Layers {
+  trait ToLayer[Data, Delta] {
+    type OutputLayer
+
+    def toLayer(forward: Do[Tape[Data, Delta]]): OutputLayer
+
+  }
+
+  object ToLayer {
+    type Aux[Data, Delta, OutputLayer0] = ToLayer[Data, Delta] {
+      type OutputLayer = OutputLayer0
+    }
+  }
+
+}
 
 /** A plugin that enables [[Layer]] in neural networks. */
-trait Layers {
+trait Layers extends Differentiables {
   import com.thoughtworks.deeplearning.plugins.Layers._
-
-  trait LayerApi {
+  trait LayerApi extends DifferentiableApi {
     type Data
     type Delta
 
-    def forward: Do[Tape[Data, Delta]]
+    /** The original forward operation passed in, for creating this [[Layer]].
+      *
+      * @note This [[rawForward]] may be different from [[forward]],
+      *       in the case of [[forward]] was overridden by other plugins, e.g. [[CumulativeFloatLayers]].
+      */
+    protected val rawForward: Do[Tape[Data, Delta]]
 
-    protected def handleException(thrown: Throwable): Unit = ()
+    def forward: Do[Tape[Data, Delta]] = rawForward
 
   }
 
   /** A differentiable operation.
     * @template
     */
-  type Layer <: LayerApi
+  type Layer <: LayerApi with Differentiable
 
   trait ImplicitsApi {
 
@@ -52,7 +73,7 @@ trait Layers {
         type Data = Data0
         type Delta = Delta0
         override def forward(from: From): Do[Tape[Data0, Delta0]] = {
-          from.forward
+          asLayer(from).forward
         }
       }
     }

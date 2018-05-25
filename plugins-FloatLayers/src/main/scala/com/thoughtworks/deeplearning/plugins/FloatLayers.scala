@@ -11,6 +11,7 @@ import scalaz.Apply
 import com.thoughtworks.continuation._
 import com.thoughtworks.future._
 import DeepLearning.ops._
+import com.thoughtworks.deeplearning.plugins.Layers.ToLayer
 import com.thoughtworks.deeplearning.plugins.Layers.Eager
 import com.thoughtworks.dsl.Dsl
 
@@ -38,6 +39,16 @@ trait FloatLayers extends Layers {
               handler(tape.data).internalForward
             }
           )
+      }
+    }
+
+    implicit def toFloatLayer[Out <: FloatLayer](
+        implicit implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out])
+      : Layers.ToLayer.Aux[Float, Float, FloatLayer] = new ToLayer[Float, Float] {
+      type OutputLayer = FloatLayer
+
+      override def toLayer(forward: Do[Tape[Float, Float]]): FloatLayer = {
+        implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
       }
     }
 
@@ -87,15 +98,16 @@ trait FloatLayers extends Layers {
         deepLearning1: DeepLearning.Aux[Operand1, Float, Float],
         implicitApply: ImplicitApply.Aux[floatPartialApplyRawForward.Rest, Out]) = {
       Operators.-.at[Operand0, Operand1] { (operand0, operand1) =>
-        val forward = Apply[Do].apply2(operand0.forward, operand1.forward) {
-          case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
-            val outputData = data0 - data1
-            def backward(doOutputDelta: Do[Float]) = {
-              backward0(doOutputDelta) >>
-                backward1(doOutputDelta.map(-_))
-            }
-            Tape(outputData, backward)
-        }
+        val forward: Do[Tape[Float, Float]] =
+          Apply[Do].apply2(operand0.forward /* deepLearning0.forward(operand0) */, operand1.forward) {
+            case (tape0 @ Tape(data0, backward0), tape1 @ Tape(data1, backward1)) =>
+              val outputData = data0 - data1
+              def backward(doOutputDelta: Do[Float]): UnitContinuation[Unit] = {
+                backward0(doOutputDelta) >>
+                  backward1(doOutputDelta.map(-_))
+              }
+              Tape(outputData, backward)
+          }
         FloatLayer(forward)
       }
     }
@@ -279,15 +291,22 @@ trait FloatLayers extends Layers {
                                                           shapeless.Witness.`"rawForward"`.T]
 
   trait FloatLayerApi extends super[Layers].LayerApi {
-    override type Data = Float
-    override type Delta = Float
+    type Data = Float
+    type Delta = Float
 
-    /** The original forward operation passed in [[FloatLayer$ FloatLayer.apply]].
-      *
-      * @note This [[rawForward]] may be different from [[forward]],
-      *       in the case of [[forward]] was overriden by other plugins, e.g. [[CumulativeFloatLayers]].
-      */
-    protected val rawForward: Do[Tape[Float, Float]]
+    final def predict: Future[Data] = {
+      val doData = forward.map(_.data)
+      doData.run
+    }
+
+    final def train: Future[Data] = {
+      val doData = forward.flatMap[Data] { tape =>
+        Do.garbageCollected(tape.backward(Do.now(1.0f.toFloat))).intransitiveMap { _: Unit =>
+          tape.data
+        }
+      }
+      doData.run
+    }
 
     /** A bridge for calling [[rawForward]] in [[FloatLayers]] */
     private[FloatLayers] final def internalForward: Do[Tape[Float, Float]] = rawForward
@@ -306,7 +325,7 @@ trait FloatLayers extends Layers {
       implicitApply(floatPartialApplyRawForward(floatLayerFactory.newInstance, floatRawForwardParameter(forward)))
     }
 
-    /** Internal helper to create unary [[FloatLayer]]. */
+    /** Internal helper to create an unary [[FloatLayer]]. */
     def unary[Operand0, Input0Data, Input0Delta, Out <: FloatLayer](
         operand0: Operand0
     )(f: Input0Data => (Float, Float => Input0Delta))(
@@ -325,7 +344,7 @@ trait FloatLayers extends Layers {
       })
     }
 
-    /** Internal helper to create unary [[FloatLayer]]. */
+    /** Internal helper to create a binary [[FloatLayer]]. */
     def binary[Operand0, Operand1, Input0Data, Input0Delta, Input1Data, Input1Delta, Out <: FloatLayer](
         operand0: Operand0,
         operand1: Operand1
