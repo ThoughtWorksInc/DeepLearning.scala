@@ -144,6 +144,9 @@ lazy val `plugins-Builtins` =
     `plugins-CumulativeINDArrayLayers`,
     DeepLearning % "test->test"
   )
+
+lazy val benchmark = project.dependsOn(`plugins-Builtins`)
+
 publishArtifact := false
 
 lazy val unidoc =
