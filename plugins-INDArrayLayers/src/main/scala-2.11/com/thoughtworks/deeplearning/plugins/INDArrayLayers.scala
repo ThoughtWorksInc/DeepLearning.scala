@@ -732,8 +732,15 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
         deepLearning1: DeepLearning.Aux[Operand1, Input1Data, Input1Delta],
         layerImplicits: ImplicitApply.Aux[indArrayPartialApplyRawForward.Rest, Out]
     ): Out = {
-      INDArrayLayer(Do.execute(()).intransitiveFlatMap { _ =>
-        parallelApply2(deepLearning0.forward(operand0), deepLearning1.forward(operand1)) {
+      INDArrayLayer(
+        parallelApply2(
+          Do.execute(()).intransitiveFlatMap { _ =>
+            deepLearning0.forward(operand0)
+          },
+          Do.execute(()).intransitiveFlatMap { _ =>
+            deepLearning1.forward(operand1)
+          }
+        ) {
           case (Tape(data0, backward0), Tape(data1, backward1)) =>
             val (outputData, delta0, delta1) = f(data0, data1)
             val outputShape = outputData.shape
@@ -750,7 +757,7 @@ trait INDArrayLayers extends DoubleLayers with DoubleLiterals with ImplicitsSing
             }
             Tape(outputData, backward)
         }
-      })
+      )
     }
 
   }
