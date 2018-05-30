@@ -42,7 +42,7 @@ object benchmark {
   @State(Scope.Benchmark)
   class FourLayer {
 
-    @Param(Array("4"))
+    @Param(Array("8"))
     protected var batchSize: Int = _
 
     @Param(Array("1", "2", "4"))
@@ -170,10 +170,15 @@ object benchmark {
 
     @Benchmark
     final def deepLearningDotScala(): Double = {
-      val (coarseClass, batch) = batches.synchronized {
-        batches.next()
+      try {
+        val (coarseClass, batch) = batches.synchronized {
+          batches.next()
+        }
+        model.train(coarseClass, batch).blockingAwait
+      } finally {
+        System.gc()
+        System.gc()
       }
-      model.train(coarseClass, batch).blockingAwait
     }
 
   }
