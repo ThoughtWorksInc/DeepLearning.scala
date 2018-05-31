@@ -40,9 +40,9 @@ object benchmark {
 
   @Threads(value = 1)
   @State(Scope.Benchmark)
-  class FourLayer {
+  class BranchNetBenchmark {
 
-    @Param(Array("8"))
+    @Param(Array("8", "16"))
     protected var batchSize: Int = _
 
     @Param(Array("1", "2", "4"))
@@ -53,6 +53,9 @@ object benchmark {
 
     @Param(Array("16", "8"))
     protected var numberOfBranches: Int = _
+
+    @Param(Array("false", "true"))
+    protected var excludeUnmatchedFineGrainedNetwork: Boolean = _
 
     private implicit var executionContext: ExecutionContextExecutorService = _
 
@@ -103,7 +106,7 @@ object benchmark {
         }
       }
 
-      val fineProbabilityModel = Seq.fill(Cifar100.NumberOfCoarseClasses)(new (INDArrayLayer => INDArrayLayer) {
+      val fineScoreModels = Seq.fill(Cifar100.NumberOfCoarseClasses)(new (INDArrayLayer => INDArrayLayer) {
         object Dense2 extends (INDArrayLayer => INDArrayLayer) {
 
           object Dense1 extends (INDArrayLayer => INDArrayLayer) {
@@ -127,14 +130,42 @@ object benchmark {
         val bias = INDArrayWeight(Nd4j.randn(1, Cifar100.NumberOfFineClassesPerCoarseClass))
 
         def apply(coarseFeatures: INDArrayLayer) = {
-          val scores = Dense2(coarseFeatures) dot weight + bias
-
-          val expScores = exp(scores)
-          expScores / expScores.sum(1)
+          Dense2(coarseFeatures) dot weight + bias
         }
       })
 
-      def loss(coarseLabel: Int, batch: Batch): DoubleLayer = {
+//      val fineProbabilityModel = Seq.fill(Cifar100.NumberOfCoarseClasses)(new (INDArrayLayer => INDArrayLayer) {
+//        object Dense2 extends (INDArrayLayer => INDArrayLayer) {
+//
+//          object Dense1 extends (INDArrayLayer => INDArrayLayer) {
+//            val weight = INDArrayWeight(Nd4j.randn(numberOfHiddenFeatures, numberOfHiddenFeatures))
+//            val bias = INDArrayWeight(Nd4j.randn(1, numberOfHiddenFeatures))
+//
+//            def apply(coarseFeatures: INDArrayLayer) = {
+//              max(coarseFeatures dot weight + bias, 0.0)
+//            }
+//          }
+//
+//          val weight = INDArrayWeight(Nd4j.randn(numberOfHiddenFeatures, numberOfHiddenFeatures))
+//          val bias = INDArrayWeight(Nd4j.randn(1, numberOfHiddenFeatures))
+//
+//          def apply(coarseFeatures: INDArrayLayer) = {
+//            max(Dense1(coarseFeatures) dot weight + bias, 0.0)
+//          }
+//        }
+//
+//        val weight = INDArrayWeight(Nd4j.randn(numberOfHiddenFeatures, Cifar100.NumberOfFineClassesPerCoarseClass))
+//        val bias = INDArrayWeight(Nd4j.randn(1, Cifar100.NumberOfFineClassesPerCoarseClass))
+//
+//        def apply(coarseFeatures: INDArrayLayer) = {
+//          val scores = Dense2(coarseFeatures) dot weight + bias
+//
+//          val expScores = exp(scores)
+//          expScores / expScores.sum(1)
+//        }
+//      })
+
+      def loss(expectedCoarseLabel: Int, batch: Batch): DoubleLayer = {
         def crossEntropy(prediction: INDArrayLayer, expectOutput: INDArray): DoubleLayer = {
           -(hyperparameters.log(prediction) * expectOutput).mean
         }
@@ -142,9 +173,34 @@ object benchmark {
         val Array(batchSize, width, height, channels) = batch.pixels.shape()
         val coarseFeatures = CoarseFeatures(batch.pixels.reshape(batchSize, width * height * channels))
         val coarseProbabilities = CoarseProbabilityModel(coarseFeatures)
-        val fineProbabilities = fineProbabilityModel(coarseLabel)(coarseFeatures)
 
-        crossEntropy(coarseProbabilities, batch.coarseClasses) + crossEntropy(fineProbabilities, batch.localFineClasses)
+        crossEntropy(coarseProbabilities, batch.coarseClasses) + {
+          if (excludeUnmatchedFineGrainedNetwork) {
+            val fineScores = fineScoreModels(expectedCoarseLabel)(coarseFeatures)
+            val expScores = exp(fineScores)
+            val fineProbabilities = expScores / expScores.sum(1)
+            crossEntropy(fineProbabilities, batch.localFineClasses)
+          } else {
+            val expScoresByCoarseLabel = for (coarseLabel <- 0 until Cifar100.NumberOfCoarseClasses) yield {
+              val fineScores = fineScoreModels(expectedCoarseLabel)(coarseFeatures)
+              exp(fineScores)
+            }
+            val expSum = expScoresByCoarseLabel.map(_.sum(1)).reduce(_ + _)
+            val lossPerCoarseLabel = for ((expScores, coarseLabel) <- expScoresByCoarseLabel.zipWithIndex) yield {
+              val fineProbabilities = expScores / expSum
+
+              crossEntropy(
+                fineProbabilities,
+                if (coarseLabel == expScoresByCoarseLabel) {
+                  batch.localFineClasses
+                } else {
+                  Nd4j.zeros(batchSize, Cifar100.NumberOfFineClassesPerCoarseClass)
+                }
+              )
+            }
+            lossPerCoarseLabel.reduce(_ + _)
+          }
+        }
       }
 
       def train(coarseLabel: Int, batch: Batch) = {
