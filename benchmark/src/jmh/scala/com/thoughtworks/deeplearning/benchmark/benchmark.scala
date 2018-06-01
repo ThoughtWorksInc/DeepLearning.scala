@@ -134,37 +134,6 @@ object benchmark {
         }
       })
 
-//      val fineProbabilityModel = Seq.fill(Cifar100.NumberOfCoarseClasses)(new (INDArrayLayer => INDArrayLayer) {
-//        object Dense2 extends (INDArrayLayer => INDArrayLayer) {
-//
-//          object Dense1 extends (INDArrayLayer => INDArrayLayer) {
-//            val weight = INDArrayWeight(Nd4j.randn(numberOfHiddenFeatures, numberOfHiddenFeatures))
-//            val bias = INDArrayWeight(Nd4j.randn(1, numberOfHiddenFeatures))
-//
-//            def apply(coarseFeatures: INDArrayLayer) = {
-//              max(coarseFeatures dot weight + bias, 0.0)
-//            }
-//          }
-//
-//          val weight = INDArrayWeight(Nd4j.randn(numberOfHiddenFeatures, numberOfHiddenFeatures))
-//          val bias = INDArrayWeight(Nd4j.randn(1, numberOfHiddenFeatures))
-//
-//          def apply(coarseFeatures: INDArrayLayer) = {
-//            max(Dense1(coarseFeatures) dot weight + bias, 0.0)
-//          }
-//        }
-//
-//        val weight = INDArrayWeight(Nd4j.randn(numberOfHiddenFeatures, Cifar100.NumberOfFineClassesPerCoarseClass))
-//        val bias = INDArrayWeight(Nd4j.randn(1, Cifar100.NumberOfFineClassesPerCoarseClass))
-//
-//        def apply(coarseFeatures: INDArrayLayer) = {
-//          val scores = Dense2(coarseFeatures) dot weight + bias
-//
-//          val expScores = exp(scores)
-//          expScores / expScores.sum(1)
-//        }
-//      })
-
       def loss(expectedCoarseLabel: Int, batch: Batch): DoubleLayer = {
         def crossEntropy(prediction: INDArrayLayer, expectOutput: INDArray): DoubleLayer = {
           -(hyperparameters.log(prediction) * expectOutput).mean
@@ -226,15 +195,10 @@ object benchmark {
 
     @Benchmark
     final def deepLearningDotScala(): Double = {
-      try {
-        val (coarseClass, batch) = batches.synchronized {
-          batches.next()
-        }
-        model.train(coarseClass, batch).blockingAwait
-      } finally {
-        System.gc()
-        System.gc()
+      val (coarseClass, batch) = batches.synchronized {
+        batches.next()
       }
+      model.train(coarseClass, batch).blockingAwait
     }
 
   }
