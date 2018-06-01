@@ -9,8 +9,19 @@ import com.thoughtworks.deeplearning.plugins.Builtins
 import com.thoughtworks.feature.Factory
 import org.openjdk.jmh.annotations._
 import com.thoughtworks.future._
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration
+import org.deeplearning4j.nn.conf.layers.{ActivationLayer, DenseLayer, LossLayer, OutputLayer}
+import org.deeplearning4j.nn.conf.Updater
+import org.deeplearning4j.nn.conf.graph.{ElementWiseVertex, MergeVertex, StackVertex}
+import org.deeplearning4j.nn.graph.ComputationGraph
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.dataset.{DataSet, MultiDataSet}
 import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
+import org.nd4j.linalg.ops.transforms.Transforms
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
@@ -42,6 +53,95 @@ object benchmark {
   @State(Scope.Benchmark)
   class BranchNetBenchmark {
 
+    private def deeplearning4jConf = {
+
+      val builder = new NeuralNetConfiguration.Builder()
+        .updater(Updater.SGD)
+        .learningRate(1.0)
+        .graphBuilder
+        .addInputs("input")
+
+      for (i <- 0 until numberOfBranches) {
+        builder
+          .addLayer(
+            s"coarse${i}_dense0",
+            new DenseLayer.Builder()
+              .activation(Activation.RELU)
+              .nIn(Cifar100.NumberOfPixelsPerSample)
+              .nOut(numberOfHiddenFeatures)
+              .build,
+            "input"
+          )
+          .addLayer(
+            s"coarse${i}_dense1",
+            new DenseLayer.Builder()
+              .activation(Activation.RELU)
+              .nIn(numberOfHiddenFeatures)
+              .nOut(numberOfHiddenFeatures)
+              .build,
+            s"coarse${i}_dense0"
+          )
+      }
+
+      builder
+        .addVertex("fusion",
+                   new ElementWiseVertex(ElementWiseVertex.Op.Add),
+                   (for (i <- 0 until numberOfBranches) yield s"coarse${i}_dense1"): _*)
+        .addLayer(
+          "coarse_probabilities",
+          new DenseLayer.Builder()
+            .activation(Activation.SOFTMAX)
+            .nIn(numberOfHiddenFeatures)
+            .nOut(Cifar100.NumberOfCoarseClasses)
+            .build,
+          "fusion"
+        )
+        .addLayer("coarse_loss", new LossLayer.Builder(LossFunction.MCXENT).build(), "coarse_probabilities")
+
+      for (i <- 0 until Cifar100.NumberOfCoarseClasses) {
+        builder
+          .addLayer(
+            s"fine${i}_dense0",
+            new DenseLayer.Builder()
+              .activation(Activation.RELU)
+              .nIn(numberOfHiddenFeatures)
+              .nOut(numberOfHiddenFeatures)
+              .build,
+            "fusion"
+          )
+          .addLayer(
+            s"fine${i}_dense1",
+            new DenseLayer.Builder()
+              .activation(Activation.RELU)
+              .nIn(numberOfHiddenFeatures)
+              .nOut(numberOfHiddenFeatures)
+              .build,
+            s"fine${i}_dense0"
+          )
+          .addLayer(
+            s"fine${i}_scores",
+            new DenseLayer.Builder()
+              .activation(Activation.IDENTITY)
+              .nIn(numberOfHiddenFeatures)
+              .nOut(Cifar100.NumberOfFineClassesPerCoarseClass)
+              .build,
+            s"fine${i}_dense1"
+          )
+      }
+
+      builder
+        .addVertex("fine_stack", new StackVertex(), (for (i <- 0 until Cifar100.NumberOfCoarseClasses) yield s"fine${i}_scores"): _*)
+//        .addLayer("fine_probabilities",
+//                  new ActivationLayer.Builder().activation(Activation.SOFTMAX).build(),
+//                  "fine_stack")
+        .addLayer("fine_loss",
+                  new LossLayer.Builder(LossFunction.MCXENT).activation(Activation.SOFTMAX).build(),
+                  "fine_stack")
+        .setOutputs("coarse_loss", "fine_loss")
+        .build
+    }
+
+    private var computationGraph: ComputationGraph = _
     @Param(Array("8", "16"))
     protected var batchSize: Int = _
 
@@ -53,9 +153,6 @@ object benchmark {
 
     @Param(Array("16", "8", "4", "2", "1"))
     protected var numberOfBranches: Int = _
-
-    @Param(Array("false", "true"))
-    protected var excludeUnmatchedFineGrainedNetwork: Boolean = _
 
     private implicit var executionContext: ExecutionContextExecutorService = _
 
@@ -134,7 +231,7 @@ object benchmark {
         }
       })
 
-      def loss(expectedCoarseLabel: Int, batch: Batch): DoubleLayer = {
+      def loss(expectedCoarseLabel: Int, batch: Batch, excludeUnmatchedFineGrainedNetwork: Boolean): DoubleLayer = {
         def crossEntropy(prediction: INDArrayLayer, expectOutput: INDArray): DoubleLayer = {
           -(hyperparameters.log(prediction) * expectOutput).mean
         }
@@ -172,8 +269,8 @@ object benchmark {
         }
       }
 
-      def train(coarseLabel: Int, batch: Batch) = {
-        loss(coarseLabel, batch).train
+      def train(coarseLabel: Int, batch: Batch, excludeUnmatchedFineGrainedNetwork: Boolean) = {
+        loss(coarseLabel, batch, excludeUnmatchedFineGrainedNetwork).train
       }
 
     }
@@ -182,6 +279,9 @@ object benchmark {
 
     @Setup
     final def setup(): Unit = {
+      computationGraph = new ComputationGraph(deeplearning4jConf)
+      computationGraph.init()
+
       executionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(sizeOfThreadPool))
       model = new Model
     }
@@ -191,14 +291,56 @@ object benchmark {
       model = null
       executionContext.shutdown()
       executionContext = null
+      computationGraph = null
     }
 
+    @Benchmark
+    final def deeplearning4j(): Double = {
+      val (coarseClass, batch) = batches.synchronized {
+        batches.next()
+      }
+
+      val dataset = new MultiDataSet()
+
+      val pixels2d = batch.pixels2d
+
+      dataset.setFeatures(Array(pixels2d))
+
+      val coarseLabels = Nd4j.zeros(1, Cifar100.NumberOfCoarseClasses)
+      coarseLabels.put(0, coarseClass, 1.0)
+
+      val broadcastCoarseLabels = coarseLabels.broadcast(pixels2d.rows(), Cifar100.NumberOfCoarseClasses)
+
+      val fineLabels = Nd4j.concat(
+        1,
+        (for (i <- 0 until Cifar100.NumberOfCoarseClasses) yield {
+          if (i == coarseClass) {
+            batch.localFineClasses
+          } else {
+            Nd4j.zeros(pixels2d.rows(), Cifar100.NumberOfFineClassesPerCoarseClass)
+          }
+        }): _*
+      )
+
+      dataset.setLabels(Array(broadcastCoarseLabels, fineLabels))
+
+      computationGraph.score(dataset, true)
+
+    }
+
+    @Benchmark
+    final def deepLearningDotScalaExcludeUnmatchedFineGrainedNetwork(): Double = {
+      val (coarseClass, batch) = batches.synchronized {
+        batches.next()
+      }
+      model.train(coarseClass, batch, true).blockingAwait
+    }
     @Benchmark
     final def deepLearningDotScala(): Double = {
       val (coarseClass, batch) = batches.synchronized {
         batches.next()
       }
-      model.train(coarseClass, batch).blockingAwait
+      model.train(coarseClass, batch, false).blockingAwait
     }
 
   }

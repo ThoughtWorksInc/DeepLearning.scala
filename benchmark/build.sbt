@@ -6,6 +6,7 @@ libraryDependencies ++= {
     Seq(
       "com.thoughtworks.deeplearning.etl" %% "cifar100" % "0.2.0",
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Optional,
+      "org.deeplearning4j" % "deeplearning4j-core" % "0.8.0",
       "org.nd4j" %% "nd4s" % "0.8.0",
       "org.nd4j" % "nd4j-api" % "0.8.0",
       "org.nd4j" % "nd4j-native-platform" % "0.8.0" % Optional
