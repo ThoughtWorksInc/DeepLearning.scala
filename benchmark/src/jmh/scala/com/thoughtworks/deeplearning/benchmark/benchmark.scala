@@ -51,7 +51,7 @@ object benchmark {
     @Param(Array("16", "32", "64"))
     protected var numberOfHiddenFeatures: Int = _
 
-    @Param(Array("16", "8"))
+    @Param(Array("16", "8", "4", "2", "1"))
     protected var numberOfBranches: Int = _
 
     @Param(Array("false", "true"))
