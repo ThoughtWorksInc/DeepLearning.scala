@@ -80,8 +80,6 @@ Version 2.0 is the current version with all of the above features.
 * Support element-wise `map`/`reduce` and other higher-order functions on GPU.
 * Support distributed models and distributed training on [Spark](https://spark.apache.org/).
 
-Version 3.0 will be released in late 2017.
-
 ## Links
 
 * [Homepage](http://deeplearning.thoughtworks.school/)
