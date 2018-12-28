@@ -1,0 +1,313 @@
+<!DOCTYPE HTML>
+<!--
+DeepLearning.scala by ThoughtWorks
+Released for free under the Apache 2.0 license (https://github.com/ThoughtWorksInc/DeepLearning.scala/blob/1.0.x/LICENSE)
+-->
+<html>
+<head>
+	<title>DeepLearning.scala by ThoughtWorks</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="DeepLearning.Scala" />
+	<meta name="keywords" content="DeepLearning,Scala" />
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,500,900' rel='stylesheet' type='text/css'>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js" type="text/javascript"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js" type="text/javascript"></script>
+	<script src="/assets/js/skel.min.js"> </script>
+	<script src="/assets/js/skel-panels.min.js"></script>
+	<script src="/assets/js/init.js"> </script>
+	<script>
+		init_init("/assets/css/style");
+	</script>
+	<noscript>
+		<link rel="stylesheet" href="/assets/css/skel-noscript.css" />
+		<link rel="stylesheet" href="/assets/css/style.css" />
+		<link rel="stylesheet" href="/assets/css/style-desktop.css" />
+	</noscript>
+	<style>
+		
+	</style>
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-103605110-1', 'auto');
+	  ga('send', 'pageview');
+	</script>
+</head>
+<body >
+	<!-- Header -->
+	<div id="header">
+		<div id="nav-wrapper"><div class="container">
+	<!-- Nav -->
+	<nav id="nav">
+		<ul>
+			
+			<li >
+				<a href="/cn/index.html">
+					<img alt="DeepLearning.scala"
+					     src="/assets/images/logo-text-white-opacity.png"
+					     style="height: 1.5em; vertical-align: text-bottom;">
+				</a>
+			</li>
+			<li ><a href="/cn/plugins">Plugins</a></li>
+			<li ><a href="/cn/doc">Documentation</a></li>
+			<li ><a href="/cn/news">News</a></li>
+			<li ><a href="/cn/get-involved">Get Involved</a></li>
+		</ul>
+	</nav>
+</div></div>
+
+		<div class="container">
+
+			<!-- Logo -->
+			<div id="logo">
+				<h1><a><img width="65%" alt="DeepLearning.scala" src="/assets/images/logo-text-white-opacity.png"/></a></h1>
+				<span class="tag">By ThoughtWorks</span>
+			</div>
+		</div>
+	</div>
+	<!-- Header -->
+	<!-- Main -->
+<div id="main">
+    <div id="content" class="container">
+        <div class="row">
+            <section class="normal-head">
+                <p>In DeepLearning.scala 2.0, all features are provided by plugins.</p>
+
+<p>A plugin is a Scala <code class="highlighter-rouge">trait</code> that can be mixed-in with other plugins. Plugins can either provide new features or modify behaviors of existing features.</p>
+
+<p>Here are some examples of what plugins can do:</p>
+
+<ul>
+  <li>An optimization algorithm</li>
+  <li>A special subnetwork</li>
+  <li>A primary differentiable operator</li>
+  <li>Logging</li>
+  <li>Integration of a new back-end other than nd4j</li>
+</ul>
+
+<h2 id="how-to-use-plugins">How to use plugins?</h2>
+
+<p>Typically, plugins of a neural network are usually setup as following:</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">import</span> <span class="nn">com.thoughtworks.feature.Factory</span>
+<span class="k">val</span> <span class="n">hyperparameters</span> <span class="k">=</span> <span class="nc">Factory</span><span class="o">[</span><span class="kt">Plugin1</span> <span class="kt">with</span> <span class="kt">Plugin2</span> <span class="kt">with</span> <span class="kt">Plugin3</span><span class="o">].</span><span class="n">newInstance</span><span class="o">(</span>
+  <span class="n">hyperparameterKey1</span> <span class="k">=</span> <span class="n">hyperparameterValue1</span><span class="o">,</span>
+  <span class="n">hyperparameterKey2</span> <span class="k">=</span> <span class="n">hyperparameterValue2</span><span class="o">,</span>
+  <span class="n">hyperparameterKey3</span> <span class="k">=</span> <span class="n">hyperparameterValue3</span>
+<span class="o">)</span>
+<span class="k">import</span> <span class="nn">hyperparameters.implicits._</span>
+</code></pre>
+</div>
+
+<p><code class="highlighter-rouge">hyperparameterKey1</code>, <code class="highlighter-rouge">hyperparameterKey2</code> and <code class="highlighter-rouge">hyperparameterKey3</code> are settings required by <code class="highlighter-rouge">Plugin1</code>, <code class="highlighter-rouge">Plugin2</code> and <code class="highlighter-rouge">Plugin3</code>. Those hyperparameter keys may differ when different plugins are used.</p>
+
+<p>Then, the neural network can be built from functions and types in <code class="highlighter-rouge">hyperparameters</code>.</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">val</span> <span class="n">weight1</span> <span class="k">=</span> <span class="n">hyperparameters</span><span class="o">.</span><span class="nc">INDArrayWeight</span><span class="o">(</span><span class="n">initialValue1</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">weight2</span> <span class="k">=</span> <span class="n">hyperparameters</span><span class="o">.</span><span class="nc">INDArrayWeight</span><span class="o">(</span><span class="n">initialValue2</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">weight3</span> <span class="k">=</span> <span class="n">hyperparameters</span><span class="o">.</span><span class="nc">INDArrayWeight</span><span class="o">(</span><span class="n">initialValue3</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">myNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">hyperparameters.INDArrayLayer</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">layer1</span> <span class="k">=</span> <span class="n">hyperparameters</span><span class="o">.</span><span class="n">function1</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">weight1</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">layer2</span> <span class="k">=</span> <span class="n">layer1</span><span class="o">.</span><span class="n">method1</span><span class="o">(</span><span class="n">weight2</span><span class="o">)</span>
+  <span class="n">hyperparameters</span><span class="o">.</span><span class="n">function2</span><span class="o">(</span><span class="n">layer2</span><span class="o">,</span> <span class="n">weight3</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p><code class="highlighter-rouge">INDArrayLayer</code> and <code class="highlighter-rouge">INDArrayWeight</code>, <code class="highlighter-rouge">function1</code>, <code class="highlighter-rouge">function2</code> and <code class="highlighter-rouge">method1</code> are types and functions provided by plugins. Also, those types and functions may differ when different plugins are used.</p>
+
+<p>Since Scala <code class="highlighter-rouge">trait</code>s can be nested, the term <em>plugin</em> is only used to refer to the root level <code class="highlighter-rouge">trait</code>. For example:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">Plugin1#INDArrayLayerApi</code> is a mixin trait but not a plugin;</li>
+  <li><code class="highlighter-rouge">Plugin1</code> is the plugin.</li>
+</ul>
+
+<p>Plugin users only need to create <code class="highlighter-rouge">hyperparameters</code> object from plugins (aka root level mixins), then all the nested types of same name in those plugins will get mixed-in automatically.</p>
+
+<p>See <a href="demo/GettingStarted.html">Getting Started</a> for a complete example of the usage of plugins.</p>
+
+<h2 id="built-in-plugins">Built-in plugins</h2>
+
+<p>Every DeepLearning.scala 2.0 built-in plugin is a library distributed on Maven central repository. The artifact ID is the lower cased plugin name with a <code class="highlighter-rouge">plugins-</code> prefix, and
+the group ID is <code class="highlighter-rouge">com.thoughtworks.deeplearning</code>.</p>
+
+<p>The complete list of all built-in plugins can be found in <a href="https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/plugins/package.html">Scaladoc of <code class="highlighter-rouge">com.thoughtworks.deeplearning.plugins</code> package</a>.</p>
+
+<p>In most cases, you may want to enable all built-in plugins at once. Then you only need the <a href="https://javadoc.io/page/com.thoughtworks.deeplearning/plugins-builtins_2.11/latest/com/thoughtworks/deeplearning/plugins/Builtins.html">Builtins</a> plugin, which contains all other built-in plugins.</p>
+
+<p>To install the <code class="highlighter-rouge">Builtins</code> plugin for a sbt project, you can add the following settings in your <code class="highlighter-rouge">build.sbt</code>:</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="n">libraryDependencies</span> <span class="o">+=</span> <span class="s">"com.thoughtworks.deeplearning"</span> <span class="o">%%</span> <span class="s">"plugins-builtins"</span> <span class="o">%</span> <span class="s">"latest.release"</span>
+</code></pre>
+</div>
+
+<p>To install the plugin in <a href="https://github.com/alexarchambault/jupyter-scala">Jupyter Scala</a> or <a href="http://ammonite.io/">Ammonite REPL</a>, you can use magic imports.</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-builtins:2.0.0`</span>
+</code></pre>
+</div>
+
+<p>Then, in the Scala source file, use the <code class="highlighter-rouge">Builtins</code> plugin as following:</p>
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.Builtins</span>
+<span class="k">val</span> <span class="n">hyperparameters</span> <span class="k">=</span> <span class="nc">Factory</span><span class="o">[</span><span class="kt">Builtins</span><span class="o">].</span><span class="n">newInstance</span><span class="o">()</span>
+</code></pre>
+</div>
+
+<h2 id="non-built-in-plugins">Non-built-in plugins</h2>
+
+<p>Most of non-built-in plugins are distributed as source files, as simple as a Gist.</p>
+
+<table>
+<thead>
+<th>
+Plugin Name
+</th>
+<th>
+Plugin Description
+</th>
+</thead>
+<tbody>
+<tr>
+<th>
+<a href="https://gist.github.com/Atry/1fb0608c655e3233e68b27ba99515f16#file-readme-ipynb">FixedLearningRate</a>
+</th>
+<td>
+Setup fixed learning rate when training INDArray weights.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/Atry/89ee1baa4c161b8ccc1b82cdd9c109fe#file-adagrad-sc">Adagrad</a>
+</th>
+<td>
+An adaptive gradient algorithm with per-parameter learning rate for INDArray weights.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/Atry/843f606fc89bd4594ffcd03853c6edc6#file-readme-ipynb">L1Regularization</a>
+</th>
+<td>
+L1 Regularization.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/a60ff752270c40a6485ee787837390aa#file-readme-ipynb">L2Regularization</a>
+</th>
+<td>
+L2 Regularization.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/08454c71448b626b013ddabd74d06adf#file-readme-ipynb">Momentum</a>
+</th>
+<td>
+The Momentum and NesterovMomentum optimizer for SGD.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/6b0640c76efc6788f13400ae91849e68#file-readme-ipynb">RMSprop</a>
+</th>
+<td>
+The RMSprop optimizer for SGD.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/Rabenda/0c2fc6ba4cfa536e4788112a94200b50#file-readme-ipynb">Adam</a>
+</th>
+<td>
+The Adam optimizer for SGD.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/a7af811a0ee592d41ab57f2c5d49f08b#file-readme-ipynb">INDArrayDumping</a>
+</th>
+<td>
+A plugin to dump weight matrices during training.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/Atry/15b7d9a4c63d95ad3d67e94bf20b4f69#file-readme-ipynb">CNN</a>
+</th>
+<td>
+A standalone Convolutional Neural Network implementation.
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td colspan="2"><a href="https://github.com/ThoughtWorksInc/DeepLearning.scala-website/edit/master/plugins.md">Add your own algorithms, models or any cool features here.</a></td>
+</tr>
+</tfoot>
+</table>
+
+<p>See <a href="demo/ContributorGuide.html">Contributor Guide</a> for the guideline to build a plugin.</p>
+
+            </section>
+        </div>
+    </div>
+</div>
+
+
+	<!-- Tweet -->
+	<div id="tweet">
+		<div class="container">
+			<section>
+				<blockquote>
+					DeepLearning.scala is an open source deep-learning toolkit in Scala created by our colleagues at ThoughtWorks.
+					We're excited about this project because it uses differentiable functional programming to create and compose neural networks; a developer simply writes code in Scala with static typing.
+				</blockquote>
+			</section>
+		</div>
+	</div>
+
+
+<!-- Footer -->
+<div id="footer">
+	<div class="container">
+		<section>
+			<header>
+				<h2>Get in touch</h2>
+				<!-- <span class="byline">Integer sit amet pede vel arcu aliquet pretium</span> -->
+			</header>
+			<ul class="contact">
+				<li><a href="https://github.com/ThoughtWorksInc/DeepLearning.scala" title="Github" class="fa fa-github"><span>Github</span></a></li>
+				<li><a href="https://gitter.im/ThoughtWorksInc/DeepLearning.scala" title="Gitter" style="width: 20px; vertical-align: text-bottom">
+					<svg
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+						xmlns:xlink="http://www.w3.org/1999/xlink"
+						viewBox="0 0 14 20"
+					>
+						<rect x="12" y="4"width="2" height="8"/>
+						<rect x="8" y="4" width="2" height="16"/>
+						<rect x="4" y="4"width="2" height="16"/>
+						<rect width="2" height="12"/>
+					</svg>
+					<span>Gitter</span>
+				</a></li>
+				<li><a href="mailto:tw-data-china@thoughtworks.com" title="Email" class="fa fa-envelope-o"><span>Email</span></a></li>
+			</ul>
+		</section>
+	</div>
+</div>
+
+<!-- Copyright -->
+<div id="copyright">
+	<div class="container">
+		© 2017 ThoughtWorks, Inc.
+	</div>
+</div>
+
+</body>
+</html>

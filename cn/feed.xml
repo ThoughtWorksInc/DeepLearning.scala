@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?><?xml-stylesheet type="text/xml" href="/cn/feed.xslt.xml"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="cn"><generator uri="http://jekyllrb.com" version="3.4.3">Jekyll</generator><link href="/cn/feed.xml" rel="self" type="application/atom+xml" /><link href="/cn/" rel="alternate" type="text/html" hreflang="cn" /><updated>2018-12-28T14:31:56+00:00</updated><id>/cn//</id><title type="html">ThoughtWorks</title><subtitle>DeepLearning.scala by ThougthWorks</subtitle><entry><title type="html">DeepLearning.scala 2.0.0发布</title><link href="/cn/2017/07/26/Announcing-DeepLearning.scala-2.0.0.html" rel="alternate" type="text/html" title="DeepLearning.scala 2.0.0发布" /><published>2017-07-26T00:00:00+00:00</published><updated>2017-07-26T00:00:00+00:00</updated><id>/cn/2017/07/26/Announcing-DeepLearning.scala-2.0.0</id><content type="html" xml:base="/cn/2017/07/26/Announcing-DeepLearning.scala-2.0.0.html">&lt;p&gt;今天，我们很荣幸宣布，DeepLearning.scala 2.0.0发布了。&lt;/p&gt;
+
+&lt;p&gt;DeepLearning.scala是个简单的框架，能以面向对象和函数式编程范式创建复杂的神经网络。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;DeepLearning.scala运行在JVM上。既可以用于单独的JVM应用和服务，也能运行在Jupyter Notebook里。&lt;/li&gt;
+  &lt;li&gt;DeepLearning.scala建模能力强。各种类型的神经网络都可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;map&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;reduce&lt;/code&gt;等lambda表达式组装出来。&lt;/li&gt;
+  &lt;li&gt;DeepLearning.scala支持插件。任何算法、子网络、超参数都可以做成插件发布到Github Gist上，复用到各种模型中。&lt;/li&gt;
+  &lt;li&gt;以上所有功能都支持静态类型检查。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;deeplearningscala-20的特性&quot;&gt;DeepLearning.scala 2.0的特性&lt;/h2&gt;
+
+&lt;p&gt;相比1.x版本，DeepLearning.scala 2.0移除了对可微分（differentiable）的ADT类型和Boolean类型提供的特殊支持。现在可微分计算图只是普通的Scala代码，包括ADT和Boolean在内的一切类型都能直接使用。&lt;/p&gt;
+
+&lt;h3 id=&quot;动态神经网络&quot;&gt;动态神经网络&lt;/h3&gt;
+
+&lt;p&gt;与其他一些深度学习框架不同，DeepLearning.scala中的神经网络结构会在运行时才动态确定。我们的神经网络都是程序。一切Scala特性，包括函数、表达式和流程控制语句，都能直接在神经网络中使用。&lt;/p&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ordinaryScalaFunction&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;INDArray&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Boolean&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signnum&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sumT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;math&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;random&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myDynamicNeuralNetwork&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;INDArray&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;INDArrayLayer&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;monadic&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Do&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;layer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;each&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ordinaryScalaFunction&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;dynamicallySelectedLayer2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;each&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;dynamicallySelectedLayer3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;each&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;})&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;以上神经网络会根据&lt;code class=&quot;highlighter-rouge&quot;&gt;ordinaryScalaFunction&lt;/code&gt;的返回值进入不同的子网络，而&lt;code class=&quot;highlighter-rouge&quot;&gt;ordinaryScalaFunction&lt;/code&gt;只是个普通的Scala函数。&lt;/p&gt;
+
+&lt;p&gt;有了动态创建神经网络的能力，一名普通的程序员，就能够用很简单的代码构建复杂神经网络。你还是像以前一样编写程序，唯一的区别是，DeepLearning.scala里写的程序有学习能力，能够持续根据反馈修改自身参数。&lt;/p&gt;
+
+&lt;h3 id=&quot;函数式编程&quot;&gt;函数式编程&lt;/h3&gt;
+
+&lt;p&gt;DeepLearning.scala 2.0基于Monads，所以可以任意组合。即使是很复杂的网络也可以从基本操作组合出来。除了Monad以外，我们还提供了Applicative类型类（type class），能并行执行多处耗时计算。&lt;/p&gt;
+
+&lt;p&gt;比如，先前的例子可以用高阶函数风格写成这样：&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myDynamicNeuralNetwork&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;INDArray&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;INDArrayLayer&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;layer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;flatMap&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ordinaryScalaFunction&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;dynamicallySelectedLayer2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;dynamicallySelectedLayer3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;outputOfLayer1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;DeepLearning.scala 2.0的核心概念是&lt;a href=&quot;https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html&quot;&gt;DeepLearning&lt;/a&gt;依赖类型类（dependent type class），可以见证（witness）可微分表达式。换句话说，对于任何数据类型，包括你定制的类型，只要提供了对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;DeepLearning&lt;/code&gt;类型类的实例，就能具备深度学习能力，成为深度神经网络的一部分。&lt;/p&gt;
+
+&lt;h3 id=&quot;面向对象编程&quot;&gt;面向对象编程&lt;/h3&gt;
+
+&lt;p&gt;DeepLearning 2.0的代码结构利用了依赖对象类型演算（Dependent Object Type calculus，DOT），所有特性都通过支持混入（mixin）的插件来实现。插件能修改一切DeepLearning.scala类型的API和行为。&lt;/p&gt;
+
+&lt;p&gt;这种架构不光解决了&lt;a href=&quot;https://en.wikipedia.org/wiki/Expression_problem&quot;&gt;expression problem&lt;/a&gt;，还让每个插件都可以“虚依赖”其他插件。&lt;/p&gt;
+
+&lt;p&gt;比如，插件作者编写优化器&lt;a href=&quot;https://gist.github.com/Atry/89ee1baa4c161b8ccc1b82cdd9c109fe#file-adagrad-sc&quot;&gt;Adagrad&lt;/a&gt;插件时，无需显式调用learning rate相关的函数。只要插件用户同时启用了&lt;code class=&quot;highlighter-rouge&quot;&gt;Adagrad&lt;/code&gt;和&lt;a href=&quot;https://gist.github.com/Atry/1fb0608c655e3233e68b27ba99515f16#file-readme-ipynb&quot;&gt;FixedLearningRate&lt;/a&gt;两个插件，那么最终的&lt;code class=&quot;highlighter-rouge&quot;&gt;Adagrad&lt;/code&gt;执行优化时就会自动调用&lt;code class=&quot;highlighter-rouge&quot;&gt;FixedLearningRate&lt;/code&gt;中的计算。&lt;/p&gt;
+
+&lt;h2 id=&quot;deeplearningscala-20的插件&quot;&gt;DeepLearning.scala 2.0的插件&lt;/h2&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;
+插件名称
+&lt;/th&gt;
+&lt;th&gt;
+插件描述
+&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://www.javadoc.io/page/com.thoughtworks.deeplearning/plugins-builtins_2.11/latest/com/thoughtworks/deeplearning/plugins/Builtins.html&quot;&gt;Builtins&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+所有的内置插件
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/Atry/1fb0608c655e3233e68b27ba99515f16#file-readme-ipynb&quot;&gt;FixedLearningRate&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+Setup fixed learning rate when training INDArray weights.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/Atry/89ee1baa4c161b8ccc1b82cdd9c109fe#file-adagrad-sc&quot;&gt;Adagrad&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+An adaptive gradient algorithm with per-parameter learning rate for INDArray weights.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/8154015cc0ac5cfba8e351b642ef12b3#file-readme-ipynb&quot;&gt;L1Regularization&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+L1 Regularization.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/a60ff752270c40a6485ee787837390aa#file-readme-ipynb&quot;&gt;L2Regularization&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+L2 Regularization.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/08454c71448b626b013ddabd74d06adf#file-readme-ipynb&quot;&gt;Momentum&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+The Momentum and NesterovMomentum optimizer for SGD.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/6b0640c76efc6788f13400ae91849e68#file-readme-ipynb&quot;&gt;RMSprop&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+The RMSprop optimizer for SGD.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/4a4dd1929963a34bf20340022b0f03d3#file-readme-ipynb&quot;&gt;Adam&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+The Adam optimizer for SGD.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/a7af811a0ee592d41ab57f2c5d49f08b#file-readme-ipynb&quot;&gt;INDArrayDumping&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+A plugin to dump weight matrices during training.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th&gt;
+&lt;a href=&quot;https://gist.github.com/TerrorJack/cdd9cc5adc82fc86abf8b4c72cd26e76#file-readme-ipynb&quot;&gt;CNN&lt;/a&gt;
+&lt;/th&gt;
+&lt;td&gt;
+A standalone CNN implementation.
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;tfoot&gt;
+&lt;tr&gt;
+&lt;td colspan=&quot;2&quot;&gt;&lt;a href=&quot;http://deeplearning.thoughtworks.school/get-involved&quot;&gt;贡献你自己的算法、模型或者任何炫酷的功能&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tfoot&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;相关链接&quot;&gt;相关链接&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://deeplearning.thoughtworks.school/&quot;&gt;DeepLearning.scala主页&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/ThoughtWorksInc/DeepLearning.scala/&quot;&gt;DeepLearning.scala Github页面&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://deeplearning.thoughtworks.school/demo/GettingStarted.html&quot;&gt;DeepLearning.scala 2.0快速上手指南&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html&quot;&gt;API参考文档&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</content><summary type="html">今天，我们很荣幸宣布，DeepLearning.scala 2.0.0发布了。</summary></entry></feed>

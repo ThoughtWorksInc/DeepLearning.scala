@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<!--
+DeepLearning.scala by ThoughtWorks
+Released for free under the Apache 2.0 license (https://github.com/ThoughtWorksInc/DeepLearning.scala/blob/1.0.x/LICENSE)
+-->
+<html>
+<head>
+	<title>DeepLearning.scala by ThoughtWorks</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="DeepLearning.Scala" />
+	<meta name="keywords" content="DeepLearning,Scala" />
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,500,900' rel='stylesheet' type='text/css'>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js" type="text/javascript"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js" type="text/javascript"></script>
+	<script src="/assets/js/skel.min.js"> </script>
+	<script src="/assets/js/skel-panels.min.js"></script>
+	<script src="/assets/js/init.js"> </script>
+	<script>
+		init_init("/assets/css/style");
+	</script>
+	<noscript>
+		<link rel="stylesheet" href="/assets/css/skel-noscript.css" />
+		<link rel="stylesheet" href="/assets/css/style.css" />
+		<link rel="stylesheet" href="/assets/css/style-desktop.css" />
+	</noscript>
+	<style>
+		
+	</style>
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-103605110-1', 'auto');
+	  ga('send', 'pageview');
+	</script>
+</head>
+<body >
+	<!-- Header -->
+	<div id="header">
+		<div id="nav-wrapper"><div class="container">
+	<!-- Nav -->
+	<nav id="nav">
+		<ul>
+			
+			<li >
+				<a href="/cn/index.html">
+					<img alt="DeepLearning.scala"
+					     src="/assets/images/logo-text-white-opacity.png"
+					     style="height: 1.5em; vertical-align: text-bottom;">
+				</a>
+			</li>
+			<li ><a href="/cn/plugins">Plugins</a></li>
+			<li ><a href="/cn/doc">Documentation</a></li>
+			<li ><a href="/cn/news">News</a></li>
+			<li ><a href="/cn/get-involved">Get Involved</a></li>
+		</ul>
+	</nav>
+</div></div>
+
+		<div class="container">
+
+			<!-- Logo -->
+			<div id="logo">
+				<h1><a><img width="65%" alt="DeepLearning.scala" src="/assets/images/logo-text-white-opacity.png"/></a></h1>
+				<span class="tag">By ThoughtWorks</span>
+			</div>
+		</div>
+	</div>
+	<!-- Header -->
+	<!-- Main -->
+<div id="main">
+    <div id="content" class="container">
+        <div class="row">
+            <section class="normal-head">
+                <h2 id="循环依赖">循环依赖</h2>
+
+<p>package之间不应该有循环依赖。Scala文件之间不应该有循环依赖。可以用<a href="https://github.com/lihaoyi/acyclic">acyclic</a>检查循环依赖。</p>
+
+<h2 id="库的粒度">库的粒度</h2>
+
+<p>每个库应该尽量小，只应包含一个Scala源文件。</p>
+
+<p>库名通常是去掉<code class="highlighter-rouge">.scala</code>后缀的文件名。但有一个例外：如果文件名是<code class="highlighter-rouge">package.scala</code>，库名应该是包名。</p>
+
+<h2 id="模拟package">模拟package</h2>
+
+<p>如果需要提供一个由一组静态成员组成的库，那么这个库不应该是<code class="highlighter-rouge">package object</code>，而应当使用普通<code class="highlighter-rouge">object</code>来模拟<code class="highlighter-rouge">package</code>，命名应该小写。</p>
+
+<h2 id="package-object">package object</h2>
+
+<p>如果有若干个相关的库位于同一个package，可以为这一组库提供一个<code class="highlighter-rouge">package object</code>作为<a href="https://zh.wikipedia.org/wiki/%E5%A4%96%E8%A7%80%E6%A8%A1%E5%BC%8F">外观模式</a>。这个<code class="highlighter-rouge">package object</code>的文件名应该是<code class="highlighter-rouge">package.scala</code>，库名是包名。</p>
+
+<h2 id="类型别名的伴生对象">类型别名的伴生对象</h2>
+
+<p>类型别名应当与其伴生对象同名且位于同一文件。这个文件可以是模拟package的object。例如：</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">object</span> <span class="nc">tryt</span> <span class="o">{</span>
+  <span class="k">type</span> <span class="kt">TryT</span><span class="o">[</span><span class="kt">F</span><span class="o">[</span><span class="k">_</span><span class="o">]</span>, <span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+  <span class="k">object</span> <span class="nc">TryT</span> <span class="o">{</span>
+    <span class="o">???</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+            </section>
+        </div>
+    </div>
+</div>
+
+
+	<!-- Tweet -->
+	<div id="tweet">
+		<div class="container">
+			<section>
+				<blockquote>
+					DeepLearning.scala is an open source deep-learning toolkit in Scala created by our colleagues at ThoughtWorks.
+					We're excited about this project because it uses differentiable functional programming to create and compose neural networks; a developer simply writes code in Scala with static typing.
+				</blockquote>
+			</section>
+		</div>
+	</div>
+
+
+<!-- Footer -->
+<div id="footer">
+	<div class="container">
+		<section>
+			<header>
+				<h2>Get in touch</h2>
+				<!-- <span class="byline">Integer sit amet pede vel arcu aliquet pretium</span> -->
+			</header>
+			<ul class="contact">
+				<li><a href="https://github.com/ThoughtWorksInc/DeepLearning.scala" title="Github" class="fa fa-github"><span>Github</span></a></li>
+				<li><a href="https://gitter.im/ThoughtWorksInc/DeepLearning.scala" title="Gitter" style="width: 20px; vertical-align: text-bottom">
+					<svg
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+						xmlns:xlink="http://www.w3.org/1999/xlink"
+						viewBox="0 0 14 20"
+					>
+						<rect x="12" y="4"width="2" height="8"/>
+						<rect x="8" y="4" width="2" height="16"/>
+						<rect x="4" y="4"width="2" height="16"/>
+						<rect width="2" height="12"/>
+					</svg>
+					<span>Gitter</span>
+				</a></li>
+				<li><a href="mailto:tw-data-china@thoughtworks.com" title="Email" class="fa fa-envelope-o"><span>Email</span></a></li>
+			</ul>
+		</section>
+	</div>
+</div>
+
+<!-- Copyright -->
+<div id="copyright">
+	<div class="container">
+		© 2017 ThoughtWorks, Inc.
+	</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE HTML>
+<!--
+DeepLearning.scala by ThoughtWorks
+Released for free under the Apache 2.0 license (https://github.com/ThoughtWorksInc/DeepLearning.scala/blob/1.0.x/LICENSE)
+-->
+<html>
+<head>
+	<title>DeepLearning.scala by ThoughtWorks</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="DeepLearning.Scala" />
+	<meta name="keywords" content="DeepLearning,Scala" />
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,500,900' rel='stylesheet' type='text/css'>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js" type="text/javascript"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js" type="text/javascript"></script>
+	<script src="/assets/js/skel.min.js"> </script>
+	<script src="/assets/js/skel-panels.min.js"></script>
+	<script src="/assets/js/init.js"> </script>
+	<script>
+		init_init("/assets/css/style");
+	</script>
+	<noscript>
+		<link rel="stylesheet" href="/assets/css/skel-noscript.css" />
+		<link rel="stylesheet" href="/assets/css/style.css" />
+		<link rel="stylesheet" href="/assets/css/style-desktop.css" />
+	</noscript>
+	<style>
+		
+	</style>
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-103605110-1', 'auto');
+	  ga('send', 'pageview');
+	</script>
+</head>
+<body >
+	<!-- Header -->
+	<div id="header">
+		<div id="nav-wrapper"><div class="container">
+	<!-- Nav -->
+	<nav id="nav">
+		<ul>
+			
+			<li >
+				<a href="/index.html">
+					<img alt="DeepLearning.scala"
+					     src="/assets/images/logo-text-white-opacity.png"
+					     style="height: 1.5em; vertical-align: text-bottom;">
+				</a>
+			</li>
+			<li ><a href="/plugins">Plugins</a></li>
+			<li ><a href="/doc">Documentation</a></li>
+			<li ><a href="/news">News</a></li>
+			<li ><a href="/get-involved">Get Involved</a></li>
+		</ul>
+	</nav>
+</div></div>
+
+		<div class="container">
+
+			<!-- Logo -->
+			<div id="logo">
+				<h1><a><img width="65%" alt="DeepLearning.scala" src="/assets/images/logo-text-white-opacity.png"/></a></h1>
+				<span class="tag">By ThoughtWorks</span>
+			</div>
+		</div>
+	</div>
+	<!-- Header -->
+	<div id="main">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <nav class="toc" role="navigation">
+                    
+<ul class="default">
+    
+    <li>
+        <a href="/doc/">
+            
+            
+            Introduction
+            
+        </a>
+    </li>
+    
+    
+<ul class="default">
+    
+    <li>
+        <a href="/demo/GettingStarted.html">
+            
+            
+            GettingStarted
+            
+        </a>
+    </li>
+    
+    
+    <li>
+        <a href="/demo/SoftmaxLinearClassifier.html">
+            
+            
+            SoftmaxLinearClassifier
+            
+        </a>
+    </li>
+    
+    
+    <li>
+        <a href="/demo/CharRNN.html">
+            
+            
+            CharRNN
+            
+        </a>
+    </li>
+    
+    
+    <li>
+        <a href="/demo/ContributorGuide.html">
+            
+            
+            <b>ContributorGuide</b>
+            
+        </a>
+    </li>
+    
+    
+    <li>
+        <a href="/demo/CNN.html">
+            
+            
+            Convolutional Neural Network
+            
+        </a>
+    </li>
+    
+    
+</ul>
+
+    
+    
+</ul>
+
+                </nav>
+            </div>
+            <div id="content" class="8u skel-cell-important">
+                <section>
+                    <div class="col-md-9 normal-head">
+                        
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Contributing-to-DeepLearning.scala">Contributing to DeepLearning.scala<a class="anchor-link" href="#Contributing-to-DeepLearning.scala">&#182;</a></h1><p>So, you like deep learning and functional programming, and decide that DeepLearning.scala might be your thing. Great! There are a lot of ways you can help, and here is a non-comprehensive guide on how you can make DeepLearning.scala even more awesome.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Helping-fellow-users">Helping fellow users<a class="anchor-link" href="#Helping-fellow-users">&#182;</a></h2><p>DeepLearning.scala is a new framework with relatively fewer users. Besides the scaladoc documentation, our website includes several tutorials which demostrates using DeepLearning.scala for machine learning, but third-party tutorials are also welcome! As the developers of this framework, we'd love to hear from our users and get some idea on how they adapt the framework for their own specific tasks.</p>
+<p>If you've evaluated DeepLearning.scala and authored a blog post about it, let it be an introductory tutorial or a real-world deep learning challenge, feel free to send us a link! Your feedback will be of great help to our fellow users.</p>
+<p>You can also help by participating in discussions in our <a href="https://gitter.im/ThoughtWorksInc/DeepLearning.scala">Gitter chatroom</a>, or answering relevant questions on Stack Overflow.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Reporting-issues">Reporting issues<a class="anchor-link" href="#Reporting-issues">&#182;</a></h2><p>If you encounter problems when using DeepLearning.scala and believe something is wrong on our end, please file a bug report on the <a href="https://github.com/ThoughtWorksInc/DeepLearning.scala/issues">GitHub issue tracker</a>. For us to track down the problem and deliver a solution, do include a minimum example to reproduce the bug in the description.</p>
+<p>You may also file a feature request if you're missing some functionality from other deep learning frameworks. Note that there's a high chance a feature request can be fulfilled by simply implementing a new plugin, which does not require code revision in the main repository.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Hacking-DeepLearning.scala">Hacking DeepLearning.scala<a class="anchor-link" href="#Hacking-DeepLearning.scala">&#182;</a></h2><p>By its core, DeepLearning.scala is simply an interface which states support of automatic differentiation for any type. Most of DeepLearning.scala's functionality lies in its plugins. The project provides a hierarchy of built-in plugins, which provides support for common types like floating-point numbers and multi-dimensional arrays.</p>
+<p>Users of DeepLearning.scala are encouraged to craft new plugins for their own specific tasks. Custom plugins can extend built-in ones and provide extra functionalities like logging, custom optimizers, or even custom neural network architectures. Here we give a brief introduction on the architecture of DeepLearning.scala and demonstrate the development of a simple plugin.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Prerequisites">Prerequisites<a class="anchor-link" href="#Prerequisites">&#182;</a></h3><p>DeepLearning.scala is based on several other Java/Scala libraries:</p>
+<ul>
+<li><a href="https://github.com/deeplearning4j/nd4j">nd4j</a>/<a href="https://github.com/deeplearning4j/nd4s">nd4s</a> for multi-dimensional arrays</li>
+<li><a href="https://github.com/scalaz/scalaz">scalaz</a> for common abstractions of functional programming</li>
+<li><a href="https://github.com/ThoughtWorksInc/feature.scala">feature.scala</a> for creating dynamic mixins</li>
+<li><a href="https://github.com/ThoughtWorksInc/raii.scala">RAII.scala</a> for resource management</li>
+<li><a href="https://github.com/ThoughtWorksInc/each">each</a> for syntactic sugar to write imperative code</li>
+</ul>
+<p>To implement a new plugin, one does not need to dive into implementation details of the above libraries, but reading their documentation will surely be useful.</p>
+<p>Knowledge on deep learning is not strictly a prerequisite. However you should know some basics about linear algebra and vector calculus, and how <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">Automatic differentiation</a> works.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Setting-up-development-environment">Setting up development environment<a class="anchor-link" href="#Setting-up-development-environment">&#182;</a></h3><p>Code of a DeepLearning.scala plugin need not be integrated into an sbt project. It can be put into an <a href="https://github.com/lihaoyi/Ammonite">Ammonite</a> script. It is very handy to use <a href="https://github.com/alexarchambault/jupyter-scala">jupyter-scala</a> to develop the plugin interactively.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="About-the-core-interface">About the core interface<a class="anchor-link" href="#About-the-core-interface">&#182;</a></h3><p>The core interface of DeepLearning.scala is <a href="https://static.javadoc.io/com.thoughtworks.deeplearning/deeplearning_2.11/2.0.0-RC4/index.html#com.thoughtworks.deeplearning.DeepLearning"><code>DeepLearning</code></a>. This trait defines a type class for data types which support automatic differentiation. To implement an instance, one needs to inherit the instance and override the definitions of <code>Data</code>, <code>Delta</code> and <code>forward</code>. The <code>train</code> method can be invoked to perform a single round of training (which is the basis of gradient descent). The <code>predict</code> method can be invoked to perform a prediction.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="About-the-hierarchy-of-built-in-plugins">About the hierarchy of built-in plugins<a class="anchor-link" href="#About-the-hierarchy-of-built-in-plugins">&#182;</a></h3><p>The core interface can be extended by various plugins. Plugins provide various functionality, like supporting new differentiable data types, optimizing, logging, etc. Typically, end-users do not need to extend the core interface themselves; they need only to select plugins which provides required functionality, combine them and initiate an instance like this:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-doublelayers:2.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-indarraylayers:2.0.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-indarrayweights:2.0.0`</span>
+
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.feature.Factory</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.DoubleLayers</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.INDArrayLayers</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.INDArrayWeights</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">interp</span><span class="o">.</span><span class="n">load</span><span class="o">(</span><span class="s">&quot;val hyperparameters = Factory[DoubleLayers with INDArrayLayers with INDArrayWeights].newInstance()&quot;</span><span class="o">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><code>hyperparameters</code> is now in scope and provides functionality from <code>DoubleLayers</code>, <code>INDArrayLayers</code> and <code>INDArrayWeights</code>. One can use <code>hyperparameters.INDArrayWeight</code> to initiate a weight matrix, <code>hyperparameters.DoubleLayer</code>/<code>hyperparameters.INDArrayLayer</code> to initiate a hidden layer/output layer of the neural network. (Note that we're using <a href="https://javadoc.io/doc/com.thoughtworks.feature/factory_2.11/2.0.1"><code>Factory</code></a> instead of Scala's built-in anonymous trait instantiation syntax, because <code>Factory</code> provides some extra niceties)</p>
+<p>There exist a hierarchy of built-in plugins. They are roughly structured as follows:</p>
+<ul>
+<li>For end users: <a href="https://static.javadoc.io/com.thoughtworks.deeplearning/deeplearning_2.11/2.0.0-RC4/index.html#com.thoughtworks.deeplearning.plugins.Builtins"><code>Builtins</code></a> is available for use. It simply combines all other traits and enables all built-in plugins.</li>
+<li>The elementary plugins include <a href="https://static.javadoc.io/com.thoughtworks.deeplearning/deeplearning_2.11/2.0.0-RC4/index.html#com.thoughtworks.deeplearning.plugins.Layers"><code>Layers</code></a>, <a href="https://static.javadoc.io/com.thoughtworks.deeplearning/deeplearning_2.11/2.0.0-RC4/index.html#com.thoughtworks.deeplearning.plugins.Training"><code>Training</code></a>, <a href="https://static.javadoc.io/com.thoughtworks.deeplearning/deeplearning_2.11/2.0.0-RC4/index.html#com.thoughtworks.deeplearning.plugins.Weights"><code>Weights</code></a> and <a href="https://static.javadoc.io/com.thoughtworks.deeplearning/deeplearning_2.11/2.0.0-RC4/index.html#com.thoughtworks.deeplearning.plugins.Operators"><code>Operators</code></a>. Each plugin is structured as a <code>trait</code> equipped with abstract types (often with constraints specifying the APIs they support) and API traits.</li>
+<li>Extending the elementary plugins, we got support for <code>Float</code>/<code>Double</code>/<code>INDArray</code>.</li>
+</ul>
+<p>The plugin hierarchy is designed with extensibility in mind. Although complicated, end users need only to use <a href="https://javadoc.io/doc/com.thoughtworks.feature/factory_2.11/2.0.1">Factory</a> to create a new instance for a plugin. The created instance often serves as the context type for the whole machine learning task, and can be used to create new differentiable variables and launch forward/backward passes.</p>
+<p>When creating a custom plugin, one typically starts by implementing a new trait which extends some built-in traits.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Creating-a-plugin-for-optimizing-INDArrayWeights">Creating a plugin for optimizing <code>INDArrayWeights</code><a class="anchor-link" href="#Creating-a-plugin-for-optimizing-INDArrayWeights">&#182;</a></h3><p>Let's create a plugin for optimizing <code>INDArrayWeights</code>. The <code>INDArrayWeights</code> trait extends <code>Weights</code>, and its inner trait <code>INDArrayOptimizerApi</code> extends the inner trait <code>OptimizerApi</code> of <code>Weights</code>. <code>WeightApi</code> declares a <code>delta</code> method, which is invoked to calculate how much is to be subtracted from the original weights after back propagation produces the current gradient. We'll implement a simple plugin which uses a fixed learning rate to calculate <code>delta</code>. The code is listed as follows:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j::nd4s:0.8.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-indarrayweights:2.0.0`</span>
+
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
+<span class="k">import</span> <span class="nn">org.nd4s.Implicits._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.INDArrayWeights</span>
+
+<span class="k">trait</span> <span class="nc">INDArrayLearningRate</span> <span class="k">extends</span> <span class="nc">INDArrayWeights</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">learningRate</span><span class="k">:</span> <span class="kt">Double</span>
+    
+    <span class="k">override</span> <span class="k">type</span> <span class="kt">INDArrayOptimizer</span> <span class="k">&lt;:</span> <span class="kt">INDArrayOptimizerApi</span> <span class="kt">with</span> <span class="kt">Optimizer</span>
+    
+    <span class="k">trait</span> <span class="nc">INDArrayOptimizerApi</span> <span class="k">extends</span> <span class="k">super</span><span class="o">.</span><span class="nc">INDArrayOptimizerApi</span> <span class="o">{</span> <span class="k">this:</span> <span class="kt">INDArrayOptimizer</span> <span class="o">=&gt;</span>
+        <span class="k">override</span> <span class="k">def</span> <span class="n">delta</span><span class="k">:</span> <span class="kt">INDArray</span> <span class="o">=</span> <span class="o">{</span>
+            <span class="k">super</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="n">learningRate</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This plugin can now be used to optimize an <code>INDArrayWeight</code> (don't forget to pass the <code>learningRate</code> parameter when initiating an instance). As we can see, extending a built-in plugin is not that hard:</p>
+<ul>
+<li>Use a trait to extend a trait of existing plugins. This guarantees your plugin can be freely mixed and extended.</li>
+<li>Add custom fields to preserve information required by this plugin.</li>
+<li>Plugins typically has nested traits. To override a method of a nested trait, first extend the inner trait (you need to use "self type" to make it type check).</li>
+</ul>
+<p>Besides the example of "learning rate", we'll develop another plugin that provides another piece of functionality: logging.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Creating-a-plugin-for-dumping-INDArrayWeights">Creating a plugin for dumping <code>INDArrayWeights</code><a class="anchor-link" href="#Creating-a-plugin-for-dumping-INDArrayWeights">&#182;</a></h3><p>We'll demostrate another plugin here: adding logging functionality to <code>INDArrayWeights</code>. As we all know, training a neural network is a long and arduous process, consuming many hours (even days). What if the training process is interrupted, and all intermediate result is gone? Adding a dumper which serializes <code>INDArrayWeights</code> in case of disruption sounds like a good idea.</p>
+<p>Below is a plugin which supports dumping <code>INDArrayWeights</code> each time after the weights are updated. The logic is pretty simple: in <code>INDArrayWeights</code>, the weight is updated by the <code>backward</code> method. So we need only to extend <code>INDArrayWeights</code> and override the <code>backward</code> method. We first invoke <code>backward</code> of the superclass to perform proper updating, then we use the <code>java.io.Serializable</code> interface to dump the data to a file. The user needs only to supply a <code>dumpingPathPrefix</code> when initiating an instance, and it keeps track of how many times the weight matrix has been serialized.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j::nd4s:0.8.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-indarrayweights:2.0.0`</span>
+
+<span class="k">import</span> <span class="nn">java.io.</span><span class="o">{</span><span class="nc">FileOutputStream</span><span class="o">,</span> <span class="nc">ObjectOutputStream</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">scalaz.syntax.all._</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.api.ndarray.INDArray</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.feature.</span><span class="o">{</span><span class="nc">Factory</span><span class="o">,</span> <span class="nc">ImplicitApply</span><span class="o">,</span> <span class="nc">PartialApply</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.raii.asynchronous._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.INDArrayWeights</span>
+
+<span class="k">trait</span> <span class="nc">INDArrayDumping</span> <span class="k">extends</span> <span class="nc">INDArrayWeights</span> <span class="o">{</span>
+    
+    <span class="k">val</span> <span class="n">dumpingPathPrefix</span><span class="k">:</span> <span class="kt">String</span>
+    
+    <span class="k">private</span> <span class="k">var</span> <span class="n">currentDumped</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="k">override</span> <span class="k">type</span> <span class="kt">INDArrayWeight</span> <span class="k">&lt;:</span> <span class="kt">INDArrayWeightApi</span> <span class="kt">with</span> <span class="kt">Weight</span>
+    
+    <span class="k">trait</span> <span class="nc">INDArrayWeightApi</span> <span class="k">extends</span> <span class="k">super</span><span class="o">.</span><span class="nc">INDArrayWeightApi</span> <span class="o">{</span> <span class="k">this:</span> <span class="kt">INDArrayWeight</span> <span class="o">=&gt;</span>
+        <span class="k">override</span> <span class="k">protected</span> <span class="k">def</span> <span class="n">backward</span><span class="o">[</span><span class="kt">SubtypeOfOptimizer</span><span class="o">](</span>
+            <span class="n">originalDelta</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)(</span>
+            <span class="k">implicit</span> <span class="n">implicitApplyRest</span><span class="k">:</span> <span class="kt">ImplicitApply.Aux</span><span class="o">[</span><span class="kt">PartiallyAppliedOptimizer</span>, <span class="kt">SubtypeOfOptimizer</span><span class="o">],</span>
+            <span class="n">asOptimizer</span><span class="k">:</span> <span class="kt">SubtypeOfOptimizer</span> <span class="k">&lt;:</span><span class="kt">&lt;</span> <span class="kt">OptimizerApi</span> <span class="o">{</span> <span class="k">type</span> <span class="kt">Delta</span> <span class="k">&lt;:</span> <span class="kt">INDArray</span> <span class="o">}</span>
+        <span class="o">)</span><span class="k">:</span> <span class="kt">Do</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+           <span class="k">super</span><span class="o">.</span><span class="n">backward</span><span class="o">(</span><span class="n">originalDelta</span><span class="o">).</span><span class="n">map</span> <span class="o">{</span> <span class="k">_</span> <span class="k">=&gt;</span>
+               <span class="k">val</span> <span class="n">os</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ObjectOutputStream</span><span class="o">(</span><span class="k">new</span> <span class="nc">FileOutputStream</span><span class="o">(</span><span class="n">dumpingPathPrefix</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">currentDumped</span><span class="o">.</span><span class="n">toString</span><span class="o">))</span>
+               <span class="k">try</span> <span class="o">{</span>    
+                   <span class="n">os</span><span class="o">.</span><span class="n">writeObject</span><span class="o">(</span><span class="n">data</span><span class="o">)</span>
+               <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                   <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="o">()</span>
+               <span class="o">}</span>
+               <span class="n">currentDumped</span> <span class="o">+=</span> <span class="mi">1</span>
+           <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To prove that our custom <code>INDArrayDumping</code> can indeed be used to initiate an <code>INDArrayWeight</code> which automatically does the serialization while preserving the original <code>backward</code> behavior, we'll test a trivial example below. We combine a random <code>INDArrayWeight</code> to form a <code>DoubleLayer</code> and invoke its <code>train</code> multiple times. We can observe the resulting value steadily decreases, and the intermediate weight matrices are indeed serialized to disk.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`org.nd4j:nd4j-native-platform:0.8.0`</span>
+<span class="k">import</span> <span class="nn">$ivy.</span><span class="n">`com.thoughtworks.deeplearning::plugins-builtins:2.0.0`</span>
+
+<span class="k">import</span> <span class="nn">scala.concurrent.Await</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.duration.Duration</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+<span class="k">import</span> <span class="nn">org.nd4j.linalg.factory.Nd4j</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.future._</span>
+<span class="k">import</span> <span class="nn">com.thoughtworks.deeplearning.plugins.Builtins</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="n">interp</span><span class="o">.</span><span class="n">load</span><span class="o">(</span><span class="s">&quot;val hyperparameters = Factory[INDArrayDumping with Builtins].newInstance(dumpingPathPrefix=\&quot;/Users/cshao/example\&quot;)&quot;</span><span class="o">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">import</span> <span class="nn">hyperparameters.INDArrayWeight</span>
+<span class="k">import</span> <span class="nn">hyperparameters.DoubleLayer</span>
+<span class="k">import</span> <span class="nn">hyperparameters.implicits._</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">val</span> <span class="n">w</span> <span class="k">=</span> <span class="nc">INDArrayWeight</span><span class="o">(</span><span class="nc">Nd4j</span><span class="o">.</span><span class="n">randn</span><span class="o">(</span><span class="mi">4</span><span class="o">,</span><span class="mi">4</span><span class="o">))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="k">def</span> <span class="n">o</span><span class="k">:</span> <span class="kt">DoubleLayer</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-scala"><pre><span></span><span class="nc">Await</span><span class="o">.</span><span class="n">result</span><span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">toScalaFuture</span><span class="o">,</span> <span class="nc">Duration</span><span class="o">.</span><span class="nc">Inf</span><span class="o">)</span> <span class="c1">// strike enter for n times, and watch the magic happen.</span>
+<span class="c1">// Make sure dumpingPathPrefix exists.</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+
+<p><a href="ContributorGuide.ipynb">Download this tutorial</a></p>
+
+                        <div class="spacing"></div>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+	<!-- Tweet -->
+	<div id="tweet">
+		<div class="container">
+			<section>
+				<blockquote>
+					DeepLearning.scala is an open source deep-learning toolkit in Scala created by our colleagues at ThoughtWorks.
+					We're excited about this project because it uses differentiable functional programming to create and compose neural networks; a developer simply writes code in Scala with static typing.
+				</blockquote>
+			</section>
+		</div>
+	</div>
+
+
+<!-- Footer -->
+<div id="footer">
+	<div class="container">
+		<section>
+			<header>
+				<h2>Get in touch</h2>
+				<!-- <span class="byline">Integer sit amet pede vel arcu aliquet pretium</span> -->
+			</header>
+			<ul class="contact">
+				<li><a href="https://github.com/ThoughtWorksInc/DeepLearning.scala" title="Github" class="fa fa-github"><span>Github</span></a></li>
+				<li><a href="https://gitter.im/ThoughtWorksInc/DeepLearning.scala" title="Gitter" style="width: 20px; vertical-align: text-bottom">
+					<svg
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+						xmlns:xlink="http://www.w3.org/1999/xlink"
+						viewBox="0 0 14 20"
+					>
+						<rect x="12" y="4"width="2" height="8"/>
+						<rect x="8" y="4" width="2" height="16"/>
+						<rect x="4" y="4"width="2" height="16"/>
+						<rect width="2" height="12"/>
+					</svg>
+					<span>Gitter</span>
+				</a></li>
+				<li><a href="mailto:tw-data-china@thoughtworks.com" title="Email" class="fa fa-envelope-o"><span>Email</span></a></li>
+			</ul>
+		</section>
+	</div>
+</div>
+
+<!-- Copyright -->
+<div id="copyright">
+	<div class="container">
+		© 2017 ThoughtWorks, Inc.
+	</div>
+</div>
+
+</body>
+</html>

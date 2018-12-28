@@ -1,0 +1,320 @@
+<!DOCTYPE HTML>
+<!--
+DeepLearning.scala by ThoughtWorks
+Released for free under the Apache 2.0 license (https://github.com/ThoughtWorksInc/DeepLearning.scala/blob/1.0.x/LICENSE)
+-->
+<html>
+<head>
+	<title>DeepLearning.scala by ThoughtWorks</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="DeepLearning.Scala" />
+	<meta name="keywords" content="DeepLearning,Scala" />
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,500,900' rel='stylesheet' type='text/css'>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js" type="text/javascript"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js" type="text/javascript"></script>
+	<script src="/assets/js/skel.min.js"> </script>
+	<script src="/assets/js/skel-panels.min.js"></script>
+	<script src="/assets/js/init.js"> </script>
+	<script>
+		init_init("/assets/css/style");
+	</script>
+	<noscript>
+		<link rel="stylesheet" href="/assets/css/skel-noscript.css" />
+		<link rel="stylesheet" href="/assets/css/style.css" />
+		<link rel="stylesheet" href="/assets/css/style-desktop.css" />
+	</noscript>
+	<style>
+		
+	</style>
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-103605110-1', 'auto');
+	  ga('send', 'pageview');
+	</script>
+</head>
+<body >
+	<!-- Header -->
+	<div id="header">
+		<div id="nav-wrapper"><div class="container">
+	<!-- Nav -->
+	<nav id="nav">
+		<ul>
+			
+			<li >
+				<a href="/cn/index.html">
+					<img alt="DeepLearning.scala"
+					     src="/assets/images/logo-text-white-opacity.png"
+					     style="height: 1.5em; vertical-align: text-bottom;">
+				</a>
+			</li>
+			<li ><a href="/cn/plugins">Plugins</a></li>
+			<li ><a href="/cn/doc">Documentation</a></li>
+			<li ><a href="/cn/news">News</a></li>
+			<li ><a href="/cn/get-involved">Get Involved</a></li>
+		</ul>
+	</nav>
+</div></div>
+
+		<div class="container">
+
+			<!-- Logo -->
+			<div id="logo">
+				<h1><a><img width="65%" alt="DeepLearning.scala" src="/assets/images/logo-text-white-opacity.png"/></a></h1>
+				<span class="tag">By ThoughtWorks</span>
+			</div>
+		</div>
+	</div>
+	<!-- Header -->
+	<!-- Main -->
+	<div id="main">
+		<div id="content" class="container">
+			<div class="row">
+				<section class="">
+					<!--<a href="/2017/07/26/Announcing-DeepLearning.scala-2.0.0.html" class="image full"><img src="/assets/images/pic01.jpg" alt=""></a>-->
+					<header>
+						<h2>DeepLearning.scala 2.0.0发布</h2>
+					</header>
+					<strong>26 July 2017</strong>
+					<div class="normal-head">
+						<p>今天，我们很荣幸宣布，DeepLearning.scala 2.0.0发布了。</p>
+
+<p>DeepLearning.scala是个简单的框架，能以面向对象和函数式编程范式创建复杂的神经网络。</p>
+
+<ul>
+  <li>DeepLearning.scala运行在JVM上。既可以用于单独的JVM应用和服务，也能运行在Jupyter Notebook里。</li>
+  <li>DeepLearning.scala建模能力强。各种类型的神经网络都可以通过<code class="highlighter-rouge">map</code>、<code class="highlighter-rouge">reduce</code>等lambda表达式组装出来。</li>
+  <li>DeepLearning.scala支持插件。任何算法、子网络、超参数都可以做成插件发布到Github Gist上，复用到各种模型中。</li>
+  <li>以上所有功能都支持静态类型检查。</li>
+</ul>
+
+<h2 id="deeplearningscala-20的特性">DeepLearning.scala 2.0的特性</h2>
+
+<p>相比1.x版本，DeepLearning.scala 2.0移除了对可微分（differentiable）的ADT类型和Boolean类型提供的特殊支持。现在可微分计算图只是普通的Scala代码，包括ADT和Boolean在内的一切类型都能直接使用。</p>
+
+<h3 id="动态神经网络">动态神经网络</h3>
+
+<p>与其他一些深度学习框架不同，DeepLearning.scala中的神经网络结构会在运行时才动态确定。我们的神经网络都是程序。一切Scala特性，包括函数、表达式和流程控制语句，都能直接在神经网络中使用。</p>
+
+<p>比如：</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">def</span> <span class="n">ordinaryScalaFunction</span><span class="o">(</span><span class="n">a</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">a</span><span class="o">.</span><span class="n">signnum</span><span class="o">.</span><span class="n">sumT</span> <span class="o">&gt;</span> <span class="n">math</span><span class="o">.</span><span class="n">random</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="n">myDynamicNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span> <span class="k">=</span> <span class="nc">INDArrayLayer</span><span class="o">(</span><span class="n">monadic</span><span class="o">[</span><span class="kt">Do</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">outputOfLayer1</span> <span class="k">=</span> <span class="n">layer1</span><span class="o">(</span><span class="n">input</span><span class="o">).</span><span class="n">forward</span><span class="o">.</span><span class="n">each</span>
+  <span class="k">if</span> <span class="o">(</span><span class="n">ordinaryScalaFunction</span><span class="o">(</span><span class="n">outputOfLayer1</span><span class="o">.</span><span class="n">data</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">dynamicallySelectedLayer2</span><span class="o">(</span><span class="n">outputOfLayer1</span><span class="o">).</span><span class="n">forward</span><span class="o">.</span><span class="n">each</span>
+  <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+    <span class="n">dynamicallySelectedLayer3</span><span class="o">(</span><span class="n">outputOfLayer1</span><span class="o">).</span><span class="n">forward</span><span class="o">.</span><span class="n">each</span>
+  <span class="o">}</span>
+<span class="o">})</span>
+</code></pre>
+</div>
+
+<p>以上神经网络会根据<code class="highlighter-rouge">ordinaryScalaFunction</code>的返回值进入不同的子网络，而<code class="highlighter-rouge">ordinaryScalaFunction</code>只是个普通的Scala函数。</p>
+
+<p>有了动态创建神经网络的能力，一名普通的程序员，就能够用很简单的代码构建复杂神经网络。你还是像以前一样编写程序，唯一的区别是，DeepLearning.scala里写的程序有学习能力，能够持续根据反馈修改自身参数。</p>
+
+<h3 id="函数式编程">函数式编程</h3>
+
+<p>DeepLearning.scala 2.0基于Monads，所以可以任意组合。即使是很复杂的网络也可以从基本操作组合出来。除了Monad以外，我们还提供了Applicative类型类（type class），能并行执行多处耗时计算。</p>
+
+<p>比如，先前的例子可以用高阶函数风格写成这样：</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">def</span> <span class="n">myDynamicNeuralNetwork</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">INDArray</span><span class="o">)</span> <span class="k">=</span> <span class="nc">INDArrayLayer</span> <span class="o">{</span>
+  <span class="n">layer1</span><span class="o">(</span><span class="n">input</span><span class="o">).</span><span class="n">forward</span><span class="o">.</span><span class="n">flatMap</span> <span class="o">{</span> <span class="n">outputOfLayer1</span> <span class="k">=&gt;</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">ordinaryScalaFunction</span><span class="o">(</span><span class="n">outputOfLayer1</span><span class="o">.</span><span class="n">data</span><span class="o">))</span> <span class="o">{</span>
+      <span class="n">dynamicallySelectedLayer2</span><span class="o">(</span><span class="n">outputOfLayer1</span><span class="o">).</span><span class="n">forward</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+      <span class="n">dynamicallySelectedLayer3</span><span class="o">(</span><span class="n">outputOfLayer1</span><span class="o">).</span><span class="n">forward</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>DeepLearning.scala 2.0的核心概念是<a href="https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/DeepLearning.html">DeepLearning</a>依赖类型类（dependent type class），可以见证（witness）可微分表达式。换句话说，对于任何数据类型，包括你定制的类型，只要提供了对应的<code class="highlighter-rouge">DeepLearning</code>类型类的实例，就能具备深度学习能力，成为深度神经网络的一部分。</p>
+
+<h3 id="面向对象编程">面向对象编程</h3>
+
+<p>DeepLearning 2.0的代码结构利用了依赖对象类型演算（Dependent Object Type calculus，DOT），所有特性都通过支持混入（mixin）的插件来实现。插件能修改一切DeepLearning.scala类型的API和行为。</p>
+
+<p>这种架构不光解决了<a href="https://en.wikipedia.org/wiki/Expression_problem">expression problem</a>，还让每个插件都可以“虚依赖”其他插件。</p>
+
+<p>比如，插件作者编写优化器<a href="https://gist.github.com/Atry/89ee1baa4c161b8ccc1b82cdd9c109fe#file-adagrad-sc">Adagrad</a>插件时，无需显式调用learning rate相关的函数。只要插件用户同时启用了<code class="highlighter-rouge">Adagrad</code>和<a href="https://gist.github.com/Atry/1fb0608c655e3233e68b27ba99515f16#file-readme-ipynb">FixedLearningRate</a>两个插件，那么最终的<code class="highlighter-rouge">Adagrad</code>执行优化时就会自动调用<code class="highlighter-rouge">FixedLearningRate</code>中的计算。</p>
+
+<h2 id="deeplearningscala-20的插件">DeepLearning.scala 2.0的插件</h2>
+
+<table>
+<thead>
+<tr>
+<th>
+插件名称
+</th>
+<th>
+插件描述
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>
+<a href="https://www.javadoc.io/page/com.thoughtworks.deeplearning/plugins-builtins_2.11/latest/com/thoughtworks/deeplearning/plugins/Builtins.html">Builtins</a>
+</th>
+<td>
+所有的内置插件
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/Atry/1fb0608c655e3233e68b27ba99515f16#file-readme-ipynb">FixedLearningRate</a>
+</th>
+<td>
+Setup fixed learning rate when training INDArray weights.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/Atry/89ee1baa4c161b8ccc1b82cdd9c109fe#file-adagrad-sc">Adagrad</a>
+</th>
+<td>
+An adaptive gradient algorithm with per-parameter learning rate for INDArray weights.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/8154015cc0ac5cfba8e351b642ef12b3#file-readme-ipynb">L1Regularization</a>
+</th>
+<td>
+L1 Regularization.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/a60ff752270c40a6485ee787837390aa#file-readme-ipynb">L2Regularization</a>
+</th>
+<td>
+L2 Regularization.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/08454c71448b626b013ddabd74d06adf#file-readme-ipynb">Momentum</a>
+</th>
+<td>
+The Momentum and NesterovMomentum optimizer for SGD.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/6b0640c76efc6788f13400ae91849e68#file-readme-ipynb">RMSprop</a>
+</th>
+<td>
+The RMSprop optimizer for SGD.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/4a4dd1929963a34bf20340022b0f03d3#file-readme-ipynb">Adam</a>
+</th>
+<td>
+The Adam optimizer for SGD.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/a7af811a0ee592d41ab57f2c5d49f08b#file-readme-ipynb">INDArrayDumping</a>
+</th>
+<td>
+A plugin to dump weight matrices during training.
+</td>
+</tr>
+<tr>
+<th>
+<a href="https://gist.github.com/TerrorJack/cdd9cc5adc82fc86abf8b4c72cd26e76#file-readme-ipynb">CNN</a>
+</th>
+<td>
+A standalone CNN implementation.
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td colspan="2"><a href="http://deeplearning.thoughtworks.school/get-involved">贡献你自己的算法、模型或者任何炫酷的功能</a></td>
+</tr>
+</tfoot>
+</table>
+
+<h2 id="相关链接">相关链接</h2>
+
+<ul>
+  <li><a href="http://deeplearning.thoughtworks.school/">DeepLearning.scala主页</a></li>
+  <li><a href="https://github.com/ThoughtWorksInc/DeepLearning.scala/">DeepLearning.scala Github页面</a></li>
+  <li><a href="http://deeplearning.thoughtworks.school/demo/GettingStarted.html">DeepLearning.scala 2.0快速上手指南</a></li>
+  <li><a href="https://javadoc.io/page/com.thoughtworks.deeplearning/deeplearning_2.11/latest/com/thoughtworks/deeplearning/package.html">API参考文档</a></li>
+</ul>
+
+					</div>
+				</section>
+			</div>
+		</div>
+	</div>
+
+
+	<!-- Tweet -->
+	<div id="tweet">
+		<div class="container">
+			<section>
+				<blockquote>
+					DeepLearning.scala is an open source deep-learning toolkit in Scala created by our colleagues at ThoughtWorks.
+					We're excited about this project because it uses differentiable functional programming to create and compose neural networks; a developer simply writes code in Scala with static typing.
+				</blockquote>
+			</section>
+		</div>
+	</div>
+
+
+<!-- Footer -->
+<div id="footer">
+	<div class="container">
+		<section>
+			<header>
+				<h2>Get in touch</h2>
+				<!-- <span class="byline">Integer sit amet pede vel arcu aliquet pretium</span> -->
+			</header>
+			<ul class="contact">
+				<li><a href="https://github.com/ThoughtWorksInc/DeepLearning.scala" title="Github" class="fa fa-github"><span>Github</span></a></li>
+				<li><a href="https://gitter.im/ThoughtWorksInc/DeepLearning.scala" title="Gitter" style="width: 20px; vertical-align: text-bottom">
+					<svg
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+						xmlns:xlink="http://www.w3.org/1999/xlink"
+						viewBox="0 0 14 20"
+					>
+						<rect x="12" y="4"width="2" height="8"/>
+						<rect x="8" y="4" width="2" height="16"/>
+						<rect x="4" y="4"width="2" height="16"/>
+						<rect width="2" height="12"/>
+					</svg>
+					<span>Gitter</span>
+				</a></li>
+				<li><a href="mailto:tw-data-china@thoughtworks.com" title="Email" class="fa fa-envelope-o"><span>Email</span></a></li>
+			</ul>
+		</section>
+	</div>
+</div>
+
+<!-- Copyright -->
+<div id="copyright">
+	<div class="container">
+		© 2017 ThoughtWorks, Inc.
+	</div>
+</div>
+
+</body>
+</html>
