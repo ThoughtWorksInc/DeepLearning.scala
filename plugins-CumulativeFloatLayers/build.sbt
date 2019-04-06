@@ -17,7 +17,7 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 
 scalacOptions += "-Ypartial-unification"
 
-libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.1.0" % Test
+libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.1.1" % Test
 
 addCompilerPlugin("com.thoughtworks.dsl" %% "compilerplugins-bangnotation" % "1.0.0-RC10")
 
