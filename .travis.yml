@@ -31,7 +31,7 @@ matrix:
         - ${AMDAPPSDK}/bin/x86_64/clinfo
     - os: osx
       osx_image: xcode8.3
-      language: java
+      language: scala
       before_install:
         - brew update
         - brew install sbt graphviz
