@@ -30,11 +30,11 @@ matrix:
         - chmod +x ${AMDAPPSDK}/bin/x86_64/clinfo
         - ${AMDAPPSDK}/bin/x86_64/clinfo
     - os: osx
-      osx_image: xcode8
-      language: java
+      osx_image: xcode8.3
+      language: scala
       before_install:
         - brew update
-        - brew install sbt graphviz
+        - brew install graphviz
 
 before_cache:
   - find $HOME/.sbt -name '*.lock' -delete
