@@ -3,7 +3,7 @@ sudo: false
 matrix:
   include:
     - os: linux
-      jdk: oraclejdk8
+      jdk: openjdk8
       sudo: false
       language: scala
       addons:
