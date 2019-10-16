@@ -13,6 +13,6 @@ exampleSuperTypes += ctor"_root_.com.thoughtworks.deeplearning.scalatest.Thought
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
-libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.3.0-M8"
+libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.3.0+140-594be493"
 
 fork in Test := true
