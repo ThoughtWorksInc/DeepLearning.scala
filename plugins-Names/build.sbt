@@ -1,1 +1,1 @@
-libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.1.4"
+libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.1.9"
