@@ -19,6 +19,6 @@ scalacOptions += "-Ypartial-unification"
 
 libraryDependencies += "com.thoughtworks.feature" %% "mixins-implicitssingleton" % "2.1.0" % Test
 
-addCompilerPlugin("com.thoughtworks.dsl" %% "compilerplugins-bangnotation" % "1.0.0-RC10")
+addCompilerPlugin("com.thoughtworks.dsl" %% "compilerplugins-bangnotation" % "1.0.0-2-ddbc1c14")
 
-addCompilerPlugin("com.thoughtworks.dsl" %% "compilerplugins-reseteverywhere" % "1.0.0-RC10")
+addCompilerPlugin("com.thoughtworks.dsl" %% "compilerplugins-reseteverywhere" % "1.0.0-2-ddbc1c14")
