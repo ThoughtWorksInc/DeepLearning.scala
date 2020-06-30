@@ -1,4 +1,4 @@
-libraryDependencies += "com.dongxiguo" %% "fastring" % "0.3.1"
+libraryDependencies += "com.dongxiguo" %% "fastring" % "1.0.0"
 
 libraryDependencies += "com.thoughtworks.feature" %% "caller" % "2.3.0"
 
