@@ -25,4 +25,4 @@ exampleSuperTypes := exampleSuperTypes.value.map {
 
 scalacOptions += "-Ypartial-unification"
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.4" % Test
