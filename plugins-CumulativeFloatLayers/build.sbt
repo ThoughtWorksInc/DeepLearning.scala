@@ -11,7 +11,7 @@ exampleSuperTypes := exampleSuperTypes.value.map {
 
 exampleSuperTypes += ctor"_root_.com.thoughtworks.deeplearning.scalatest.ThoughtworksFutureToScalaFuture"
 
-libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
+libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.2" % Test
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
